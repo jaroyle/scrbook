@@ -80,12 +80,18 @@ primary descriptor of the homogeneous point process model is the
 of points in an infinitesimally small area. Thus the intensity
 parameter can also be used to determine the expected number of points
 in any region of the state-space $\cal{S}$. To denote this, we say
-that the expected number of points in region $B \in \cal{S}$ is simply
-$n(B) = A(B)\mu$ where $A(B)$ is the area of region $B$.  To  The
-primary difference between the two models is that the binomial model
-conditions on $N$, the number of points to be simulated; whereas under
+that the expected number of points in region $B \in \cal{S}$ is
+$n(B) = A(B)\mu$ where $A(B)$ is the area of region $B$.  One property
+of the Poisson model is that if we divide the entire state-space into
+$k=1,\dots,K$ disjunct regions, the counts $\{n(B_k)\}$ are
+independent and identically distributed, ({\it i.i.d.}). This is one
+of the distinctions between the Poisson model and the binomial model,
+for which the counts $n(B_k)$ are not {\it i.i.d.} as we will explain
+shortly. This difference is also related to more important distinction
+between the two models, namely that the binomial model
+conditions on the number of points to be simulated $N$; whereas under
 the Poisson model $N$ is random. Here is some simple R code to
-illustrate this difference.
+illustrate this point.
 
 \begin{verbatim}
 mu <- 4                            # intensity
@@ -98,17 +104,17 @@ BPP <- cbind(runif(Nb), runif(Nb)) # Binomial point process
 
 Note that in both models, the $N$ points are independent
 of one another and distributed uniformly
-throughout $\mathcal{S}$. Thus, the ``point process
-intensity'' at any point $x \in \cal{S}$ is $\mu(x) = 1 /
-A(\mathcal{S})$ where $A(\mathcal{S})$ denotes the area of the
-state-space. For example, if the area of our state-space is 4 km$^2$,
+throughout $\mathcal{S}$. Thus, the intensity at any point $x \in
+\cal{S}$ is $\mu = 1 / A(\mathcal{S})$ where $A(\mathcal{S})$ denotes
+the area of the state-space. For example, if the area of our
+state-space is 4 km$^2$,
 under a homogeneous model, the intensity is $\mu(x) = 1/4$.
 
-Although the Poisson model is typically described in terms of $\mu(x)$,
+Although the Poisson model is typically described in terms of $\mu$,
 the binomial model is not; rather, it
-is more common to consider a discrete state space, which we mention
-here for clarity. Suppose that $\mathcal{S}$ is divided into $K$ non-overlapping
-regions, the number of points in each region $B$ is $n(B) \sim Bin(N, p)$
+is more common to consider a discrete state space, for example a grid
+with $K$ pixels. Under the binomial model, the number of points in
+each region is $n(B) \sim Bin(N, p)$
 where $p(B) = A(B)/A(\cal{S})$, ie $p(B)$ is simply the fraction of
 the state-space area in $B$.
 
@@ -116,6 +122,41 @@ One additional property of the binomial model is that the $K$
 realizations of $n$ are not independent since they must sum to
 $N$. Instead, the model for the entire vector
 is ${\bf n(B)} \sim Multinomial(N, {\mathbf{\pi}} = (p_1, p_2, \dots, p_K))$.
+
+
+
+[below is text from Chapter 4.3 and it is great to have this
+material reiteratred here.  Im thinking you could copy the last 2
+mini-paragraphs here to expand on the last point you made above
+especially be sure to cite Illian et al. because thats a good
+book. Also I ordered a copy for you]
+
+The collection of individual activity centers s[1], ..., s[N] represent
+a realization of a {\it binomial point process} (e.g., Illiana et
+al. 2008, p. XYZ).  The binomial point process (BPP) is analogous to a
+Poisson point process in the sense that it represents a ``random
+scatter'' of points in space except that the total number of points
+is {\it fixed}, whereas, in a Poisson point process it is random
+(having a Poisson distribution).   It is natural to consider a
+binomial point process in the context of capture-recapture models
+because it preserves N in the model and thus preserves the linkage
+directly with closed population models. In fact, under the binomial
+point process model then Model M0 and other closed models are simple
+limiting cases of SCR models. In addition, use of the BPP model allows
+us to use data augmentation for Bayesian analysis of the models as in
+chapter 3, thus yielding a methodologically coherent approach to
+analyzing the different classes of models.
+One consequence of having fixed N, in the BPP model, is that the BPP
+is not strictly a model of ``complete spatial randomness''. This is
+because if you form counts in any set of regions say A1, ..., Ak, even
+disjoint regions, let n(A1), ..., n(Ak) be the counts then these counts
+are not independent. In fact, they have a multinomial distribution
+(see Illian et al. (2008. P XYZ )).
+ Thus, the BPP model introduces a slight bit of dependence among the
+ point locations (and areal totals). However, in most situations this
+ will have no practical effect on any inference or analysis and, as a
+ practical matter, we will usually regard the BPP model as one of
+ spatial independence among individual activity centers .
 
 \section{Inhomogeneous binomial point process}
 
@@ -136,7 +177,7 @@ $v_j(x)$. To be clear, $v(x)$ is the value of any covariate, such as
 habitat type or elevation, at location $x$.  This equation should look
 familiar because it is the standard linear model used in log-linear
 GLMs with the exception that we have no need
-for an intercept because it would be entirely confounded with
+for an intercept because it would be confounded with
 $N$. This is intuitive since an intercept would
 represent the expected value of $N$ when $\alpha=0$, but we already
 have a parameter in the model for $E[N]$, namely $E[N] =
@@ -147,7 +188,7 @@ spatial covariates.
 
 Now that we have a model of the intensity parameter $\mu(x)$,
 we need to develop the associated probability density function to use
-as a prior in the place of the uniform prior used in the homogeneous
+in the place of the uniform prior used in the homogeneous
 model. Remembering that
 the integral of a pdf must be unity, we can create a pdf by dividing
 $\mu(x)$ by a normalizing constant, which in this case is the integral
@@ -164,14 +205,14 @@ models to spatial capture-recapture data. We can also use this
 distribution to obtain the expected number of individuals in any given
 region. Specifically, the proprotion of $N$ expected to occur in any
 region $B$ when heterogeneity in density is present is $p(B) = \int_B
-f(x)\, \mathrm{d}x$. Once again these are
+f(x)\, \mathrm{d}x$. These are
 also the multinomial cell probabilities if the regions are
-non-overlapping and compose the entire state-space.
+disjoint and compose the entire state-space.
 
 As a practical matter, note that the integral in the
 demoninator of $f(x)$ is evaluated over space, and since we almost always regard as
 space as two-dimensional, this is a two-dimensional integral that can
-be approximated using the methods discussed in ChXX. These methods include
+be approximated using the methods discussed in ref{ChXXX}. These methods include
 Monte Carlo integration, Gaussian quadrature, etc... One
 issue that often arises is that continuous spatial covariates are
 \emph{not} represented as continuous, and instead are
@@ -208,11 +249,11 @@ point process models to such data is straight-forward and illustrates
 the fundamental process that we will later embed in our MCMC algorithm
 used to fit SCR models.
 
-Suppose that we knew the locations of 100 animals' activity
+Suppose we knew the locations of 100 animals' activity
 centers. To estimate the intensity surface $\mu(x)$ underlying these points, we
-need to express the likelihood of our data for various values of
-$\alpha$. Given the pdf $f(x)$, if we assume that the points are
-conditionally independent of one another, we may write
+need to derive the likelihood for our data under this model. Given the
+pdf $f(x)$, if we assume that the points are
+mutually independent of one another, we may write
 the likelihood as the product
 of $R$ such terms, where $R=100$ is the sample size in this case,
 \emph{ie} the observed number of activity centers.
@@ -242,7 +283,12 @@ will proceed with our truly continuous covariate for illustrative
 purposes. However, to evaluate the integral we end up discretizing the
 state-space anyway.
 
-%\newpage
+
+The following R commands demonstrate the use of rejection sampling to
+simulate an inhomogeneous point process for the covariate depicted in
+Figure XYZ.
+
+
 
 \begin{small}
 \begin{verbatim}
@@ -320,18 +366,19 @@ this estimate to our linear model at each point in the state-space to
 obtain the MLE for the intensity surface.
 
 This example demonstrates
-that if we had the data we wish we had, {\it ie} if we knew the
+that if we had the data we wish we had, {\it i.e.} if we knew the
 coordinates of the activity centers, we could easily estimate the
 parameters governing the underlying point process. Unfortunately, in
-SCR models, the activity centers cannot be directly observed, and thus
-are latent variables that we must either estimate or at least integrate out
-of a likelihood. The good news is that capturing an individual at
-multiple locations in space provides us with the information needed to
-estimate the location of its activity.
+SCR models, the activity centers cannot be directly observed. Rather,
+they are latent variables that we must either estimate or at least integrate out
+of a likelihood. In SCR studies, spatial re-captures, that is captures
+of individuals at
+multiple locations in space, provide us with the information needed to
+estimate individual activity centers.
 
 \subsection{Fitting inhomogeneous point process SCR model}
 
-As we have stated before, one
+One
 of the nice things about hierarchical models is that they allow us to
 break a problem up into a series of simple conditional
 relationships. Thus,
@@ -343,6 +390,9 @@ traps upon the map shown in Fig.~\ref{fig:elevMap}. We will then
 simulate capture histories conditional upon the activity centers shown
 on the map. Then, we will attempt to estimate the activity center
 locations as though we did not know where they were.
+
+
+[note the use of Poisson model below]
 
 \begin{small}
 \begin{verbatim}
@@ -438,6 +488,56 @@ that the prior we use is not a standard distribution available by
 default. It is, however, possible to use arbitrary distribution in
 BUGS using the ??-trick.. Anyone remember how to do this? Here is an
 example.
+
+
+
+Actually what you do is this: Discretize the state-space (see Chapter
+4.XYZ to be written by Andy) preferable at the same resolution as your
+raster and then define s[i] = integer from 1:Ngridpoints and
+s[i] ~ dcat(probs[])
+where
+probs[k] = exp(alpha*x)/[sum of all that stuff]
+This works.
+In fact Marc's capricaillie paper has an example. In that case there
+were only 30 or so spatial units (forest tracts) and the covariate was
+``size of unit'' so the model was putting activity centers in each pixel
+in proportion to area).
+
+I think it is worth: (1) showing this example here possible or (2)
+give a sample WinBUGS analysis (simulated data) that shows this and
+discuss relevant issue: large rasters is really really expensive
+computationally. Might use JAGS/parallel to do big problems with
+thousands of raster points. I wonder if that's possible?
+
+In chapter 5 I'm adding information about the discrete state-space
+formulation of the model.
+
+
+\subsection{The tiger data}
+
+Hopefully Arjun can send me something. Something will turn up I'm
+sure.  I also don't object to using simulated data here and there if
+we have to. Maybe SECR has a canned example we could rip off?
+
+\section{MLE}
+
+Maybe its easy to adapt the MLE code from chapter 5 for doing a
+spatial covariate? For completeness it might be worth having that.
+
+\section{Other ideas}
+
+Should have some discussion on some ideas for building flexible
+models. Might be cool to use the Ickstadt/Wolpert as a model for the
+inhomogeneous point process. Dont have to do it, just mention it. Also
+some kind of a spline model or similar.
+
+
+\section{Summary}
+
+When spatially-referenced covariates are available, we can model
+density by replacing the uniform prior on the activity centers with a
+prior based on a log-linear function of covariates.
+
 
 
 \subsection{The tiger data}
