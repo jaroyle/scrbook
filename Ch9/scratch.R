@@ -91,12 +91,27 @@ n.k <- table(cut(s[,1], seq(0, 1, 0.2)),
 # plot continuous space and discrete space
 png("figs/heteroPlots.png", width=5, height=2.5, units="in", res=400)
 op <- par(mfrow=c(1, 2), mai=c(0.1, 0.1, 0.1, 0.1))
-plot(s, frame=T, ann=FALSE, axes=FALSE, asp=1, cex=0.5)
+Sx <- seq(0.01, 0.99, 0.01)
+len <- length(Sx)
+S <- cbind(rep(Sx, each=len), rep(Sx, times=len))
+elev <- elev.fn(S)
+image(Sx, Sx, matrix(elev, len), col=rgb(0,seq(0.1,1,0.01),0,0.8),
+      ann=FALSE, axes=FALSE, asp=1)
+points(s, cex=0.5)
 segments(seq(0, 1, 0.2), 0, seq(0, 1, 0.2), 1, col=gray(0.5))
 segments(0, seq(0, 1, 0.2), 1, seq(0, 1, 0.2), col=gray(0.5))
-plot(s, frame=T, ann=FALSE, axes=F, type="n", asp=1)
+box(col=gray(0.5))
+Sx <- seq(0.1, 0.9, 0.2)
+len <- length(Sx)
+S <- cbind(rep(Sx, each=len), rep(Sx, times=len))
+elev <- elev.fn(S)
+image(Sx, Sx,
+      matrix(elev, len), xlim=c(0,1), ylim=c(0,1),
+      col=rgb(0,seq(0.1,1,0.01),0,0.8),
+      ann=FALSE, axes=FALSE, asp=1)
 segments(seq(0, 1, 0.2), 0, seq(0, 1, 0.2), 1, col=gray(0.5))
 segments(0, seq(0, 1, 0.2), 1, seq(0, 1, 0.2), col=gray(0.5))
+box(col=gray(0.5))
 y <- 0.1
 for(i in 1:nrow(n.k)) {
     text(seq(0.1, 1, by=0.2), y, labels=n.k[,i], cex=0.6)
