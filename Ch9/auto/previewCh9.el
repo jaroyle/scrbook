@@ -8,6 +8,7 @@
      "graphicx"
      "amsfonts"
      "amsmath"
+     "float"
      "latex2e"
      "bk10"
      "book"
