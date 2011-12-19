@@ -1,48 +1,28 @@
 \name{int2d}
 \alias{int2d}
-%- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
+Crude two-dimensional integration over the unit square.
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+This is meant to be used in Ch9
 }
 \usage{
 int2d(alpha, delta = 0.02)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{alpha}{
-%%     ~~Describe \code{alpha} here~~
+    The coefficient for a simple log-linear model with one spatial covariate
 }
   \item{delta}{
-%%     ~~Describe \code{delta} here~~
+    The grid size to use for approximating the integral
 }
 }
 \details{
-%%  ~~ If necessary, more details than the description above ~~
+  This is meant to illustrate the proceedure, but it is not efficient
+  when high levels of accuracy are needed.
 }
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
-}
-\references{
-%% ~put references to the literature/web site here ~
-}
-\author{
-%%  ~~who you are~~
-}
-\note{
-%%  ~~further notes~~
-}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+  The value of the integral
 }
 \examples{
 ##---- Should be DIRECTLY executable !! ----
@@ -58,7 +38,3 @@ function(alpha, delta=0.02) {
   sum(exp(alpha*elev.fn(S)) * cell.area)
   }
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line

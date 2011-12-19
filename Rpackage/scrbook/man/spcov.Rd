@@ -1,11 +1,10 @@
 \name{spcov}
 \alias{spcov}
-%- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
+Functions to generate spatial covariates using Kriging
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+sdfs
 }
 \usage{
 spcov(B = 1, v = 20)

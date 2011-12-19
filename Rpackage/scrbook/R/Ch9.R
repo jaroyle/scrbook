@@ -24,24 +24,13 @@ int2d <- function(alpha, delta=0.02) {
 
 
 
-# Distance between traps and activity centers
-# Faster than using loops
-e2dist1 <- function (x, y)
-{
-    i <- sort(rep(1:nrow(y), nrow(x)))
-    dvec <- sqrt((x[, 1] - y[i, 1])^2 + (x[, 2] - y[i, 2])^2)
-    matrix(dvec, nrow = nrow(x), ncol = nrow(y), byrow = F)
-}
-
-
-
 # Create spatial covariate
 
 spcov <- function(B=1, v=20) {
     R <- data.frame(x=rep(seq(0, B, length=v), each=v),
                     y=rep(seq(0, B, length=v), times=v))
     elev <- function(x, y) (x-.5)+(y-.5) # Elevation is a function of x,y
-    D<-e2dist1(R,R)
+    D<-e2dist(R,R)
     V<-exp(-D/2)
     Vi<-solve(V)
 
@@ -51,7 +40,7 @@ spcov <- function(B=1, v=20) {
     R$cov1<-cov1-mean(cov1)
     cov1.fn<-function(newpt,cov1,cov1.coords=cbind(R$x,R$y),Vi){
         newpt<-matrix(newpt,ncol=2)
-        k<- exp(-e2dist1(newpt,cov1.coords)/2)
+        k<- exp(-e2dist(newpt,cov1.coords)/2)
         pred<-k%*%Vi%*%cov1
         as.numeric(pred)
     }
@@ -79,7 +68,7 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, tune=rep(0.1, 4))
 
     # initial values
     S <- cbind(runif(M,xlims[1],xlims[2]),runif(M,ylims[1],ylims[2]))
-    D <- e2dist1(S, X)
+    D <- e2dist(S, X)
     sigma <-runif(1, .3, .6)
     lam0 <- runif(1, 4, 6)
     lam <- lam0*exp(-(D*D)/(2*sigma*sigma))

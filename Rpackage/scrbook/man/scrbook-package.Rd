@@ -3,12 +3,10 @@
 \alias{scrbook}
 \docType{package}
 \title{
-What the package does (short line)
-~~ package title ~~
+  Companion to the book "Spatial Capture Recapture"
 }
 \description{
-More about what it does (maybe more than one line)
-~~ A concise (1-5 lines) description of the package ~~
+  Stuff to go along with the book
 }
 \details{
 \tabular{ll}{
