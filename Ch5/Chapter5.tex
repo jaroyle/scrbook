@@ -57,9 +57,10 @@ analyzed, such as model Mh, and individual covariate models (see
 Chapter 6 from Royle and Dorazio 2008).
 
 The observation model specified conditional on ${\bf s}_{i}$ is 
-\[
+\begin{equation}
 	y_{ij}| {\bf s}_{i} \sim \mbox{Bin}(K, p_{ij})
-\]
+\label{mle.eq.cond-on-s}
+\end{equation}
 where $p_{ij}$ is a function of the individual-specific random effect,
 ${\bf s}_{i}$, which has a $\mbox{Unif}({\cal S})$ prior distribution.  The
 conditional-on-${\bf s}$ likelihood for any parameters $\theta$ given
@@ -129,44 +130,19 @@ From before, we simulated data for 100 individuals and a 25 trap array
 layed out in a 5 x 5 grid of unit spacing.  The specific encounter
 model is the logit model given above and we used this code to simulate
 data used in subsequent analyses.  The 100 activity centers were
-simulated on a state-space defined by a 8 x 8 square within which the
+simulated on a state-space defined by a $8 \times 8$ square 
+within which the
 trap array was centered (thus the trap array is buffered by 2
 units). Therefore, the density of individuals in this system is fixed
 at 100/64.
 
+In the following set of R commands we generate some data using our
+fancy
+simSCR0.fn R function and harvest the required data objects.........
+
 \begin{verbatim}
-# create 5 x 5 grid of trap locations with unit spacing
-traplocs<- cbind(sort(rep(1:5,5)),rep(1:5,5))
-Dmat<-e2dist(traplocs,traplocs)
-ntraps<-nrow(traplocs)
 
-# define state-space of point process. (i.e., where animals live).
-# "delta" just adds a fixed buffer to the outer extent of the traps. 
 
-ssbuffer<-2
-Xl<-min(traplocs[,1] - ssbuffer)
-Xu<-max(traplocs[,1] + ssbuffer)
-Yl<-min(traplocs[,2] - ssbuffer)
-Yu<-max(traplocs[,2] + ssbuffer)
-
-N<-100   # population size
-K<- 20    # number nights of effort
-
-sx<-runif(N,Xl,Xu)    # simulate activity centers
-sy<-runif(N,Yl,Yu)
-S<-cbind(sx,sy) 
-D<- e2dist(S,traplocs)  # distance of each individual from each trap
-
-alpha0<- -2.5      # define parameters of encounter probability
-sigma<- 0.5        #
-alpha1<- 1/(2*sigma*sigma)
-probcap<- plogis(alpha0 - alpha1*D)    # probability of encounter
-
-# now generate the encounters of every individual in every trap
-y<-matrix(NA,nrow=N,ncol=ntraps)
-for(i in 1:nrow(y)){
-   y[i,]<-rbinom(ntraps,K,probcap[i,])
-}
 \end{verbatim}
 
 Now we need to define the integration grid, say G, which we do with
@@ -183,15 +159,15 @@ nG<-nrow(G)
 \end{verbatim}
 
 In this case, the integration grid is set up as a grid with spacing
-0.2 which produces a 20 x 20 grid of points for evaluating the
+0.2 which produces a $20 \times 20$ grid of points for evaluating the
 integrand if the state-space buffer is set at 2.
 
 We next create an R function that defines the likelihood as a function
-of the data objects y and X which were created above but, in general,
+of the data objects $y$ and $X$ which were created above but, in general,
 you would read these files into R, e.g., as done in the previous
 chapter for the analysis using WinBUGS.  In addition to these data
 objects, we need to have defined the various quantities associated
-with the integration grid – created just previously -- G, nG, and
+with the integration grid – created just previously -- $G$, $nG$, and
 area.  Instead of worrying about making all of these objects and
 keeping track of them we just put that code above into the likelihood
 function and pass “delta” as an additional (optional) argument and a
@@ -201,6 +177,7 @@ over which the integration (summation) is being done.
 Here is one reasonably useful variation of a function for estimation
 based on the integrated likelihood:
 
+{\small 
 \begin{verbatim}
 
 intlik1<-function(parm,y=y,delta=.2,X=traplocs,ssbuffer=2){
@@ -222,8 +199,10 @@ alpha0<-parm[1]
 alpha1<-parm[2]
 probcap<- plogis(alpha0-alpha1*D)
 Pm<-matrix(NA,nrow=nrow(probcap),ncol=ncol(probcap))
-n0<-sum(apply(y,1,sum)==0) # all zero encounter histories
-ymat<-y[apply(y,1,sum)>0,] # encounter histories with at least 1 detection
+                    # all zero encounter histories
+n0<-sum(apply(y,1,sum)==0) 
+                    # encounter histories with at least 1 detection
+ymat<-y[apply(y,1,sum)>0,] 
 ymat<-rbind(ymat,rep(0,ncol(ymat)))
 lik.marg<-rep(NA,nrow(ymat))
 for(i in 1:nrow(ymat)){
@@ -234,27 +213,33 @@ lik.marg[i]<- sum( lik.cond*(1/nG))
 nv<-c(rep(1,length(lik.marg)-1),n0)
 -1*( sum(nv*log(lik.marg)) )
 }
-
 \end{verbatim}
+}
 
-Remarks about the likelihood function: 1. The function accepts as
-input the encounter history matrix, y, the trap locations, X, and the
+
+The function accepts as
+input the encounter history matrix, $y$, the trap locations, $X$, and the
 state-space buffer. This allows us to vary the state-space buffer and
 easily evaluate the sensitivity of the MLE to the size of the
-state-space. 2. We have a peculiar handling of the encounter history
-matrix y. In particular, we remove the all-zero encounter histories
+state-space. 
+Note that we have a peculiar handling of the encounter history
+matrix $y$. In particular, we remove the all-zero encounter histories
 from the matrix and tack-on a single all-zero encounter history as the
 last row which then gets weighted by the number of such encounter
-histories (n0). This is a bit long-winded and strictly unnecessary
-when N is known, but we did it this way because the extension to the
-unknown-N case is now transparent (as we demonstrate in the following
-section). 3. The matrix “Pm” holds the log-likelihood contributions of
+histories ($n0$). This is a bit long-winded and strictly unnecessary
+when $N$ is known, but we did it this way because the extension to the
+unknown-$N$ case is now transparent (as we demonstrate in the following
+section). 
+ The matrix $Pm$ holds the log-likelihood contributions of
 each encounter frequency for each possible state-space location of the
-individual. 4. The log contributions are summed up and the result
+individual. 
+The log contributions are summed up and the result
 exponentiated on the next line, producing lik.cond, the
-conditional-on-s likelihood. (formula XXX above). 5. The marginal
-likelihood (lik.marg) sums up the conditional elements weighted by
-Pr(s) (formula XXX above). 6. This function assumes that K, the number
+conditional-on-s likelihood (Eq. \ref{mle.eq.cond-on-s}
+above). The marginal
+likelihood (\mbox{\tt lik.marg}) sums up the conditional elements weighted by
+$\Pr({\bf s})$ (formula XXX above).
+Finally, this function assumes that $K$, the number
 of replicates, is constant for each trap. Further, it assumes that the
 state-space is a square. As an exercise, consider resolving these two
 issues by generalizing the code.
@@ -264,7 +249,9 @@ results into an object called “frog”.  The output is a list of the
 following structure and these specific estimates are produced using
 the data set provided in the Online Supplement):
 
+{\small 
 \begin{verbatim}
+
 # should take 15-30 seconds
 > starting.values <- c(a0=-2, a1=1) # just to make things clear
 > frog<-nlm(intlik1,starting.values,y=y,delta=.1,X=traplocs,ssbuffer=2,hessian=TRUE)
@@ -293,8 +280,9 @@ $code
 
 $iterations
 [1] 12
- 
 \end{verbatim}
+}
+
 
 Details about this output can be found on the help page for \mbox{\tt nlm}. We
 note briefly that \mbox{\tt frog$minimum} is the negative log-likelihood value at
@@ -368,8 +356,8 @@ with a discussion of its capabilities.
 \section{MLE when N is Unknown} 
 
 Here we build on the previous introduction to integrated likelihood
-but we consider now the case in which N is unknown. We will see that
-adapting the analysis based on the N-known model is really
+but we consider now the case in which $N$ is unknown. We will see that
+adapting the analysis based on the $N$-known model is really
 straightforward for the more general problem. The main distinction is
 that we don’t observe the all-zero encounter history so we have to
 make sure we compute the probability for that encounter history which
@@ -383,7 +371,7 @@ involves the unknown n0 and thus it must be included in the likelihood
 (we have already done that in the previous likelihood construction
 even though we didn’t need it).
 
-To summarize, when N is unknown, the “n” observed encounter histories
+To summarize, when N is unknown, the $n$ observed encounter histories
 have a multinomial distribution with probabilities pi(i) and sample
 size N\footnote{ Maybe you could show an alternative simulation script
   to generate data using the rmultinom function. This would make it a
