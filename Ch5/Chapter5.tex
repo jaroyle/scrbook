@@ -148,7 +148,7 @@ Here we will illustrate how to carryout this integration and
 optimization based on the integrated likelihood using simulated data
  (i.e., following that from Chapter 4). Using \mbox{\tt simSCR0.fn}
  we simulate data for 100 individuals and a 25 trap array
-layed out in a 5 x 5 grid of unit spacing.  The specific encounter
+layed out in a $5 \times 5$ grid of unit spacing.  The specific encounter
 model is the half-normal model. The 100 activity centers were
 simulated on a state-space defined by a $8 \times 8$ square 
 within which the
@@ -166,7 +166,6 @@ nind<-nrow(y)
 X<-data$traplocs
 J<-nrow(X)
 K<-data$K
-y<-rbind(y,matrix(0,nrow=(100-nrow(y)),ncol=J ) )
 Xl<-data$xlim[1]
 Yl<-data$ylim[1]
 Xu<-data$xlim[2]
@@ -214,14 +213,14 @@ Yl<-min(X[,2]) - ssbuffer
 xg<-seq(Xl+delta/2,Xu-delta/2,,length=npix) 
 yg<-seq(Yl+delta/2,Yu-delta/2,,length=npix) 
 npix<-length(xg)
-area<- (Xu-Xl)*(Yu-Yl)/((npix)*(npix))
+
 G<-cbind(rep(xg,npix),sort(rep(yg,npix)))
 nG<-nrow(G)
 D<- e2dist(X,G)  
 
 alpha0<-parm[1]
 alpha1<-parm[2]
-probcap<- plogis(alpha0-alpha1*D)
+probcap<- plogis(alpha0)*exp(-alpha1*D*D)
 Pm<-matrix(NA,nrow=nrow(probcap),ncol=ncol(probcap))
                     # all zero encounter histories
 n0<-sum(apply(y,1,sum)==0) 
@@ -268,79 +267,73 @@ of replicates, is constant for each trap. Further, it assumes that the
 state-space is a square. As an exercise, consider resolving these two
 issues by generalizing the code.
 
-Here is the R command for maximizing the likelihood and saving the
-results into an object called “frog”.  The output is a list of the
+Here is the {\bf R} command for maximizing the likelihood and saving the
+results into an object called \mbox{\tt frog}.  The output is a list of the
 following structure and these specific estimates are produced using
-the data set provided in the Online Supplement):
+the simulated data set:
 
 {\small 
 \begin{verbatim}
-
 # should take 15-30 seconds
-> starting.values <- c(a0=-2, a1=1) # just to make things clear
+
+> starting.values <- c(-2, 2) 
 > frog<-nlm(intlik1,starting.values,y=y,delta=.1,X=traplocs,ssbuffer=2,hessian=TRUE)
-
-Warning message:
-In nlm(intlik1, c(-2, 1), y = y, delta = 0.1, X = traplocs, ssbuffer = 2,  :
-  NA/Inf replaced by maximum positive value
-
 > frog
+
 $minimum
-[1] 182.6882
+[1] 297.1896
 
 $estimate
-[1] -2.623456  1.658335
+[1] -2.504824  2.373343
 
 $gradient
-[1] -1.867945e-06  1.587044e-06
+[1] -2.069654e-05  1.968754e-05
 
 $hessian
           [,1]      [,2]
-[1,]  69.16351 -72.13976
-[2,] -72.13976 108.22528
+[1,]  48.67898 -19.25750
+[2,] -19.25750  13.34114
 
 $code
 [1] 1
 
 $iterations
-[1] 12
+[1] 11
 \end{verbatim}
-}
-
-
-Details about this output can be found on the help page for \mbox{\tt nlm}. We
-note briefly that \mbox{\tt frog\$minimum} is the negative log-likelihood value at
-the MLEs, which are stored in the \mbox{\tt frog\$estimate} component of the
-list. The hessian is the observed Fisher information matrix, which can
-be inverted to obtain the variance-covariance matrix using the
-commands:
+} 
+Details about this output can be found on the help page for
+\mbox{\tt nlm}. We note briefly that \mbox{\tt frog\$minimum} is the
+negative log-likelihood value at the MLEs, which are stored in the
+\mbox{\tt frog\$estimate} component of the list. The hessian is the
+observed Fisher information matrix, which can be inverted to obtain
+the variance-covariance matrix using the commands:
 \begin{verbatim}
 solve(frog$hessian)
 \end{verbatim}
+
 It is worth drawing attention to the fact that the estimates are
 different than the Bayesian estimates reported in the previous chapter
-(section XYZ)!!! How can that be?!  There are several reasons for this.
-First Bayesian inference is based on the posterior distribution and it
-is not generally the case that the MLE should correspond to any
+(section XYZ)!!! How can that be?!  There are several reasons for
+this.  First Bayesian inference is based on the posterior distribution
+and it is not generally the case that the MLE should correspond to any
 particular value of the posterior distribution. If the prior
 distributions in a Bayesian analysis are uniform, then the mode of the
-posterior is the MLE,  but note that Bayesians almost always report
+posterior is the MLE, but note that Bayesians almost always report
 posterior means and so there will typically be a discrepancy
 there. Secondly, we have implemented an approximation to the integral
-here and there might be a slight bit of error induced by that. We
-will evaluate that shortly. Third, the Bayesian analysis by MCMC is
-subject to some amount of Monte Carlo error which the analyst should
-always be aware of in practical situations.  All of these different
-explanations are likely responsible for some of the
-discrepancy. Accounting for these, as a
-practical matter, we see general consistency between the two
-estimates. 
+here and there might be a slight bit of error induced by that. We will
+evaluate that shortly. Third, the Bayesian analysis by MCMC is subject
+to some amount of Monte Carlo error which the analyst should always be
+aware of in practical situations.  All of these different explanations
+are likely responsible for some of the discrepancy. Accounting for
+these, as a practical matter, we see general consistency between the
+two estimates.
 
 To compute the integrated likelihood we used a discrete representation
 of the state-space so that the integral could be approximated as a
 summation over possible values of ${\bf s}$ with each value being
-weighted by its probability of occurring, which is 1/nG under the
-assumption that s is uniform on the state-space S. In chapter 4 we
+weighted by its probability of occurring, which is $1/nG$ under the
+assumption that s is uniform on the state-space ${\cal S}$. In chapter 4 we
 used a discrete state-space in developing a Bayesian analysis of the
 model in order to be able to modify the state-space in a flexible
 manner. Bayesian analysis requires simulation of the point process
@@ -349,19 +342,19 @@ the state-space is continuous but has irregular geometry.  Conversely,
 if the state-space is a regular polygon then Bayesian analysis by MCMC
 is possibly more efficient with a continuous state-space. We emphasize
 that the state-space is a part of the model. In some cases there won’t
-be a natural choice of state space beyond “some large rectangle
-containing the trap grid” and, in such cases, for regular detection
+be a natural choice of state space beyond ``some large rectangle
+containing the trap grid'' and, in such cases, for regular detection
 functions the estimate of density is invariant to the size of the
 state-space (i.e., the buffer) as long as it is sufficiently
 large. However if there are good reasons to restrict the state-space,
 it will tend to have an influence on the likelihood and hence AIC and
 so forth.  As an illustration, lets do that by changing the state
-space here…… Use my polygon clipping stuff…….
+space here......Use my polygon clipping stuff ..... 
 
 In summary, we note that, for the basic SCR model, integrated
-likelihood is a really easy calculation when N is known. Even for N
+likelihood is a really easy calculation when $N$ is known. Even for $N$
 unknown it is not too difficult, and we will do that shortly.
-However, if you can solve the known-N problem then you should be able
+However, if you can solve the known-$N$ problem then you should be able
 to do a real analysis, for example by considering different values of
 N and computing the results for each value and then making a plot of
 the log-likelihood or AIC and choosing the value of N that produces
@@ -369,11 +362,11 @@ the best log likelihood or AIC. As a homework problem we suggest that
 the reader take the code given above and try to estimate N without
 modifying the code – by just repeatedly calling that code for
 different values of N and trying to deduce the best value.
-Nevertheless, we will formalize the unknown-N problem shortly.  We
-note that the software package DENSITY (Efford et al. 2004) implements
+Nevertheless, we will formalize the unknown-$N$ problem shortly.  We
+note that the software package {\bf DENSITY} \citep{efford_etal:2004} implements
 certain types of SCR models using integrated likelihood methods.
-DENSITY has been made into an R package called “secr” (Efford 2011)
-and we provide an analysis of some data using “secr” shortly along
+{\bf DENSITY} has been made into an {\bf R} package called \mbox{\tt secr} \citep{efford:2011}
+and we provide an analysis of some data using \mbox{\tt secr} shortly along
 with a discussion of its capabilities.
 
 
@@ -387,46 +380,48 @@ that we don’t observe the all-zero encounter history so we have to
 make sure we compute the probability for that encounter history which
 we do by tacking a row of zeros onto the encounter history matrix. In
 addition, we include the number of such all-zero encounter histories
-as an unknown parameter of the model. Call that unknown quantity n0.
+as an unknown parameter of the model. Call that unknown quantity $n_{0}$.
 In addition, we have to be sure to include a combinatorial term to
-account for the fact that of the n observed individuals there are N
-choose n ways to realize a sample of size n. The combinatorial term
-involves the unknown n0 and thus it must be included in the likelihood
-(we have already done that in the previous likelihood construction
-even though we didn’t need it).
+account for the fact that of the $n$ observed individuals there are
+${N \choose n}$
+ ways to realize a sample of size $n$. The combinatorial term
+involves the unknown $n_{0}$ and thus it must be included in the likelihood.
 
-To summarize, when N is unknown, the $n$ observed encounter histories
+To summarize, when $N$ is unknown, the $n$ observed encounter histories
 have a multinomial distribution with probabilities pi(i) and sample
 size N\footnote{ Maybe you could show an alternative simulation script
   to generate data using the rmultinom function. This would make it a
-  little more clear for people}. The last cell – the “zero cell” is
+  little more clear for people}. The last cell – the ``zero cell'' is
 computed by carrying out the integral in expression XYZ above for the
 all-zero encounter history and we have to account for the fact that
-there are n0 = N-n such encounter histories.
+there are $n_{0} = N-n$ such encounter histories.
 
 To analyze a specific case, we’ll read in our fake data set (simulated
 using the parameters given above). To set some things up in our
 workspace we do this:
 
 \begin{verbatim}
- simSCR0.fn( blah blah blah) 
-
-> y<-read.csv("ind_by_trap.csv")[,-1]
-> y<-as.matrix(y)
-> 
-> X<-read.csv("traplocs.csv")[,-1]
-> X<-as.matrix(X)
-> 
+data<-simSCR0.fn(discard0=TRUE,sd=2013)
+y<-data$Y
+nind<-nrow(y)
+X<-data$traplocs
+J<-nrow(X)
+K<-data$K
+Xl<-data$xlim[1]
+Yl<-data$ylim[1]
+Xu<-data$xlim[2]
+Yu<-data$ylim[2]
 
 \end{verbatim}
 
-Recall that these data were generated with N=100, on an 8 x 8 unit
-state-space representing the trap locations (X) buffered by 2 units.
-As before, the likelihood is defined in the R workspace as an R
+Recall that these data were generated with $N=100$, on an $8 \times 8$ unit
+state-space representing the trap locations (${\bf X}$) buffered by 2 units.
+As before, the likelihood is defined in the {\bf R} workspace as an
+{\bf R}
 function which takes an argument being the unknown parameters of the
 model and additional arguments as prescribed. In particular, as
-before, we provide the encounter history matrix y, the trap locations
-traplocs, the spacing of the integration grid (“delta”) and the
+before, we provide the encounter history matrix ${\bf y}$, the trap locations
+traplocs, the spacing of the integration grid ($\delta$) and the
 state-space buffer. Here is the new likelihood function:
 
 \begin{verbatim}
@@ -450,14 +445,14 @@ D<- e2dist(X,G)
 alpha0<-parm[1]
 alpha1<-parm[2]
 n0<-exp(parm[3])
-probcap<- plogis(alpha0-alpha1*D)
+probcap<- plogis(alpha0)*exp(-alpha1*D*D)
 Pm<-matrix(NA,nrow=nrow(probcap),ncol=ncol(probcap))
 ymat<-rbind(y,rep(0,ncol(y)))
 
 lik.marg<-rep(NA,nrow(ymat))
 for(i in 1:nrow(ymat)){
 Pm[1:length(Pm)]<- (dbinom(rep(ymat[i,],nG),K,probcap[1:length(Pm)],log=TRUE))
-lik.cond<- exp(t(Pm)%*%rep(1,nrow(probcap)))
+lik.cond<- exp(colSums(Pm))
 lik.marg[i]<- sum( lik.cond*(1/nG) )  
 }                                                 
 nv<-c(rep(1,length(lik.marg)-1),n0)
@@ -467,37 +462,49 @@ part2<- sum(nv*log(lik.marg))
 }
 \end{verbatim}
 
-To execute this function for the data that we just read into the
-workspace, we execute the following command (saving the result in our
+To execute this function for the data that we created with \mbox{\tt simSCR0.fn},
+ we execute the following command (saving the result in our
 friend \mbox{\tt frog}).
-
-\begin{verbatim}
-> frog<-nlm(intlik2,c(-2.5,2,log(4)),hessian=TRUE,y=y,X=traplocs,delta=.2,ssbuffer=2)
-\end{verbatim}
-
 This results in the usual output, including the parameter estimates,
 the gradient, and the numerical Hessian which is useful for obtaining
-asymptotic standard errors (omitted here).
-
+asymptotic standard errors (see below):
 \begin{verbatim}
+> frog<-nlm(intlik2,c(-2.5,2,log(4)),hessian=TRUE,y=y,X=X,delta=.2,ssbuffer=2)
+There were 50 or more warnings (use warnings() to see the first 50)
+> 
+>
 > frog
 $minimum
-[1] 181.4657
+[1] 113.5004
 
 $estimate
-[1] -2.629342  1.790849  3.997268
+[1] -2.538334  2.466515  4.232810
 
 […. Additional output deleted ….]
 \end{verbatim}
-
-The estimate of population size for the state-space (using the default state-space buffer) is
-
+While this produces some {\bf R} warnings, these happen to be harmless
+in this case, and we will see from the \mbox{\tt nlm} output that the
+algorithm performed satisfactory in minimizing the objective function.
+The estimate of population size for the state-space (using the default 
+state-space buffer) is
 \begin{verbatim}
-> nrow(y)+exp(3.997)
-[1] 113.4346
+> nrow(y)+exp(4.2328)
+[1] 110.9099
 \end{verbatim}
-
-Which differs from the data-generating truth (N=100) as we might expect. 
+Which differs from the data-generating value ($N=100$) as we might
+expect. We usually will present an estimate of uncertainty assocated
+with this MLE which we can obtain by inverting the Hessian. Note that
+$Var(\hat{N}) = n + Var(\hat{n}_{0})$.
+Since we
+have parameterized the model in terms of $log(n_{0})$ we use a delta
+approximation to obtain the variance on the scale of $n_{0}$ as
+follows:
+\begin{verbatim}
+> (exp(4.2328)^2)*solve(frog$hessian)[3,3]
+[1] 260.2033
+> sqrt(260)
+[1] 16.12452
+\end{verbatim}
 
 \subsection{
 Exercises}
