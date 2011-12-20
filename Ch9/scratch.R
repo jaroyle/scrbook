@@ -36,6 +36,16 @@ dev.off()
 
 
 
+
+
+
+
+
+
+
+
+
+
 # Heterogeneous BPP
 
 
@@ -43,7 +53,7 @@ dev.off()
 
 
 # spatial covariate
-elev.fn <- function(x) x[,1]+x[,2]
+elev.fn <- function(x) x[,1]+x[,2]-1
 
 
 # 2-dimensional integration over unit square
@@ -56,7 +66,7 @@ int2d <- function(alpha, delta=0.02) {
   }
 
 # Simulate PP using rejection sampling
-set.seed(395)
+set.seed(3005)
 N <- 100
 count <- 1
 s <- matrix(NA, N, 2)
@@ -65,7 +75,7 @@ while(count <= 100) {
   x.c <- runif(1, 0, 1)
   y.c <- runif(1, 0, 1)
   s.cand <- cbind(x.c,y.c)
-  elev.min <- elev.fn(cbind(-1,-1))
+  elev.min <- elev.fn(cbind(0,0))
   elev.max <- elev.fn(cbind(1,1))
   pr <- exp(alpha*elev.fn(s.cand)) / int2d(alpha)
   Q <- max(c(exp(alpha*elev.min) / int2d(alpha),
@@ -134,3 +144,104 @@ image(Sx, Sx, matrix(elev, len), col=rgb(0,seq(0.1,1,0.01),0,0.8),
 box()
 points(s, pch=16)
 dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Analysis in JAGS
+
+
+# 3x3 grid of traps centered
+xc <- seq(0.3, 0.7, 0.2)
+X <- cbind(rep(xc, each=3), rep(xc, times=3))
+
+lam0 <- 2
+sigma <- 0.15
+
+set.seed(32235)
+y <- matrix(NA, nrow(s), nrow(X))
+for(i in 1:nrow(s)) {
+    for(j in 1:nrow(X)) {
+        dist <- sqrt((s[i,1]-X[j,1])^2 + (s[i,2]-X[j,2])^2)
+        lam <- lam0 * exp(-dist^2/(2*sigma*sigma))
+        y[i,j] <- rpois(1, lam)
+    }
+}
+
+sum(y)
+
+nz <- 50
+yz <- matrix(0, nrow(y)+nz, ncol(y))
+yz[1:nrow(y),] <- y
+
+
+sink("ippDiscrete.txt")
+cat("
+model{
+sigma ~ dunif(0, 1)
+lam0 ~ dunif(0, 5)
+beta ~ dnorm(0,0.1)
+psi ~ dbeta(1,1)
+
+for(j in 1:nPix) {
+  theta[j] <- exp(beta*elevation[j])
+}
+
+for(j in 1:nPix) {
+  probs[j] <- theta[j]/sum(theta[])
+}
+
+for(i in 1:M) {
+  w[i] ~ dbern(psi)
+  s[i] ~ dcat(probs[])
+  x0g[i] <- Sgrid[s[i],1]
+  y0g[i] <- Sgrid[s[i],2]
+  for(j in 1:ntraps) {
+    dist[i,j] <- sqrt(pow(x0g[i]-grid[j,1],2) + pow(y0g[i]-grid[j,2],2))
+    lambda[i,j] <- lam0*exp(-dist[i,j]*dist[i,j]/(2*sigma*sigma)) * w[i]
+    y[i,j] ~ dpois(lambda[i,j])
+    }
+  }
+
+N <- sum(w[])
+D <- N/1 # unit square
+}
+
+", fill=TRUE)
+sink()
+
+
+
+
+
+library(rjags)
+
+modfile <- "ippDiscrete.txt"
+file.show(modfile)
+dat <- list(y=yz, elevation=elev, nPix=prod(dim(n.k)),
+            M=nrow(yz), ntraps=nrow(X), Sgrid=S, grid=X)
+init <- function() {
+    list(sigma=runif(1), lam0=runif(1), beta=rnorm(1),
+         s=
+         w=c(rep(1,100), rep(0,nz)), psi=1)
+}
+pars <- c("sigma", "lam0", "beta", "N")
+
+
+jm <- jags.model(modfile, dat, init, n.chains=2, n.adapt=500)
+jc <- coda.samples(jm, pars, n.iter=2000)
+
+plot(jc)
+
+summary(window(jc, start=1001))
