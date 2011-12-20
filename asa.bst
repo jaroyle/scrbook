@@ -8,7 +8,7 @@
 %% ----------------------------------------
 %% *** BibTeX Style for ASA Journals ***
 %% (Brett Presnell, 24 August 1998)
-%%
+%% 
  %-------------------------------------------------------------------
  % The original source file contains the following version information:
  % \ProvidesFile{merlin.mbs}[1998/02/25 3.85a (PWD)]
@@ -79,10 +79,10 @@ ENTRY
   {}
   { label extra.label sort.label short.list }
 
-INTEGERS { output.state before.all mid.sentence after.sentence
-after.block }
+INTEGERS { output.state before.all mid.sentence after.sentence after.block }
 
-FUNCTION {init.state.consts} { #0 'before.all :=
+FUNCTION {init.state.consts}
+{ #0 'before.all :=
   #1 'mid.sentence :=
   #2 'after.sentence :=
   #3 'after.block :=
@@ -90,7 +90,8 @@ FUNCTION {init.state.consts} { #0 'before.all :=
 
 STRINGS { s t }
 
-FUNCTION {output.nonnull} { 's :=
+FUNCTION {output.nonnull}
+{ 's :=
   output.state mid.sentence =
     { ", " * write$ }
     { output.state after.block =
@@ -110,31 +111,36 @@ FUNCTION {output.nonnull} { 's :=
   s
 }
 
-FUNCTION {output} { duplicate$ empty$
+FUNCTION {output}
+{ duplicate$ empty$
     'pop$
     'output.nonnull
   if$
 }
 
-FUNCTION {output.check} { 't :=
+FUNCTION {output.check}
+{ 't :=
   duplicate$ empty$
     { pop$ "empty " t * " in " * cite$ * warning$ }
     'output.nonnull
   if$
 }
 
-FUNCTION {fin.entry} { add.period$
+FUNCTION {fin.entry}
+{ add.period$
   write$
   newline$
 }
 
-FUNCTION {new.block} { output.state before.all =
+FUNCTION {new.block}
+{ output.state before.all =
     'skip$
     { after.block 'output.state := }
   if$
 }
 
-FUNCTION {new.sentence} { output.state after.block =
+FUNCTION {new.sentence}
+{ output.state after.block =
     'skip$
     { output.state before.all =
         'skip$
@@ -144,33 +150,41 @@ FUNCTION {new.sentence} { output.state after.block =
   if$
 }
 
-FUNCTION {add.blank} {  " " * before.all 'output.state := }
+FUNCTION {add.blank}
+{  " " * before.all 'output.state :=
+}
 
-FUNCTION {date.block} {
+FUNCTION {date.block}
+{
   skip$
 }
 
-FUNCTION {not} {   { #0 }
+FUNCTION {not}
+{   { #0 }
     { #1 }
   if$
 }
 
-FUNCTION {and} {   'skip$
+FUNCTION {and}
+{   'skip$
     { pop$ #0 }
   if$
 }
 
-FUNCTION {or} {   { pop$ #1 }
+FUNCTION {or}
+{   { pop$ #1 }
     'skip$
   if$
 }
 
-FUNCTION {non.stop} { duplicate$
+FUNCTION {non.stop}
+{ duplicate$
    "}" * add.period$
    #-1 #1 substring$ "." =
 }
 
-FUNCTION {new.block.checkb} { empty$
+FUNCTION {new.block.checkb}
+{ empty$
   swap$ empty$
   and
     'skip$
@@ -178,74 +192,103 @@ FUNCTION {new.block.checkb} { empty$
   if$
 }
 
-FUNCTION {field.or.null} { duplicate$ empty$
+FUNCTION {field.or.null}
+{ duplicate$ empty$
     { pop$ "" }
     'skip$
   if$
 }
 
-FUNCTION {emphasize} { duplicate$ empty$
+FUNCTION {emphasize}
+{ duplicate$ empty$
     { pop$ "" }
     { "\textit{" swap$ * "}" * }
   if$
 }
 
-FUNCTION {capitalize} { "u" change.case$ "t" change.case$ }
+FUNCTION {capitalize}
+{ "u" change.case$ "t" change.case$ }
 
-FUNCTION {space.word} { " " swap$ * " " * }
+FUNCTION {space.word}
+{ " " swap$ * " " * }
 
  % Here are the language-specific definitions for explicit words.
  % Each function has a name bbl.xxx where xxx is the English word.
  % The language selected here is ENGLISH
-FUNCTION {bbl.and} { "and"}
+FUNCTION {bbl.and}
+{ "and"}
 
-FUNCTION {bbl.editors} { "eds." }
+FUNCTION {bbl.editors}
+{ "eds." }
 
-FUNCTION {bbl.editor} { "ed." }
+FUNCTION {bbl.editor}
+{ "ed." }
 
-FUNCTION {bbl.edby} { "edited by" }
+FUNCTION {bbl.edby}
+{ "edited by" }
 
-FUNCTION {bbl.edition} { "ed." }
+FUNCTION {bbl.edition}
+{ "ed." }
 
-FUNCTION {bbl.volume} { "vol." }
+FUNCTION {bbl.volume}
+{ "vol." }
 
-FUNCTION {bbl.of} { "of" }
+FUNCTION {bbl.of}
+{ "of" }
 
-FUNCTION {bbl.number} { "no." }
+FUNCTION {bbl.number}
+{ "no." }
 
-FUNCTION {bbl.nr} { "no." }
+FUNCTION {bbl.nr}
+{ "no." }
 
-FUNCTION {bbl.in} { "in" }
+FUNCTION {bbl.in}
+{ "in" }
 
-FUNCTION {bbl.pages} { "pp." }
+FUNCTION {bbl.pages}
+{ "pp." }
 
-FUNCTION {bbl.page} { "p." }
+FUNCTION {bbl.page}
+{ "p." }
 
-FUNCTION {bbl.chapter} { "chap." }
+FUNCTION {bbl.chapter}
+{ "chap." }
 
-FUNCTION {bbl.techrep} { "Tech. Rep." }
+FUNCTION {bbl.techrep}
+{ "Tech. Rep." }
 
-FUNCTION {bbl.mthesis} { "Master's thesis" }
+FUNCTION {bbl.mthesis}
+{ "Master's thesis" }
 
-FUNCTION {bbl.phdthesis} { "Ph.D. thesis" }
+FUNCTION {bbl.phdthesis}
+{ "Ph.D. thesis" }
 
-FUNCTION {bbl.first} { "1st" }
+FUNCTION {bbl.first}
+{ "1st" }
 
-FUNCTION {bbl.second} { "2nd" }
+FUNCTION {bbl.second}
+{ "2nd" }
 
-FUNCTION {bbl.third} { "3rd" }
+FUNCTION {bbl.third}
+{ "3rd" }
 
-FUNCTION {bbl.fourth} { "4th" }
+FUNCTION {bbl.fourth}
+{ "4th" }
 
-FUNCTION {bbl.fifth} { "5th" }
+FUNCTION {bbl.fifth}
+{ "5th" }
 
-FUNCTION {bbl.st} { "st" }
+FUNCTION {bbl.st}
+{ "st" }
 
-FUNCTION {bbl.nd} { "nd" }
+FUNCTION {bbl.nd}
+{ "nd" }
 
-FUNCTION {bbl.rd} { "rd" }
+FUNCTION {bbl.rd}
+{ "rd" }
 
-FUNCTION {bbl.th} { "th" }
+FUNCTION {bbl.th}
+{ "th" }
 
 MACRO {jan} {"Jan."}
 
@@ -271,7 +314,8 @@ MACRO {nov} {"Nov."}
 
 MACRO {dec} {"Dec."}
 
-FUNCTION {eng.ord} { duplicate$ "1" swap$ *
+FUNCTION {eng.ord}
+{ duplicate$ "1" swap$ *
   #-2 #1 substring$ "1" =
      { bbl.th * }
      { duplicate$ #-1 #1 substring$
@@ -328,14 +372,14 @@ MACRO {toms} {"ACM Transactions on Mathematical Software"}
 
 MACRO {toois} {"ACM Transactions on Office Information Systems"}
 
-MACRO {toplas} {"ACM Transactions on Programming Languages and
-Systems"}
+MACRO {toplas} {"ACM Transactions on Programming Languages and Systems"}
 
 MACRO {tcs} {"Theoretical Computer Science"}
 
 INTEGERS { nameptr namesleft numnames }
 
-FUNCTION {format.names} { 's :=
+FUNCTION {format.names}
+{ 's :=
   #1 'nameptr :=
   s num.names$ 'numnames :=
   numnames 'namesleft :=
@@ -371,20 +415,25 @@ FUNCTION {format.names} { 's :=
       namesleft #1 - 'namesleft :=
     }
   while$
-} FUNCTION {format.names.ed} { format.names } FUNCTION
-{format.key} { empty$
+}
+FUNCTION {format.names.ed}
+{ format.names }
+FUNCTION {format.key}
+{ empty$
     { key field.or.null }
     { "" }
   if$
 }
 
-FUNCTION {format.authors} { author empty$
+FUNCTION {format.authors}
+{ author empty$
     { "" }
     { author format.names }
   if$
 }
 
-FUNCTION {format.editors} { editor empty$
+FUNCTION {format.editors}
+{ editor empty$
     { "" }
     { editor format.names
       editor num.names$ #1 >
@@ -395,14 +444,16 @@ FUNCTION {format.editors} { editor empty$
   if$
 }
 
-FUNCTION {format.in.editors} { editor empty$
+FUNCTION {format.in.editors}
+{ editor empty$
     { "" }
     { editor format.names.ed
     }
   if$
 }
 
-FUNCTION {format.note} { note empty$
+FUNCTION {format.note}
+{ note empty$
     { "" }
     { note #1 #1 substring$
       duplicate$ "{" =
@@ -419,7 +470,8 @@ FUNCTION {format.note} { note empty$
   if$
 }
 
-FUNCTION {format.title} { title empty$
+FUNCTION {format.title}
+{ title empty$
     { "" }
     { title
       "\enquote{" swap$ *
@@ -431,13 +483,15 @@ FUNCTION {format.title} { title empty$
   if$
 }
 
-FUNCTION {end.quote.title} { title empty$
+FUNCTION {end.quote.title}
+{ title empty$
     'skip$
     { before.all 'output.state := }
   if$
 }
 
-FUNCTION {format.full.names} {'s :=
+FUNCTION {format.full.names}
+{'s :=
   #1 'nameptr :=
   s num.names$ 'numnames :=
   numnames 'namesleft :=
@@ -475,7 +529,8 @@ FUNCTION {format.full.names} {'s :=
   while$
 }
 
-FUNCTION {author.editor.key.full} { author empty$
+FUNCTION {author.editor.key.full}
+{ author empty$
     { editor empty$
         { key empty$
             { cite$ #1 #3 substring$ }
@@ -489,7 +544,8 @@ FUNCTION {author.editor.key.full} { author empty$
   if$
 }
 
-FUNCTION {author.key.full} { author empty$
+FUNCTION {author.key.full}
+{ author empty$
     { key empty$
          { cite$ #1 #3 substring$ }
           'key
@@ -499,7 +555,8 @@ FUNCTION {author.key.full} { author empty$
   if$
 }
 
-FUNCTION {editor.key.full} { editor empty$
+FUNCTION {editor.key.full}
+{ editor empty$
     { key empty$
          { cite$ #1 #3 substring$ }
           'key
@@ -509,7 +566,8 @@ FUNCTION {editor.key.full} { editor empty$
   if$
 }
 
-FUNCTION {make.full.names} { type$ "book" =
+FUNCTION {make.full.names}
+{ type$ "book" =
   type$ "inbook" =
   or
     'author.editor.key.full
@@ -521,7 +579,8 @@ FUNCTION {make.full.names} { type$ "book" =
   if$
 }
 
-FUNCTION {output.bibitem} { newline$
+FUNCTION {output.bibitem}
+{ newline$
   "\bibitem[{" write$
   label write$
   ")" make.full.names duplicate$ short.list =
@@ -536,7 +595,8 @@ FUNCTION {output.bibitem} { newline$
   before.all 'output.state :=
 }
 
-FUNCTION {n.dashify} {
+FUNCTION {n.dashify}
+{
   't :=
   ""
     { t empty$ not }
@@ -561,10 +621,12 @@ FUNCTION {n.dashify} {
   while$
 }
 
-FUNCTION {word.in} { bbl.in
+FUNCTION {word.in}
+{ bbl.in
   " " * }
 
-FUNCTION {format.date} { year duplicate$ empty$
+FUNCTION {format.date}
+{ year duplicate$ empty$
     { "empty year in " cite$ * "; set to ????" * warning$
        pop$ "????" }
     'skip$
@@ -574,22 +636,27 @@ FUNCTION {format.date} { year duplicate$ empty$
   " (" swap$ * ")" *
 }
 
-FUNCTION {format.btitle} { title emphasize }
+FUNCTION {format.btitle}
+{ title emphasize
+}
 
-FUNCTION {tie.or.space.connect} { duplicate$ text.length$ #3 <
+FUNCTION {tie.or.space.connect}
+{ duplicate$ text.length$ #3 <
     { "~" }
     { " " }
   if$
   swap$ * *
 }
 
-FUNCTION {either.or.check} { empty$
+FUNCTION {either.or.check}
+{ empty$
     'pop$
     { "can't use both " swap$ * " fields in " * cite$ * warning$ }
   if$
 }
 
-FUNCTION {format.bvolume} { volume empty$
+FUNCTION {format.bvolume}
+{ volume empty$
     { "" }
     { bbl.volume volume tie.or.space.connect
       series empty$
@@ -601,7 +668,8 @@ FUNCTION {format.bvolume} { volume empty$
   if$
 }
 
-FUNCTION {format.number.series} { volume empty$
+FUNCTION {format.number.series}
+{ volume empty$
     { number empty$
         { series field.or.null }
         { output.state mid.sentence =
@@ -620,12 +688,14 @@ FUNCTION {format.number.series} { volume empty$
   if$
 }
 
-FUNCTION {is.num} { chr.to.int$
+FUNCTION {is.num}
+{ chr.to.int$
   duplicate$ "0" chr.to.int$ < not
   swap$ "9" chr.to.int$ > not and
 }
 
-FUNCTION {extract.num} { duplicate$ 't :=
+FUNCTION {extract.num}
+{ duplicate$ 't :=
   "" 's :=
   { t empty$ not }
   { t #1 #1 substring$
@@ -642,8 +712,8 @@ FUNCTION {extract.num} { duplicate$ 't :=
   if$
 }
 
-FUNCTION {convert.edition} { edition extract.num "l" change.case$
-'s :=
+FUNCTION {convert.edition}
+{ edition extract.num "l" change.case$ 's :=
   s "first" = s "1" = or
     { bbl.first 't := }
     { s "second" = s "2" = or
@@ -671,7 +741,8 @@ FUNCTION {convert.edition} { edition extract.num "l" change.case$
   t
 }
 
-FUNCTION {format.edition} { edition empty$
+FUNCTION {format.edition}
+{ edition empty$
     { "" }
     { output.state mid.sentence =
         { convert.edition "l" change.case$ " " * bbl.edition * }
@@ -683,7 +754,8 @@ FUNCTION {format.edition} { edition empty$
 
 INTEGERS { multiresult }
 
-FUNCTION {multi.page.check} { 't :=
+FUNCTION {multi.page.check}
+{ 't :=
   #0 'multiresult :=
     { multiresult not
       t empty$ not
@@ -702,7 +774,8 @@ FUNCTION {multi.page.check} { 't :=
   multiresult
 }
 
-FUNCTION {format.pages} { pages empty$
+FUNCTION {format.pages}
+{ pages empty$
     { "" }
     { pages multi.page.check
         { bbl.pages pages n.dashify tie.or.space.connect }
@@ -712,7 +785,8 @@ FUNCTION {format.pages} { pages empty$
   if$
 }
 
-FUNCTION {format.journal.pages} { pages empty$
+FUNCTION {format.journal.pages}
+{ pages empty$
     'skip$
     { duplicate$ empty$
         { pop$ format.pages }
@@ -725,9 +799,12 @@ FUNCTION {format.journal.pages} { pages empty$
   if$
 }
 
-FUNCTION {format.vol.num.pages} { volume field.or.null }
+FUNCTION {format.vol.num.pages}
+{ volume field.or.null
+}
 
-FUNCTION {format.chapter.pages} { chapter empty$
+FUNCTION {format.chapter.pages}
+{ chapter empty$
     { "" }
     { type empty$
         { bbl.chapter }
@@ -738,7 +815,8 @@ FUNCTION {format.chapter.pages} { chapter empty$
   if$
 }
 
-FUNCTION {format.in.ed.booktitle} { booktitle empty$
+FUNCTION {format.in.ed.booktitle}
+{ booktitle empty$
     { "" }
     { editor empty$
         { word.in booktitle emphasize * }
@@ -756,7 +834,8 @@ FUNCTION {format.in.ed.booktitle} { booktitle empty$
   if$
 }
 
-FUNCTION {format.thesis.type} { type empty$
+FUNCTION {format.thesis.type}
+{ type empty$
     'skip$
     { pop$
       type "t" change.case$
@@ -764,7 +843,8 @@ FUNCTION {format.thesis.type} { type empty$
   if$
 }
 
-FUNCTION {format.tr.number} { type empty$
+FUNCTION {format.tr.number}
+{ type empty$
     { bbl.techrep }
     'type
   if$
@@ -774,12 +854,14 @@ FUNCTION {format.tr.number} { type empty$
   if$
 }
 
-FUNCTION {format.article.crossref} {
+FUNCTION {format.article.crossref}
+{
   word.in
   " \cite{" * crossref * "}" *
 }
 
-FUNCTION {format.book.crossref} { volume empty$
+FUNCTION {format.book.crossref}
+{ volume empty$
     { "empty volume in " cite$ * "'s crossref of " * crossref * warning$
       word.in
     }
@@ -790,12 +872,14 @@ FUNCTION {format.book.crossref} { volume empty$
   " \cite{" * crossref * "}" *
 }
 
-FUNCTION {format.incoll.inproc.crossref} {
+FUNCTION {format.incoll.inproc.crossref}
+{
   word.in
   " \cite{" * crossref * "}" *
 }
 
-FUNCTION {format.publisher} { publisher empty$
+FUNCTION {format.publisher}
+{ publisher empty$
     { "empty publisher in " cite$ * warning$ }
     'skip$
   if$
@@ -823,7 +907,8 @@ FUNCTION {format.publisher} { publisher empty$
 
 STRINGS {oldname}
 
-FUNCTION {name.or.dash} { 's :=
+FUNCTION {name.or.dash}
+{ 's :=
    oldname empty$
      { s 'oldname := s }
      { s oldname =
@@ -834,7 +919,8 @@ FUNCTION {name.or.dash} { 's :=
    if$
 }
 
-FUNCTION {article} { output.bibitem
+FUNCTION {article}
+{ output.bibitem
   format.authors "author" output.check
   author format.key output
   name.or.dash
@@ -857,7 +943,8 @@ FUNCTION {article} { output.bibitem
   fin.entry
 }
 
-FUNCTION {book} { output.bibitem
+FUNCTION {book}
+{ output.bibitem
   author empty$
     { format.editors "author and editor" output.check
       editor format.key output
@@ -888,7 +975,8 @@ FUNCTION {book} { output.bibitem
   fin.entry
 }
 
-FUNCTION {booklet} { output.bibitem
+FUNCTION {booklet}
+{ output.bibitem
   format.authors output
   author format.key output
   name.or.dash
@@ -902,7 +990,8 @@ FUNCTION {booklet} { output.bibitem
   fin.entry
 }
 
-FUNCTION {inbook} { output.bibitem
+FUNCTION {inbook}
+{ output.bibitem
   author empty$
     { format.editors "author and editor" output.check
       editor format.key output
@@ -937,7 +1026,8 @@ FUNCTION {inbook} { output.bibitem
   fin.entry
 }
 
-FUNCTION {incollection} { output.bibitem
+FUNCTION {incollection}
+{ output.bibitem
   format.authors "author" output.check
   author format.key output
   name.or.dash
@@ -962,7 +1052,8 @@ FUNCTION {incollection} { output.bibitem
   fin.entry
 }
 
-FUNCTION {inproceedings} { output.bibitem
+FUNCTION {inproceedings}
+{ output.bibitem
   format.authors "author" output.check
   author format.key output
   name.or.dash
@@ -994,7 +1085,8 @@ FUNCTION {inproceedings} { output.bibitem
 
 FUNCTION {conference} { inproceedings }
 
-FUNCTION {manual} { output.bibitem
+FUNCTION {manual}
+{ output.bibitem
   format.authors output
   author format.key output
   name.or.dash
@@ -1008,7 +1100,8 @@ FUNCTION {manual} { output.bibitem
   fin.entry
 }
 
-FUNCTION {mastersthesis} { output.bibitem
+FUNCTION {mastersthesis}
+{ output.bibitem
   format.authors "author" output.check
   author format.key output
   name.or.dash
@@ -1023,7 +1116,8 @@ FUNCTION {mastersthesis} { output.bibitem
   fin.entry
 }
 
-FUNCTION {misc} { output.bibitem
+FUNCTION {misc}
+{ output.bibitem
   format.authors output
   author format.key output
   name.or.dash
@@ -1036,7 +1130,8 @@ FUNCTION {misc} { output.bibitem
   fin.entry
 }
 
-FUNCTION {phdthesis} { output.bibitem
+FUNCTION {phdthesis}
+{ output.bibitem
   format.authors "author" output.check
   author format.key output
   name.or.dash
@@ -1051,7 +1146,8 @@ FUNCTION {phdthesis} { output.bibitem
   fin.entry
 }
 
-FUNCTION {proceedings} { output.bibitem
+FUNCTION {proceedings}
+{ output.bibitem
   format.editors output
   editor format.key output
   name.or.dash
@@ -1067,7 +1163,8 @@ FUNCTION {proceedings} { output.bibitem
   fin.entry
 }
 
-FUNCTION {techreport} { output.bibitem
+FUNCTION {techreport}
+{ output.bibitem
   format.authors "author" output.check
   author format.key output
   name.or.dash
@@ -1082,7 +1179,8 @@ FUNCTION {techreport} { output.bibitem
   fin.entry
 }
 
-FUNCTION {unpublished} { output.bibitem
+FUNCTION {unpublished}
+{ output.bibitem
   format.authors "author" output.check
   author format.key output
   name.or.dash
@@ -1098,13 +1196,15 @@ FUNCTION {default.type} { misc }
 
 READ
 
-FUNCTION {sortify} { purify$
+FUNCTION {sortify}
+{ purify$
   "l" change.case$
 }
 
 INTEGERS { len }
 
-FUNCTION {chop.word} { 's :=
+FUNCTION {chop.word}
+{ 's :=
   'len :=
   s #1 len substring$ =
     { s len #1 + global.max$ substring$ }
@@ -1112,7 +1212,8 @@ FUNCTION {chop.word} { 's :=
   if$
 }
 
-FUNCTION {format.lab.names} { 's :=
+FUNCTION {format.lab.names}
+{ 's :=
   s #1 "{vv~}{ll}" format.name$
   s num.names$ duplicate$
   #2 >
@@ -1134,7 +1235,8 @@ FUNCTION {format.lab.names} { 's :=
   if$
 }
 
-FUNCTION {author.key.label} { author empty$
+FUNCTION {author.key.label}
+{ author empty$
     { key empty$
         { cite$ #1 #3 substring$ }
         'key
@@ -1144,7 +1246,8 @@ FUNCTION {author.key.label} { author empty$
   if$
 }
 
-FUNCTION {author.editor.key.label} { author empty$
+FUNCTION {author.editor.key.label}
+{ author empty$
     { editor empty$
         { key empty$
             { cite$ #1 #3 substring$ }
@@ -1158,7 +1261,8 @@ FUNCTION {author.editor.key.label} { author empty$
   if$
 }
 
-FUNCTION {editor.key.label} { editor empty$
+FUNCTION {editor.key.label}
+{ editor empty$
     { key empty$
         { cite$ #1 #3 substring$ }
         'key
@@ -1168,7 +1272,8 @@ FUNCTION {editor.key.label} { editor empty$
   if$
 }
 
-FUNCTION {calc.short.authors} { type$ "book" =
+FUNCTION {calc.short.authors}
+{ type$ "book" =
   type$ "inbook" =
   or
     'author.editor.key.label
@@ -1181,7 +1286,8 @@ FUNCTION {calc.short.authors} { type$ "book" =
   'short.list :=
 }
 
-FUNCTION {calc.label} { calc.short.authors
+FUNCTION {calc.label}
+{ calc.short.authors
   short.list
   "("
   *
@@ -1193,7 +1299,8 @@ FUNCTION {calc.label} { calc.short.authors
   'label :=
 }
 
-FUNCTION {sort.format.names} { 's :=
+FUNCTION {sort.format.names}
+{ 's :=
   #1 'nameptr :=
   ""
   s num.names$ 'numnames :=
@@ -1218,7 +1325,8 @@ FUNCTION {sort.format.names} { 's :=
   while$
 }
 
-FUNCTION {sort.format.title} { 't :=
+FUNCTION {sort.format.title}
+{ 't :=
   "A " #2
     "An " #3
       "The " #4 t chop.word
@@ -1228,7 +1336,8 @@ FUNCTION {sort.format.title} { 't :=
   #1 global.max$ substring$
 }
 
-FUNCTION {author.sort} { author empty$
+FUNCTION {author.sort}
+{ author empty$
     { key empty$
         { "to sort, need author or key in " cite$ * warning$
           ""
@@ -1240,7 +1349,8 @@ FUNCTION {author.sort} { author empty$
   if$
 }
 
-FUNCTION {author.editor.sort} { author empty$
+FUNCTION {author.editor.sort}
+{ author empty$
     { editor empty$
         { key empty$
             { "to sort, need author, editor, or key in " cite$ * warning$
@@ -1256,7 +1366,8 @@ FUNCTION {author.editor.sort} { author empty$
   if$
 }
 
-FUNCTION {editor.sort} { editor empty$
+FUNCTION {editor.sort}
+{ editor empty$
     { key empty$
         { "to sort, need editor or key in " cite$ * warning$
           ""
@@ -1268,7 +1379,8 @@ FUNCTION {editor.sort} { editor empty$
   if$
 }
 
-FUNCTION {presort} { calc.label
+FUNCTION {presort}
+{ calc.label
   label sortify
   "    "
   *
@@ -1303,14 +1415,15 @@ STRINGS { last.label next.extra }
 
 INTEGERS { last.extra.num number.label }
 
-FUNCTION {initialize.extra.label.stuff} { #0 int.to.chr$
-'last.label :=
+FUNCTION {initialize.extra.label.stuff}
+{ #0 int.to.chr$ 'last.label :=
   "" 'next.extra :=
   #0 'last.extra.num :=
   #0 'number.label :=
 }
 
-FUNCTION {forward.pass} { last.label label =
+FUNCTION {forward.pass}
+{ last.label label =
     { last.extra.num #1 + 'last.extra.num :=
       last.extra.num int.to.chr$ 'extra.label :=
     }
@@ -1322,7 +1435,8 @@ FUNCTION {forward.pass} { last.label label =
   number.label #1 + 'number.label :=
 }
 
-FUNCTION {reverse.pass} { next.extra "b" =
+FUNCTION {reverse.pass}
+{ next.extra "b" =
     { "a" 'extra.label := }
     'skip$
   if$
@@ -1342,7 +1456,8 @@ ITERATE {forward.pass}
 
 REVERSE {reverse.pass}
 
-FUNCTION {bib.sort.order} { sort.label
+FUNCTION {bib.sort.order}
+{ sort.label
   "    "
   *
   year field.or.null sortify
@@ -1360,7 +1475,8 @@ ITERATE {bib.sort.order}
 
 SORT
 
-FUNCTION {begin.bib} { preamble$ empty$
+FUNCTION {begin.bib}
+{ preamble$ empty$
     'skip$
     { preamble$ write$ newline$ }
   if$
@@ -1378,7 +1494,8 @@ EXECUTE {init.state.consts}
 
 ITERATE {call.type$}
 
-FUNCTION {end.bib} { newline$
+FUNCTION {end.bib}
+{ newline$
   "\end{thebibliography}" write$ newline$
 }
 
