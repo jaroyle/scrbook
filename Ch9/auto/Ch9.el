@@ -2,7 +2,8 @@
  (lambda ()
     (LaTeX-add-labels
      "chapt.state-space"
+     "ch9:fig:homo"
      "eq:pdf-ipp"
-     "fig:elevMap"
-     "tab:simIPP")))
+     "ch9:fig:elevMap"
+     "ch9:tab:simIPP")))
 
