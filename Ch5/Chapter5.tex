@@ -29,51 +29,74 @@ binomial (or other) GLMs with random effects – i.e., GLMMs, which are
 routinely analyzed by likelihood methods. In particular, likelihood
 analysis is based on the integrated likelihood in which the random
 effects are removed by integration from the likelihood. In SCR models,
-the random effect, s , i.e., the 2-dimensional coordinate, is a
+the random effect, ${\bf s}$ , i.e., the 2-dimensional coordinate, is a
 bivariate random effect. In this chapter, we show that it is
 straightforward to compute the maximum likelihood estimates (MLE) for
 SCR models by integrated likelihood. We develop the MLE framework
 using R, and we also provide a basic introduction to an R package
-“secr” (Efford 2011) which is based on the stand-alone package DENSITY
+\mbox{\tt secr} (Efford 2011) which is based on the stand-alone package DENSITY
 (Efford et al. 2004).  To set the context we analyze the SCR model
-here when N is known because, in that case, it is precisely a GLMM and
+here when $N$ is known because, in that case, it is precisely a GLMM and
 does not pose any difficulty at all. We generalize the model to allow
-for unknown N using both conventional ideas based on the “joint
-likelihood” (e.g., Borchers book XYZ) and also using a formulation
+for unknown $N$ using both conventional ideas based on the ``joint
+likelihood'' \citep[e.g.,][]{borchers_etal:2002}
+and also using a formulation
 based on data augmentation.  We consider likelihood analysis of SCR
-models in the context of the wolverine camera trapping study (Magoun
-et al. XYZ) we analyzed in previous chapters to compare/contrast the
+models in the context of the wolverine camera trapping study \citep{magoun_etal:2011}
+ we analyzed in previous chapters to compare/contrast the
 results.
 
 \section{Likelihood analysis }
 
-We noted in Chapter 4 that, with N known, the basic SCR model is a
+We noted in Chapter 4 that, with $N$ known, the basic SCR model is a
 type of binomial regression with a random effect. For such models we
-can easily maximize the integrated likelihood numerically. It is worth
-analyzing this really simple case in order to understand the
-underlying mechanics and basic concepts which are directly relevant to
+can easily obtain maximum likelihood estimators of model parameters
+based on integrated likelihood. The integrated likelihood is based on
+the marginal distribution of the data $y$ in which the random effects
+are removed by integration. Conceptually, our model is a specification
+of the conditional-on-${\bf s}$ model $[y|{\bf s},\theta]$ and we have
+a ``prior distribution'' for ${\bf s}$, say $[{\bf s}]$, and the
+marginal distribution of the data $y$ is
+\[
+[y|\theta] =  \int_{\bf s} [y|{\bf s},\theta][{\bf s}] d{\bf s}.
+\]
+When viewed as a function of $\theta$ for pursposes of estimation, the
+marginal distribution $[y|\theta]$ is often referred to as the {\it
+  integrated likelihood}.
+
+
+It is worth analyzing 
+the simplest SCR model with known-$N$ in order to understand the
+underlying mechanics and basic concepts. These are directly relevant to
 the manner in which many capture-recapture models are classically
 analyzed, such as model Mh, and individual covariate models (see
-Chapter 6 from Royle and Dorazio 2008).
+chapt. 6 from \citet{royle_dorazio:2008}). To develop integrated
+likelihood for SCR models, we first identify the conditional
+likelhiood. 
 
-The observation model specified conditional on ${\bf s}_{i}$ is 
+The observation model for each encounter observation $y_{ij}$,
+specified conditional on ${\bf s}_{i}$, is 
 \begin{equation}
-	y_{ij}| {\bf s}_{i} \sim \mbox{Bin}(K, p_{ij})
+	y_{ij}| {\bf s}_{i} \sim \mbox{Bin}(K, p_{\theta}({\bf x}_{j},{\bf s}_{i}))
 \label{mle.eq.cond-on-s}
 \end{equation}
-where $p_{ij}$ is a function of the individual-specific random effect,
-${\bf s}_{i}$, which has a $\mbox{Unif}({\cal S})$ prior distribution.  The
-conditional-on-${\bf s}$ likelihood for any parameters $\theta$ given
-the encounter history data for
-individual $i$ is the product of $J$ such terms:
-{\bf Do this in terms of conditional and marginal distributions, not likelihoods}
-
+where we have indicated the dependence of $p_{ij}$ on ${\bf s}$ and
+parameters $\theta$
+explicitly.
+For the random effect we have ${\bf s}_{i} \sim  \mbox{Unif}({\cal
+  S})$.
+The joint distribution of the data for individual $i$ is the product
+of $J$ such terms (i.e., contributions from each of $J$ traps).
 \[
-     {\cal  L}( \theta | {\bold y}_{i} , {\bf s}_{i} ) =    \prod_{j} \mbox{Bin}(K, p_{ij})
+  [{\bf y}_{i} | {\bf s}_{i} , \theta] = 
+  \prod_{j} \mbox{Bin}(K, p_{\theta}({\bf x}_{j},{\bf s}_{i})
 \]
 We note that this assumes that encounter of individual $i$ in each
 trap is independent of encounter in every other trap, conditional on
-${\bf s}_{i}$.  The so-called ``marginal likelihood'' is computed by removing
+${\bf s}_{i}$, this is the fundamental property of SCR0 or
+``multi-catch'' traps. 
+
+ The so-called ``marginal likelihood'' is computed by removing
 ${\bf s}_{i}$, by integration, from the conditional-on-${\bf s}$ likelihood. That
 is, we compute:
 \[
@@ -92,11 +115,11 @@ this would only be valid when individuals are not physically
 restrained or removed upon capture, and when traps do not “fill up”.
 
 The key operation for computing the likelihood is solving a
-2-dimensional integration problem. There are some general purpose R
-packages that implement a number of 
+2-dimensional integration problem. There are some general purpose {\bf
+  R} packages that implement a number of 
  multi-dimensional integration routines
 including \mbox{\tt adapt} (REF) and \mbox{\tt Rcuba} (REF XYZ). In practice, we won’t rely
-on these extraneous R packages but instead will use perhaps less
+on these extraneous {\bf R} packages but instead will use perhaps less
 efficient methods in which we replace the integral with a summation
 over an equal area mesh of points on the state-space ${\cal S}$ and explicitly
 evaluate the integrand at each point. Let $u=1,2,\ldots,nG$ index a grid of
@@ -104,76 +127,77 @@ $nG$ points where the area of grid cell $u$ is $a(u) \equiv a$ (for a regular gr
 In this case, the trapezoidal rule
 for approximating the integral yields
 \[
-          f(y[i,j]) = sum_{u=1}^{nG}  f( {\bold y}_{i} |u) …. g(u) *area
+          f(y_{ij}) = \sum_{u=1}^{nG}  f( {\bold y}_{i} |u) g(u) *area
 \]
-Where “a” is the constant area of the grid cells used to approximate
-the continuous region. This is a general expression that could be used
+This is a general expression that could be used
 for approximating the integral for any arbitrary bivariate
-distribution g(u). In the present context note that g(u) = (1/area(S))
-= 1/[nG*a] and thus the grid-cell area “a” cancels in the above
+distribution $g(u)$. In the present context note that $g(u) = (1/area(S))
+= 1/[nG*a]$ and thus the grid-cell area cancels in the above
 expression and we have
 \[
-          f(y[i,j]) = sum_{u=1}^{nG}  f( {\bold y}_{i} |u) (1/nG)
+          f(y_{ij}) = \sum_{u=1}^{nG}  f( {\bold y}_{i} |u) (1/nG)
 \]
-Which not surprisingly is the same answer we get if S were inherently
-discrete, having nG unique values with equal probabilities 1/nG. Then
-the marginal probability of $y[I,j]$, i.e., by the Law of Total
+Which not surprisingly is the same answer we get if {\cal S} were inherently
+discrete, having $nG$ unique values with equal probabilities $1/nG$. Then
+the marginal probability of $y_{ij}$, i.e., by the Law of Total
 probability, is precisely that last expression.
 
 \subsection{ Implementation (simulated data)}
 
 Here we will illustrate how to carryout this integration and
 optimization based on the integrated likelihood using simulated data
- (i.e., following that from Chapter 4).
-
-From before, we simulated data for 100 individuals and a 25 trap array
+ (i.e., following that from Chapter 4). Using \mbox{\tt simSCR0.fn}
+ we simulate data for 100 individuals and a 25 trap array
 layed out in a 5 x 5 grid of unit spacing.  The specific encounter
-model is the logit model given above and we used this code to simulate
-data used in subsequent analyses.  The 100 activity centers were
+model is the half-normal model. The 100 activity centers were
 simulated on a state-space defined by a $8 \times 8$ square 
 within which the
 trap array was centered (thus the trap array is buffered by 2
 units). Therefore, the density of individuals in this system is fixed
-at 100/64.
+at $100/64$.
 
-In the following set of R commands we generate some data using our
-fancy
-simSCR0.fn R function and harvest the required data objects.........
-
+In the following set of R commands we generate the data and 
+then harvest the required data objects:
 \begin{verbatim}
-
-
+data<-simSCR0.fn(discard0=FALSE,sd=2013)
+y<-data$Y
+traplocs<-data$traplocs
+nind<-nrow(y)
+X<-data$traplocs
+J<-nrow(X)
+K<-data$K
+y<-rbind(y,matrix(0,nrow=(100-nrow(y)),ncol=J ) )
+Xl<-data$xlim[1]
+Yl<-data$ylim[1]
+Xu<-data$xlim[2]
+Yu<-data$ylim[2]
 \end{verbatim}
-
-Now we need to define the integration grid, say G, which we do with
-the following set of R commands (delta is the grid spacing):
-
+Now we need to define the integration grid, say ${\bf G}$, which we do with
+the following set of {\bf R} commands (here, \mbox{\tt delta} is the grid spacing):
 \begin{verbatim}
 delta<- .2
 xg<-seq(Xl+delta/2,Xu-delta/2,by=delta) 
 yg<-seq(Yl+delta/2,Yu-delta/2,by=delta) 
-npix<-length(xg)  # assumes xg and yg same dimension here
-area<- (Xu-Xl)*(Yu-Yl)/((npix)*(npix)) # don’t need area here
+npix<-length(xg)          # assumes xg and yg same dimension here
+area<- (Xu-Xl)*(Yu-Yl)/((npix)*(npix)) # don’t need area for anything
 G<-cbind(rep(xg,npix),sort(rep(yg,npix)))
 nG<-nrow(G)
 \end{verbatim}
-
 In this case, the integration grid is set up as a grid with spacing
-0.2 which produces a $20 \times 20$ grid of points for evaluating the
+$\delta = 0.2$ which produces a $40 \times 40$ grid of points for evaluating the
 integrand if the state-space buffer is set at 2.
 
-We next create an R function that defines the likelihood as a function
+We next create an {\bf R} function that defines the likelihood as a function
 of the data objects $y$ and $X$ which were created above but, in general,
-you would read these files into R, e.g., as done in the previous
-chapter for the analysis using WinBUGS.  In addition to these data
+you would read these files into {\bf R}, e.g., from a .csv file.
+In addition to these data
 objects, we need to have defined the various quantities associated
-with the integration grid – created just previously -- $G$, $nG$, and
-area.  Instead of worrying about making all of these objects and
+with the integration grid ${\bf G}$ and $nG$.
+However, instead of worrying about making all of these objects and
 keeping track of them we just put that code above into the likelihood
-function and pass “delta” as an additional (optional) argument and a
+function and pass $\delta$ as an additional (optional) argument and a
 few other things that we need such as the boundary of the state-space
 over which the integration (summation) is being done.
-
 Here is one reasonably useful variation of a function for estimation
 based on the integrated likelihood:
 
@@ -182,10 +206,10 @@ based on the integrated likelihood:
 
 intlik1<-function(parm,y=y,delta=.2,X=traplocs,ssbuffer=2){
 
-Xl<-min(X[,1])-ssbuffer 
-Xu<-max(X[,1])+ ssbuffer
-Yu<-max(X[,2])+ ssbuffer
-Yl<-min(X[,2])-ssbuffer
+Xl<-min(X[,1]) - ssbuffer 
+Xu<-max(X[,1]) + ssbuffer
+Yu<-max(X[,2]) + ssbuffer
+Yl<-min(X[,2]) - ssbuffer
 
 xg<-seq(Xl+delta/2,Xu-delta/2,,length=npix) 
 yg<-seq(Yl+delta/2,Yu-delta/2,,length=npix) 
@@ -285,8 +309,8 @@ $iterations
 
 
 Details about this output can be found on the help page for \mbox{\tt nlm}. We
-note briefly that \mbox{\tt frog$minimum} is the negative log-likelihood value at
-the MLEs, which are stored in the \mbox{\tt frog$estimate} component of the
+note briefly that \mbox{\tt frog\$minimum} is the negative log-likelihood value at
+the MLEs, which are stored in the \mbox{\tt frog\$estimate} component of the
 list. The hessian is the observed Fisher information matrix, which can
 be inverted to obtain the variance-covariance matrix using the
 commands:
@@ -445,7 +469,7 @@ part2<- sum(nv*log(lik.marg))
 
 To execute this function for the data that we just read into the
 workspace, we execute the following command (saving the result in our
-friend frog).
+friend \mbox{\tt frog}).
 
 \begin{verbatim}
 > frog<-nlm(intlik2,c(-2.5,2,log(4)),hessian=TRUE,y=y,X=traplocs,delta=.2,ssbuffer=2)
