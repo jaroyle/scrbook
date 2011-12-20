@@ -616,17 +616,17 @@ Here we compute the MLEs for the wolverine data using an expanded
 version of the function we developed in the previous section. To
 accommodate that each trap might be operational a variable number of
 nights, we provided an additional argument to the likelihood function
-(allowing for a vector K), which requires also a modification to the
+(allowing for a vector $K$), which requires also a modification to the
 construction of the likelihood (see Online Supplement).  In addition,
 we had to accommodate that the state-space is a general rectangle, and
 we included a line in the code to compute the state-space area which
 we apply below for computing density.  The more general function
-(intlik3) is given in the online supplement (shall we provide it
-here?).
+(\mbox{\tt intlik3}) is given in the {\bf R} package. It has a general
+purpose wrapper named \mbox{\tt scr} which has other capabilities. 
 
 The data were read into our R session and manipulated using the
-following commands. Note that we use the utility R function
-SCR23darray.fn which we defined in section XYZ.XYZ.
+following commands. Note that we use the utility {\bf R} function
+\mbox{\tt SCR23darray.fn} which we defined in section XYZ.XYZ.
 
 \begin{verbatim}
 > wcaps<-source("wcaps.R")$value
@@ -638,10 +638,33 @@ SCR23darray.fn which we defined in section XYZ.XYZ.
 > traplocs.wolv<-wtraps[,2:3]
 > traplocs.wolv<-traplocs.wolv/10000
 >
-> nlm(lik,c(-1.5,1.2,log(4)),hessian=TRUE,y=y.wolv,K=K.wolv,X=traplocs.wolv,
-delta=.1,ssbuffer=2)$estimate
+> frog<-nlm(intlik3,c(-1.5,1.2,log(4)),hessian=TRUE,y=y.wolv,K=K.wolv,X=traplocs.wolv,delta=.1,ssbuffer=2)
+There were 23 warnings (use warnings() to see them)
+> frog
+$minimum
+[1] 220.4355
 
-[1] -1.646692  3.128712  3.761974
+$estimate
+[1] -2.817570  1.255112  3.599040
+
+$gradient
+[1] -6.274309e-06  2.146722e-05 -1.045566e-05
+
+$hessian
+           [,1]       [,2]      [,3]
+[1,]  37.687931 -11.852236  4.688911
+[2,] -11.852236  30.846144 -9.199113
+[3,]   4.688911  -9.199113 13.050428
+
+$code
+[1] 1
+
+$iterations
+[1] 12
+
+> exp(3.599)*sqrt(solve(frog$hessian)[3,3])
+[1] 11.41059
+> 
 
 \end{verbatim}
 
@@ -650,65 +673,51 @@ units) and for integration grid with spacing delta = .3, .2, .1,
 .05. The MLES for these 4 cases are as follows:
 
 \begin{verbatim}
-
-> nlm(intlik3,c(-1.5,1.2,log(4)),hessian=TRUE,y=y.wolv,K=K.wolv, X=traplocs.wolv,delta=.3,ssbuffer=2)$estimate
-
-[1] -1.654535  3.108126  3.723244
-
-> nlm(lik,c(-1.5,1.2,log(4)),hessian=TRUE,…,delta=.2,ssbuffer=2)$estimate
-
- [1] -1.643023  3.133985  3.749195
-
-> nlm(lik,c(-1.5,1.2,log(4)),hessian=TRUE,…,delta=.1,ssbuffer=2)$estimate
-
-[1] -1.646692  3.128712  3.761974
-
-> nlm(lik,c(-1.5,1.2,log(4)),hessian=TRUE,…,delta=.05,ssbuffer=2)$estimate
-
-[1] -1.647191  3.128308  3.769455
-
+delta runtime          estimates
+ .3     8.4    -2.819786  1.258468  3.569731
+ .2    22.6    -2.817610  1.254757  3.583690
+ .1    99.0    -2.817570  1.255112  3.599040
+ .05  403.0    -2.817559  1.255281  3.607158
 \end{verbatim}
 
 We see the results change only slightly as the fineness of the
 integration grid increases. Conversely, the runtime on the platform of
-the day for the 4 cases was approximately 19s, 40s, 169s, and 723s
-which as we have suggested before could probably be regarded as
-relative to each other, across platforms, for gaging the decrease in
-speed as the fineness of the integration grid increases.
-
+the day for the 4 cases increases rapidly 
+which, as we have suggested before, could probably be regarded in
+relative terms,  across platforms, for gaging the decrease in
+speed as the fineness of the integration grid increases. The effect of
+this is that we anticipate some numerical error in approximating the
+integral on a mesh of points, and that error increases as the
+coarsenss of the mesh increases. 
 Next we studied the effect of the state-space buffer on the MLEs,
-using a fixed delta=.1 for all analyses. We used state-space buffers
+using a fixed $\delta = .2$ for all analyses. We used state-space buffers
 of 1 to 4 units stepped by .5. This produced the following results,
 given here are the state-space buffer, area of the state-space, the
 MLE of N for the prescribed state-space and the corresponding MLE of
 density:
-
-  
 \begin{verbatim}
-
-### REDO ANALYSES 
-
      ssbuff       Ass      Nhat      Dhat
-[1,]    1.0  66.98212  42.18630 0.6298144
-[2,]    1.5  84.36242  52.12473 0.6178667
-[3,]    2.0 103.74272  64.03329 0.6172317
-[4,]    2.5 125.12302  77.36792 0.6183348
-[5,]    3.0 148.50332  91.99139 0.6194568
-[6,]    3.5 173.88362 107.87487 0.6203855
-[7,]    4.0 201.26392 125.01359 0.6211426
-
+[1,]    1.0  66.98212  37.73338 0.5633352
+[2,]    1.5  84.36242  46.21008 0.5477567
+[3,]    2.0 103.74272  57.00617 0.5494956
+[4,]    2.5 125.12302  69.03616 0.5517463
+[5,]    3.0 148.50332  82.17550 0.5533580
+[6,]    3.5 173.88362  96.44018 0.5546249
+[7,]    4.0 201.26392 111.83524 0.5556646
 \end{verbatim}
-
-The estimates of D stabilize rapidly\footnote{not very convincing} and
-the results suggest that wolverine density is around 0.62 individuals
-per 100 square km (recall that a unit is 10 x 10 km).  This is about
-6.2 individuals per thousand square km which compares with XYZ
-reported in Royle et al. (2011) based on a clipped state-space as
-described in section XYZ.
+The estimates of $D$ stabilize rapidly and the incremental difference
+is within the numerical error associated with approximating the
+integral.  The results suggest that wolverine density is around 0.56 individuals
+per $100$ $km^2$ (recall that a state-space unit is $10 \times 10$ $km$).  This is about
+5.6 individuals per thousand $km^2$ which compares with XYZ-lookup-XYZ
+reported in \citet{royle_etal:2011jwm} based on a clipped state-space as
+described in section XYZ (XYZ chapter 4 XYZ).
 
 In a later chapter analysis by MLE is done with an irregular
 state-space. Therefore we will have to extend the R function again to
 accept as possible input a pre-defined state-space grid.
+
+XXXXXXXX DO THIS HERE XYZ 
 
 \subsection{
 Exercises
@@ -719,43 +728,47 @@ Exercises
 }
 
 {\flushleft
-2.	Compute the AIC of this model and modify intlik3 to consider alternative link functions (at least one additional) and compare the AIC of the different models and the estimates. Comment. [should we do that here?].
+2.	Compute the AIC of this model and modify \mbox{\tt intlik3}
+ to consider alternative link functions (at least one additional) and
+ compare the  AIC of the different models and the estimates. Comment. 
 }
 
 \section{Program DENSITY and the R package \mbox{\tt secr} }
 
-DENSITY is a software program developed by Efford et al. (2004) for
+{\bf DENSITY} is a software program developed by \citet{efford:2004}
+for 
 fitting spatial capture-recapture models based mostly on classical
-maximum likelihood estimation and related inference methods.  Efford
-(2011) has also released an R package named secr, that contains many
-of the functions within DENSITY but also incorporates new models and
+maximum likelihood estimation and related inference methods.  \citet{efford:2011}
+has also released an {\bf R} package named secr, that contains many
+of the functions within {\bf DENSITY} but also incorporates new models and
 features.  Here, we will focus on secr as it will continue to be
-developed, contains more functionality and is based in R.  To install
-and run models in secr, you must download the package and load itin R.
-
+developed, contains more functionality and is based in {\bf R}.  To install
+and run models in secr, you must download the package and load itin
+{\bf R}.
 \begin{verbatim}
->install.packages(“secr”)
->library(secr)
+> install.packages(“secr”)
+> library(secr)
 \end{verbatim}
-
-SECR allows the user to simulate data and fit a suite of models with
-various detection functions and covariate responses.  SECR uses the
-standard R model specification framework using tildes. E.g., the model
-command is “secr.fit” and is generally written as
+\mbox{\tt secr} allows the user to simulate data and fit a suite of models with
+various detection functions and covariate responses.  \mbox{\tt secr}
+uses the
+standard {\bf R} model specification framework using tildes. E.g., the model
+command is \mbox{\tt secr.fit} and is generally written as
 
 \begin{verbatim}
->secr.fit(capturedata, model = list(D~1, g0~1, sigma~1), buffer = 20000)
+> secr.fit(capturedata, model = list(D~1, g0~1, sigma~1), buffer = 20000)
 \end{verbatim}
 
 where we have \mbox{\tt g0~1} indicating the intercept model.  To include
 covariates, this would be written as \mbox{\tt g0~b} where b is a behavioral
 covariate.  Possible predictors for detection probability include both
-pre-defined variables (e.g., t and b corresponding to ‘time’ and
-‘behavior’), and user-defined covariates of several kinds. The
+pre-defined variables (e.g., \mbox{\tt t} and \mbox{\tt b}
+corresponding to ``time'' and 
+``behavior''), and user-defined covariates of several kinds. The
 discussion of covariates is developed in chapter XX(8).
 
 Before we can fit the models, the data must first be entered into
-SECR.  Two input files are required: trap layout (location and
+\mbox{\tt secr}.  Two input files are required: trap layout (location and
 identification information for each trap) and capture data (e.g.,
 sampling session, animal identification, trap day, and trap location).
 SECR requires that you specify the trap type, the two most common for
@@ -778,7 +791,7 @@ than one animal at a time.  For a full review of the detector types,
 one should look at the help manual, which can be accessed in R after
 installing the SECR package by using the command:
 \begin{verbatim}
->RShowDoc("secr-manual", package = "secr")
+> RShowDoc("secr-manual", package = "secr")
 \end{verbatim}
 As with all of the scr models, SECR fits a detection function relating
 the probability of detection to the distance of a detector from an
