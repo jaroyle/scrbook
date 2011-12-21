@@ -14,18 +14,21 @@ Likelihood Analysis of SCR Models
 In this book we mainly focus on Bayesian analysis of spatial
 capture-recapture models. And, in the previous chapters we learned how
 to fit some basic spatial capture-recapture models using a Bayesian
-formulation of the models analyzed in WinBUGS.  Despite our focus on
+formulation of the models analyzed in BUGS engines including {\bf
+  WinBUGS} and {\bf JAGS}.  Despite our focus on
 Bayesian analysis, it is instructive to develop the basic conceptual
 and methodological ideas behind classical analysis based on likelihood
-methods. In fact, simple SCR models can be analyzed fairly easily
-using classical likelihood methods. This has been the approach taken
-by Borchers and Efford (2008), Dawson and Efford (2009) and related
+methods and frequentist inference. 
+In fact, simple SCR models can be analyzed fairly easily
+using such methods. This has been the approach taken
+by \citet{borchers_efford:2008, dawson_efford:2009} and related
 papers.
 
 In this chapter we provide some conceptual and technical footing for
 likelihood-based analysis of spatial capture-recapture models. We
-recognized earlier (Section xxxx) that SCR models are versions of
-binomial (or other) GLMs with random effects – i.e., GLMMs, which are
+recognized earlier (chapt. 4) that SCR models are versions of
+binomial (or other) GLMs, but with random effects – i.e., GLMMs. These
+models are 
 routinely analyzed by likelihood methods. In particular, likelihood
 analysis is based on the integrated likelihood in which the random
 effects are removed by integration from the likelihood. In SCR models,
@@ -33,9 +36,11 @@ the random effect, ${\bf s}$ , i.e., the 2-dimensional coordinate, is a
 bivariate random effect. In this chapter, we show that it is
 straightforward to compute the maximum likelihood estimates (MLE) for
 SCR models by integrated likelihood. We develop the MLE framework
-using R, and we also provide a basic introduction to an R package
-\mbox{\tt secr} (Efford 2011) which is based on the stand-alone package DENSITY
-(Efford et al. 2004).  To set the context we analyze the SCR model
+using {\bf R}, and we also provide a basic introduction to an {\bf R} package
+\mbox{\tt secr} \citep{efford:2011} which is based on the stand-alone
+package 
+{\bf DENSITY} \citep{efford_etal:2004}.
+ To set the context we analyze the SCR model
 here when $N$ is known because, in that case, it is precisely a GLMM and
 does not pose any difficulty at all. We generalize the model to allow
 for unknown $N$ using both conventional ideas based on the ``joint
@@ -48,7 +53,7 @@ results.
 
 \section{Likelihood analysis }
 
-We noted in Chapter 4 that, with $N$ known, the basic SCR model is a
+We noted in chapter 4 that, with $N$ known, the basic SCR model is a
 type of binomial regression with a random effect. For such models we
 can easily obtain maximum likelihood estimators of model parameters
 based on integrated likelihood. The integrated likelihood is based on
@@ -99,9 +104,11 @@ ${\bf s}_{i}$, this is the fundamental property of SCR0 or
 ${\bf s}_{i}$, by integration, from the conditional-on-${\bf s}$ likelihood. That
 is, we compute:
 \[
-         {\cal L}(\theta| {\bf y}_{i}) = 
+  [y|\theta] = 
 \int_{{\cal S}} {\cal L}( \theta | {\bf y}_{i} |{\bf s}_{i}) g({\bf s}_{i}) d{\bf s}_{i}
 \]
+here $g(s) = 1/||{\cal S}||$.
+
 The joint likelihood for all $N$ individuals, assuming independence of
 encounters among individuals, is the product of $N$ such terms:
 \[
@@ -111,7 +118,7 @@ We emphasize that two independence assumptions are explicit in this
 development: independence of trap-specific encounters within
 individuals and also independence among individuals. In particular,
 this would only be valid when individuals are not physically
-restrained or removed upon capture, and when traps do not “fill up”.
+restrained or removed upon capture, and when traps do not ``fill up''.
 
 The key operation for computing the likelihood is solving a
 2-dimensional integration problem. There are some general purpose {\bf
@@ -121,25 +128,39 @@ including \mbox{\tt adapt} (REF) and \mbox{\tt Rcuba} (REF XYZ). In practice, we
 on these extraneous {\bf R} packages but instead will use perhaps less
 efficient methods in which we replace the integral with a summation
 over an equal area mesh of points on the state-space ${\cal S}$ and explicitly
-evaluate the integrand at each point. Let $u=1,2,\ldots,nG$ index a grid of
-$nG$ points where the area of grid cell $u$ is $a(u) \equiv a$ (for a regular grid).
-In this case, the trapezoidal rule
-for approximating the integral yields
-\[
-          f(y_{ij}) = \sum_{u=1}^{nG}  f( {\bold y}_{i} |u) g(u) *area
-\]
-This is a general expression that could be used
+evaluate the integrand at each point. We invoke the rectangular rule
+for integration here\footnote{e.g., 
+\url{http://en.wikipedia.org/wiki/Rectangle_method}
+} in which we
+evaluate the
+integrand on a regular grid of points of equal area and compute the
+average of
+the integrand over that grid of points. 
+Let $u=1,2,\ldots,nG$ index a grid of
+$nG$ points, ${\bf s}_{u}$,  where the area of grid cell $u$ is $A$.
+In this case, the integrand, i.e., the marginal probability of
+$y_{ij}$, is approximated by  
+\begin{equation}
+          f(y_{ij}|\theta) = \frac{1}{nG} \sum_{u=1}^{nG}  f( {\bold
+            y}_{i} |{\bf s}_u)
+\label{mle.eq.intlik}
+\end{equation}
+
+This is a specific case of the general expression that could be used
 for approximating the integral for any arbitrary bivariate
-distribution $g(u)$. In the present context note that $g(u) = (1/area(S))
-= 1/[nG*a]$ and thus the grid-cell area cancels in the above
-expression and we have
+distribution $g(u)$. The general case is
 \[
-          f(y_{ij}) = \sum_{u=1}^{nG}  f( {\bold y}_{i} |u) (1/nG)
+[y]  = \frac{A}{nG} \sum_{u} [y|{\bf s}_{u}] [{\bf s}_{u}]
 \]
-Which not surprisingly is the same answer we get if {\cal S} were inherently
-discrete, having $nG$ unique values with equal probabilities $1/nG$. Then
-the marginal probability of $y_{ij}$, i.e., by the Law of Total
-probability, is precisely that last expression.
+ In the present context note that $[{\bf s}] = (1/A)$
+and thus the grid-cell area cancels in the above
+expression to yield eq. \ref{mle.eq.intlik}.
+
+Not surprisingly this the same answer we get if {\cal S} were inherently
+discrete, having $nG$ unique values with equal probabilities $1/nG$,
+and we apply the Law of Total Probability directly to compute the
+marginal probability  $[y|\theta]$.
+
 
 \subsection{ Implementation (simulated data)}
 
@@ -307,7 +328,7 @@ negative log-likelihood value at the MLEs, which are stored in the
 observed Fisher information matrix, which can be inverted to obtain
 the variance-covariance matrix using the commands:
 \begin{verbatim}
-solve(frog$hessian)
+> solve(frog$hessian)
 \end{verbatim}
 
 It is worth drawing attention to the fact that the estimates are
@@ -360,7 +381,7 @@ the log-likelihood or AIC and choosing the value of N that produces
 the best log likelihood or AIC. As a homework problem we suggest that
 the reader take the code given above and try to estimate N without
 modifying the code – by just repeatedly calling that code for
-different values of N and trying to deduce the best value.
+different values of $N$ and trying to deduce the best value.
 Nevertheless, we will formalize the unknown-$N$ problem shortly.  We
 note that the software package {\bf DENSITY} \citep{efford_etal:2004} implements
 certain types of SCR models using integrated likelihood methods.
@@ -386,8 +407,7 @@ ${N \choose n}$
  ways to realize a sample of size $n$. The combinatorial term
 involves the unknown $n_{0}$ and thus it must be included in the likelihood.
 
-DETAILS NEEDED HERE
-
+{\bf DETAILS NEEDED HERE }
 
 To summarize, when $N$ is unknown, the $n$ observed encounter histories
 have a multinomial distribution with probabilities pi(i) and sample
@@ -401,7 +421,6 @@ there are $n_{0} = N-n$ such encounter histories.
 To analyze a specific case, we’ll read in our fake data set (simulated
 using the parameters given above). To set some things up in our
 workspace we do this:
-
 \begin{verbatim}
 data<-simSCR0.fn(discard0=TRUE,sd=2013)
 y<-data$Y
@@ -413,7 +432,6 @@ Xl<-data$xlim[1]
 Yl<-data$ylim[1]
 Xu<-data$xlim[2]
 Yu<-data$ylim[2]
-
 \end{verbatim}
 
 Recall that these data were generated with $N=100$, on an $8 \times 8$ unit
@@ -425,7 +443,6 @@ model and additional arguments as prescribed. In particular, as
 before, we provide the encounter history matrix ${\bf y}$, the trap locations
 traplocs, the spacing of the integration grid ($\delta$) and the
 state-space buffer. Here is the new likelihood function:
-
 \begin{verbatim}
 intlik2<-function(parm,y=y,delta=.3,X=traplocs,ssbuffer=2){
 
@@ -547,7 +564,7 @@ Note that this likelihood analysis is based on the standard likelihood
 in which $N$ (or $n_{0}$) is an explicit parameter. This is usually called
 the ``joint likelihood'' or ``unconditional likelihood''.  We could also
 express the joint likelihood using data augmentation, replacing the
-parameter $N$ with $\psi$ \citep[e.g.,][chapt. xyz]{royle_dorazio:2008}.
+parameter $N$ with $\psi$ \citep[e.g.,][sec. xyz]{royle_dorazio:2008}.
 We don't go into detail here, but we do note that the
 likelihood under data augmentation is a zero-inflated binomial
 mixture – precisely as an occupancy type model \citep{royle:2006}.
@@ -577,8 +594,8 @@ hard to do MLE for these based on the joint likelihood as we have
 developed above. Instead what people normally do is use what is
 colloquially referred to as the ``Huggins-Alho'' type model which is one
 of the approaches taken in the software package 
-\mbox{\tt secr} (Efford XYZ; see
-chapter XYZ). .
+\mbox{\tt secr} \citep[][see sec. \ref{mle.sec.secr}]{efford:2011}.
+
 
 \section{Classical model selection and assessment}
 
@@ -641,6 +658,7 @@ following commands. Note that we use the utility {\bf R} function
 > frog<-nlm(intlik3,c(-1.5,1.2,log(4)),hessian=TRUE,y=y.wolv,K=K.wolv,X=traplocs.wolv,delta=.1,ssbuffer=2)
 There were 23 warnings (use warnings() to see them)
 > frog
+
 $minimum
 [1] 220.4355
 
@@ -669,16 +687,26 @@ $iterations
 \end{verbatim}
 
 We optained the MLEs for a state-space buffer of 2 (standardized
-units) and for integration grid with spacing delta = .3, .2, .1,
-.05. The MLES for these 4 cases are as follows:
+units) and for integration grid with spacing $\delta = .3, .2, .1,
+.05$. The MLES for these 4 cases including the relative runtime are
+given in Table \ref{mle.tab.integration}.
 
-\begin{verbatim}
-delta runtime          estimates
- .3     8.4    -2.819786  1.258468  3.569731
- .2    22.6    -2.817610  1.254757  3.583690
- .1    99.0    -2.817570  1.255112  3.599040
- .05  403.0    -2.817559  1.255281  3.607158
-\end{verbatim}
+\begin{table}[ht]
+\centering
+\caption{Run time and MLEs for different integration grid resolutions.}
+\begin{tabular}{l|rccc}
+\hline \hline
+$\delta$ &  runtime & \multicolumn{3}{c}{Estimates} \\ \hline
+         &          & $\alpha_0$ & $\theta$ & $log(n_0)$ \\ \hline
+ 0.30   &  8.4  &  -2.819786 & 1.258468 & 3.569731  \\
+ 0.20   & 22.6  &  -2.817610 & 1.254757 & 3.583690 \\
+ 0.10  &  99.0  &  -2.817570 & 1.255112 & 3.599040 \\
+ 0.05 &  403.0 &   -2.817559&  1.255281&  3.607158 \\
+\end{tabular}
+\label{mle.tab.integration}
+\end{table}
+
+
 
 We see the results change only slightly as the fineness of the
 integration grid increases. Conversely, the runtime on the platform of
@@ -689,6 +717,23 @@ speed as the fineness of the integration grid increases. The effect of
 this is that we anticipate some numerical error in approximating the
 integral on a mesh of points, and that error increases as the
 coarsenss of the mesh increases. 
+
+In section xxxx back in chapt. 4 we used a discrete representation of
+the state-space in order to have control over its extent and shape,
+for example so that we could clip out ``non-habitat''. Clearly that
+formulation of the model is relevant to the use of integrated
+likelihood in the sense that such a representation of the state-space
+underlies the computation of the integral. Thus, for example, we could
+easily compute the MLE of parameters under some model with a
+restricted state-space merely by creating the required state-space at
+whatever grid resolution is desired, and then feed that state-space
+into the likelihood evaluation above. The R function \mbox{\tt scr}
+which comes with the {\bf R} package for this book accommodates an
+arbitrary state-space fashioned in this manner, as well as
+state-spaces created by polygons or GIS shapefiles\footnote{to be completed!}.
+
+
+
 Next we studied the effect of the state-space buffer on the MLEs,
 using a fixed $\delta = .2$ for all analyses. We used state-space buffers
 of 1 to 4 units stepped by .5. This produced the following results,
@@ -713,11 +758,7 @@ per $100$ $km^2$ (recall that a state-space unit is $10 \times 10$ $km$).  This 
 reported in \citet{royle_etal:2011jwm} based on a clipped state-space as
 described in section XYZ (XYZ chapter 4 XYZ).
 
-In a later chapter analysis by MLE is done with an irregular
-state-space. Therefore we will have to extend the R function again to
-accept as possible input a pre-defined state-space grid.
 
-XXXXXXXX DO THIS HERE XYZ 
 
 \subsection{
 Exercises
@@ -734,6 +775,8 @@ Exercises
 }
 
 \section{Program DENSITY and the R package \mbox{\tt secr} }
+\label{mle.sec.secr}
+
 
 {\bf DENSITY} is a software program developed by \citet{efford:2004}
 for 
@@ -754,18 +797,20 @@ various detection functions and covariate responses.  \mbox{\tt secr}
 uses the
 standard {\bf R} model specification framework using tildes. E.g., the model
 command is \mbox{\tt secr.fit} and is generally written as
-
 \begin{verbatim}
 > secr.fit(capturedata, model = list(D~1, g0~1, sigma~1), buffer = 20000)
 \end{verbatim}
-
-where we have \mbox{\tt g0~1} indicating the intercept model.  To include
-covariates, this would be written as \mbox{\tt g0~b} where b is a behavioral
+where we have \verb#g0~1# indicating the intercept model.  To include
+covariates, this would be written as \verb#g0~b# where $b$ is a
+behavioral
+response 
 covariate.  Possible predictors for detection probability include both
 pre-defined variables (e.g., \mbox{\tt t} and \mbox{\tt b}
 corresponding to ``time'' and 
 ``behavior''), and user-defined covariates of several kinds. The
-discussion of covariates is developed in chapter XX(8).
+discussion of covariates is developed in chapter XX(8)\footnote{Beth:
+  does secr fit a local trap-specific response or just a global
+  behavioral response?}
 
 Before we can fit the models, the data must first be entered into
 \mbox{\tt secr}.  Two input files are required: trap layout (location and
@@ -793,9 +838,9 @@ installing the SECR package by using the command:
 \begin{verbatim}
 > RShowDoc("secr-manual", package = "secr")
 \end{verbatim}
-As with all of the scr models, SECR fits a detection function relating
+As with all of the scr models, \mbox{\tt secr} fits a detection function relating
 the probability of detection to the distance of a detector from an
-individual activity center. SECR allows the user to specify one of a
+individual activity center. \mbox{\tt secr} allows the user to specify one of a
 variety of detection functions including the commonly used
 half-normal, hazard rate, and exponential.  There are 12 different
 functions, but some are only available for simulating data, and one
@@ -865,14 +910,14 @@ Calling the secr.fit command, will run the model.  We are using the
 basic model (SCR0), so we do not need to make any specifications in
 the command line except for the providing the buffer size (in m).  To
 specify different models, you can change the default
-\mbox{\tt D~1, g0~1, sigma~1}, which the interested reader can do with
+\verb#D~1, g0~1, sigma~1#, which the interested reader can do with
 very little difficulty.
 
 
 \begin{verbatim}
 > wolv.secr=secr.fit(wolvcapt, model = list(D~1, g0~1, sigma~1), buffer = 20000)
 
->wolv.secr
+> wolv.secr
 
 secr.fit( capthist = wolvcapt, buffer = 20000, binomN = 1 )
 secr 2.0.0, 18:26:39 05 Jul 2011
@@ -915,7 +960,7 @@ g0    logit 1.371121e-02 2.142902e-03 1.008756e-02 1.861207e-02
 sigma   log 5.998124e+03 4.727205e+02 5.140849e+03 6.998355e+03
 \end{verbatim}
 
-Under the fitted (real) parameters, we find D, the density, given in
+Under the fitted (real) parameters, we find $D$, the density, given in
 units of individuals/hectare (1 hectare = 100 m2).  To convert this
 into individuals/1000km2, we multiply by 100000, thus our density
 estimate is 5.83 individuals/1000 km2.  Sigma is given in units of
@@ -923,7 +968,9 @@ meters, to convert to kilometers, we divide by 1000, which puts sigma
 at 5.99 km.  Both of these estimates are very similar to those
 provided in section 4.6 for the buffer size equal to 20 km.  As an
 exercise, run this analysis for 30 and 40 km buffers and compare those
-found in section 4.6 under {\bf WinBUGS}.  NOTE: The \mbox{\tt secr.fit} will return a
+found in section 4.6 under {\bf WinBUGS}.  NOTE: The function \mbox{\tt
+  secr.fit} 
+will return a
 warning when the buffer size appears to be too small.  This is useful
 particularly with the different units being used between programs and
 packages.
@@ -935,12 +982,12 @@ In this chapter, we showed that classical analysis of SCR models based
 on likelihood methods is a relatively simple proposition.  Analysis is
 based on the so-called integrated likelihood in which the individual
 activity centers (random effects) are removed from the
-conditional-on-s likelihood by integration. We showed how to construct
+conditional-on-{\bf s} likelihood by integration. We showed how to construct
 the integrated likelihood and fit some simple models in the R
 programming language.  In addition, likelihood analysis for some broad
 classes of SCR models can be accomplished in the software package
 DENSITY 
-or in the equivalent R
+or in the equivalent {\bf R}
 library \mbox{\tt secr} which we provided an illustration of here. In later
 chapters we provide more detailed analyses of SCR data using the secr
 package.
@@ -961,9 +1008,9 @@ using model M0 or model Mh and buffering the trap array.
 
 Why or why not use likelihood inference exclusively? For certain
 specific models, it is probably more computationally efficient to
-produce MLEs. However, WinBUGS is extremely flexible in terms of
+produce MLEs. However, {\bf WinBUGS} is extremely flexible in terms of
 describing models, although it sometimes can be quite slow. We can
-devise models in WinBUGS easily that we cannot fit in secr. E.g.,
+devise models in {\bf WinBUGS} easily that we cannot fit in secr. E.g.,
 random individual effects of various types (see next chapter), we can
 handle missing covariates in complete generality and seamlessly, and
 impose arbitrary distributions on random variables. Moreover, models
@@ -974,7 +1021,7 @@ to write a custom new piece of code for each model or hope someone has
 done it for us.  Later we consider open population models which are
 straightforward to develop in WinBUGS but, so far, there is no
 available platform for doing MLE although we imagine one could develop
-this. . Another thing that is more conceptual here is non-CSR point
+this.  Another thing that is more conceptual here is non-CSR point
 processes (see chapter XYZ) and generating predictions of how many
 individuals have home range centers in any particular polygon.  Basic
 benefits of Bayesian analysis have been discussed elsewhere (Chapter
