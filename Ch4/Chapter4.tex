@@ -138,47 +138,78 @@ to be the activity center for individual $i$. Then, the basic SCR
 model postulates that encounter probability, $p_{ij}$, is related by a
 decreasing function to distance between trap $j$, having location
 ${\bf x}_{j}$, and ${\bf s}_{i}$.  Naturally, if we think of modeling binomial counts using logistic regression, we might specify the model according to:
-\[
+\begin{equation}
 	\mbox{logit}(p_{ij}) = \alpha_{0} + \theta *||s[i]-x[j]||				
-\]
+\label{scr0.eq.logit}
+\end{equation}
 where, here, $||{\bf s}_{i}-{\bf x}_{j}||$ is the distance between
 ${\bf s}_{i}$ and ${\bf x}_{j}$. We sometimes write $||{\bf
-  s}_{i}-{\bf x}_{j}|| = dist({\bf s}_{i},{\bf x}_{j}) = d_{ij}$. Alternatively, if we think about distance sampling then we might use the ``half-normal'' model of the form:
+  s}_{i}-{\bf x}_{j}|| = dist({\bf s}_{i},{\bf x}_{j}) =
+d_{ij}$. Alternatively, if we think about distance sampling then we
+might use the ``half-normal'' model of the form:
 \[
 p_{ij} = p_{0}*\exp(-\theta*||{\bf s}_{i}-{\bf x}_{j}||^2)
 \]
-Or any of a large number of standard detection models that are commonly used. The half-normal model implies 
-\[
+Or any of a large number of standard detection models that are
+commonly used (we consider more in chapter XYZ). The half-normal model implies 
+\begin{equation}
 \log(p_{ij})  = \log(p_{0}) - \theta*||{\bf s}_{i}-{\bf x}_{j}||^2
+\label{scr0.eq.norm}
+\end{equation}
+%We would always like to be clear that encounter probability depends on individual activity
+%centers {\it and} trap locations {\it and} parameter(s) $\theta$, and
+%so it would be ideal to write $p({\bf s}_{i},{\bf x}_{j}; \theta)$ or
+%something similar. However, this can be extremely unwieldy and 
+%clutter up what are otherwise extremely simple mathematical
+%expressions and formulae. As such, we will usually abbreviate these
+%various dependencies by writing $p_{ij}$ or sometimes $p_{\theta,ij}$,
+%understanding that $p_{ij}$ is actually a function of the various important
+%quantities.
+Whatever model encounter probability we choose, we should always keep
+in mind that the model is described conditional on ${\bf s}_{i}$, which is an
+unobserved random variable.  Thus, to be precise about this, we should
+write the observation model as
+\[
+y_{ij}|{\bf s}_{i} \sim \mbox{Bin}(K, p({\bf s}_{ij};\theta))
 \]
-We address other detection models in chapter XYZ and elsewhere. 
 
-Whatever model encounter probability we choose, we should always keep in mind that the model is described conditional on $s[i]$, which is an unobserved random variable.  Thus, to be precise about this, we should write the observation model as
+Note that we probably expect that the parameter $\theta$ in
+Eq. \ref{scr0.eq.logit} or \ref{scr0.eq.norm} should be negative, so
+that the probability of encounter decreases with distance between the
+trap and individual home range center.  The joint likelihood for the
+data, conditional on the collection of individual activity centers,
+can therefore be expressed as
 \[
-y_{ij}|{\bf s}_{i} \sim \mbox{Bin}(K, p({\bf s}_{ij}))
+{\cal L}(\theta | \{ {\bf y}_{i},{\bf s}_{i} \}_{i=1}^{N})
+ =  \prod_{i} \prod_{j} \mbox{Bin}(y_{ij}|p_{ij}(\theta))
 \]
-Note that we probably expect that the parameter beta in [**] should be negative, so that the probability of encounter decreases with distance between the trap and individual home range center.  The joint likelihood for the data, conditional on the collection of individual activity centers, can therefore be written as
-\[
-{\cal L}(stuff|s[1],...,s[N]) =  \prod_{i} \prod_{j} Bin(y_{ij}|p_{ij})
-\]
-Which, if we switch the indices on the product operators, this shows the SCR likelihood (conditional on $s$) to be the product of $J$ INDEPENDENT capture-recapture likelihoods - one for each trap.  However, the data have a ``repeated measures'' type of structure, with each of the $j$ likelihood contributions for each individual being ``grouped'' by individual. Thus, we cannot analyze the model meaningfully by J trap-specific models. In classical repeated measures types of models, we accommodate the group structure of the data using random effects (random individual or group level variables). For SCR models we take the same basic approach, which we develop subsequently.
+Which, if we switch the indices on the product operators, this shows
+the SCR likelihood (conditional on ${\bf s}$) to be the product of $J$
+INDEPENDENT capture-recapture likelihoods - one for each trap.
+However, the data have a ``repeated measures'' type of structure, with
+each of the $j$ likelihood contributions for each individual being
+``grouped'' by individual. Thus, we cannot analyze the model
+meaningfully by J trap-specific models. In classical repeated measures
+types of models, we accommodate the group structure of the data using
+random effects (random individual or group level variables). For SCR
+models we take the same basic approach, which we develop subsequently.
 
 \subsection{Distance as a latent variable}
 	
-If we knew precisely every $s[i]$ in the population (and how many, N), then the model specified by [*] and [**] is just an ordinary logistic regression type of a model which we learned how to fit using WinBUGS previously (Chapter 2), with a covariate $d[i,j]$. However, the activity centers are unobservable even in the best possible circumstances. In that case, $d[i,j]$ is an unobserved variable, analogous to classical ``random effects'' models. We need to therefore extend the model to accommodate these random variables with an additional model component. A standard, and perhaps not unreasonable, assumption is the so-called ``uniformity assumption'' which is to say that the $s[i]$ are uniformly distributed over space (the obvious next question ``which space?'' is addressed below).  This uniformity assumption amounts to a uniform prior distribution on $s[i]$, i.e., the pdf of $s[i]$ is constant, which we may express
+If we knew precisely every ${\bf s}_{i}$ in the population (and how many, N), then the model specified by [*] and [**] is just an ordinary logistic regression type of a model which we learned how to fit using WinBUGS previously (Chapter 2), with a covariate $d[i,j]$. However, the activity centers are unobservable even in the best possible circumstances. In that case, $d[i,j]$ is an unobserved variable, analogous to classical ``random effects'' models. We need to therefore extend the model to accommodate these random variables with an additional model component. A standard, and perhaps not unreasonable, assumption is the so-called ``uniformity assumption'' which is to say that the ${\bf s}_{i}$ are uniformly distributed over space (the obvious next question ``which space?'' is addressed below).  This uniformity assumption amounts to a uniform prior distribution on ${\bf s}_{i}$, i.e., the pdf of ${\bf s}_{i}$ is constant, which we may express
 \begin{equation}
-	\Pr(s[i]) propto const	
+	\Pr({\bf s}_{i}) propto const	
 \label{eq.3stars}				
 \end{equation}
 
 The 3 starred equations completely define the important parts of this spatial capture-recapture model. To summarize:
 \begin{itemize}
-\item[(1)] $y[i,j]|s[i] \sim Binomial(K, p[i,j])	$
-\item[(2)] $logit(p[i,j]) = alpha + beta*||s[i]-x[j]||$
-\item[(3)] $\Pr[s[i] ] \propto const$	
+\item[(1)] $y[i,j]|{\bf s}_{i} \sim Binomial(K, p[i,j])	$
+\item[(2)] $logit(p[i,j]) = alpha + beta*||{\bf s}_{i}-x[j]||$
+\item[(3)] $\Pr[{\bf s}_{i} ] \propto const$	
 \end{itemize}			
-Therefore, the SCR model is little more than an ordinary capture-recapture model for closed populations. It is such a model, but augmented with a set of ``individual effects'', $s[i]$, which relate some sense of individual location to encounter probability. 
-As it turns out, assumption (3) is usually not precise enough to fit a model in practice for reasons we discuss in the following section.  We will give another way to represent this prior distribution that is more concrete, but it depends on specifying the ``state-space'' of the random variable $s[i]$. The term ``state-space'' is a technical way of saying ``possible outcomes''.
+Therefore, the SCR model is little more than an ordinary capture-recapture model for closed populations. It is such a model, but augmented with a set of ``individual effects'', ${\bf s}_{i}$, which relate some sense of individual location to encounter probability. 
+As it turns out, assumption (3) is usually not precise enough to fit a model in practice for reasons we discuss in the following section.  We will give another way to represent this prior distribution that is more concrete, but it depends on specifying the ``state-space'' of the random variable ${\bf s}_{i}$. The term ``state-space'' is a technical way of saying ``possible outcomes''.
 
 
 \section{ The Binomial Point-process Model}
@@ -205,11 +236,11 @@ Shortly we will focus on Bayesian analysis of this model with N known
 so that we can directly apply what we learned in chapter 2 to this
 situation. To do this, we note that the individual effects $s[1],
 ...[N]$ are unknown quantities and we will need to be able to simulate
-each $s[i]$ in the population from the posterior distribution.  It
-should be self-vident that we cannot simulate the $s[i]$ unless we
-describe precisely the region over which those $s[i]'s$ are uniformly distributed. This is the quantity referred to above as the state-space, denoted henceforth by ${\cal S}$, which is a region or a set of points comprising the potential values of $s[i]$. Thus, an equivalent explicit statement of the ``uniformity assumption'' is
+each ${\bf s}_{i}$ in the population from the posterior distribution.  It
+should be self-vident that we cannot simulate the ${\bf s}_{i}$ unless we
+describe precisely the region over which those ${\bf s}_{i}'s$ are uniformly distributed. This is the quantity referred to above as the state-space, denoted henceforth by ${\cal S}$, which is a region or a set of points comprising the potential values of ${\bf s}_{i}$. Thus, an equivalent explicit statement of the ``uniformity assumption'' is
 \[
-		s[i] ~ Uniform({\cal S})
+		{\bf s}_{i} ~ Uniform({\cal S})
 \]
 
 
@@ -224,7 +255,7 @@ This is primarily necessary to provide control over the geometry and morphology 
 
 
 \subsection{Invariance and the State-space as a model assumption}
-We will assert for all models we consider in this book that density is invariant to the size and extent of S, if S is sufficiently large. In fact, this only holds as long as our model relating $p[i,j]$ to $s[i]$ is a decreasing function of distance.  We can prove this thinking about a 1-d case where $E[y]$ for the ``last cell'' (i.e., for d>B for B large enough) is 0. So it always contributes nothing to the likelihood, i.e., $E[n(last cell)] = 0$. [sketch out a proof of this], in regular situations in which the detection function decays monotonically with distance and prior density is constant.
+We will assert for all models we consider in this book that density is invariant to the size and extent of S, if S is sufficiently large. In fact, this only holds as long as our model relating $p[i,j]$ to ${\bf s}_{i}$ is a decreasing function of distance.  We can prove this thinking about a 1-d case where $E[y]$ for the ``last cell'' (i.e., for d>B for B large enough) is 0. So it always contributes nothing to the likelihood, i.e., $E[n(last cell)] = 0$. [sketch out a proof of this], in regular situations in which the detection function decays monotonically with distance and prior density is constant.
 Sometimes our estimate of density can be influenced if we make S too
 small but this might be sensible if S is naturally well-defined. As we
 discussed in chapter 1, {\bf choice of S is part of the model and thus it makes sense that estimates of density might be sensitive to its definition in problems where it is natural to restrict S}.  One could imagine however that in specific cases where you're studying a small population with well-defined habitat preferences that a problem could arise because changing the state-space around based on differing opinions and GIS layers really changes the estimate of total population size. But this is a real biological problem and a natural consequence of the spatial formalization of capture-recapture models - a feature, not a bug or some statistical artifact - and it should be resolved with better information and research, and not some arbitrary statistical artifact.  For situations where there is not a natural choice of S, we should default to choosing S to be very large in order to achieve invariance or otherwise evaluate sensitivity of density estimates by trying a couple of different values of S. This is a standard ``sensitivity to prior'' argument that Bayesians always have to be conscious of.   We demonstrate this in our analysis of section XXX.YYY below. Note that $area(S)$ affects data augmentation. If you increase $area(S)$ then there are more individuals to account for and therefore the size of the augmented data set $M$ must increase. 
@@ -732,9 +763,9 @@ No. of traps & 1 & 2 & 3 & 4 & 5 & 6 & 8 & 10 &13 &14 \\
 
 For illustrative purposes here we fit the simplest SCR model with the half-normal distance function although we revisit these data with more complex models in later chapters. The model is summarized by the following 3 components: 
 \begin{itemize}
-\item[(1)] $y[i,j]|s[i] \sim Binomial(K, z[i]*p[i,j])$
-\item[(2)] $p[i,j] = p0*exp(-beta*||s[i]-x[j]||^2)$
-\item[(3)] $ s[i] \sim Uniform(S)$
+\item[(1)] $y[i,j]|{\bf s}_{i} \sim Binomial(K, z[i]*p[i,j])$
+\item[(2)] $p[i,j] = p0*exp(-beta*||{\bf s}_{i}-x[j]||^2)$
+\item[(3)] $ {\bf s}_{i} \sim Uniform(S)$
 \item[(4)] $ z[i] \sim Bern(psi)	$
 \end{itemize}		
 We assume customary flat priors on the structural (hyper-) parameters of the model, alpha, beta, and psi.  It remains to define the state-space S. For this, we overlaid the trap array (Fig. XXX.YYY) on a rectangular region extending 20 km beyond the traps in each cardinal direction.  We also considered larger state-spaces up to 50 km to evaluate that choice.
@@ -845,7 +876,7 @@ It is worth thinking about this model, and these estimates, computed under a rec
 One of the most useful aspects of SCR models is that they are
 parameterized in terms of individual locations - i.e., {\it where}
 each individual lives -- and, thus, we can compute many useful or interesting summaries of the activity centers.  For example, we can make a spatial density plot by tallying up the number of activity centers ${\bf s}_{i}$ in boxes of arbitrary size and then producing a nice multi-color spatial plot of those which, we find, increases the acceptance probability of your manuscripts by 50\%. 
-We discussed in Chapter 2 the idea of estimating derived parameters from MCMC output. In SCR models, there are many derived parameters that are functions of the latent point process (s[1],....,s[N]). In the present context, the number of individuals living in any well-defined polygon is a derived parameter. Specifically, let $B(x)$ indicate a box centered at x then $N(x)=\sum_{i} I(s[i] in B(x))$ is the population size of box $B(x)$, and $D(x) = N(x)/||B(x)||$ is the local density. These are just ``derived parameters'' (see Chapt. 2) which are estimated from MCMC output using the appropriate Monte Carlo average. One thing to be careful about, in the context of models in which N is unknown, is that, for each m, we only tabulate those activity centers which correspond to individuals in the sampled population. i.e., for which the data augmentation variable $z_{i}  = 1$.  In this case, we take all of the output for MCMC iterations $m=1,2,\ldots,$ and compute this summary:
+We discussed in Chapter 2 the idea of estimating derived parameters from MCMC output. In SCR models, there are many derived parameters that are functions of the latent point process (s[1],....,s[N]). In the present context, the number of individuals living in any well-defined polygon is a derived parameter. Specifically, let $B(x)$ indicate a box centered at x then $N(x)=\sum_{i} I({\bf s}_{i} in B(x))$ is the population size of box $B(x)$, and $D(x) = N(x)/||B(x)||$ is the local density. These are just ``derived parameters'' (see Chapt. 2) which are estimated from MCMC output using the appropriate Monte Carlo average. One thing to be careful about, in the context of models in which N is unknown, is that, for each m, we only tabulate those activity centers which correspond to individuals in the sampled population. i.e., for which the data augmentation variable $z_{i}  = 1$.  In this case, we take all of the output for MCMC iterations $m=1,2,\ldots,$ and compute this summary:
 \[
    N(x,m) = \sum_{z[i,m]=1} I(s[i,m] \in B(x))
 \]
@@ -983,7 +1014,7 @@ naturally discrete. Consider a situation in which discrete patches of
 habitat are searched using some method and it might be convenient (or
 occur inadvertently) to associate samples to the patch level instead
 of recording observation locations. In this case we might use a model
-$s[i] \sim dcat(probs[])$  where $probs[]$ are the probabilities that
+${\bf s}_{i} \sim dcat(probs[])$  where $probs[]$ are the probabilities that
 an individual inhabits a particular patch. We consider such a case
 study in Chapter XXPoissonXXX from \citet{mollet_etal:2012} who
 obtained a population size estimate of a large grouse species known as
@@ -1000,7 +1031,7 @@ apply multi-state models directly to any SCR problem.
 A point we tried to emphasize in this chapter is that the basic SCR
 model is not much more than an ordinary capture-recapture model for
 closed populations -- it is simply that model augmented with a set of
-``individual effects'', s[i], which relate some sense of individual
+``individual effects'', {\bf s}_{i}, which relate some sense of individual
 location to encounter probability. SCR models are therefore a type of
 individual covariate model (as introduced in Chapter 3) - but with
 imperfect information about the individual covariate. In other words,
