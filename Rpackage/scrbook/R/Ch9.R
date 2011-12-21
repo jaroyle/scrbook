@@ -4,23 +4,17 @@
 
 
 
+# spatial covariate (with mean 0)
+elev.fn <- function(x) x[,1]+x[,2]-1
 
-
-# spatial covariate
-elev.fn <- function(x) x[,1]+x[,2]
-
-
-# 2-dimensional integration over [-1, 1] square
+# 2-dimensional integration over unit square
 int2d <- function(alpha, delta=0.02) {
-  z <- seq(-1+delta/2, 1-delta/2, delta)
+  z <- seq(delta/2, 1-delta/2, delta)
   len <- length(z)
   cell.area <- delta*delta
   S <- cbind(rep(z, each=len), rep(z, times=len))
   sum(exp(alpha*elev.fn(S)) * cell.area)
   }
-
-
-
 
 
 
@@ -152,8 +146,8 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, tune=rep(0.1, 4))
         D1 <- int2d(beta1, delta=.05)
         beta1.cand <- rnorm(1, beta1, tune[3])
         D1.cand <- int2d(beta1.cand, delta=0.05)
-        ll.beta1 <- sum(  beta1*cov(S[,1],S[,2]) - log(D1) )
-        ll.beta1.cand <- sum( beta1.cand*(S[,1]+S[,2]) - log(D1.cand) )
+        ll.beta1 <- sum(  beta1*elev.fn(S) - log(D1) )
+        ll.beta1.cand <- sum( beta1.cand*elev.fn(S) - log(D1.cand) )
         if(runif(1) < exp(ll.beta1.cand - ll.beta1) )  {
           beta1<-beta1.cand
           }
@@ -162,8 +156,8 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, tune=rep(0.1, 4))
         # update S
         Sups <- 0
         for(i in 1:M) {
-            Scand <- c(rnorm(1, S[i,1], tune[4]),
-                       rnorm(1, S[i,2], tune[4]))
+            Scand <- matrix(c(rnorm(1, S[i,1], tune[4]),
+                              rnorm(1, S[i,2], tune[4])), nrow=1)
             inbox <- Scand[1]>=xlims[1] & Scand[1]<=xlims[2] &
                      Scand[2]>=ylims[1] & Scand[2]<=ylims[2]
             if(!inbox)
@@ -178,8 +172,8 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, tune=rep(0.1, 4))
                 ll.S.cand <- sum(dpois(Z[i,,], lam.cand[i,], log=TRUE) )
             }
             #ln(prior), denominator is constant
-            prior.S <- beta1*cov(S[i,1], S[i,2]) # - log(D1)
-            prior.S.cand <- beta1*(Scand[1] + Scand[2]) # - log(D1)
+            prior.S <- beta1*elev.fn(S[i,,drop=FALSE]) # - log(D1)
+            prior.S.cand <- beta1*elev.fn(Scand) # - log(D1)
 
            if(runif(1)< exp((ll.S.cand+prior.S.cand) - (ll.S+prior.S))) {
                 S[i,] <- Scand

@@ -2,7 +2,12 @@
  (lambda ()
     (LaTeX-add-bibliographies
      "../AndyRefs_alphabetized")
+    (TeX-add-symbols
+     "R"
+     "bugs"
+     "secr")
     (TeX-run-style-hooks
+     "verbatim"
      "natbib"
      "lineno"
      "graphicx"

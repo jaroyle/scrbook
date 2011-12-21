@@ -91,7 +91,7 @@ for which the counts $n(B_k)$ are not {\it i.i.d.} as we will explain
 shortly. This difference is also related to more important distinction
 between the two models, namely that the binomial model
 conditions on the number of points to be simulated $N$; whereas under
-the Poisson model $N$ is random. Here is some simple R code to
+the Poisson model $N$ is random. Here is some simple \R~code to
 illustrate this point.
 
 \begin{verbatim}
@@ -130,12 +130,12 @@ is ${\bf n(B)} \sim Multinomial(N, {\mathbf{\pi}} = (p_1, p_2, \dots,
 p_K))$ \citep{illian:2008}. The dependence among counts has virtually
 no practical consequence when the number of pixels is large. For
 example, if we have 100 pixels, the number of counts in one pixels
-tell you very little about the expected count in another
+tells you very little about the expected count in another
 pixel. However, if there are only 2 pixels, then clearly the number of
 points in one pixel tells you exactly how many will occur in the
 remaining pixel. To gain familiarity with the multinomial distribution
 and the discrete representation of space, use the \verb+rmultinom+
-function in R to simulate counts similar to those shown in
+function in \R~to simulate counts similar to those shown in
 Fig.~\ref{ch9:fig:homo}, for example using a command
 such as:
 
@@ -290,20 +290,19 @@ state-space.\footnote{Such functional forms of
 covariates are rarely available, which is why continuous spatial
 covariates are more often measured on a discrete grid.}
 
-The following R commands demonstrate the use of rejection sampling to
+The following \R~commands demonstrate the use of rejection sampling to
 simulate an inhomogeneous point process for the covariate depicted in
 Fig.~\ref{ch9:fig:hetero}.
 
 
 \begin{small}
 \begin{verbatim}
-# spatial covariate
-# Elevation as a function of the coordinates at point x
-elev.fn <- function(x) x[,1]+x[,2]
+# spatial covariate (with mean 0)
+elev.fn <- function(x) x[,1]+x[,2]-1
 
-# 2-dimensional integration over [-1, 1] square
+# 2-dimensional integration over unit square
 int2d <- function(alpha, delta=0.02) {
-  z <- seq(-1+delta/2, 1-delta/2, delta)
+  z <- seq(delta/2, 1-delta/2, delta)
   len <- length(z)
   cell.area <- delta*delta
   S <- cbind(rep(z, each=len), rep(z, times=len))
@@ -311,20 +310,21 @@ int2d <- function(alpha, delta=0.02) {
   }
 
 # Simulate PP using rejection sampling
-set.seed(395)
+set.seed(300225)
 N <- 100
 count <- 1
-s <- matrix(NA, N, 2) # matrix to hold simulated activity centers
+s <- matrix(NA, N, 2)
 alpha <- 2 # parameter of interest
-Q <- max(c(exp(alpha*elev.min) / int2d(alpha),
-           exp(alpha*elev.max) / int2d(alpha))) # Rejection sampling bound
 while(count <= 100) {
-  x.c <- runif(1, -1, 1); y.c <- runif(1, -1, 1) # proposed activity center
+  x.c <- runif(1, 0, 1); y.c <- runif(1, 0, 1)
   s.cand <- cbind(x.c,y.c)
-  elev.min <- elev.fn(cbind(-1,-1)); elev.max <- elev.fn(cbind(1,1))
+  elev.min <- elev.fn(cbind(0,0))
+  elev.max <- elev.fn(cbind(1,1))
   pr <- exp(alpha*elev.fn(s.cand)) / int2d(alpha)
+  Q <- max(c(exp(alpha*elev.min) / int2d(alpha),
+             exp(alpha*elev.max) / int2d(alpha)))
   if(runif(1) < pr/Q) {
-    s[count,] <- s.cand # accepted proposals
+    s[count,] <- s.cand
     count <- count+1
     }
   }
@@ -357,7 +357,7 @@ negative-log-likelihood using \verb+R+'s \verb+optim+ function.
 \begin{verbatim}
 # Negative log-likelihood
 nll <- function(beta) {
-  -sum(beta*cov(S[,1], S[,2]) - log(int2d(beta)))
+  -sum(beta*elev.fn(s) - log(int2d(beta)))
   }
 starting.value <- 0
 fm <- optim(starting.value, nll, method="Brent",
@@ -368,7 +368,7 @@ c(Est=fm$par, SE=sqrt(1/fm$hessian)) # estimates and SEs
 
 
 Maximizing the likelihood took a small fraction of a second, and we
-obtained an estimate of $\hat{\alpha}=2.01$. Not bad! We could plug in
+obtained an estimate of $\hat{\alpha}=2.47$. We could plug in
 this estimate to our linear model at each point in the state-space to
 obtain the MLE for the intensity surface.
 
@@ -380,6 +380,12 @@ SCR models, the activity centers cannot be directly observed, but
 spatial re-captures, that is captures of individuals at
 multiple locations in space, provide us with the information needed to
 estimate these latent parameters.
+%This example should also have
+%illustrated the point that spatial covariates are rarely defined as
+%continuous functions as we did here. Furthermore, even when they are,
+%many multi-dimensional integration functions approximate the integral by
+%pretending as though the covariate was defined on a discrete grid of
+%small pixels.
 
 \subsection{Fitting inhomogeneous point process SCR model}
 
@@ -393,8 +399,8 @@ the previous example. Specifically, we will overlay a grid of
 traps upon the map shown in Fig.~\ref{ch9:fig:hetero}. We will then
 simulate capture histories conditional upon the activity centers shown
 on the map. Then, we will attempt to estimate the activity center
-locations as though we did not know where they were.
-
+locations as though we did not know where they were, as is the case in
+real applications.
 
 Here is some \verb+R+ code to simulate the encounter histories under a
 Poisson observation model, which would be appropriate if animals could
@@ -435,8 +441,8 @@ yz[1:nrow(y),,] <- y # Fill
 Now that we have a simulated capture-recapture dataset $y$, and we have
 augmented it to create the new data object $yz$, we are ready to
 begin sampling from the posteriors. A commented Gibbs sampler written
-in \verb+R+ is available online. There are two small parts of the
-\verb+R+ code that distinguish it from previous code we have shown to
+in \R~is available online. There are two small parts of the
+\R~code that distinguish it from previous code we have shown to
 fit homogeneous point processes. First, we need to update the parameter
 ${\bf \alpha}$ conditional on all other parameters in the model. The code to
 do so is:
@@ -446,8 +452,8 @@ do so is:
 D1 <- int2d(beta1, delta=.05)
 beta1.cand <- rnorm(1, beta1, tune[3])
 D1.cand <- int2d(beta1.cand, delta=0.05)
-ll.beta1 <- sum(  beta1*cov(S[,1],S[,2]) - log(D1) )
-ll.beta1.cand <- sum( beta1.cand*(S[,1]+S[,2]) - log(D1.cand) )
+ll.beta1 <- sum(  beta1*elev.fn(S) - log(D1) )
+ll.beta1.cand <- sum( beta1.cand*elev.fn(S) - log(D1.cand) )
 if(runif(1) < exp(ll.beta1.cand - ll.beta1) )  {
     beta1<-beta1.cand
 }
@@ -469,59 +475,57 @@ if(runif(1)< exp((ll.S.cand+prior.S.cand) - (ll.S+prior.S))) {
 \end{verbatim}
 \end{small}
 
-Applying this modified sampler to our data we obtain posterior
+We can apply this modified sampler to our data using the code shown in
+the following panel. We obtain posterior
 distributions summarized in Table~\ref{ch9:tab:simIPP}. Mixing is good, and as usual,
 life is very nice when we are working with simulated data.
 
-
-\begin{comment}
-
-# MCCM code
-
-source("thinSmcmc_exp.R")
-ls()
-
+\begin{verbatim}
+library(scrbook)
 fm1 <- scrIPP(yz, X, M, 3000, xlims=c(-1,1), ylims=c(-1,1),
             tune=c(0.002, 0.1, 0.25, 0.07) )
-
-library(coda)
 plot(mcmc(fm1$out))
-
-rejectionRate(mcmc(fm1$out))
-
-\end{comment}
+\end{verbatim}
 
 
-
-
-
-\begin{table}
+\begin{table}[h]
 \centering
-\begin{tabular}{lccccc}
-Parameter & Mean & SD  & q0.025 & q0.5 & q0.975 \\
+\caption{Posterior summaries from inhomogeneous point proces model}
+\begin{tabular}{lrrrrr}
 \hline
-$\alpha$    &&&&& \\
-$\lambda_0$  &&&&& \\
-$\sigma$    &&&&& \\
-$N$        &&&&& \\
-Density     &&&&& \\
+& Mean & SD & 2.5\% & 50\% & 97.5\% \\
+ $\sigma =0.10$ &   0.1026 &   0.0048 &   0.0935 &   0.1025 &   0.1123 \\
+ $\lambda_0=0.50$ &   0.4419 &   0.0493 &   0.3496 &   0.4400 &   0.5390 \\
+ $\psi =0.66$ &   0.6826 &   0.0554 &   0.5762 &   0.6820 &   0.7923 \\
+ $\beta =2.00$ &   2.1601 &   0.3390 &   1.5193 &   2.1583 &   2.8043 \\
+ $N =100$ & 102.7696 &   6.2689 &  92.0000 & 102.0000 & 117.0000 \\
 \hline
 \end{tabular}
 \label{ch9:tab:simIPP}
 \end{table}
 
-Discrete space versions of these models can be fitted using
-\verb+BUGS+. As discussed in Chapter 5, we can define $s_i$ as the
-pixel id, and use the 
-categorical distribution as a prior.
 
-A good example of this is in +cite{Kery capricaillie}. Here we present
-an analysis of the simulated data shown in the right panel of 
-Fig.~\ref{ch9:fig:hetero}. The \textbf{BUGS} code to fit the model is shown in
+We can also fit these models using maximum-likelihood. Let's try using
+\secr.
+
+
+
+Fitting continuous space versions of these of these models is somewhat
+difficult in \bugs~ because our prior $f(x)$ is not one of the
+available distributions\footnote{It is possible, if somewhat
+  cumerbersome, to add new distributions in \bugs.} However, discrete
+space versions are
+straight-forward. This is not really an important limitation of \bugs,
+since most covariates are represented as rasters not continuous
+functions. To fit the discrete space models, we follow the same steps
+as outlined in Chapter 5---we define $s_i$ as
+pixel id, and we use the categorical distribution as a prior. A good
+example of this is in +cite{Kery capricaillie}. Here we present
+an analysis of the simulated data shown in the right panel of
+Fig.~\ref{ch9:fig:hetero}. The \bugs~code to fit the model is shown in
 the following panel.
 
 \begin{verbatim}
-
 model{
 sigma ~ dunif(0, 1)
 lam0 ~ dunif(0, 5)
@@ -530,9 +534,6 @@ psi ~ dbeta(1,1)
 
 for(j in 1:nPix) {
   theta[j] <- exp(beta*elevation[j])
-}
-
-for(j in 1:nPix) {
   probs[j] <- theta[j]/sum(theta[])
 }
 
@@ -549,26 +550,28 @@ for(i in 1:M) {
   }
 
 N <- sum(w[])
-D <- N/1 # unit square
+Density <- N/1 # unit square
 }
-
 \end{verbatim}
 
-A complete {\bf R} script to conduct the analysis is presented in the
-online supplement. 
+A complete script to conduct the analysis is presented in the
+\R~package
+.
 
 
 
 \subsection{The jaguar data}
 
-Estimating density of large felines was difficult before the advent of
-SCR. This is because you would never be able to conduct a distance
-sampling analysis for such rare and cryptic species, and because
-traditional capture-recapture methods don't yield estimates of
-density, only population size within some unknown region. This example
-not only demonstrates how readily density can be estimated for a
-globally imperilled species, but it also shows the importance of
-estimating density rather than just population size.
+Estimating density of large felines has been a priority for many
+conservation organizations, but no robust methodologies existed before
+the advent of SCR. Distance sampling is not feasible for such rare and
+cryptic species, and traditional capture-recapture methods yield
+estimates that are highly sensitive to the subjective choice of the
+effective survey area. In this example, we
+demonstrate how readily density can be estimated for a
+globally imperilled species using SCR. Furthermore, we show how
+inhomogeneous point process models can be used to test important
+hypotheses regarding the factors affecting density.
 
 [describe study]
 

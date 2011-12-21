@@ -4,6 +4,6 @@
      "chapt.state-space"
      "ch9:fig:homo"
      "eq:pdf-ipp"
-     "ch9:fig:elevMap"
+     "ch9:fig:hetero"
      "ch9:tab:simIPP")))
 
