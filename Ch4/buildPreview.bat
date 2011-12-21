@@ -1,4 +1,5 @@
-bibtex previewCh5.tex
-bibtex previewCh5.tex
-pdflatex previewCh5.tex
-open previewCh5.pdf
+pdflatex previewCh4.tex
+bibtex previewCh4
+bibtex previewCh4
+pdflatex previewCh4.tex
+open previewCh4.pdf
