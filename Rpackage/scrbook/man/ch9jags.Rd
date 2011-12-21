@@ -91,11 +91,8 @@ lam0 ~ dunif(0, 5)
 beta ~ dnorm(0,0.1)
 psi ~ dbeta(1,1)
 
-# Don't do this in 1 for loop
 for(j in 1:nPix) {
   theta[j] <- exp(beta*elevation[j])
-}
-for(j in 1:nPix) {
   probs[j] <- theta[j]/sum(theta[])
 }
 
@@ -142,6 +139,8 @@ jc <- coda.samples(jm, pars, n.iter=2000)
 plot(jc)
 summary(window(jc, start=1001))
 }
+
+unlink(modfile)
 
 
 }
