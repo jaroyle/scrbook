@@ -149,6 +149,89 @@ dev.off()
 
 
 
+# Analysis using custom MCMC
+
+
+
+
+
+# Create trap locations
+xsp <- seq(-0.8, 0.8, by=0.2)
+len <- length(xsp)
+X <- cbind(rep(xsp, each=len), rep(xsp, times=len))
+
+# Simulate capture histories, and augment the data
+ntraps <- nrow(X)
+T <- 5
+y <- array(NA, c(N, ntraps, T))
+
+nz <- 50 # augmentation
+M <- nz+nrow(y)
+yz <- array(0, c(M, ntraps, T))
+
+sigma <- 0.1  # half-normal scale parameter
+lam0 <- 0.5   # basal encounter rate
+lam <- matrix(NA, N, ntraps)
+
+set.seed(5588)
+for(i in 1:N) {
+    for(j in 1:ntraps) {
+        distSq <- (s[i,1]-X[j,1])^2 + (s[i,2] - X[j,2])^2
+        lam[i,j] <- exp(-distSq/(2*sigma^2)) * lam0
+        y[i,j,] <- rpois(T, lam[i,j])
+    }
+}
+yz[1:nrow(y),,] <- y # Fill
+
+
+
+
+
+
+
+
+library(scrbook)
+set.seed(3434)
+fm1 <- scrIPP(yz, X, M, 6000, xlims=c(0,1), ylims=c(0,1),
+            tune=c(0.003, 0.08, 0.3, 0.07) )
+
+plot(mcmc(fm1$out))
+rejectionRate(mcmc(fm1$out))
+
+
+fm1.s <- summary(window(mcmc(fm1$out), start=1001))
+fm1.r <- cbind(fm1.s$stat[,1:2], fm1.s$quant[,c(1,3,5)])
+colnames(fm1.r) <- c("& Mean", "SD", "2.5\\%", "50\\%", "97.5\\%")
+rownames(fm1.r) <- c("$\\sigma=0.1$", "$\\lambda_0=0.5$", "$\\psi=0.66$",
+                     "$\\beta=2$", "$N=100$")
+round(fm1.r,2)
+
+
+
+
+sink("fm1.r.tex")
+cat("
+\\begin{table}
+\\centering
+\\caption{Posterior summaries from inhomogeneous point proces model}
+\\begin{tabular}{lrrrrr}
+\\hline
+")
+write.table(format(fm1.r, digits=2, nsmall=4, scientific=FALSE),
+            quote=FALSE, sep=" & ", eol=" \\\\\n ")
+cat("
+\\hline
+\\end{tabular}
+\\label{ch9:tab:simIPP}
+\\end{table}
+")
+sink()
+
+
+
+
+
+
 
 # Analysis in JAGS
 
