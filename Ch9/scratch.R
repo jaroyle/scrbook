@@ -52,9 +52,8 @@ dev.off()
 
 
 
-# spatial covariate
+# spatial covariate (with mean 0)
 elev.fn <- function(x) x[,1]+x[,2]-1
-
 
 # 2-dimensional integration over unit square
 int2d <- function(alpha, delta=0.02) {
@@ -72,8 +71,7 @@ count <- 1
 s <- matrix(NA, N, 2)
 alpha <- 2 # parameter of interest
 while(count <= 100) {
-  x.c <- runif(1, 0, 1)
-  y.c <- runif(1, 0, 1)
+  x.c <- runif(1, 0, 1); y.c <- runif(1, 0, 1)
   s.cand <- cbind(x.c,y.c)
   elev.min <- elev.fn(cbind(0,0))
   elev.max <- elev.fn(cbind(1,1))
@@ -83,11 +81,18 @@ while(count <= 100) {
   if(runif(1) < pr/Q) {
     s[count,] <- s.cand
     count <- count+1
-    cat("accept\n")
     }
-  else
-    cat("  reject\n")
   }
+
+
+# Maximum likelihood
+nll <- function(beta) {
+  -sum(beta*elev.fn(s) - log(int2d(beta)))
+  }
+starting.value <- 0
+fm <- optim(starting.value, nll, method="Brent",
+            lower=-5, upper=5, hessian=TRUE)
+c(Est=fm$par, SE=sqrt(1/fm$hessian)) # estimates and SEs
 
 
 

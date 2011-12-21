@@ -4,23 +4,17 @@
 
 
 
+# spatial covariate (with mean 0)
+elev.fn <- function(x) x[,1]+x[,2]-1
 
-
-# spatial covariate
-elev.fn <- function(x) x[,1]+x[,2]
-
-
-# 2-dimensional integration over [-1, 1] square
+# 2-dimensional integration over unit square
 int2d <- function(alpha, delta=0.02) {
-  z <- seq(-1+delta/2, 1-delta/2, delta)
+  z <- seq(delta/2, 1-delta/2, delta)
   len <- length(z)
   cell.area <- delta*delta
   S <- cbind(rep(z, each=len), rep(z, times=len))
   sum(exp(alpha*elev.fn(S)) * cell.area)
   }
-
-
-
 
 
 

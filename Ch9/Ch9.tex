@@ -130,7 +130,7 @@ is ${\bf n(B)} \sim Multinomial(N, {\mathbf{\pi}} = (p_1, p_2, \dots,
 p_K))$ \citep{illian:2008}. The dependence among counts has virtually
 no practical consequence when the number of pixels is large. For
 example, if we have 100 pixels, the number of counts in one pixels
-tell you very little about the expected count in another
+tells you very little about the expected count in another
 pixel. However, if there are only 2 pixels, then clearly the number of
 points in one pixel tells you exactly how many will occur in the
 remaining pixel. To gain familiarity with the multinomial distribution
@@ -297,13 +297,12 @@ Fig.~\ref{ch9:fig:hetero}.
 
 \begin{small}
 \begin{verbatim}
-# spatial covariate
-# Elevation as a function of the coordinates at point x
-elev.fn <- function(x) x[,1]+x[,2]
+# spatial covariate (with mean 0)
+elev.fn <- function(x) x[,1]+x[,2]-1
 
-# 2-dimensional integration over [-1, 1] square
+# 2-dimensional integration over unit square
 int2d <- function(alpha, delta=0.02) {
-  z <- seq(-1+delta/2, 1-delta/2, delta)
+  z <- seq(delta/2, 1-delta/2, delta)
   len <- length(z)
   cell.area <- delta*delta
   S <- cbind(rep(z, each=len), rep(z, times=len))
@@ -311,20 +310,21 @@ int2d <- function(alpha, delta=0.02) {
   }
 
 # Simulate PP using rejection sampling
-set.seed(395)
+set.seed(300225)
 N <- 100
 count <- 1
-s <- matrix(NA, N, 2) # matrix to hold simulated activity centers
+s <- matrix(NA, N, 2)
 alpha <- 2 # parameter of interest
-Q <- max(c(exp(alpha*elev.min) / int2d(alpha),
-           exp(alpha*elev.max) / int2d(alpha))) # Rejection sampling bound
 while(count <= 100) {
-  x.c <- runif(1, -1, 1); y.c <- runif(1, -1, 1) # proposed activity center
+  x.c <- runif(1, 0, 1); y.c <- runif(1, 0, 1)
   s.cand <- cbind(x.c,y.c)
-  elev.min <- elev.fn(cbind(-1,-1)); elev.max <- elev.fn(cbind(1,1))
+  elev.min <- elev.fn(cbind(0,0))
+  elev.max <- elev.fn(cbind(1,1))
   pr <- exp(alpha*elev.fn(s.cand)) / int2d(alpha)
+  Q <- max(c(exp(alpha*elev.min) / int2d(alpha),
+             exp(alpha*elev.max) / int2d(alpha)))
   if(runif(1) < pr/Q) {
-    s[count,] <- s.cand # accepted proposals
+    s[count,] <- s.cand
     count <- count+1
     }
   }
@@ -357,7 +357,7 @@ negative-log-likelihood using \verb+R+'s \verb+optim+ function.
 \begin{verbatim}
 # Negative log-likelihood
 nll <- function(beta) {
-  -sum(beta*cov(S[,1], S[,2]) - log(int2d(beta)))
+  -sum(beta*elev.fn(s) - log(int2d(beta)))
   }
 starting.value <- 0
 fm <- optim(starting.value, nll, method="Brent",
@@ -368,7 +368,7 @@ c(Est=fm$par, SE=sqrt(1/fm$hessian)) # estimates and SEs
 
 
 Maximizing the likelihood took a small fraction of a second, and we
-obtained an estimate of $\hat{\alpha}=2.01$. Not bad! We could plug in
+obtained an estimate of $\hat{\alpha}=2.47$. We could plug in
 this estimate to our linear model at each point in the state-space to
 obtain the MLE for the intensity surface.
 
@@ -380,6 +380,12 @@ SCR models, the activity centers cannot be directly observed, but
 spatial re-captures, that is captures of individuals at
 multiple locations in space, provide us with the information needed to
 estimate these latent parameters.
+%This example should also have
+%illustrated the point that spatial covariates are rarely defined as
+%continuous functions as we did here. Furthermore, even when they are,
+%many multi-dimensional integration functions approximate the integral by
+%pretending as though the covariate was defined on a discrete grid of
+%small pixels.
 
 \subsection{Fitting inhomogeneous point process SCR model}
 
@@ -393,8 +399,8 @@ the previous example. Specifically, we will overlay a grid of
 traps upon the map shown in Fig.~\ref{ch9:fig:hetero}. We will then
 simulate capture histories conditional upon the activity centers shown
 on the map. Then, we will attempt to estimate the activity center
-locations as though we did not know where they were.
-
+locations as though we did not know where they were, as is the case in
+real applications.
 
 Here is some \verb+R+ code to simulate the encounter histories under a
 Poisson observation model, which would be appropriate if animals could
@@ -512,11 +518,9 @@ Density     &&&&& \\
 
 Discrete space versions of these models can be fitted using
 \verb+BUGS+. As discussed in Chapter 5, we can define $s_i$ as the
-pixel id, and use the 
-categorical distribution as a prior.
-
-A good example of this is in +cite{Kery capricaillie}. Here we present
-an analysis of the simulated data shown in the right panel of 
+pixel id, and use the categorical distribution as a prior. A good
+example of this is in +cite{Kery capricaillie}. Here we present
+an analysis of the simulated data shown in the right panel of
 Fig.~\ref{ch9:fig:hetero}. The \textbf{BUGS} code to fit the model is shown in
 the following panel.
 
@@ -555,7 +559,7 @@ D <- N/1 # unit square
 \end{verbatim}
 
 A complete {\bf R} script to conduct the analysis is presented in the
-online supplement. 
+online supplement.
 
 
 
