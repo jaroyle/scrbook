@@ -66,7 +66,7 @@ int2d <- function(alpha, delta=0.02) {
   }
 
 # Simulate PP using rejection sampling
-set.seed(3005)
+set.seed(300225)
 N <- 100
 count <- 1
 s <- matrix(NA, N, 2)
@@ -133,20 +133,6 @@ dev.off()
 
 
 
-# plot the simulated data
-png("../figs/elevMap.png", width=7, height=7, units="in", res=400)
-Sx <- seq(-1, 1, length=50)
-len <- length(Sx)
-S <- cbind(rep(Sx, each=len), rep(Sx, times=len))
-elev <- elev.fn(S)
-image(Sx, Sx, matrix(elev, len), col=rgb(0,seq(0.1,1,0.01),0,0.8),
-      xlab="Easting", ylab="Northing", main="Elevation map")
-box()
-points(s, pch=16)
-dev.off()
-
-
-
 
 
 
@@ -197,10 +183,13 @@ psi ~ dbeta(1,1)
 for(j in 1:nPix) {
   theta[j] <- exp(beta*elevation[j])
 }
-
 for(j in 1:nPix) {
   probs[j] <- theta[j]/sum(theta[])
 }
+#for(j in 1:nPix) {
+#  theta[j] <- exp(beta*elevation[j])
+#  probs[j] <- theta[j]/sum(theta[])
+#}
 
 for(i in 1:M) {
   w[i] ~ dbern(psi)
@@ -233,8 +222,7 @@ dat <- list(y=yz, elevation=elev, nPix=prod(dim(n.k)),
             M=nrow(yz), ntraps=nrow(X), Sgrid=S, grid=X)
 init <- function() {
     list(sigma=runif(1), lam0=runif(1), beta=rnorm(1),
-         s=
-         w=c(rep(1,100), rep(0,nz)), psi=1)
+         w=c(rep(1,100), rep(1,nz)), psi=1)
 }
 pars <- c("sigma", "lam0", "beta", "N")
 
@@ -245,3 +233,9 @@ jc <- coda.samples(jm, pars, n.iter=2000)
 plot(jc)
 
 summary(window(jc, start=1001))
+
+
+
+
+
+

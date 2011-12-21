@@ -2,7 +2,7 @@
 
 
 \chapter{State-space Covariates}
-%\markboth{State-space Covariates}{}
+\markboth{Chapter 9 }{}
 \label{chapt.state-space}
 
 \vspace{0.3cm}
@@ -292,7 +292,7 @@ covariates are more often measured on a discrete grid.}
 
 The following R commands demonstrate the use of rejection sampling to
 simulate an inhomogeneous point process for the covariate depicted in
-Fig.~\ref{ch9:fig:elevMap}.
+Fig.~\ref{ch9:fig:hetero}.
 
 
 \begin{small}
@@ -334,14 +334,14 @@ while(count <= 100) {
 
 \begin{figure}
 \centering
-\includegraphics[width=5in,height=2.5in]{figs/heteroPlots}%{figs/elevMap}
-\label{ch9:fig:elevMap}
+\includegraphics[width=5in,height=2.5in]{figs/heteroPlots}
+\label{ch9:fig:hetero}
 \caption{An example of a spatial covariate, say elevation, and a
   realization of a inhomogeneous binomial point process with $N$=100
   and $\mu(x) = exp(\alpha Elev)$ where $\alpha=2$.}
 \end{figure}
 
-The simulated data are shown in Fig~\ref{fig:elevMap}. High elevations
+The simulated data are shown in Fig~\ref{ch9:fig:hetero}. High elevations
 are represented by light green and low elevations by dark green. The
 activity centers of one hundred animals are shown as
 points, and it is clear that these simulated animals prefer the high
@@ -390,7 +390,7 @@ we can simply add the methods described above into our existing MCMC
 algorithm to simulate the posteriors of $\alpha$ conditional on the
 simulated values of $\mathbf{s}_i$. To demonstrate, we will continue with
 the previous example. Specifically, we will overlay a grid of
-traps upon the map shown in Fig.~\ref{ch9:fig:elevMap}. We will then
+traps upon the map shown in Fig.~\ref{ch9:fig:hetero}. We will then
 simulate capture histories conditional upon the activity centers shown
 on the map. Then, we will attempt to estimate the activity center
 locations as though we did not know where they were.
@@ -470,11 +470,11 @@ if(runif(1)< exp((ll.S.cand+prior.S.cand) - (ll.S+prior.S))) {
 \end{small}
 
 Applying this modified sampler to our data we obtain posterior
-distributions summarized in Table~\ref{tab:simIPP}. Mixing is good, and as usual,
+distributions summarized in Table~\ref{ch9:tab:simIPP}. Mixing is good, and as usual,
 life is very nice when we are working with simulated data.
 
 
-\comment{
+\begin{comment}
 
 # MCCM code
 
@@ -489,9 +489,9 @@ plot(mcmc(fm1$out))
 
 rejectionRate(mcmc(fm1$out))
 
+\end{comment}
 
 
-}
 
 
 
@@ -510,32 +510,53 @@ Density     &&&&& \\
 \label{ch9:tab:simIPP}
 \end{table}
 
-It is worth noting that these models can also be fitted using
-\verb+BUGS+ when the covariates are available in raster format. As
-mentioned previously, we can define $s_i$ as the pixel id, and use the
+Discrete space versions of these models can be fitted using
+\verb+BUGS+. As discussed in Chapter 5, we can define $s_i$ as the
+pixel id, and use the 
 categorical distribution as a prior.
 
-\begin{verbatim}
-s[i] ~ dcat(probs[])
-mu[i] <- exp(alpha*covariate[i])
-probs[k] = mu[i]/sum(mu[])
-\end{verbatim}
-
-A good example of this is in +cite{Kery capricaillie}. One must be
-aware, however, that for larger rasters, computing the denominator
-will be a ghastly slow process when done 50,000 times in MCMC, but
-this seems to run faster using \verb+JAGS+ than in \verb+BUGS+.
-
-[andy will have some stuff about this in Ch5]
-
-Here is a cool example.
-
+A good example of this is in +cite{Kery capricaillie}. Here we present
+an analysis of the simulated data shown in the right panel of 
+Fig.~\ref{ch9:fig:hetero}. The \textbf{BUGS} code to fit the model is shown in
+the following panel.
 
 \begin{verbatim}
 
+model{
+sigma ~ dunif(0, 1)
+lam0 ~ dunif(0, 5)
+beta ~ dnorm(0,0.1)
+psi ~ dbeta(1,1)
 
+for(j in 1:nPix) {
+  theta[j] <- exp(beta*elevation[j])
+}
+
+for(j in 1:nPix) {
+  probs[j] <- theta[j]/sum(theta[])
+}
+
+for(i in 1:M) {
+  w[i] ~ dbern(psi)
+  s[i] ~ dcat(probs[])
+  x0g[i] <- Sgrid[s[i],1]
+  y0g[i] <- Sgrid[s[i],2]
+  for(j in 1:ntraps) {
+    dist[i,j] <- sqrt(pow(x0g[i]-grid[j,1],2) + pow(y0g[i]-grid[j,2],2))
+    lambda[i,j] <- lam0*exp(-dist[i,j]*dist[i,j]/(2*sigma*sigma)) * w[i]
+    y[i,j] ~ dpois(lambda[i,j])
+    }
+  }
+
+N <- sum(w[])
+D <- N/1 # unit square
+}
 
 \end{verbatim}
+
+A complete {\bf R} script to conduct the analysis is presented in the
+online supplement. 
+
 
 
 \subsection{The jaguar data}
