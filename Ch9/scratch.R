@@ -52,17 +52,20 @@ dev.off()
 
 
 
-# spatial covariate (with mean 0)
-elev.fn <- function(x) x[,1]+x[,2]-1
+# Create a spatial covariate
 
-# 2-dimensional integration over unit square
-int2d <- function(alpha, delta=0.02) {
-  z <- seq(delta/2, 1-delta/2, delta)
-  len <- length(z)
-  cell.area <- delta*delta
-  S <- cbind(rep(z, each=len), rep(z, times=len))
-  sum(exp(alpha*elev.fn(S)) * cell.area)
-  }
+library(raster)
+
+set.seed(3453)
+cov1 <- spcov(v=30)$R
+image(matrix(cov1$cov1, 30, 30))
+
+rast <- raster(matrix(cov1$cov1, 30, 30))
+plot(rast)
+
+
+
+summary(cov1)
 
 # Simulate PP using rejection sampling
 set.seed(300225)
@@ -73,8 +76,8 @@ alpha <- 2 # parameter of interest
 while(count <= 100) {
   x.c <- runif(1, 0, 1); y.c <- runif(1, 0, 1)
   s.cand <- cbind(x.c,y.c)
-  elev.min <- elev.fn(cbind(0,0))
-  elev.max <- elev.fn(cbind(1,1))
+  elev.min <- min(cov1$cov1) #elev.fn(cbind(0,0))
+  elev.max <- max(cov1$cov1) #elev.fn(cbind(1,1))
   pr <- exp(alpha*elev.fn(s.cand)) / int2d(alpha)
   Q <- max(c(exp(alpha*elev.min) / int2d(alpha),
              exp(alpha*elev.max) / int2d(alpha)))
@@ -134,6 +137,19 @@ for(i in 1:nrow(n.k)) {
 }
 par(op)
 dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
