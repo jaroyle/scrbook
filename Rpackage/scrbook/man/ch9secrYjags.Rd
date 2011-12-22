@@ -1,5 +1,5 @@
 \name{ch9secrYjags}
-\alias{ch9jags}
+\alias{ch9secrYjags}
 \title{
   Fit IPP using secr and JAGS
 }
@@ -102,9 +102,13 @@ jags1 <- coda.samples(jm, pars, n.iter=2200)
 
 plot(jags1)
 summary(window(jags1, start=1001))
-}
+
 
 unlink(modfile)
+
+
+}
+
 
 
 }

@@ -383,8 +383,8 @@ ch9simData <- list(ch.secr=ch, ch.jags=yz, spcov.jags=dat, spcov.secr=msk,
                    traps=X)
 
 
-save(ch9simData, file="../Rpackage/scrbook/data/ch9simData.rda")
-promptData(ch9simData, filename="../Rpackage/scrbook/man/ch9simData.Rd")
+#save(ch9simData, file="../Rpackage/scrbook/data/ch9simData.rda")
+#promptData(ch9simData, filename="../Rpackage/scrbook/man/ch9simData.Rd")
 
 
 
@@ -469,12 +469,31 @@ pars <- c("sigma", "lam0", "beta", "N")
 # Obtain posterior samples. This takes a few minutes
 # Compile and adapt
 set.seed(03453)
-jm <- jags.model(modfile, jags.data, init, n.chains=2, n.adapt=200)
+jm <- jags.model(modfile, jags.data, init, n.chains=2, n.adapt=500)
 # MCMC
-jags1 <- coda.samples(jm, pars, n.iter=2200)
+jags1 <- coda.samples(jm, pars, n.iter=5500)
 
 plot(jags1)
-summary(window(jags1, start=1001))
+summary(window(jags1, start=1501))
 }
 
 unlink(modfile)
+
+
+
+
+
+
+
+
+
+
+
+
+# compare results
+
+library(scrbook)
+example(ch9secrYjags)
+
+
+
