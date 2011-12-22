@@ -52,17 +52,20 @@ dev.off()
 
 
 
-# spatial covariate (with mean 0)
-elev.fn <- function(x) x[,1]+x[,2]-1
+# Create a spatial covariate
 
-# 2-dimensional integration over unit square
-int2d <- function(alpha, delta=0.02) {
-  z <- seq(delta/2, 1-delta/2, delta)
-  len <- length(z)
-  cell.area <- delta*delta
-  S <- cbind(rep(z, each=len), rep(z, times=len))
-  sum(exp(alpha*elev.fn(S)) * cell.area)
-  }
+library(raster)
+
+set.seed(3453)
+cov1 <- spcov(v=30)$R
+image(matrix(cov1$cov1, 30, 30))
+
+rast <- raster(matrix(cov1$cov1, 30, 30))
+plot(rast)
+
+
+
+summary(cov1)
 
 # Simulate PP using rejection sampling
 set.seed(300225)
@@ -73,8 +76,8 @@ alpha <- 2 # parameter of interest
 while(count <= 100) {
   x.c <- runif(1, 0, 1); y.c <- runif(1, 0, 1)
   s.cand <- cbind(x.c,y.c)
-  elev.min <- elev.fn(cbind(0,0))
-  elev.max <- elev.fn(cbind(1,1))
+  elev.min <- min(cov1$cov1) #elev.fn(cbind(0,0))
+  elev.max <- max(cov1$cov1) #elev.fn(cbind(1,1))
   pr <- exp(alpha*elev.fn(s.cand)) / int2d(alpha)
   Q <- max(c(exp(alpha*elev.min) / int2d(alpha),
              exp(alpha*elev.max) / int2d(alpha)))
@@ -149,6 +152,19 @@ dev.off()
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Analysis using custom MCMC
 
 
@@ -156,7 +172,7 @@ dev.off()
 
 
 # Create trap locations
-xsp <- seq(-0.8, 0.8, by=0.2)
+xsp <- seq(0.2, 0.8, by=0.1)
 len <- length(xsp)
 X <- cbind(rep(xsp, each=len), rep(xsp, times=len))
 
@@ -228,6 +244,70 @@ cat("
 sink()
 
 
+
+
+
+
+
+
+
+# Analysis using secr
+library(secr)
+
+
+# Create a "traps" object
+Xs <- data.frame(X)
+colnames(Xs) <- c("x","y")
+secr.traps <- read.traps(data=Xs, detector="count")
+
+summary(secr.traps)
+
+# Huh?
+plot(secr.traps)
+
+plot.default(secr.traps, xlim=c(0,1), asp=1, pch="+")
+
+# Create a "capthist" object
+secr.caps <- matrix(NA, sum(y), 5)
+colnames(secr.caps) <- c("Session", "ID", "Occasion", "X", "Y")
+counter <- 0
+for(i in 1:nrow(y)) {
+    for(j in 1:ncol(y)) {
+        for(k in 1:dim(y)[3]) {
+            y.ijk <- y[i,j,k]
+            if(y.ijk==0)
+                next
+            for(v in 1:y.ijk) {
+                counter <- counter+1
+                secr.caps[counter,] <- c(1, i, k, X[j,1], X[j,2])
+            }
+        }
+    }
+}
+ch <- make.capthist(secr.caps, secr.traps, fmt="XY")
+plot(ch, tol=0.0005) # ouch
+
+# Make mask
+
+msk <- make.mask(secr.traps, buffer=0.2, spacing=.1, nx=100)
+summary(msk)
+plot(msk)
+
+summary(elev.fn(msk))
+
+covariates(msk) <- data.frame(elev=elev.fn(msk))
+
+m0 <- secr.fit(ch, mask=msk, start=c(log(N), log(lam0), log(sigma)))
+
+m1 <- secr.fit(ch, model=D~elev,
+               mask=msk, start=c(log(N), 0, log(lam0), log(sigma)))
+
+
+m1
+
+
+expected.n(m1)
+region.N(m1, se.N=TRUE)
 
 
 

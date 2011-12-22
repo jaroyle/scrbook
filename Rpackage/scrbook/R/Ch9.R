@@ -23,14 +23,10 @@ int2d <- function(alpha, delta=0.02) {
 spcov <- function(B=1, v=20) {
     R <- data.frame(x=rep(seq(0, B, length=v), each=v),
                     y=rep(seq(0, B, length=v), times=v))
-    elev <- function(x, y) (x-.5)+(y-.5) # Elevation is a function of x,y
     D<-e2dist(R,R)
     V<-exp(-D/2)
     Vi<-solve(V)
-
     cov1<-t(chol(V))%*%rnorm(nrow(R))
-    image(matrix(cov1,20,20))
-    R$elev <- apply(R[,1:2], 1, function(x) elev(x[1], x[2]))
     R$cov1<-cov1-mean(cov1)
     cov1.fn<-function(newpt,cov1,cov1.coords=cbind(R$x,R$y),Vi){
         newpt<-matrix(newpt,ncol=2)
@@ -38,7 +34,7 @@ spcov <- function(B=1, v=20) {
         pred<-k%*%Vi%*%cov1
         as.numeric(pred)
     }
-    return(cov1.fn)
+    return(list(R=R, Vi=Vi, cov1.fn=cov1.fn))
 }
 
 
