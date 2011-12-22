@@ -469,12 +469,12 @@ pars <- c("sigma", "lam0", "beta", "N")
 # Obtain posterior samples. This takes a few minutes
 # Compile and adapt
 set.seed(03453)
-jm <- jags.model(modfile, jags.data, init, n.chains=2, n.adapt=500)
+jm <- jags.model(modfile, jags.data, init, n.chains=2, n.adapt=1000)
 # MCMC
-jags1 <- coda.samples(jm, pars, n.iter=5500)
+jags1 <- coda.samples(jm, pars, n.iter=11000)
 
 plot(jags1)
-summary(window(jags1, start=1501))
+summary(window(jags1, start=2001))
 }
 
 unlink(modfile)
@@ -497,3 +497,42 @@ example(ch9secrYjags)
 
 
 
+summary(window(jags1, start=10001))
+gelman.diag(window(jags1, start=10001))
+
+
+jags.est <- summary(window(jags1, start=10001))
+jags.r <- cbind(jags.est$stat[,1:2], jags.est$quant[,c(1,5)])
+
+secr.est <- predict(secr1)
+secr.r <- cbind(secr.est[2:3,2:5])
+secr.r <- rbind(beta=as.numeric(coef(secr1)[2,]), secr.r)
+secr.r <- rbind(region.N(secr1)[2,1:4], secr.r)
+
+
+comp.out <- data.frame(rbind(as.matrix(secr.r), jags.r))
+comp.out <- cbind(Software=c(rep("secr",4), rep("JAGS",4)),
+      Parameter=c("$N$", "$\\beta$", "$\\lambda_0$", "$\\sigma$",
+                  "$N$", "$\\beta$", "$\\lambda_0$", "$\\sigma$"),
+      comp.out)
+
+colnames(comp.out) <- c("Software", "Par", "Est.", "SD", "lower", "upper")
+
+
+sink("comp.out.tex")
+cat("
+\\begin{table}
+\\centering
+\\caption{Comparision of \\jags~and \\secr~results}
+\\begin{tabular}{llrrrr}
+\\hline
+")
+write.table(format(comp.out, digits=2, nsmall=4, scientific=FALSE),
+            quote=FALSE, sep=" & ", eol=" \\\\\n ", row.names=FALSE)
+cat("
+\\hline
+\\end{tabular}
+\\label{ch9:tab:simIPP}
+\\end{table}
+")
+sink()

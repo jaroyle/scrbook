@@ -5,7 +5,9 @@
     (TeX-add-symbols
      "R"
      "bugs"
-     "secr")
+     "jags"
+     "secr"
+     "scrbook")
     (TeX-run-style-hooks
      "verbatim"
      "natbib"
