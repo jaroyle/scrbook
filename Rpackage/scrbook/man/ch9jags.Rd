@@ -1,4 +1,4 @@
-\name{ch9jags}
+\name{ch9secrYjags}
 \alias{ch9jags}
 \title{
   Example of fitting inhomogeneous point process using JAGS

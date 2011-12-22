@@ -54,18 +54,21 @@ dev.off()
 
 # Create a spatial covariate
 
-library(raster)
-
-set.seed(3453)
-cov1 <- spcov(v=30)$R
-image(matrix(cov1$cov1, 30, 30))
-
-rast <- raster(matrix(cov1$cov1, 30, 30))
-plot(rast)
 
 
 
-summary(cov1)
+
+# spatial covariate (with mean 0)
+elev.fn <- function(x) x[,1]+x[,2]-1
+
+# 2-dimensional integration over unit square
+int2d <- function(alpha, delta=0.02) {
+  z <- seq(delta/2, 1-delta/2, delta)
+  len <- length(z)
+  cell.area <- delta*delta
+  S <- cbind(rep(z, each=len), rep(z, times=len))
+  sum(exp(alpha*elev.fn(S)) * cell.area)
+  }
 
 # Simulate PP using rejection sampling
 set.seed(300225)
@@ -76,8 +79,8 @@ alpha <- 2 # parameter of interest
 while(count <= 100) {
   x.c <- runif(1, 0, 1); y.c <- runif(1, 0, 1)
   s.cand <- cbind(x.c,y.c)
-  elev.min <- min(cov1$cov1) #elev.fn(cbind(0,0))
-  elev.max <- max(cov1$cov1) #elev.fn(cbind(1,1))
+  elev.min <- elev.fn(cbind(0,0))
+  elev.max <- elev.fn(cbind(1,1))
   pr <- exp(alpha*elev.fn(s.cand)) / int2d(alpha)
   Q <- max(c(exp(alpha*elev.min) / int2d(alpha),
              exp(alpha*elev.max) / int2d(alpha)))
@@ -251,6 +254,84 @@ sink()
 
 
 
+
+
+
+
+
+
+
+# Discrete space
+
+
+library(scrbook)
+library(raster)
+
+set.seed(3453)
+v <- 21
+dat <- spcov(v=v)$R
+npix <- nrow(dat)
+colnames(dat) <- c("x","y","elev")
+image(t(matrix(dat$elev, v, v)))
+
+head(dat)
+
+# Simulate IPP
+set.seed(300225)
+N <- 50
+alpha <- 2
+dat$cp <- exp(alpha*dat$elev) / sum(exp(alpha*dat$elev))
+s.tmp <- rmultinom(1, N, dat$cp) # a single realization to be ignored later
+image(t(matrix(dat$elev, v, v)))
+points(dat[s.tmp>0,c("x","y")])
+
+
+# Trap locations
+xsp <- seq(0.3, 0.7, 0.05)
+X <- cbind(rep(xsp, each=length(xsp)), rep(xsp, times=length(xsp)))
+
+
+
+
+
+
+# Simulate capture histories, and augment the data
+npix <- nrow(dat)
+ntraps <- nrow(X)
+T <- 5
+y <- array(NA, c(N, ntraps))
+
+nz <- 50 # augmentation
+M <- nz+nrow(y)
+yz <- array(0, c(M, ntraps))
+
+sigma <- 0.1  # half-normal scale parameter
+lam0 <- 0.8   # basal encounter rate
+lam <- matrix(NA, N, ntraps)
+
+s <- matrix(NA, N, 3)
+colnames(s) <- c("pixID", "x", "y")
+
+set.seed(5588)
+for(i in 1:N) {
+    s.i <- sample(1:npix, 1, prob=dat$cp)
+    sx <- dat[s.i, "x"]
+    sy <- dat[s.i, "y"]
+    s[i,] <- c(s.i, sx, sy)
+    for(j in 1:ntraps) {
+        distSq <- (sx-X[j,1])^2 + (sy - X[j,2])^2
+        lam[i,j] <- exp(-distSq/(2*sigma^2)) * lam0
+        y[i,j] <- rpois(1, lam[i,j])
+    }
+}
+yz[1:nrow(y),] <- y # Fill
+
+sum(y)
+
+
+
+
+
 # Analysis using secr
 library(secr)
 
@@ -273,14 +354,12 @@ colnames(secr.caps) <- c("Session", "ID", "Occasion", "X", "Y")
 counter <- 0
 for(i in 1:nrow(y)) {
     for(j in 1:ncol(y)) {
-        for(k in 1:dim(y)[3]) {
-            y.ijk <- y[i,j,k]
-            if(y.ijk==0)
-                next
-            for(v in 1:y.ijk) {
-                counter <- counter+1
-                secr.caps[counter,] <- c(1, i, k, X[j,1], X[j,2])
-            }
+        y.ij <- y[i,j]
+        if(y.ij==0)
+            next
+        for(v in 1:y.ij) {
+            counter <- counter+1
+            secr.caps[counter,] <- c(1, i, 1, X[j,1], X[j,2])
         }
     }
 }
@@ -289,57 +368,50 @@ plot(ch, tol=0.0005) # ouch
 
 # Make mask
 
-msk <- make.mask(secr.traps, buffer=0.2, spacing=.1, nx=100)
+msk <- make.mask(secr.traps, buffer=0.325, spacing=.05, nx=v)
 summary(msk)
 plot(msk)
 
-summary(elev.fn(msk))
+ssArea <- attr(msk, "area")*nrow(msk)
 
-covariates(msk) <- data.frame(elev=elev.fn(msk))
-
-m0 <- secr.fit(ch, mask=msk, start=c(log(N), log(lam0), log(sigma)))
-
-m1 <- secr.fit(ch, model=D~elev,
-               mask=msk, start=c(log(N), 0, log(lam0), log(sigma)))
+covariates(msk) <- data.frame(elev=dat$elev[order(dat$y, dat$x)])
 
 
-m1
 
 
-expected.n(m1)
-region.N(m1, se.N=TRUE)
+ch9simData <- list(ch.secr=ch, ch.jags=yz, spcov.jags=dat, spcov.secr=msk,
+                   traps=X)
+
+
+save(ch9simData, file="../Rpackage/scrbook/data/ch9simData.rda")
+promptData(ch9simData, filename="../Rpackage/scrbook/man/ch9simData.Rd")
 
 
 
 
 
-# Analysis in JAGS
+library(secr)
+library(rjags)
+
+data(ch9simData)
+
+ch <- ch9simData$ch.secr
+msk <- ch9simData$spcov.secr
 
 
-# 3x3 grid of traps centered
-xc <- seq(0.3, 0.7, 0.2)
-X <- cbind(rep(xc, each=3), rep(xc, times=3))
+# SECR analysis
 
-lam0 <- 2
-sigma <- 0.15
+secr1 <- secr.fit(ch, model=D~elev, mask=msk)
 
-set.seed(32235)
-y <- matrix(NA, nrow(s), nrow(X))
-for(i in 1:nrow(s)) {
-    for(j in 1:nrow(X)) {
-        dist <- sqrt((s[i,1]-X[j,1])^2 + (s[i,2]-X[j,2])^2)
-        lam <- lam0 * exp(-dist^2/(2*sigma*sigma))
-        y[i,j] <- rpois(1, lam)
-    }
-}
-
-sum(y)
-
-nz <- 50
-yz <- matrix(0, nrow(y)+nz, ncol(y))
-yz[1:nrow(y),] <- y
+region.N(secr1, se.N=TRUE)
 
 
+
+
+
+# JAGS analysis
+
+# JAGS model
 sink("ippDiscrete.txt")
 cat("
 model{
@@ -350,14 +422,8 @@ psi ~ dbeta(1,1)
 
 for(j in 1:nPix) {
   theta[j] <- exp(beta*elevation[j])
-}
-for(j in 1:nPix) {
   probs[j] <- theta[j]/sum(theta[])
 }
-#for(j in 1:nPix) {
-#  theta[j] <- exp(beta*elevation[j])
-#  probs[j] <- theta[j]/sum(theta[])
-#}
 
 for(i in 1:M) {
   w[i] ~ dbern(psi)
@@ -380,30 +446,35 @@ sink()
 
 
 
-
-
-library(rjags)
-
 modfile <- "ippDiscrete.txt"
-file.show(modfile)
-dat <- list(y=yz, elevation=elev, nPix=prod(dim(n.k)),
-            M=nrow(yz), ntraps=nrow(X), Sgrid=S, grid=X)
+
+jags.data <- with(ch9simData, {
+    list(y=ch.jags, elevation=drop(spcov.jags$elev),
+            nPix=nrow(spcov.jags),
+            M=nrow(ch.jags), ntraps=nrow(traps),
+            Sgrid=as.matrix(spcov.jags[,1:2]),
+            grid=traps)
+    })
+str(jags.data)
+
 init <- function() {
     list(sigma=runif(1), lam0=runif(1), beta=rnorm(1),
-         w=c(rep(1,100), rep(1,nz)), psi=1)
+         s=sample.int(jags.data$nPix, jags.data$M, replace=TRUE),
+         w=rep(1, jags.data$M), psi=1)
 }
+str(init())
+
 pars <- c("sigma", "lam0", "beta", "N")
 
+# Obtain posterior samples. This takes a few minutes
+# Compile and adapt
+set.seed(03453)
+jm <- jags.model(modfile, jags.data, init, n.chains=2, n.adapt=200)
+# MCMC
+jags1 <- coda.samples(jm, pars, n.iter=2200)
 
-jm <- jags.model(modfile, dat, init, n.chains=2, n.adapt=500)
-jc <- coda.samples(jm, pars, n.iter=2000)
+plot(jags1)
+summary(window(jags1, start=1001))
+}
 
-plot(jc)
-
-summary(window(jc, start=1001))
-
-
-
-
-
-
+unlink(modfile)
