@@ -283,16 +283,17 @@ alpha <- 2
 dat$cp <- exp(alpha*dat$elev) / sum(exp(alpha*dat$elev))
 s.tmp <- rmultinom(1, N, dat$cp) # a single realization to be ignored later
 
-png("figs/discrete.png", width=7, height=7, units="in", res=400)
-image(t(matrix(dat$elev, v, v)))
-points(dat[s.tmp>0,c("x","y")], cex=s.tmp[s.tmp>0])
-box()
-dev.off()
-
 # Trap locations
 xsp <- seq(0.3, 0.7, 0.05)
 X <- cbind(rep(xsp, each=length(xsp)), rep(xsp, times=length(xsp)))
 
+
+png("figs/discrete.png", width=7, height=7, units="in", res=400)
+image(t(matrix(dat$elev, v, v)))
+points(dat[s.tmp>0,c("x","y")], cex=s.tmp[s.tmp>0])
+points(X, pch="+", cex=0.5)
+box()
+dev.off()
 
 
 
