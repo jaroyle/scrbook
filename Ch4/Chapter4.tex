@@ -599,16 +599,19 @@ as a 2-dimensional array, an $\mbox{\tt nind} \times \mbox{\tt
 conventional capture-recapture model, but not for spatial
 capture-recapture models.  For SCR models we must preserve the spatial
 information in the encounter history information. We will routinely
-analyze data in 3 standard formats:
-
+analyze data from 3 standard formats:
 \begin{itemize}
-\item[(1)] Basic 2-dimensional data format, which is an nind x ntraps encounter frequency matrix such as that simulated previously; 
-\item[(2)] The maximally informative 3-dimensional array which we establish here the convention that it has dimensions nind x nperiods x ntraps and 
-\item[(3)] We use a compact format - the ``SCR flat format'' - which we describe below (Section XYZ wolverine XYZ).
+\item[(1)] The basic 2-dimensional data format, which is an \mbox{\tt
+    nind} $\times$ \mbox{\tt ntraps} encounter frequency matrix such as that simulated previously; 
+\item[(2)] The maximally informative 3-dimensional array which we
+  establish here the 
+convention that it has dimensions \mbox{\tt nind} $\times$ \mbox{\tt
+  nperiods} $\times$ \mbox{\tt ntraps} and 
+\item[(3)] We use a compact format - the ``SCR flat format'' - which
+  we describe below  in section \ref{scr0.sec.wolverine}.
 \end{itemize}
-
-To simulate data in the most informative format - the ``3-d array'' - we can use the R commands given previously but replace the last 4 lines with the following: 
-
+To simulate data in the most informative format - the ``3-d array'' -
+we can use the {\bf R} commands given previously but replace the last 4 lines with the following: 
 \begin{verbatim}
 Y<-array(NA,dim=c(N,K,ntraps))
 for(i in 1:nrow(Y)){
@@ -617,10 +620,15 @@ for(j in 1:ntraps){
 }
 }
 \end{verbatim}
-
-We see that a collection of $K$ binary encounter events are generated for {\it each} individual and for {\it each} trap.  The probabilities have those Bernoulli trials are computed based on the distance from each individuals home range center and the trap (see calculation above), and those are housed in the matrix probcap. Our data simulator function \mbox{\tt simSRC0.fn} will return the full 3-d array if \mbox{\tt array3d=TRUE} is specified in the function call.
-To recover the 2-d matrix from the 3-d array, and subset the 3-d array to individuals that were captured, we do this:
-
+We see that a collection of $K$ binary encounter events are generated
+for {\it each} individual and for {\it each} trap.  The probabilities
+have those Bernoulli trials are computed based on the distance from
+each individuals home range center and the trap (see calculation
+above), and those are housed in the matrix probcap. Our data simulator
+function \mbox{\tt simSRC0.fn} will return the full 3-d array if
+\mbox{\tt array3d=TRUE} is specified in the function call.  To recover
+the 2-d matrix from the 3-d array, and subset the 3-d array to
+individuals that were captured, we do this:
 \begin{verbatim}
 Y2d<- apply(Y,c(1,3),sum) # sum over the ``replicates'' dimension (2nd margin of the array)
 ncaps<-apply(Y2d,1,sum)   # compute how many times each individual was captured
@@ -631,8 +639,18 @@ Y<-Y[ncaps>0,,]           # keep those individuals that were captured
 
 \section{Fitting an SCR Model in BUGS}
 \label{scr0.sec.winbugs1}
-Clearly if we somehow knew the value of $N$ then we could fit this model directly because, in that case, it is a special kind of logistic regression model - one with a random effect, but that enters into the model in a peculiar fashion - and also with a distribution (uniform) which we don't usually think of as standard for random effects models.  So our aim here is to analyze the known-N problem, using our simulated data, as an incremental step in our progress toward fitting more generally useful models.
-To begin, we use our simulator to grab a data set and then harvest the elements of the resulting object for further analysis. 
+
+Clearly if we somehow knew the value of $N$ then we could fit this
+model directly because, in that case, it is a special kind of logistic
+regression model - one with a random effect, but that enters into the
+model in a peculiar fashion - and also with a distribution (uniform)
+which we don't usually think of as standard for random effects models.
+So our aim here is to analyze the known-$N$ problem, using our simulated
+data, as an incremental step in our progress toward fitting more
+generally useful models.
+
+To begin, we use our simulator to grab a data set and then harvest the
+elements of the resulting object for further analysis.
 \begin{verbatim}
 data<-simSCR0.fn(discard0=FALSE,sd=2013)
 y<-data$Y
@@ -647,26 +665,39 @@ Xu<-data$xlim[2]
 Yu<-data$ylim[2]
 \end{verbatim}
 
-Note that we specify \mbox{\tt discard0 = FALSE} so that we have a ''complete'' data set, i.e., one with the all-zero encounter histories corresponding to uncaptured individuals. Now, within an R session, we can create the BUGS model file and fit the model using the following commands. This model describes the half-normal detection model but it would be trivial to modify that to various others including the logistic described above. One consequence of using the half-normal is that we have to constrain the encounter probability to be in $[0,1]$ which we do here by defining \mbox{\tt alpha0} to be the logit of the intercept parameter \mbox{\tt p0}. Note that the distance covariate is computed within the BUGS model specification given the matrix of trap locations, \mbox{\tt X}, which is provided to WinBUGS as data. 
+Note that we specify \mbox{\tt discard0 = FALSE} so that we have a
+"complete" data set, i.e., one with the all-zero encounter histories
+corresponding to uncaptured individuals. Now, within an R session, we
+can create the BUGS model file and fit the model using the following
+commands. This model describes the half-normal detection model but it
+would be trivial to modify that to various others including the
+logistic described above. One consequence of using the half-normal is
+that we have to constrain the encounter probability to be in $[0,1]$
+which we do here by defining \mbox{\tt alpha0} to be the logit of the
+intercept parameter \mbox{\tt p0}. Note that the distance covariate is
+computed within the BUGS model specification given the matrix of trap
+locations, \mbox{\tt X}, which is provided to WinBUGS as data.
+{\small 
 \begin{verbatim}
 cat("
 model {
 alpha0~dnorm(0,.1)
 logit(p0)<- alpha0
-beta~dnorm(0,.1)
+theta~dnorm(0,.1)
 for(i in 1:N){
  s[i,1]~dunif(Xl,Xu)
  s[i,2]~dunif(Yl,Yu) 
 for(j in 1:J){
 d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
 y[i,j] ~ dbin(p[i,j],K)
-p[i,j]<- p0*exp(- beta*d[i,j]*d[i,j])
+p[i,j]<- p0*exp(- theta*d[i,j]*d[i,j])
 }
 }
 
 }
 ",file = "SCR0a.txt")
 \end{verbatim}
+}
 
 Next we do a number of organizational activities including bundling the data for WinBUGS, defining some initial values, the parameters to monitor and some basic MCMC settings. 
 We choose initial values for the activity centers ${\bf s}$ by generating uniform random numbers in the state-space but, for the observed individuals, we replace those values by each individual's mean trap coordinate for all encounters
@@ -680,11 +711,11 @@ sst[i,2]<- mean( X[y[i,]>0,2] )
 
 data <- list (y=y,X=X,K=K,N=nind,J=J,Xl=Xl,Yl=Yl,Xu=Xu,Yu=Yu)
 inits <- function(){
-  list (alpha0=rnorm(1,-4,.4),beta=runif(1,1,2),s=sst)
+  list (alpha0=rnorm(1,-4,.4),theta=runif(1,1,2),s=sst)
 }
 
 library("R2WinBUGS")
-parameters <- c("alpha0","beta")
+parameters <- c("alpha0","theta")
 nthin<-1
 nc<-3
 nb<-1000
@@ -692,9 +723,16 @@ ni<-2000
 out <- bugs (data, inits, parameters, "SCR0a.txt", n.thin=nthin,n.chains=nc,
  n.burnin=nb,n.iter=ni,debug=TRUE,working.dir=getwd())
 \end{verbatim}
-There is little to say about the preceding basic operations other than to suggest that the interested reader explore the output and additional analyses by running the script provided in the Web Supplement. 
-We ran 1000 burn-in and 1000 after burn-in, 3 chains, to obtain 3000 posterior samples.  Because we know N for this particular data set we only have 2 parameters of the detection model to summarize (\mbox{\tt alpha0} and \mbox{\tt beta}).  When the object \mbox{\tt out} is produced we print a summary of the results as follows:
 
+There is little to say about the preceding basic operations other than
+to suggest that the interested reader explore the output and
+additional analyses by running the script provided in the Web
+Supplement.  We ran $1000$ burn-in and $1000$ after burn-in, 3 chains,
+to obtain 3000 posterior samples.  Because we know $N$ for this
+particular data set we only have 2 parameters of the detection model
+to summarize (\mbox{\tt alpha0} and \mbox{\tt theta}).  When the
+object \mbox{\tt out} is produced we print a summary of the results as
+follows:
 \begin{verbatim}
 > print(out,digits=3)
 Inference for Bugs model at "SCR0a.txt", fit using WinBUGS,
@@ -702,7 +740,7 @@ Inference for Bugs model at "SCR0a.txt", fit using WinBUGS,
  n.sims = 3000 iterations saved
             mean     sd    2.5%     25%    50%     75%   97.5%  Rhat n.eff
 alpha0    -2.496  0.224  -2.954  -2.648  -2.48  -2.340  -2.091 1.013   190
-beta       2.442  0.419   1.638   2.145   2.44   2.721   3.303 1.005   530
+theta      2.442  0.419   1.638   2.145   2.44   2.721   3.303 1.005   530
 deviance 292.803 21.155 255.597 277.500 291.90 306.000 339.302 1.006   380
 
 For each parameter, n.eff is a crude measure of effective sample size,
@@ -713,14 +751,38 @@ pD = -138.8 and DIC = 154.0
 DIC is an estimate of expected predictive error (lower deviance is better).
 \end{verbatim}
 
-We know the data were generated with alpha0 = -2.5 and beta = -2. The estimates look reasonably close to those data-generating values and we probably feel pretty good about the performance of the Bayesian analysis and MCMC algorithm that WinBUGS cooked-up based on our sample size of 1 data set.  It is worth noting that the Rhat statistics indicate reasonable convergence but, as a practical matter, we might choose to run the MCMC algorithm for additional time to bring these closer to 1.0 and to increase the effective posterior sample size (n.eff). Other summary output includes ``deviance'' and related things including the deviance information criterion (DIC). We discuss these things in chapter XXXX model selection XXXX. 
+We know the data were generated with \mbox{\tt alpha0} $= -2.5$ and
+\mbox{\tt theta = -2}. The estimates look reasonably close to those
+data-generating values and we probably feel pretty good about the
+performance of the Bayesian analysis and MCMC algorithm that WinBUGS
+cooked-up based on our sample size of 1 data set.  It is worth noting
+that the Rhat statistics indicate reasonable convergence but, as a
+practical matter, we might choose to run the MCMC algorithm for
+additional time to bring these closer to 1.0 and to increase the
+effective posterior sample size (\mbox{\tt n.eff}). Other summary output includes
+``deviance'' and related things including the deviance information
+criterion (DIC). We discuss these things in chapter XXXX.
+
 
 
 \section{Unknown N}
 \label{scr0.sec.unknownN}
 
-In all real applications N is unknown and that fact is kind of an important feature of the capture-recapture problem!  We handled this important issue in Chapter 3 using the method of data augmentation which we apply here to achieve a realistic analysis of Model SCR0. As with the basic closed population models considered previously, we formulate the problem here by augmenting our observed data set with a number of ``all zero'' encounter histories - what we referred to in Chapter 3 as potential individuals. If $n$ is the number of observed individuals, then let $M-n$ be the number of potential individuals in the data set. For the basic $y[i,j]$ data structure (individuals x traps encounter frequencies) we simply add additional rows of ``all 0'' observations to that data set. This is because such ``individuals'' are unobserved, and therefore necessarily have $y[i,j]=0$ for all j.  A data set, say with 4 traps and 6 individuals, augmented with 4 pseudo-individuals therefore might look like this:
-
+In all real applications $N$ is unknown and that fact is kind of an
+important feature of the capture-recapture problem!  We handled this
+important issue in chapter 3 using the method of data augmentation
+which we apply here to achieve a realistic analysis of Model SCR0. As
+with the basic closed population models considered previously, we
+formulate the problem here by augmenting our observed data set with a
+number of ``all zero'' encounter histories - what we referred to in
+Chapter 3 as potential individuals. If $n$ is the number of observed
+individuals, then let $M-n$ be the number of potential individuals in
+the data set. For the basic $y_{ij}$ data structure (individuals x
+traps encounter frequencies) we simply add additional rows of ``all
+0'' observations to that data set. This is because such
+``individuals'' are unobserved, and therefore necessarily have
+$y_{ij}=0$ for all $j$.  A data set, say with 4 traps and 6 individuals,
+augmented with 4 pseudo-individuals therefore might look like this:
 \begin{verbatim}
       trap1 trap2 trap3 trap4 
  [1,]     1     0     0     0
@@ -734,10 +796,17 @@ In all real applications N is unknown and that fact is kind of an important feat
  [9,]     0     0     0     0
 [10,]     0     0     0     0
 \end{verbatim}
+We typically have more than 4 traps and, if we're fortunate, many more
+individuals in our data set.
 
-We typically have more than 4 traps and, if we're fortunate, many more individuals in our data set. 
-
-For the augmented data, we introduce a set of binary latent variables (the data augmentation variables), $z[i]$, and the model is extended to describe $\Pr(z(i] = 1)$ which is, in the context of this problem, the probability that an individual in the augmented data set is a member of the population that was sampled. In other words, if $z[i]=1$ for one of the ``all zero'' encounter histories, this is implied to be a sampling zero whereas observations for which $z[i]=0$ are ``structural zeros'' under the model. 
+For the augmented data, we introduce a set of binary latent variables
+(the data augmentation variables), $z_{i}$, and the model is extended
+to describe $\Pr(z_{i} = 1)$ which is, in the context of this problem,
+the probability that an individual in the augmented data set is a
+member of the population that was sampled. In other words, if $z_{i}=1$
+for one of the ``all zero'' encounter histories, this is implied to be
+a sampling zero whereas observations for which $z_{i}=0$ are
+``structural zeros'' under the model.
 
 How big does the augmented data set have to be? We discussed this
 issue in Chapter 3 where we noted that the size of the data set is
@@ -885,6 +954,8 @@ We find that JAGS seems to be 20-30\% faster for the basic SCR model which the r
 
 
 \section{Case Study: Wolverine Camera Trapping Study}
+\label{scr0.sec.wolverine}
+
 We provide an analysis here of A. Magoun's wolverine data
 \citep{magoun_etal:2011, royle_etal:2011}. The study took place in SE
 Alaska (Figure \ref{scr0.fig.wolverinelocs}) where 37 cameras were
