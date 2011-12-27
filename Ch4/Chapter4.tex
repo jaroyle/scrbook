@@ -592,6 +592,7 @@ The {\bf R} object \mbox{\tt data} is a list, so let's take a look at what's in 
 
 
 \subsection{Formatting and manipulating real data sets}
+\label{scr0.sec.formats}
 
 Conventional capture-recapture data are easily stored and manipulated
 as a 2-dimensional array, an $\mbox{\tt nind} \times \mbox{\tt
@@ -1013,18 +1014,18 @@ library \mbox{\tt rjags} \citep{plummer:2009} which has a slightly different
 implementation that we demonstrate here as we reanalyze the simulated
 data set in the previous section (note: the same {\bf R} commands are used
 to generate the data and package the data, inits and parameters to
-monitor). The function jags.model is used to initialize the model and
+monitor). The function \mbox{\tt jags.model} is used to initialize the model and
 run the MCMC algorithm for a period in which adaptive rejection (???)
 sampling is used. Then the Markov chains are updated using
-coda.samples() to obtain posterior samples for analysis, as follows:
-
+\mbox{\tt coda.samples()} to obtain posterior samples for analysis, as follows:
 \begin{verbatim}
 jm<- jags.model("SCR0a.txt", data=data, inits=inits, n.chains=nc,
                  n.adapt=nb))
 jm<- coda.samples(jm, parameters, n.iter=ni-nb, thin=nthin)
 \end{verbatim}
-
-We find that JAGS seems to be 20-30\% faster for the basic SCR model which the reader can evaluate using the script jags.winbugs.R in the R package. 
+We find that JAGS seems to be 20-30\% faster for the basic SCR model
+which the reader can evaluate using the script \mbox{\tt
+  jags.winbugs.R} in the {\bf R} package XYZ. 
 
 
 \section{Case Study: Wolverine Camera Trapping Study}
@@ -1035,9 +1036,11 @@ We provide an analysis here of A. Magoun's wolverine data
 Alaska (Figure \ref{scr0.fig.wolverinelocs}) where 37 cameras were
 operational for variable periods of time (min = 5 days, max = 108
 days, median = 45 days).  A consequence of this is that the binomial
-sample size $K$ (see Eq. XXXX) is variable for each camera. Thus, we
+sample size $K$ (see Eq. \ref{scr0.eq.bin})
+ is variable for each camera. Thus, we
 must provide a matrix of sample sizes as data to BUGS and modify the
-model specification in sec. xxxx accordingly. Our treatment of the
+model specification in sec. \ref{scr0.sec.unknownN}
+accordingly. Our treatment of the
 data here is based on the analysis of  \citet{royle_etal:2011}.
 
 \begin{figure}
@@ -1048,8 +1051,21 @@ data here is based on the analysis of  \citet{royle_etal:2011}.
 \label{scr0.fig.wolverinelocs}
 \end{figure}
 
-To carry-out an analysis of these data, we require the matrix of trap coordinates and the encounter history data.  We store data in an efficient file format which is easily manipulated and also used as the input file format in our custom R script and SPACECAP (this is the ``spacecap flat format'' see section XYZ above). To illustrate this format, the wolverine data are available as an encounter data R object named ``wcaps'' which has 3 columns and 115 rows, each representing a unique encounter event including the trap identity, the individual identity and the sample ID.  The first 10 rows of this matrix are as follows:
-
+To carry-out an analysis of these data, we require the matrix of trap
+coordinates and the encounter history data.  We store data in an
+the
+``scr flat format'' (see sec.
+\ref{scr0.sec.formats}
+ above), an
+efficient file format which is easily manipulated and also used as the
+input file format in our custom {\bf R} script (ch. xxx) and SPACECAP \citep{gopalaswamy_etal:2012}.
+ To illustrate this
+format, the wolverine data are available as an encounter data {\bf R} object
+named ``\mbox{\tt wcaps}'' which has 3 columns and 115 rows, each representing a
+unique encounter event including the trap identity, the individual
+identity and the sample occasion index (\mbox{\tt sample}).  
+The first 10 rows of this matrix are as
+follows:
 \begin{verbatim}
 
 > wcaps
@@ -1067,11 +1083,42 @@ To carry-out an analysis of these data, we require the matrix of trap coordinate
 
 \end{verbatim}
 
-This ``encounter data file'' contains 1 row for each unique individual/trap encounter, and 3 variables (columns): trapid is an integer that runs from 1:ntraps, individual runs from 1:nind and sample runs from 1:nperiods. Often (as the case here) ``samples'' will correspond to daily sample intervals. The variable trapid will have to correspond to the row of a matrix containing the trap coordinates - a file called traplocs.csv on the web supplement.
+This ``encounter data file'' contains 1 row for each unique
+individual/trap encounter, and 3 variables (columns): trapid is an
+integer that runs from \mbox{\tt 1:ntraps}, individual runs from
+\mbox{\tt 1:nind} and
+sample runs from \mbox{\tt 1:nperiods}. Often (as the case here) ``sample'' will
+correspond to daily sample intervals. The variable \mbox{\tt trapid} will have to
+correspond to the row of a matrix containing the trap coordinates - a
+file named \mbox{\tt traplocs.csv} available in the {\bf R} package XYZ.
 
-Note that these data do not represent a completely informative summary of the data. For example, if no individuals were captured in a certain trap or during a certain period, then this compact data format will have no record. Thus we will need to know ntraps and nperiods when reformatting this SCR data format into a 2-d encounter frequency matrix or 3-d array. In addition, the encounter data file does not provide information about which periods each trap was operated. This additional information is also necessary as the trap-specific sample sizes must be passed to BUGS as data. We provide this information in a 2nd data file - which we call the ``trap deployment'' file (described below).
+Note that these data do not represent a completely informative summary
+of the data. For example, if no individuals were captured in a certain
+trap or during a certain period, then this compact data format will
+have no record. Thus we will need to know ntraps and nperiods when
+reformatting this SCR data format into a 2-d encounter frequency
+matrix or 3-d array. In addition, the encounter data file does not
+provide information about which periods each trap was operated. This
+additional information is also necessary as the trap-specific sample
+sizes must be passed to {\bf BUGS} as data. We provide this information in a
+2nd data file - which we call the ``trap deployment'' file (described
+below).
 
-The ``encounter data file'' wcaps.csv exists on the Web Supplement as a CSV file that people can read into R and do some basic summary statistics on. For our purposes we need to convert these data into the ``individual x trap'' array of binary encounter frequencies, although more general models might require an encounter-history formulation of the model which requires a full 3-d array.  To obtain our nind x ntrap encounter frequency matrix, we do this the hard way by first converting the encounter data file into a 3-d array and then summarize to trap totals. We have a handy function ``SCR23darray.fn'' which takes the compact encounter data file with optional arguments ntraps and nperiods, and converts it to a 3-d array, and then we use the R function ``apply'' to summarize over the ``sample period'' dimension (by convention here, this is the 2nd dimension):
+The ``encounter data file'' \mbox{\tt wcaps.csv} exists in the {\bf R}
+package XYZ as 
+a .csv file that people can read into {\bf R} and do some basic summary
+statistics on. For our purposes we need to convert these data into the
+``individual x trap'' array of binary encounter frequencies, although
+more general models might require an encounter-history formulation of
+the model which requires a full 3-d array.  To obtain our nind x ntrap
+encounter frequency matrix, we do this the hard way by first
+converting the encounter data file into a 3-d array and then summarize
+to trap totals. We have a handy function \mbox{\tt SCR23darray.fn} which
+takes the compact encounter data file with optional arguments ntraps
+and nperiods, and converts it to a 3-d array, and then we use the {\bf
+  R}
+function \mbox{\tt apply} to summarize over the ``sample'' period dimension
+(by convention here, this is the 2nd dimension):
 
 \begin{verbatim}
 SCR23darray.fn <- function(caps,ntraps=NULL,nperiods=NULL){
