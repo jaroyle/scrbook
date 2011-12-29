@@ -1,5 +1,20 @@
 
+%%% TO DO  as of 12/29/11
 
+ %%% Spell check document
+ %%% Change "beta" to "theta"
+ %%% Fix up R scripts and consolidate for R package
+ %%% R commands to process wolverine data need included in that section
+
+ %%% Run Wolverine 2k 4k and 8k grids in JAGS compare to WinBUGS
+ %%%     insert those results in text
+
+ %%%  For discrete state-space stuff, convert BUGS output to JAGS and
+ %%%  figure out MC errors 
+ %%% Finish Table that has those results in it
+
+ %% pick up all hard references to chapters and make float
+ 
 
 \chapter{Fully Spatial Capture-Recapture Models}
 \markboth{Chapter 4 }{}
@@ -33,7 +48,7 @@ basically an individual covariate model but operating at the level of
 traps. That is, we develop our first fully spatial capture-recapture
 model which turns out to be precisely the model considered in section
 3.XXX but instead of defining the individual covariate to be distance
-to centroid of the array we define J individual covariates - the
+to centroid of the array we define $J$ individual covariates - the
 distance to {\it each} trap. And, instead of using estimates of
 individual locations ${\bf s}$, we consider a fully hierarchical model in
 which we regard ${\bf s}$ as a latent variable and impose a prior
@@ -638,7 +653,6 @@ ncaps<-apply(Y2d,1,sum)   # compute how many times each individual was captured
 Y<-Y[ncaps>0,,]           # keep those individuals that were captured
 \end{verbatim}
 }
-
 
 \section{Fitting an SCR Model in BUGS}
 \label{scr0.sec.winbugs1}
@@ -1581,28 +1595,33 @@ prescribed state-space. Clearly this will not always be a reasonable
 assumption. In chapter \ref{chapt.ipp} we talk about developing models that allow
 explicitly for non-uniformity of the activity centers by modeling
 covariate effects on density. A simpler method of affecting the
-distribution of activity centers which we address here is to modify
+distribution of activity centers, which we address here, is to modify
 the shape of the state-space explicitly. For example, we might be able
 to classify the state-space into distinct blocks of habitat and
-non-habitat. In that case we might choose to remove the non-habitat
+non-habitat. In that case we can remove the non-habitat
 from the state-space and assume uniformity of the activity centers
-over the remaining portions of the state-space judged to be habitat.
+over the remaining portions judged to be suitable habitat.
 There are two ways to approach this: We can use a regular grid of
-points to represent the state-space, i.e., ${\bf s}_1, \ldots, {\bf s}_{G}$ and assign a
-discrete uniform distribution to each individual's activity center, or
+points to represent the state-space, i.e., by the set of coordinates
+${\bf s}_1, \ldots, {\bf s}_{G}$, and assign a
+equal probabilities to each possible value, or
 we can retain the continuous formulation of the state-space but use
 basic polygon operations to induce constraints on the state-space
-(Chapt. \ref{chapt.mcmc} and also Appendix XYZ). We focus here on the formulation
-of our basic SCR model in terms of a discrete state-space.  Use of a
+We focus here on the formulation
+of our basic SCR model in terms of a discrete state-space but later on
+(chapter \ref{chapt.mcmc} and also Appendix XYZ) we demonstrate the
+latter approach based on using polygon operations to define
+an irregular state-space.
+ Use of a
 discrete state-space can be computationally expensive in {\bf WinBUGS}. That
 said, it isn't too difficult to do the MCMC calculations in {\bf R} which we
-discuss briefly in Chapt. \ref{chapt.mcmc}. The {\bf R} package {\tt SPACECAP}
+discuss briefly in chapter \ref{chapt.mcmc}. The {\bf R} package {\tt SPACECAP}
 \citep{gopalaswamy_etal:2011} arose from the {\bf R} implementation
 developed for the application in \citet{royle_etal:2009}.
-As we will see in Chapt. \ref{chapt.mle}, we must prescribe the
+As we will see in chapter \ref{chapt.mle}, we must prescribe the
 state-space by a discrete mesh of points in order to do integrated
 likelihood and so if we are using a discrete state-space this can be
-accommodated directly for obtaining MLEs.  
+accommodated directly in our code for obtaining MLEs.  
 
 While clipping out
 non-habitat seems like a good idea, its not obvious that we accomplish
@@ -1621,24 +1640,140 @@ in a walmart parking lot if there is pretty good habitat around
 walmart, so there is probably no sense to cut out the walmart lot and
 preclude it as the location for an activity center.  It would
 generally be better to include some definition of habitat quality in
-the model for the detection probability (see Sec. XYZ).
+the model for the detection probability (see chapter XYZ).
 
 
 \subsection{Evaluation of Coarseness of Discrete Approximation}
 
-The coarseness of the state-space should not really have much of an effect on estimates if the grain is sufficiently fine relative to typical animal home range sizes\footnote{ although the geometry of the state-space is likely to have a big effect}. Why is this? We can think about this as doing numerical integration.... We don't need a huge amount of support points to evaluate the integral to a reasonable level of accuracy. We demonstrate this here by reanalyzing simulated data for different approximations to the state-space. We create a new version of the data simulator called simSCR0discrete.fn.....
+The coarseness of the state-space should not really have much of an
+effect on estimates if the grain is sufficiently fine relative to
+typical animal home range sizes.  Why is this?  We have two analogies
+that can help us understand this. First is the relationship to Model
+$M_{h}$.  As noted in section \ref{scr0.sec.scrmh} above, we can think
+about SCR models as a type of finite mixture
+\citep{norris_pollock:1996, pledger:2000} where we are fortunate to be
+able to obtain direct information about which ``group'' individuals
+belong to (group being location of activity center).  In the standard
+finite mixture models we typically find that only 1 or a very small
+number of groups (e.g., 2 or 3 at the most) can explain really high
+levels of heterogeneity and are adequate for most data sets of small
+to moderate sample sizes. We therefore expect a similar effect in SCR
+models when we discretize the state-space.
+We can also 
+think about discretizing the state-space as being related
+to numerical integration where we find (see
+chapter \ref{chapt.mle}) that we don't need a very fine 
+grid of support points to evaluate the integral to a reasonable
+level of accuracy. We demonstrate this here by reanalyzing simulated
+data using a state-space defined by a different numbers of support points.
+We provide an R script called \mbox{\tt simSCR0discrete.fn} in the
+{\bf R} package \mbox{\tt scrbook}.  We note that for this comparison
+we generated the actual activity centers as a continuous random
+variable and thus the discrete state-space is, strictly speaking, an
+approximation to truth. That said, we regard all state-space
+specifications as approximations to truth because they are all,
+strictly speaking, models of some unknown truth. Thus the use of any
+specific discrete state-space is not intrinsically more ``wrong'' than
+any specific continuous representation.
 
-As noted in section \ref{scr0.sec.scrmh} above, we can think about SCR
-models as a type of finite mixture \citep{norris_pollock:1996,
-  pledger:2000} with direct information about which ``group'' individuals belong to. In these finite mixture models we typically find that only 1 or a very small number of groups can explain really high levels of heterogeneity. We therefore expect a similar effect in SCR models when we discretize the state-space. 
+
+We used jags from the \mbox{\tt rjags} function to obtain the results
+for $6 \times 6$, $9 \times 9$, $12 \times 12$, $15\times 15$,
+$20\times 20$, $25 \times 25$ and $30 \times 30$ state-space grids.
+We used 2000 burn, 12000 total iters with 3 chains, therefore a total
+of 30000 posterior samples.
+For WinBUGS we used 3 chains of 5k total with 1k burnin means 12k
+total posterior samples. 
+
+In Table XYZ we just clipped out the results for N
+
+\begin{verbatim}
+             Mean       SD    NaiveSE  Time-seriesSE  runtime 
+6    N     109.7717 15.98959 0.0923160    0.377737    1239     
+9    N     114.4621 16.72025 0.0965344    0.468659    1267
+12   N     115.4309 17.12403 0.098866     0.464830    1576
+15   N     114.7699 17.0242  0.0982894    0.425238    1638
+20   N     116.0370 17.10686 0.0987665    0.486867    1647
+25   N     116.3228 16.98323 0.0980527    0.465527    1661
+30   N     116.4252 17.4078  0.100504     0.533735    1806
+WinBUGS
+             Mean       SD    NaiveSE  Time-seriesSE  runtime 
+6    N     111.67    16.61                             2274
+9    N     114.23    17.99                             4300
+12   N     115.98    17.38                             7100
+15   N     115.38    17.94                            13010
+
+Note: WinBUGS based on fewer samples too!
+
+To get SE and time-series SE do this:
+
+
+You can use as.mcmc.list() to convert to a coda object. Then use summary. 
+\end{verbatim}
+
+The results in terms of the posterior summaries are, as we hope and
+expect, very similar using {\bf WinBUGS}. However, it was interesting
+to note that {\bf WinBUGS} runtime is much worse (note the number of
+iterations is lower for {\bf WinBUGS} yet the runtime is much longer)
+and, furthermore, it seems to scale with the size of the
+discrete state-space grid. While that was expected, it was unexpected
+that the runtime of {\bf JAGS} would seem relatively consistent
+as we increase the grid size.
+We suspect that {\bf WinBUGS} is evaluating the full-conditional for
+each activity center at all $G$ possible values whereas it may be that
+{\bf JAGS} is evaluating the full-conditional only at a subset of 
+values or perhaps using previous calculations more effectively. 
 
 
 \subsection{Analysis of the wolverine camera trapping data}
 
-We reanalyzed the wolverine data using grids with points spaced by 2, 4 and 8 km (Fig XYZ). What was the effect of this?
-We also provide a second analysis of the data in which we used a discrete representation of the state-space, but then deleted points that were not over land. For that approach we used 2 grid resolutions (2 km and 8 km) before clipping out unsuitable points. Our interest in doing this was to evaluate the relative influence of grid resolution on estimated density because the coarser grids will be more efficient from a computational stand-point and so we would prefer to use them, but not if there is a strong influence on estimated density.  
+We reanalyzed the wolverine data using grids with points spaced by 2,
+4 and 8 km (Fig XYZ). What was the effect of this?  We also provide a
+second analysis of the data in which we used a discrete representation
+of the state-space, but then deleted points that were not over
+land. For that approach we used 2 grid resolutions (2 km and 8 km)
+before clipping out unsuitable points. Our interest in doing this was
+to evaluate the relative influence of grid resolution on estimated
+density because the coarser grids will be more efficient from a
+computational stand-point and so we would prefer to use them, but not
+if there is a strong influence on estimated density.
 %models running at work. produce a density map here too. 
 
+\begin{verbatim}
+based on 2k burn 3k total and 3 chains = 3k total posterior samples.
+check these with JAGS
+
+2km
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+       mean    sd  2.5%   25%   50%   75%  97.5% Rhat n.eff
+psi    0.28  0.06  0.17  0.24  0.27  0.32   0.41 1.01   230
+sigma  0.64  0.05  0.55  0.60  0.64  0.67   0.73 1.02    88
+lam0  -3.00  0.16 -3.33 -3.11 -3.00 -2.90  -2.69 1.04    52
+p0     0.05  0.01  0.03  0.04  0.05  0.05   0.06 1.04    52
+N     82.95 16.26 55.00 72.00 82.00 93.00 119.02 1.01   240
+
+
+4 km
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+       mean    sd  2.5%   25%   50%   75%  97.5% Rhat n.eff
+psi    0.30  0.06  0.19  0.26  0.29  0.34   0.43 1.01   580
+sigma  0.62  0.05  0.54  0.59  0.62  0.65   0.72 1.00  2000
+lam0  -3.00  0.16 -3.33 -3.10 -2.99 -2.90  -2.67 1.01   390
+p0     0.05  0.01  0.03  0.04  0.05  0.05   0.06 1.01   390
+N     88.78 16.76 60.00 77.00 87.00 99.00 125.00 1.01   690
+
+8km
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+       mean    sd  2.5%   25%   50%   75%  97.5% Rhat n.eff
+psi    0.27  0.06  0.17  0.23  0.27  0.31   0.40 1.00  1500
+sigma  0.69  0.05  0.60  0.65  0.68  0.72   0.80 1.00  3000
+lam0  -3.07  0.17 -3.41 -3.20 -3.07 -2.95  -2.74 1.01   210
+p0     0.04  0.01  0.03  0.04  0.04  0.05   0.06 1.01   200
+N     82.01 15.98 55.00 71.00 80.00 92.00 118.00 1.00  1300
+\end{verbatim}
 
 \subsection{SCR models as multi-state models}
 
@@ -1673,20 +1808,120 @@ any continuous measurement using a discrete state-space, and therefore
 apply multi-state models directly to any SCR problem. 
 
 
-\section{ Summary and Outlook  }
+\section{ Summary and Outlook }
+
 A point we tried to emphasize in this chapter is that the basic SCR
 model is not much more than an ordinary capture-recapture model for
-closed populations -- it is simply that model augmented with a set of
-``individual effects'', ${\bf s}_{i}$, which relate some sense of individual
-location to encounter probability. SCR models are therefore a type of
-individual covariate model (as introduced in Chapter 3) - but with
-imperfect information about the individual covariate. In other words,
-GLMM type models when N is known or, when N is unknown, they are
-zero-inflated GLMMs (see \citet{royle:2006}).  These models are really quite easy to analyze by likelihood methods, based on the integrated likelihood, and they are also very easy to analyze using existing MCMC black boxes such as WinBUGS or JAGS and possibly other packages.  We will consider likelihood analysis of such models sparingly in this book (but see Chapter XYZ) because our emphasis is on Bayesian analysis. 
-Formal consideration of the collection of individual locations (s[1], ...,s[N]) in the model is fundamental to all of the models considered in this book. In statistical terminology, we think of the collection of points $\{ s_{i} \}$ as a realization of a point process and part of the promise, and ongoing challenge, of SCR models is to develop SCR models based on interesting point process models. Here we considered the simplest possible point process model - the points are independent and uniformly (``randomly'') distributed over space. Despite the simplicity of this assumption, it should suffice in many applications of SCR models although we do address generalizations of this model in later chapters. Moreover, even though the {\it prior} distribution on the point locations is uniform, the realized pattern may deviate markedly from uniformity as the observed encounter data provide information to impart deviations from uniformity. Thus, the estimated density map will typically appear distinctly non-uniform.  As a general rule, information in the data will govern estimates of individual point locations so even fairly complex patterns of non-independence or non-uniformity will appear in the data. For example, if individuals are highly territorial then the data should indicate this in the form of individuals not being encountered in the same trap - the resulting posterior distribution of point locations should therefore reflect non-independence.  Obviously the complexity of posterior estimates of the point pattern will depend on the quantity of data, both number of individuals and captures per individual.
-We showed how to conduct inference about the underlying point process including calculation of density maps from posterior output. We can do other things we normally do with spatial point processes such as compute K-functions, and test for ``complete spatial randomness'' which we develop in Chapter XYZ.  Modifying and applying point process methods to SCR problems seems to us to be a fruitful area of research.
-An obvious question that might be floating around in your mind is why should we ever go through all of this trouble when we could just use MARK or CAPTURE to get an estimate of N and apply $1/2$ MMDM methods?  That's a good question. The main reason is that these conventional methods are predicated on models that are blatent misspecifications of the observation and ecological process - they are wrong! Or perhaps more charitably, they are models of the wrong system. They do not account for trap identity. They don't account for spatial organization or ``clustering'' of individual encounters. And, ``density'' is not a parameter of those models because density has no meaning absent an explicit representation of space. Conversely, the SCR model is a model for trap-specific encounter data - how individuals are organized in space and interact with traps. SCR models provide a coherent framework for inference about density or population size and also, because of the formality of their derivation, can be extended and generalized to a large variety of different situations, as we demonstrate in subsequent chapters.
+closed populations -- it is simply that model but augmented with a set
+of ``individual effects'', ${\bf s}_{i}$, which relate encounter
+probability to some sense of individual location. SCR models are
+therefore a type of individual covariate model (as introduced in
+chapter \ref{chapt.closed} -- but with imperfect information about the
+individual covariate. In other words, they are GLMM type models when
+$N$ is known or, when $N$ is unknown, they are zero-inflated GLMMs
+(see \citet{royle:2006}).  Another class of capture-recapture models
+that SCR models are closely related to is so-called ``Model $M_{h}$.''
+The effect of introducing a spatial location for individuals is that
+it induces heterogeneity in detection probability, as in Model
+$M_{h}$. However, unlike Model $M_{h}$, we obtain some information
+about the individual effect which is completely latent in Model
+$M_{h}$. If the state-space of the random effect ${\bf s}$ is discrete
+then the SCR model resembles more closely the finite-mixture class of
+heterogeneity models \citep{norris_pollock:1996} which parameterizes
+heterogeneity by assuming that individuals belong to discrete classes
+or groups (e.g., high, medium, low). In the context of SCR models we
+obtain some information about the ``group membership'' in the
+locations where individuals are captured.  Given the direct
+relationship of SCR models with so many standard classes of models, we
+find that they are really quite easy to analyze using standard MCMC
+methods encased in black boxes such as {\bf WinBUGS} or {\bf JAGS} and
+possibly other packages. They are also easy to analyze using classical
+likelihood methods, which we address in chapter \ref{chapt.mle}.
+
+Formal consideration of the collection of individual locations $({\bf
+  s}_{1}, \ldots, {\bf s}_{N})$ in the model is fundamental to all of
+the models considered in this book. In statistical terminology, we
+think of the collection of points $\{ s_{i} \}$ as a realization of a
+point process and part of the promise, and ongoing challenge, of SCR
+models is to develop models that reflect interesting biological
+processes, for example interactions among points or temporal dynamics
+in point locations.  Here we considered the simplest possible point
+process model - the points are independent and uniformly
+(``randomly'') distributed over space. Despite the simplicity of this
+assumption, it should suffice in many applications of SCR models
+although we do address generalizations of this model in later
+chapters. Moreover, even though the {\it prior} distribution on the
+point locations is uniform, the realized pattern may deviate markedly
+from uniformity as the observed encounter data provide information to
+impart deviations from uniformity. Thus, the estimated density map
+will typically appear distinctly non-uniform.  As a general rule,
+information in the data will govern estimates of individual point
+locations so even fairly complex patterns of non-independence or
+non-uniformity will appear in the data. That is, we find in
+applications of the basic SCR model that this simple {\it a priori}
+model can effectively reflect or adapt to complex realizations of the
+underlying point process.  For example, if individuals are highly
+territorial then the data should indicate this in the form of
+individuals not being encountered in the same trap - the resulting
+posterior distribution of point locations should therefore reflect
+non-independence.  Obviously the complexity of posterior estimates of
+the point pattern will depend on the quantity of data, both number of
+individuals and captures per individual.  Because the point process is
+such an integral component of SCR models, the state-space of the point
+process plays an important role in developing SCR models. As we tried
+to emphasize in this chapter, the choice of the stat-espace is part of
+the model. It can have an influence on parameter estimates and other
+inferences such as model selection (see chapter \ref{chapt.gof}). We
+emphasize however that this is not an arbitrary decision like
+``buffering'' because the model induces an explicit interpretation of
+parameters and statistical effect on estimators.
+
+We showed how to conduct inference about the underlying point process
+including calculation of density maps from posterior output. We can do
+other things we normally do with spatial point processes such as
+compute ``K-functions'' and test for ``complete spatial randomness''
+(CSR) which we develop in chapter \ref{chapt.gof}.  Modifying and
+applying point process methods to SCR problems seems to us to be a
+fruitful area of research.
+
+
+An obvious question that might be floating around in your mind is why
+should we ever go through all of this trouble when we could just use
+{\bf MARK} or {\bf CAPTURE} to get an estimate of $N$ and apply $1/2$
+MMDM methods?  The main reason is that these conventional methods are
+predicated on models that represent explicit misspecifications of both
+the observation and ecological process - they are wrong!  Not just
+wrong, because of course all models are wrong, but they're not even
+{\it plausible} models! Thus while we might be able to show adequate
+fit or whatever, we think as a conceptual and philosophical model one
+should not be using models that are not even plausible data-generating
+models -- even if the plausible ones don't fit!  Perhaps more
+charitably, these ordinary non-spatial models are models of the wrong
+system. They do not account for trap identity. They don't account for
+spatial organization or ``clustering'' of individual encounters in
+space. And, ``density'' is not a parameter of those models because
+density has no meaning absent an explicit representation of space. If
+we do define space explicitly, e.g., as a buffered minimum convex
+hull, then the normal models ($M_{0}$, $M_{h}$, etc..) assume that
+individual capture-probability is not related to space, no matter how
+we define the buffer.  Conversely, the SCR model is a model for
+trap-specific encounter data - how individuals are organized in space
+and interact with traps. SCR models provide a coherent framework for
+inference about density or population size and also, because of the
+formality of their derivation, can be extended and generalized to a
+large variety of different situations, as we demonstrate in subsequent
+chapters.
+
 In the next few chapters we continue to work with this basic SCR
 design and model but consider some important extensions of the basic
-model. We consider technical details of Bayesian and  maximum
-likelihood estimation in the following chapter, and then extensions to include covariates that vary by individual, trap, or over time (chapter XXX.YYY).
+model.  For example, we consider 
+extensions 
+to  include covariates that vary by individual, trap, or over time
+(chapter \ref{chapt.covariates}), spatial covariates on density
+(chapter \ref{chapt.ipp}), 
+ open populations (chapter \ref{chapt.open}), model assessment and
+ selection (chapter \ref{chapt.gof}) and other topics.
+We also consider technical details of Bayesian (chapter
+\ref{chapt.mcmc}) and  maximum
+likelihood (chapter \ref{chapt.mle}) estimation so that the interested
+reader can develop or extend their own methods to suit their needs. 
