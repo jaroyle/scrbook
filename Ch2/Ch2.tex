@@ -6,6 +6,11 @@ Introduction to Bayesian Analysis of GL(M)Ms Using R/WinBUGS
 
 \vspace{.3in}
 
+%%%% STUFF TO DO 
+%%% 1. Prior lack of invariance to transformation stuff: Reference and Figure
+%%% 2. Full conditional example from ch. 6 copy notation
+%%% 3. Check out algorithm environment
+
 
 A major theme of this book is that spatial capture-recapture models
 are, for the most part, just generalized linear models (GLMs) wherein
@@ -212,7 +217,13 @@ where
 
 \section{Bayesian Analysis}
 
-Bayesian analysis is unfamiliar to many ecological researchers because older cohorts of ecologists were largely educated in the classical statistical paradigm of frequentist inference. But advances in technology and increasing exposure to benefits of Bayesian analysis are fast making Bayesians out of people or at least making Bayesian analysis an acceptable, general, alternative to classical, frequentist inference.  
+Bayesian analysis is unfamiliar to many ecological researchers because
+older cohorts of ecologists were largely educated in the classical
+statistical paradigm of frequentist inference. But advances in
+technology and increasing exposure to benefits of Bayesian analysis
+are fast making Bayesians out of people or at least making Bayesian
+analysis an acceptable, general, alternative to classical, frequentist
+inference.
 
 Conceptually, the main thing about Bayesian inference is that it uses
 probability directly to characterize uncertainty about things we don't
@@ -222,16 +233,17 @@ processes using probability, it seems natural also to characterize
 information about unknown ``parameters'' using probability. At least
 this seems natural to us and, we think, most ecologists either
 explicitly adopt that view or tend to fall into that point of view
-naturally. 
-Conversely,
-frequentists use probability in many different ways, but never to
-characterize uncertainty about parameters\footnote{This will be
-  shocking to most readers.}
-It is paradoxical that people readily
+naturally.  Conversely, frequentists use probability in many different
+ways, but never to characterize uncertainty about
+parameters\footnote{To hear this will be shocking to some readers
+  perhaps.} Instead, frequentists use probability to characterize the
+behavior of {\it procedures} such as estimators or confidence
+intervals (see below), which can lead to some inelegant or unnatural
+interpretations of things.  It is paradoxical that people readily
 adopt a philosophy of statistical inference in which the things you
 don't know (i.e., parameters) should {\it not} be regarded as random
 variables, so that, as a consequence, one cannot use probability to
-characterize ones state of knowledge about them. 
+characterize ones state of knowledge about them.
 
 
 \subsection{Bayes Rule}
@@ -239,44 +251,58 @@ characterize ones state of knowledge about them.
 As its name suggests, Bayesian analysis makes use of Bayes' rule in
 order to make direct probability statements about model
 parameters. Given two random variables $z$ and $y$, Bayes rule relates
-the two conditional probability distributions $[z|y]$ and $[y|z]$ by the relationship:
+the two conditional probability distributions $[z|y]$ and $[y|z]$ by
+the relationship:
 \[
 [z|y] = [y|z][z]/[y]
 \]
 Bayes' rule itself is a mathematical fact and there is no debate in
 the statistical community as to its validity and relevance to many
-problems. 
+problems. Generally speaking, these distributions are characterized as
+follows: $[y|z]$ is the conditional probability distribution of $y$
+{\it given} $z$, $[z]$ is the marginal distribution of $z$ and $[y]$
+is the marginal distribution of $y$. In the context of Bayesian
+inference we usually associate specific meanings in which $[y|z]$ is
+thought of as ``the likelihood'', $[z]$ as the ``prior'' and so on. We
+leave this for later because here the focus is on this expression of
+Bayes rule as a basic fact of probability. 
 
 As an example of a simple application of Bayes rule,
 consider the problem of determining species presence at a sample
 location based on imperfect survey information. Let $z$ be a binary
 random variable that denotes species presence $(z=1)$ or absence
-$(z=0)$, let $\Pr(z=1) = \psi$, let $y$ be the {\it observed} presence
+$(z=0)$, let $\Pr(z=1) = \psi$ where $\psi$ is usually called
+occurrence probability, ``occupancy'' \citep{mackenzie_etal:2002} or ``prevalence''. 
+Let $y$ be the {\it observed} presence
 ($y=1$) or absence ($y=0$), and let $p$ be the probability that a
 species is detected in a single survey at a site given that it is
-present. Thus, $\Pr(y=1|z=1)=p$.
+present. Thus, $\Pr(y=1|z=1)=p$. The interpretation of this is that,
+if the species is present, we will only observe presence with
+probability $p$. In addition, we assume here that $\Pr(y=1|z=0) =
+0$. That is, the species cannot be detected if it is not present which
+is a conventional view adopted in most biological sampling problems (but
+see \citet{royle_link:2006}).
 If we survey a site $T$ times but never detect the species,
-then this clearly does not imply that the specie sis not present
+then this clearly does not imply that the species is not present
 ($z=0$) at this site. Rather, our degree of belief in $z=0$ should be
 made with a probabilistic statement
 $\Pr(z=1|y_1=0,\ldots,y_{T}=0)$. If the $T$ surveys are independent so
 that we might regard $y_{t}$ as $iid$ Bernoulli trials, then the total
 number of detections, say $y$, is Binomial with probability $p$ then
 we can use Bayes rule to compute the probability that it is present
-given that it is not detected in $T$ samples as
+given that it is not detected in $T$ samples. In words, the expression
+we seek is:
+\[
+\Pr(\mbox{present} | \mbox{not detected}) = \frac{\Pr(\mbox{not detected} |
+  \mbox{present})\Pr(\mbox{present})}{\Pr(\mbox{detected})}
+\]
+Mathematically, this is 
 \[
 \Pr(z=1|y=0) = \Pr(y=0|z=1)\Pr(z=1)/\Pr(y=0) = 
-[(1-p)^{T} \psi]/[ (1-p)^T \psi + (1-\psi) ]
+[(1-p)^{T} \psi]/[ (1-p)^T \psi + (1-\psi) ].
 \]
-\footnote{
-It would be would be nice to label the different parts of this
-  equation as to their analogy with Bayes' Rule... I know it sounds
-  kind of basic, but I think it might be nice to see that
-  explicitly. Maybe just say something like 'not detected
-  (corresponding to the observation y in equation XX) , z=1
-  (corresponding to theta in eq. XX) and so on... 
-}
-Suppose that $T=2$ surveys are done at a wetland for a species of
+To apply this, 
+suppose that $T=2$ surveys are done at a wetland for a species of
 frog, and the species is not detected there. Suppose further that $\psi
 = .8$ and $p = .5$ are obtained from a prior study.  Then the
 probability that the species is present at this site is
@@ -322,85 +348,294 @@ is:
 \]
 Asserting the general relevance of Bayes rule to all statistical
 problems, we can conclude that the two main features of Bayesian
-inference are that: (1) ``parameters'' are regarded as realizations of
+inference are that: (1) ``parameters'' $\theta$ are regarded as realizations of
 a random variable and, as a result, (2) inference is based on the
-probability distribution of the parameters given the data, which is
+probability distribution of the parameters given the data,
+$[\theta|y]$,
+which is
 called the posterior distribution. This is the result of using Bayes
 rule to combine ``the likelihood'' and the prior distribution.  The
 key concept is regarding parameters as realizations of a random
 variable because, once you admit this conceptual view, this leads
 directly to the posterior distribution, a very natural quantity upon
-which to base inference about things we don't know -  including parameters of statistical models.  
+which to base inference about things we don't know -  including
+parameters of statistical models.  In particular, $[\theta|y]$ is a
+probability distribution for $\theta$ and therefore we can make direct
+probability statements to characterize uncertainty about
+$\theta$. 
 
+The denominator of our invocation of Bayes rule, $[y]$,
+is the marginal distribution of the data $y$.  We note without further
+remark right now that, in many practical problems, this can be an
+enormous pain to compute. The main reason that the Bayesian paradigm
+has become so popular in the last 20 years or so is because methods
+exist for characterizing the posterior distribution that do not
+require that we possess a mathematical understanding of $[y]$, i.e.,
+we never have to compute it or know what it looks like, or know
+anything specific about it.
 
-We note that the denominator of our invocation of Bayes rule, $[y]$, is the marginal distribution of the data $y$.   We note without further remark right now that, in many practical problems, this can be an enormous pain to compute. The main reason that the Bayesian paradigm has become so popular in the last 20 years or so is because methods exist for characterizing the posterior distribution that do not require that we possess a mathematical understanding of $[y]$, i.e., we never have to compute it or know what it looks like, or know anything specific about it. 
-
-
-A common misunderstanding on the distinction between Bayesian and frequentist inference goes something like this ``in frequentist inference parameters are fixed but unknown but in a Bayesian analysis parameters are random.'' At best this is a sad caricature of the distinction and at worst it is downright wrong. What is true is that, to a Bayesian, parameters are random variables. However, a Bayesian assumes, just like a frequentist, that there was a single data-generating value of that parameter - a fixed, and unknown value.  The distinction between Bayesian and frequentist approaches is that Bayesians regard the parameter as a random variable, and its value as the outcome of a random value, on par with the observations. This allows Bayesians to use probability to make direct probability statements about parameters. Frequentist inference procedures do not permit direct probability statements to be made about parameter values- because parameters are not random variables!
+A common misunderstanding on the distinction between Bayesian and
+frequentist inference goes something like this ``in frequentist
+inference parameters are fixed but unknown but in a Bayesian analysis
+parameters are random.'' At best this is a sad caricature of the
+distinction and at worst it is downright wrong. What is true is that,
+to a Bayesian, parameters are random variables. However, a Bayesian
+assumes, just like a frequentist, that there was a single
+data-generating value of that parameter - a fixed, and unknown value
+that produced the given data set.
+The distinction between Bayesian and frequentist approaches is that
+Bayesians regard the parameter as a random variable, and its value as
+the outcome of a random value, on par with the observations. This
+allows Bayesians to use probability to make direct probability
+statements about parameters. Frequentist inference procedures do not
+permit direct probability statements to be made about parameter
+values -- because parameters are not random variables!
 
 While we can understand the conceptual basis of Bayesian inference
-merely by understanding Bayes rule -1 that's really {\it all there is
-  to it} - it is not so easy to understand the basis of  classical
-``frequentist'' inference which is really ``a basket of methods'' with
-little coherent organization. What is mostly coherent in frequentist
-inference is the manner in which items in this ``basket of methods''
-are evaluated - the performance of a given procedure is evaluated by
-``averaging over'' hypothetical realizations of $y$. This leads to
-interpretations that are not so straightforward. For example
-confidence intervals having the interpretation ``95\% probability that the interval contains the true value" and p-values being "the probability of observing an outcome as extreme or more than the one observed''. Moreover, this is conceptually probblematic to some because the hypothetical realizations that characterize the performance of our procedure we will never get to observe.  
+merely by understanding Bayes rule -- that's really all there is to it
+-- it is not so easy to understand the basis of classical
+``frequentist'' inference which is mostly
+like\footnote{Characterization from Sims REF XYZ} a ``basket of
+methods'' with little coherent organization. What is mostly coherent
+in frequentist inference is the manner in which items in this basket
+of methods are evaluated -- the performance of a given procedure is
+evaluated by ``averaging over'' hypothetical realizations of $y$,
+regarding the {\it estimator} as a random variable. For example, if
+$\hat{\theta}$ is an estimator of $\theta$ then the frequentist is
+interested in $E_{y}[\hat{\theta}|y]$ which is used to characterize
+bias. If the expected value of $\hat{\theta}$, when averaged over
+realizations of $y$, is equal to $\theta$, then $\hat{\theta}$ is
+unbiased. 
 
-That said,  we advocate for a pragamatic non-partisian approach to inference because, frankly,  some of these ``bucket of methods'' are actually very convenient in certain situations as we will see in later chapters.
+The view of parameters as fixed constants and estimators as random variables
+leads to interpretations that are not so straightforward. For
+example confidence intervals having the interpretation ``95\%
+probability that the interval contains the true value" and p-values
+being "the probability of observing an outcome as extreme or more than
+the one observed.'' These are far from intuitive interpretations to
+most people.  Moreover, this is conceptually probblematic to some
+because the hypothetical realizations that characterize the
+performance of our procedure we will never get to observe.
+
+While we do tend to favor Bayesian inference for the conceptual
+simplicity (parameters are random, posterior inference), we mostly
+advocate for a pragamatic non-partisian approach to inference because,
+frankly, some of these ``bucket of methods'' are actually very
+convenient in certain situations as we will see in later chapters.
 
 
 \subsection{Prior distributions}
-{\bf It would be nice to explain at some point what a prior can look like/where it can come from, what informative/uninformative means... I though further down the chapter that there was quite a bit of explanation on the posterior, but then you kind of just jump into choosing priors, which, for someone who may not really ever have done a Bayesian analysis, might be a little puzzling }
 
-An oft-touted benefit of Bayesian analysis is the ease with which
-prior information can be included. The manner in which this happens is
-usually largely subjective, but still the need arises from time to
-time. In SCR models we often have a parameter that is closely linked
+
+The prior distribution $[\theta]$ is an important feature of Bayesian
+inference. As a conceptual matter, 
+the prior distribution characterizes ``prior beliefs'' or ``prior
+information'' about a parameter. Indeed, 
+an oft-touted benefit of Bayesian analysis is the ease with which
+prior information can be included in an analysis.
+However, more commonly, the prior is chosen to
+express a lack of prior information, even if previous studies have
+been done and even if the investigator does in fact know quite a bit
+about a parameter. 
+This is because 
+the manner in which prior information is embodied in a prior (and the
+amount of information) is 
+usually very subjective and thus the result can wind up being very
+contentious, e.g., if different investigators might report different
+results based on subjective assessments of things. Thus it is usually
+better to ``let the data speak'' and use priors that reflect absence
+of information beyond the data set being analyzed. 
+
+But still the need occasionally arises to embody prior information or
+beliefs about a parameter formally into the estimation scheme.
+ In SCR models we often have a parameter that is closely linked
 to ``home range radius'' and thus auxiliary information on the home
 range size of a species can be used as prior information (e.g., see
 \citet{chandler_royle:2012} ; also chapter XYZ). 
 
+XXXXXXXX
 
+noninformative prior on one scale is informative on another scale.
+e.g., flat prior on logit(p) is very different from uniform(0,1) on
+p...
+show graphic......
+
+reference to non-invariance of prior distributions to transformation......
+
+XXXXXXXX
 
 \subsection{Posterior Inference}
 
-Posterior inference is the main practical element  of Bayesian analysis. We get to make an inference conditional on the data that we actually observed - i.e., what we actually know.  To us, this seems logical - to condition on what we know. Conversely, frequentist inference is based on considering average performance over hypothetical unobserved data sets (i.e., the ``relative frequency'' interpretation of probability).  Frequentists know that their procedures work well when averaged over all hypothetical, unobserved, data sets but no one ever really knows how well they work for the specific data set analyzed. That seems like a relevant question to biologists who oftentimes only have their one, extremely valuable, data set.
-This distinction comes into play a lot in exposing philosophical biases in the peer review of statistical analyses in ecology in the sense that, despite these opposing conceptual views to inference (i.e. conditional on the data you have, or averaged over hypothetical realizations), those who conduct a Bayesian analysis are often required to provide a frequentist evaluation of their Bayesian procedure.  
+In Bayesian inference, we are not focusing on estimating a single
+point or interval but rather on characterizing a whole distribution --
+the posterior distribution -- from which one can report any summary of
+interest. A point estimate might be the posterior mean, median, mode,
+etc..  In many applications in this book, we will compute 95\%
+Bayesian intervals using the 2.5\% and 97.5\% quantiles of the
+posterior distribution. For such intervals, it is correct to say
+$\Pr(L < \theta < U) = 0.95$. That is, "the probability that $\theta$
+is between $L$ and $U$ is $0.95$". It is not a subtle thing that this
+cannot be said using frequentist methods - although people tend to say
+it anyway and not really understand why it is wrong or even that it is
+wrong. This is actually a failing of frequentist ideas and the
+inability of frequentists to get people to overcome their natural
+tendency to use probability - which is something that, as a
+frequentist, you simply cannot do in the manner that you would like
+to.
 
-  It is worth emphasizing that, in Bayesian inference, we are not focusing on estimating a single point or interval but rather characterizing a whole distribution from which one can report any summary of interest. A point estimate might be the posterior mean, median, mode, etc..  In many applications in this book, we will compute 95% Bayesian intervals using the 2.5% and 97.5% quantiles of the posterior distribution. For such intervals, it is correct to say $Pr(L < theta < U) = 0.95$. That is, "the probability that theta is between L and U is 0.95". It is not a subtle thing that this cannot be said using frequentist methods - although people tend to say it anyway and not really understand why it is wrong or even that it is wrong. This is actually a failing of frequentist ideas and the inability of frequentists to get people to overcome their natural tendency to use probability - which is something that, as a frequentist, you simply cannot do in the manner that you would like to.  
 
 
+Posterior inference is the main practical element of Bayesian
+analysis. We get to make an inference conditional on the data that we
+actually observed - i.e., what we actually know.  To us, this seems
+logical - to condition on what we know. Conversely, frequentist
+inference is based on considering average performance over
+hypothetical unobserved data sets (i.e., the ``relative frequency''
+interpretation of probability).  Frequentists know that their
+procedures work well when averaged over all hypothetical, unobserved,
+data sets but no one ever really knows how well they work for the
+specific data set analyzed. That seems like a relevant question to
+biologists who oftentimes only have their one, extremely valuable,
+data set.  This distinction comes into play a lot in exposing
+philosophical biases in the peer review of statistical analyses in
+ecology in the sense that, despite these opposing conceptual views to
+inference (i.e. conditional on the data you have, or averaged over
+hypothetical realizations), those who conduct a Bayesian analysis are
+often (in ecology, almost always) required to provide a frequentist
+evaluation of their Bayesian procedure.
 
 \subsection{Small sample inference}
-Using Bayesian inference, we obtain an estimate of the posterior distribution which is an exhaustive summary of the state-of-knowledge about an unknown quantity. It is the posterior distribution - not an estimate of that thing. It is also not, usually, an approximation except to within Monte Carlo error (in cases where we use simulation to calculate it).  One of the great virtues of Bayesian analysis which is not really appreciated is that it is completely valid for any particular sample size. i.e., $[theta|y$ is, as precise as we claim it to be, for the particular sample size and observations that we have.  The same cannot be said for almost all frequentist procedures in which estimates or variances are very often based on ``asymptotic approximations'' to the procedure which is actually being employed.  
 
-There seems to be a prevailing view in statistical ecology that classical likelihood-based procedures are virtuous because of the availability of simple formulas and procedures for carrying out inference, such as calculating standard errors, doing model selection by AIC, and assessing goodness-of-fit.  In large samples, this may be an important practical benefit, but the practical validity of these procedures cannot be asserted in most situations involving small samples.  This is not a minor issue because it is typical in many wildlife sampling problems - especially in surveys of carnivores or rare/endangered species - to wind up with a small, sometimes extremely small, data set. For example, a recent paper on the fossa (Cryptoprocta ferox), an endangered carnivore in Madagascar, estimated an adult density of 0.18 adults / km sq based on 20 animals captured over 3 years \citep{hawkins_racey:2005}. A similar paper on the endangered southern river otter (Lontra provocax) estimated a density of 0.25 animals per river km based on 12 individuals captured over 3 years \citep{sepulveda_etal:2007}. \citet{gardner_etal:2010} analyzed data from a study of the Pampas cat, a species for which very little is known, wherein only 22 individual cats were captured .during the two year period.  \citet{trolle_kery:2005} reported only 9 individual ocelots captured and \citet{jackson_etal:2006} captured 6 individual snow leopards using camera trapping. Thus, studies of rare and/or secretive carnivores necessarily and flagrantly violate one of Le Cam's Basic Principles, that of ``If you need to use asymptotic arguments, do not forget to let your number of observations tend to infinity.''\citep{lecam:1990}.
+Using Bayesian inference, we obtain an estimate of the posterior
+distribution which is an exhaustive summary of the state-of-knowledge
+about an unknown quantity. It is the posterior distribution - not an
+estimate of that thing. It is also not, usually, an approximation
+except to within Monte Carlo error (in cases where we use simulation
+to calculate it).  One of the great virtues of Bayesian analysis which
+is not really appreciated is that it is completely valid for any
+particular sample size. i.e., it is $[\theta|y]$, as precise as we
+claim it to be based on our ability to do calculations, for the
+particular sample size and observations that we have even if we have
+only a single datum $y$.  The same cannot be said for almost all
+frequentist procedures in which estimates or variances are very often
+(almost always in practice) based on ``asymptotic approximations'' to
+the procedure which is actually being employed.
 
-The biologist thus faces a dilemma with such data. On one hand, these datasets, and the resulting inference, are often criticized as being poor and unreliable. Or, even worse\footnote{Actual quote from a referee}, ``the data set is so small, this is a poor analysis.''  On the other hand, such data may be all that is available for species that are extraordinarily important for conservation and management.    The Bayesian framework for inference provides a valid, rigorous, and flexible framework that is theoretically justifiable in arbitrary sample sizes. This is not to say that one will obtain precise estimates of density or other parameters, just that your inference is coherent and justifiable from a conceptual and technical statistical point of view. That is, we report the posterior probability $Pr(D|data)$ which is easily interpretable and just what it is advertised to be and we don't need to do a simulation study to evaluate how well some approximate $Pr(D|data)$ deviates from the actual $Pr(D|data)$ because they are precisely the same quantity.
+There seems to be a prevailing view in statistical ecology that
+classical likelihood-based procedures are virtuous because of the
+availability of simple formulas and procedures for carrying out
+inference, such as calculating standard errors, doing model selection
+by AIC, and assessing goodness-of-fit.  In large samples, this may be
+an important practical benefit, but the theoretical validity of these
+procedures cannot be asserted in most situations involving small
+samples.  This is not a minor issue because it is typical in many
+wildlife sampling problems - especially in surveys of carnivores or
+rare/endangered species - to wind up with a small, sometimes extremely
+small, data set. For example, a recent paper on the fossa
+(Cryptoprocta ferox), an endangered carnivore in Madagascar, estimated
+an adult density of 0.18 adults / km sq based on 20 animals captured
+over 3 years \citep{hawkins_racey:2005}. A similar paper on the
+endangered southern river otter (Lontra provocax) estimated a density
+of 0.25 animals per river km based on 12 individuals captured over 3
+years \citep{sepulveda_etal:2007}. \citet{gardner_etal:2010} analyzed
+data from a study of the Pampas cat, a species for which very little
+is known, wherein only 22 individual cats were captured .during the
+two year period.  \citet{trolle_kery:2005} reported only 9 individual
+ocelots captured and \citet{jackson_etal:2006} captured 6 individual
+snow leopards using camera trapping. Thus, studies of rare and/or
+secretive carnivores necessarily and flagrantly violate one of Le
+Cam's Basic Principles, that of ``If you need to use asymptotic
+arguments, do not forget to let your number of observations tend to
+infinity.''\citep{lecam:1990}.
+
+The biologist thus faces a dilemma with such data. On one hand, these
+datasets, and the resulting inference, are often criticized as being
+poor and unreliable. Or, even worse\footnote{Actual quote from a
+  referee}, ``the data set is so small, this is a poor analysis.''  On
+the other hand, such data may be all that is available for species
+that are extraordinarily important for conservation and management.
+The Bayesian framework for inference provides a valid, rigorous, and
+flexible framework that is theoretically justifiable in arbitrary
+sample sizes. This is not to say that one will obtain precise
+estimates of density or other parameters, just that your inference is
+coherent and justifiable from a conceptual and technical statistical
+point of view. That is, we report the posterior probability
+$\Pr(D|data)$ which is easily interpretable and just what it is
+advertised to be and we don't need to do a simulation study to
+evaluate how well some approximate $\Pr(D|data)$ deviates from the
+actual $\Pr(D|data)$ because they are precisely the same quantity.
 
 
 
 \section{Characterizing posterior distributions by MCMC simulation}  
 
-In practice, it is not really feasible to ever compute the marginal probability distribution $Pr(y)$, the denominator resulting from application of Bayes' rule. For decades this impeded the adoption of Bayesian methods by practitioners. Or, the few Bayesian analyses done were based on asymptotic normal approximations to the posterior distribution. While this was useful stuff from a theoretical and technical standpoint and, practically, it allowed people to make the probability statements that they naturally would like to make, it was kind of a bad joke around the Bayesian water-cooler to, on one hand, criticize classical statistics for being, essentially, completely ad hoc in their approach to things but then, on the other hand, have to devise various approximations to what they were trying to characterize. The advent of Markov chain Monte Carlo (MCMC) methods has made it easier to calculate posterior distributions for just about any problem to arbitrary levels of precision.  
+In practice, it is not really feasible to ever compute the marginal
+probability distribution $\Pr(y)$, the denominator resulting from
+application of Bayes' rule. For decades this impeded the adoption of
+Bayesian methods by practitioners. Or, the few Bayesian analyses done
+were based on asymptotic normal approximations to the posterior
+distribution. While this was useful stuff from a theoretical and
+technical standpoint and, practically, it allowed people to make the
+probability statements that they naturally would like to make, it was
+kind of a bad joke around the Bayesian water-cooler to, on one hand,
+criticize classical statistics for being, essentially, completely ad
+hoc in their approach to things but then, on the other hand, have to
+devise various approximations to what they were trying to
+characterize. The advent of Markov chain Monte Carlo (MCMC) methods
+has made it easier to calculate posterior distributions for just about
+any problem to arbitrary levels of precision.
 
-Broadly speaking, MCMC is a class of methods for drawing random numbers (sampling or simulating) from the target posterior distribution.  Thus, even though we might not recognize the posterior as a named distribution or be able to analyze its features analytically, e.g., devise mathematical expressions for the mean and variance, we can use these MCMC methods to obtain a large sample from the posterior and then use that sample to characterize features of the posterior. What we do with the sample depends on our intentions -- typically we obtain the mean or median for use as a point estimate, and take a confidence interval based on Monte Carlo estimates of the quantiles.  These are estimates, but not like frequentist estimates. Rather, they are Monte Carlo estimates with an associated Monte Carlo error which is largely determined arbitrarily by the analyst. They are not estimates qualified by a sampling distribution as in classical statistics. If we run our MCMC long enough then our reported value of $E[theta|y]$ or any feature of the posterior distribution is precisely what we say it is. There is no ``sampling variation'' in the frequentist sense of the word.  In summary, the MCMC samples provide a Monte Carlo characterization of {\it the} posterior distribution.
+Broadly speaking, MCMC is a class of methods for drawing random
+numbers (sampling or simulating) from the target posterior
+distribution.  Thus, even though we might not recognize the posterior
+as a named distribution or be able to analyze its features
+analytically, e.g., devise mathematical expressions for the mean and
+variance, we can use these MCMC methods to obtain a large sample from
+the posterior and then use that sample to characterize features of the
+posterior. What we do with the sample depends on our intentions --
+typically we obtain the mean or median for use as a point estimate,
+and take a confidence interval based on Monte Carlo estimates of the
+quantiles.  These are estimates, but not like frequentist
+estimates. Rather, they are Monte Carlo estimates with an associated
+Monte Carlo error which is largely determined arbitrarily by the
+analyst. They are not estimates qualified by a sampling distribution
+as in classical statistics. If we run our MCMC long enough then our
+reported value of $E[\theta|y]$ or any feature of the posterior
+distribution is precisely what we say it is. There is no ``sampling
+variation'' in the frequentist sense of the word.  In summary, the
+MCMC samples provide a Monte Carlo characterization of {\it the}
+posterior distribution.
 
 
 \section{What Goes on Under the MCMC Hood}
 
-A type of MCMC method relevant to most problems is Gibbs sampling, which is based on the idea of iterative simulation from the ``full conditional'' distributions (also called conditional posterior distributions). The full conditional distribution for an unknown quantity is the conditional distribution of that quantity given every other random variable in the model - the data and all other parameters. For example, for a normal regression model with $y \sim Normal(alpha + beta*x , 1)$ then the two full conditionals are, in symbolic terms,
+We will develop and apply MCMC methods in some detail for spatial
+capture-recapture models in chapter \ref{chapt.mcmc}. Here we provide
+a simple illustration of some basic ideas related to the practice of MCMC.
+
+A type of MCMC method relevant to most problems is Gibbs sampling (REF
+XYZ XYZ),
+which is based on the idea of iterative simulation from the ``full
+conditional'' distributions (also called conditional posterior
+distributions). The full conditional distribution for an unknown
+quantity is the conditional distribution of that quantity given every
+other random variable in the model - the data and all other
+parameters. For example, for a normal regression model with $y \sim
+\mbox{Normal}(\alpha + \beta x , 1)$ then the two full conditionals are, in
+symbolic terms,
 \[ 
 [\alpha|y,\beta]
 \]
  and 
 \[
-[\beta|y,\alpha]
-\]. 
-We might use our knowledge of probability to identify these mathematically. In particular, by Bayes' Rule, [alpha|y,beta] = [y|alpha,beta][alpha|beta]/[y|beta] and similarly for [beta|y,alpha]. For example, if we have priors for [alpha] and [beta] which are also normal distributions, some algebra reveals that 
+[\beta|y,\alpha].
+\]
+We might use our knowledge of probability to identify these
+mathematically. In particular, by Bayes' Rule, $[\alpha|y,\beta] =
+[y|\alpha,\beta][\alpha|\beta]/[y|\beta]$ and similarly for
+$[\beta|y,\alpha]$. For example, if we have priors for $[\alpha]$ and $[\beta]$
+which are also normal distributions, some algebra reveals that
+XXXX COPY NOTATION FFROM CH. 6 XXXXX
 \[
 [\alpha|y,\beta] = Normal(ybar,...weighted variance here...). 
 \]
@@ -409,25 +644,59 @@ Similarly,
  [\beta|y,\alpha] is normal(........) 
 \]
 
-Thus, the MCMC algorithm has us simulate successively and repeatedly from those two distributions. See Gilks et al. (MCMC in practice book REF XXXX) for more examples with the normal model. A conceptual representation of the MCMC algorithm for this simple model is therefore: 
+The MCMC algorithm for this model has us simulate in succession,
+repeatedly, from those two distributions. See \citet{gelman_etal:2004}
+for more examples of Gibbs sampling for the normal model. A
+conceptual representation of the MCMC algorithm for this simple model
+is therefore:
+XXXX Check out ALGORITHM environment XXXXX
 \begin{verbatim}
-Algorithm:
+ Algorithm
 
-0.	Initialize $\alpha$ and $\beta$
+       0. Initialize $\alpha$ and $\beta$
 
-Repeat{
-1.	Draw a new value of $\alpha$ from Eq. \ref{xyz}
+       Repeat{
+           1. Draw a new value of $\alpha$ from Eq. \ref{xyz}
 
-2.	Draw a new value of $\beta$ from Eq. \ref{xyz}
-}
+           2. Draw a new value of $\beta$ from Eq. \ref{xyz}
+       }
 \end{verbatim}
 
-As we just saw for this simple ``normal-normal'' model it is sometimes possible to specify the full conditional distributions analytically. In general, when certain so-called conjugate prior distributions are chosen, the form of full conditional distributions is similar to that of the observation model. In this normal-normal case, choice of normal priors for the mean parameters is the conjugate prior under the normal model, and thus the full-conditional distributions are also normal. This is convenient because, in such cases, we can simulate directly from them using standard methods (or R functions).  But, in practice,  we don't really ever need to know such things because most of the time we can get by using a simple algorithm, called the Metropolis-Hastings (henceforth ``MH'') algorithm, to obtain samples from these full conditional distributions without having to recognize them as specific, named, distributions. As we noted above, this gives us enormous freedom in developing models and analyzing them without having to resolve them mathematically because to implement the MH algorithm   we need only identify the full conditional distribution up to a constant of proportionality, that being the marginal distribution in the denominator (e.g., $[y|beta]$ above).
+As we just saw for this simple ``normal-normal'' model it is sometimes
+possible to specify the full conditional distributions
+analytically. In general, when certain so-called conjugate prior
+distributions are chosen, the form of full conditional distributions
+is similar to that of the observation model. In this normal-normal
+case, the normal distribution for the mean parameters is the conjugate
+prior under the normal model, and thus the full-conditional
+distributions are also normal. This is convenient because, in such
+cases, we can simulate directly from them using standard methods (or
+{\bf R}
+functions).  But, in practice, we don't really ever need to know such
+things because most of the time we can get by using a simple
+algorithm, called the Metropolis-Hastings (henceforth ``MH'')
+algorithm, to obtain samples from these full conditional distributions
+without having to recognize them as specific, named, distributions. 
+This gives us enormous freedom in developing models
+and analyzing them without having to resolve them mathematically
+because to implement the MH algorithm we need only identify the full
+conditional distribution up to a constant of proportionality, that
+being the marginal distribution in the denominator (e.g., $[y|\beta]$
+above).
 
+We will talk about the Metropolis-Hastings algorithm shortly, and we
+will use it extensively in the analysis of SCR models (e.g., chapter
+\ref{chapt.mcmc}). While we sometimes use Gibbs sampling, we seldom
+use ``pure'' Gibbs sampling because we might use MH to sample from one
+or more of the full conditional distributions. For such hybrid
+algorithms we use the term {\it Metrpolized Gibbs sampling} or
+more commonly {\it Metropolis-within-Gibbs}.
 
 \subsection{Rules for constructing full conditional distributions}  
 
-The basic strategy for constructing full-conditional distributions for devising MCMC algorithms can be reduced conceptually to a couple of basic steps summarized as follows:
+The basic strategy for constructing full-conditional distributions for
+devising MCMC algorithms can be reduced conceptually to a couple of
+basic steps summarized as follows:
 \begin{itemize}
 \item[(step 1)] collect all stochastic components of the model; 
 \item[(step 2)] Recognize and express the full conditional in question as proportional to the product of all  components; 
