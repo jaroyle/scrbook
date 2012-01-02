@@ -13,6 +13,9 @@ Introduction to Bayesian Analysis of GL(M)Ms Using R/WinBUGS
 %%% 4. reference for sampling from f() with bounded support
 %%% 5. need refs on choosing prior disributions
 %%% 6. Check Bayesian p-value definition
+%%% 7. FIX parameter notation! I have beta0 beta1 , alpha beta, and a,
+%%%     b in the same chapter!   Use alpha beta probably?
+%%% 8. spell check this document 
 
 A major theme of this book is that spatial capture-recapture models
 are, for the most part, just generalized linear models (GLMs) wherein
@@ -1342,22 +1345,75 @@ of the situations you encounter.
 
 
 \section{Poisson GLMs}
-The Poisson GLM (also known as ``Poisson regression'') is probably the most relevant and important class of models in all of ecology. The basic model assumes observations $y(i); i=1,2,...,n$ follow a Poisson distribution with mean lambda which we write
-\[
- 	y(i) ~Poisson(\lambda)\]
+\label{glms.sec.poisson}
 
-Commonly $y(i)$ is a count of animals or plants at some point in space and lambda might depend on i. For example, $i$ might index point count locations in a forest, BBS route centers, or sample quadrats, or similar.  If covariates are available it is typical to model them as linear effects on the log mean. If $x(i)$ is some measured covariate associated with observation $i$. Then,
+The Poisson GLM (also known as ``Poisson regression'') is probably the
+most relevant and important class of models in all of ecology. The
+basic model assumes observations $y_{i}; i=1,2,...,n$ follow a Poisson
+distribution with mean $\lambda$ which we write
+\[
+ 	y_{i} \sim \mbox{Poisson}(\lambda)
+\]
+Commonly $y_{i}$ is a count of animals or plants at some point in
+space and lambda might depend on i. For example, $i$ might index point
+count locations in a forest, BBS route centers, or sample quadrats, or
+similar.  If covariates are available it is typical to model them as
+linear effects on the log mean. If $x(i)$ is some measured covariate
+associated with observation $i$. Then,
 \[
  	log(x(i)) = \alpha  + \beta*x(i)
 \]
-While we only specify the mean of the Poisson model directly, the Poisson model (and all GLMs) has a ``built-in'' variance which is directly related to the mean. In this case, $Var(y) = E(y) = \lambda$. Thus the model accommodates a linear increase in variance with the mean.  Another extremely useful feature of the Poisson model is the property of ``compound additivity''. If $y(1)$ and $y(2)$ are Poisson random variables with means $\lambda[1]$ and $\lambda[2]$, then $y(1)+y(2)$ is Poisson with mean$(\lambda[1]+\lambda[2])$. Thus, if the observations can be viewed as an aggregate of counts over some finer scale, then the mean aggregates in a corresponding manner.  Multinomial random variables have a direct relationship to Poisson random variables. If $y(1)$ and $y(2)$ are $iid$ Poisson then, conditional on their total $T = y(1) + y(2)$, they have a multinomial distribution with sample size T and cell probabilities $\lambda[1]/(\lambda[1]+\lambda[2])$ and $\lambda[2]/(\lambda[1]+\lambda[2])$.  These are some of the reasons the Poisson distribution is extremely useful in ecology.
 
+While we only specify the mean of the Poisson model directly, the
+Poisson model (and all GLMs) has a ``built-in'' variance which is
+directly related to the mean. In this case, $\mbox{Var}(y) = \mbox{E}(y) =
+\lambda$. Thus the model accommodates a linear increase in variance
+with the mean.  
 
+\subsection{Important properties of the Poisson distribution}
+\label{glms.sec.properties}
+
+There are two properties of the Poisson distribution
+that make it extremely useful in ecology. First 
+is the property of {\it compound additivity}. If $y_1$ and $y_2$ are
+Poisson random variables with means $\lambda_1$ and $\lambda_2$,
+then their sum $N=y_1+y_2$ is Poisson with mean $\lambda_1+\lambda_2$. Thus,
+if the observations can be viewed as an aggregate of counts over some
+finer unit of measurement, then the mean aggregates in a corresponding
+manner. 
+Secondly, the Poisson distribution has a direct relationship to the multinomial.
+If $y_1$ and $y_2$ are $iid$ Poisson then,
+conditional on their sum $N = y_1 + y_2$, their joint distribution is multinomial
+ with sample size $N$ and cell probabilities
+$\lambda_1/(\lambda_1+\lambda_2)$ and
+$\lambda_2/(\lambda_1+\lambda_2)$.  As a result of this, most
+multinomial models can be analyzed as a Poisson GLM and {\it vice versa}.
 
 \subsection{Example: Breeding Bird Survey Data}
 
-As an example we consider a classical situation in ecology where counts of an organism are made at a collection of spatial locations. In this particular example, we have mourning dove counts made along North American Breeding Bird Survey (BBS) routes in Pennsylvania, USA. A route consists of 50 stops separated by 0.5 mile. For the purposes here we are defining y[i] = route total count and he sample location will be marked by the center point of the BBS route.  The survey is run annually and the data set we have is 1966-1998. BBS data can be obtained online at http:....xyz.xyz.xyz.  We will make use of the whole data set shortly but for now we're going to focus on a specific year of counts - 1990 - for no particular reason. For 1990 there were 77 active routes. We have the data stored in a .csv file where rows index the unique route, column 1 is the route ID, columns 2-3 are the route coordinates (longitude/latitude), column 4 is a habitat covariate ``forest cover'' (standardized, see below) and the remaining columns are the yearly counts. Years for which a route was not run are coded as ``NA'' in the data matrix. We imagine that this will be a typical format for many ecological studies, perhaps with more columns representing covariates.  To read in the data and display the first few elements of this matrix, do this:
-
+As an example we consider a classical situation in ecology where
+counts of an organism are made at a collection of spatial
+locations. In this particular example, we have mourning dove counts
+made along North American Breeding Bird Survey (BBS) routes in
+Pennsylvania, USA. A route consists of 50 stops separated by 0.5
+mile. For the purposes here we are defining $y_i$ = route total count
+and he sample location will be marked by the center point of the BBS
+route.  The survey is run annually and the data set we have is
+1966-1998. BBS data can be obtained online at \mbox{\tt http:\//\//www.pwrc.usgs.gov\//bbs\//}.
+We will make use of the whole data set shortly but for now we're going
+to focus on a specific year of counts -- 1990 -- for the sake of
+building a simple model. 
+ For 1990 there were 77 active routes. We have the data stored
+in a \mbox{\tt .csv} file\footnote{check this data format} where rows index the unique route, column 1 is the
+route ID, columns 2-3 are the route coordinates (longitude/latitude),
+column 4 is a habitat covariate ``forest cover'' (standardized, see
+below) and the remaining columns are the yearly counts. Years for
+which a route was not run are coded as ``\mbox{\tt NA}'' in the data matrix. We
+imagine that this will be a typical format for many ecological
+studies, perhaps with more columns representing covariates.  To read
+in the data and display the first few elements of this matrix, do
+this:
+{\small 
 \begin{verbatim}
 > a<-read.csv("pa-bbsdovedata-all.csv")
 > data[1:2,1:6]
@@ -1365,51 +1421,90 @@ As an example we consider a classical situation in ecology where counts of an or
 1 72002 -80.445 41.501 -0.3871372  NA  24
 2 72003 -80.347 41.214 -1.0171629  NA  NA
 \end{verbatim}
+}
 
-It is useful to display the pattern in counts. For that we use a spatial dot plot - where we plot the coordinates of the observations and mark the color of the plotting symbol based on the magnitude of the count.  We have a special plotting function for that which is called \mbox{\tt spatial.plot()} and it is available with the supplemental materials. Actually, what we want to do here is plot the log-count (+1 of course!) which displays a notable pattern that could be related to something. We can ponder the potential effects that might lead to dove counts being high....Corn fields, telephone wires, barn roofs along with misidentification of pigeons, these could all correlated reasonably well with these counts for all we know. Unfortunately we don't have any of that information. 
+It is useful to display the spatial pattern in the observed counts. For that we use a
+spatial dot plot - where we plot the coordinates of the observations
+and mark the color of the plotting symbol based on the magnitude of
+the count.  We have a special plotting function for that which is
+called \mbox{\tt spatial.plot()} and it is available with the
+supplemental {\bf R} package. 
+Actually, what we want to do here is plot the
+log-count (+1 of course) which (Fig. \ref{glms.fig.padovecounts}) displays a notable pattern that could
+be related to something. The {\bf R} commands for obtaining this figure are:
+{\small 
+\begin{verbatim}
+data<-read.csv("pa-bbsdovedata-all.csv")
+y<-data[,29]  # pick out 1990
+notna<-!is.na(y)
+y<-y[notna]
+spatial.plot(data[notna,2:3],y)
+\end{verbatim}
+}
+ We can ponder the potential effects that
+might lead to dove counts being high....corn fields, telephone wires,
+barn roofs along with misidentification of pigeons, these could all
+correlated reasonably well with the observed count of mourning doves.
+Unfortunately we don't have any of that information.
 
 \begin{figure}
 \begin{center}
 \includegraphics[height=2.75in]{figs/PA1}
 \end{center}
 \caption{Needs a caption}
-\label{fig.PA1}
+\label{glms.fig.padovecounts}
 \end{figure}
 
-We do have a measure of forest cover in the vicinity of each point which is contained in the data set (``habitat''). This was derived from a larger GIS coverage of the state (provided in the data file ``pahabdata'') which can be plotted using the spatial.plot function using the following commands
+We do have a measure of forest cover in the vicinity of each point
+which is contained in the data set (variable ``habitat''). This was derived
+from a larger GIS coverage of the state (provided in the data file
+``\mbox{\tt pahabdata.csv}'') which can be plotted using the \mbox{\tt spatial.plot} function
+using the following commands
+{\small 
 \begin{verbatim}
 > map('state',regions="penn",lwd=2)
 > spatial.plot(pahabdata[,2:3],pahabdata[,"dfor"],cx=2)
 > map('state',regions="penn",lwd=2,add=TRUE)
 \end{verbatim}
-
-
+}
+where the result appears in Fig. \ref{glms.fig.paforest}. 
+We see a prominent pattern that indicates high forest coverage in the
+central part of the state and low forest cover in the SE.  Inspecting
+the previous figure of log-counts suggests a relationship between
+counts and forest cover which is perhaps not surprising.
 \begin{figure}
 \begin{center}
 \includegraphics[height=2.75in]{figs/PA2}
 \end{center}
 \caption{Needs a caption}
-\label{fig.PA21}
+\label{glms.fig.paforest}
 \end{figure}
 
-
-We see a prominent pattern that indicates high forest coverage in the
-central part of the state and low forest cover in the SE.  Inspecting
-the previous figure of log-counts suggests a relationship between
-counts and forest cover which is not surprising.
-
 \subsection{Doing it in WinBUGS}
-Here we demonstrate how to fit a Poisson GLM in WinBUGS using the covariate $x(i) =$ forest cover. It is advisable that $x(i)$ be standardized in most cases as this will improve mixing of the Markov chains. Recall that the data we have stored include a standardized covariate (forest cover) and so we don't have to worry about that here.  To read the BBS data into R and get things set up for WinBUGS we issue the following commands: 
+
+Here we demonstrate how to fit a Poisson GLM in {\bf WinBUGS} using the
+covariate $x_{i} =$ forest cover. It is advisable that $x_i$ be
+standardized in most cases as this will improve mixing of the Markov
+chains. Recall that the data we have stored include a standardized
+covariate (forest cover) and so we don't have to worry about that
+here.  To read the BBS data into {\bf R} and get things set up for
+{\bf WinBUGS}
+we issue the following commands:
+{\small 
 \begin{verbatim}
 data<-read.csv("pa-bbsdovedata-all.csv")
-y<-data[,29]  # pick out 1990
+y<-data[,29]                        # pick out 1990
 notna<-!is.na(y)
-y<-y[notna]
-habitat<-data[notna,4]
-library("R2WinBUGS")
-data <- list ( "y","M","habitat")
+y<-y[notna]                         # discard missing
+habitat<-data[notna,4]              # get habitat data
+library("R2WinBUGS")                # load R2WinBUGS
+data <- list ( "y","M","habitat")   # bundle data for WinBUGS
 \end{verbatim}
-Now we write out the Poisson model specification in WinBUGS pseudo-code, provide initial values, identify parameters to be monitored and then execute WinBUGS:
+} 
+Now we write out the Poisson model specification in {\bf WinBUGS}
+pseudo-code, provide initial values, identify parameters to be
+monitored and then execute {\bf WinBUGS}:
+{\small 
 \begin{verbatim}
 cat("
 model {
@@ -1424,10 +1519,16 @@ model {
 
 inits <- function()  list ( beta0=rnorm(1),beta1=rnorm(1))
 parameters <- c("beta0","beta1")
-out<-bugs (data, inits, parameters, "PoissonGLM.txt", n.thin=2, n.chains=2, n.burnin=2000,n.iter=6000,debug=TRUE,working.dir=getwd())
+out<-bugs (data, inits, parameters, "PoissonGLM.txt", n.thin=2,n.chains=2, 
+                n.burnin=2000,n.iter=6000,debug=TRUE,working.dir=getwd())
 \end{verbatim}
-
-{\bf Remarks:} (1) Note the close correspondence in how the model is specified here compared with the normal regression model previously. As an exercise you should discuss the specific differences between the BUGS model specifications for the normal and Poisson models.
+} 
+{\bf Remarks:} (1) Note the close correspondence in how the model is
+specified here compared with the normal regression model
+previously. As an exercise you should discuss the specific differences
+between the {\bf BUGS} model specifications for the normal and Poisson
+models.
+{\small 
 \begin{verbatim}
 > print(out,digits=3)
 Inference for Bugs model at 
@@ -1439,13 +1540,15 @@ beta0       3.151  0.025    3.102    3.135    3.151    3.168    3.199 1.001  230
 beta1      -0.498  0.021   -0.539   -0.512   -0.498   -0.484   -0.457 1.001  3000
 fit       869.930 19.856  835.500  855.700  868.600  881.900  913.602 1.002  1600
 fitnew     76.709 12.519   54.098   68.107   76.215   84.510  102.602 1.001  3000
-deviance 1116.605  2.014 1115.000 1115.000 1116.000 1117.000 1122.000
-1.001  3000
+deviance 1116.605  2.014 1115.000 1115.000 1116.000 1117.000 1122.000 1.001  3000
 \end{verbatim}
+}
 
-
-We might wonder whether this model provides an adequate fit to our data.  To evaluate that, we used a Bayesian p-value analysis with fit statistic based on the Freeman-Tukey residual by replacing the model specification above with this:
-
+We might wonder whether this model provides an adequate fit to our
+data.  To evaluate that, we used a Bayesian p-value analysis with fit
+statistic based on the Freeman-Tukey residual by replacing the model
+specification above with this:
+{\small 
 \begin{verbatim}
 cat("
 model {
@@ -1463,27 +1566,52 @@ model {
  beta0~dunif(-5,5)
  beta1~dunif(-5,5)
 }
-
-
 ",file="PoissonGLM.txt")
 \end{verbatim}
-The Bayesian p-value is the proportion of times $fitnew > fit$ which, for this data set, is 0, which was 1.0 in this case (calculation omitted). This suggests that the basic Poisson model does not fit well. 
+}
+The Bayesian p-value is the proportion of times $fitnew > fit$ which,
+for this data set, is 0, which was 1.0 in this case (calculation
+omitted). This suggests that the basic Poisson model does not fit
+well.
 
 
 \subsection{ Constructing your own MCMC algorithm}
 
-It will be helpful for people to suffer through a couple examples building a custom MCMC algorithm. So, here, we build a basic one for the Poisson regression model using a Metropolis-within-Gibbs approach. First, we will assume that the two parameters have diffuse normal priors, say $[\alpha] = norm(0,100)$ and $[\beta]=norm(0,100)$.  We need to collect the relevant elements of the model which are the likelihood $[y|\alpha,\beta] = prod_{i} [y[i]|\alpha\beta] $ which is, mathematically, the product of the Poisson pmf evaluated at $y[i]$, given particular values of $\beta0$ and $\beta1$. The priors are $[\alpha]$ and $[\beta]$. We identify the full conditionals which are $[\alpha|\beta, y]$ and $[\beta|\alpha,y]$.  We use the all-purpose rule for constructing full conditionals to discover that:
+It will be helpful for people to suffer through a couple examples
+building a custom MCMC algorithm. So, here, we build a basic one for
+the Poisson regression model using a Metropolis-within-Gibbs
+approach. First, we will assume that the two parameters have diffuse
+normal priors, say $[\alpha] = norm(0,100)$ and $[\beta]=norm(0,100)$.
+We need to collect the relevant elements of the model which are the
+likelihood $[y|\alpha,\beta] = prod_{i} [y[i]|\alpha\beta] $ which is,
+mathematically, the product of the Poisson pmf evaluated at $y[i]$,
+given particular values of $\beta0$ and $\beta1$. The priors are
+$[\alpha]$ and $[\beta]$. We identify the full conditionals which are
+$[\alpha|\beta, y]$ and $[\beta|\alpha,y]$.  We use the all-purpose
+rule for constructing full conditionals to discover that:
 \[
  [\alpha|\beta,y] propto [y|\alpha,\beta][\alpha] 
 \]
 \[
  [\beta|\alpha,y] propto [y|\alpha,\beta][\beta]
 \]
-Remember we could replace the ``propto'' with ``equals'' if we simply put $[y|\beta]$ or $[y|\alpha]$ in the denominator. But, in general, $[y|\alpha]$ or $[y|\beta]$ will be quite a pain to compute and, more importantly, it is a constant as far as the operative parameter (beta or alpha, respectively) goes so we can just as well ignore it because, recall, the MH acceptance probability will be the ratio of the ful-conditional evaluated at a candidate draw to that evaluated at the current draw. So, the denominator required to change $\propto$ to $=$ winds up canceling from the MH acceptance probability.  Here we will use the random walk candidate generator.  The ``Metropolis within Gibbs'' algorithm for a Poisson regression is remarkably simple:
+Remember we could replace the ``propto'' with ``equals'' if we simply
+put $[y|\beta]$ or $[y|\alpha]$ in the denominator. But, in general,
+$[y|\alpha]$ or $[y|\beta]$ will be quite a pain to compute and, more
+importantly, it is a constant as far as the operative parameter (beta
+or alpha, respectively) goes so we can just as well ignore it because,
+recall, the MH acceptance probability will be the ratio of the
+ful-conditional evaluated at a candidate draw to that evaluated at the
+current draw. So, the denominator required to change $\propto$ to $=$
+winds up canceling from the MH acceptance probability.  Here we will
+use the random walk candidate generator.  The ``Metropolis within
+Gibbs'' algorithm for a Poisson regression is remarkably simple:
 
-%% Kimmy: test this R code out below and see what happens!
 
-\begin{verbatim}I would break this code up into more lines and have objects called ``prior'' and ``prior.candidate'' and ``lambda'' and ``likelihood.candidate''. Annoying stuff that will make it easier for people to understand. Also, remind people that $lik*prior = exp(log(like)+log(prior))$. Lots of people have been running around in the woods for years with traps, and have forgotten math.
+
+\begin{verbatim}
+
+I would break this code up into more lines and have objects called ``prior'' and ``prior.candidate'' and ``lambda'' and ``likelihood.candidate''. Annoying stuff that will make it easier for people to understand. Also, remind people that $lik*prior = exp(log(like)+log(prior))$. Lots of people have been running around in the woods for years with traps, and have forgotten math.
 
 You could also mention that this is a random walk M-H. It would help lots of people out to see a non-symmetric proposal distribution, and the extra step needed to account for it.
 
