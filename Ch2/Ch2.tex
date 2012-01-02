@@ -10,7 +10,9 @@ Introduction to Bayesian Analysis of GL(M)Ms Using R/WinBUGS
 %%% 1. Prior lack of invariance to transformation stuff: Reference and Figure
 %%% 2. Full conditional example from ch. 6 copy notation
 %%% 3. Check out algorithm environment
-
+%%% 4. reference for sampling from f() with bounded support
+%%% 5. need refs on choosing prior disributions
+%%% 6. Check Bayesian p-value definition
 
 A major theme of this book is that spatial capture-recapture models
 are, for the most part, just generalized linear models (GLMs) wherein
@@ -686,91 +688,208 @@ above).
 
 We will talk about the Metropolis-Hastings algorithm shortly, and we
 will use it extensively in the analysis of SCR models (e.g., chapter
-\ref{chapt.mcmc}). While we sometimes use Gibbs sampling, we seldom
-use ``pure'' Gibbs sampling because we might use MH to sample from one
-or more of the full conditional distributions. For such hybrid
-algorithms we use the term {\it Metrpolized Gibbs sampling} or
-more commonly {\it Metropolis-within-Gibbs}.
+\ref{chapt.mcmc}). 
 
 \subsection{Rules for constructing full conditional distributions}  
+\label{glms.sec.rules}
 
 The basic strategy for constructing full-conditional distributions for
 devising MCMC algorithms can be reduced conceptually to a couple of
 basic steps summarized as follows:
 \begin{itemize}
-\item[(step 1)] collect all stochastic components of the model; 
-\item[(step 2)] Recognize and express the full conditional in question as proportional to the product of all  components; 
-\item[(step 3)] remove the ones that don't have the focal parameter in them. 
+\item[(step 1)] Collect all stochastic components of the model; 
+\item[(step 2)] Recognize and express the full conditional in question
+  as proportional to the product of all components;
+\item[(step 3)] Remove the ones that don't have the focal parameter in them. 
 \item[(step 4)] Do some algebra on the result in order to identify the resulting pdf or pmf. 
 \end{itemize}
-Of the 4 steps, the last of those is the main step that requires quite a bit of statistical experience and intuition because various algebraic tricks can be used to reshape the mess into something noticeable - i.e., a standard, named distribution. But step 4 is not necessary if we decide instead to use the Metrpolis-Hastings algorithm as described below. 
+Of the 4 steps, the last of those is the main step that requires quite
+a bit of statistical experience and intuition because various
+algebraic tricks can be used to reshape the mess into something
+noticeable - i.e., a standard, named distribution. But step 4 is not
+necessary if we decide instead to use the Metrpolis-Hastings algorithm
+as described below.
 
-% KIMMY: dollar-signs around everything with a bracket please! Also convert to \alpha
-% \beta for greek letters
-
-To illustrate for computing $[\alpha|y,\beta]$ we first apply step 1 and identify the model components as $[y|\alpha, \beta]$, $[\alpha]$ and $[\beta]$. Step 2 has us write $[\alpha|y,\beta] \propto [y|\alpha,\beta][\alpha][\beta]$.  We note that $[\beta]$ is not a function of alpha and therefore we delete it to get $[\alpha|y,\beta] \propto [y|\alpha,\beta][\alpha]$. Similarly we get $[\beta|y,\alpha] \propto [y|\alpha,\beta][\beta]$. We can apply step 4 and manipulate these algebraically to arrive at the result or, alternatively, we can sample them indirectly using the Metropolis-Hastings algorithm (see below).   
+To illustrate for computing $[\alpha|y,\beta]$ we first apply step 1
+and identify the model components as: $[y|\alpha, \beta]$, $[\alpha]$
+and $[\beta]$. Step 2 has us write $[\alpha|y,\beta] \propto
+[y|\alpha,\beta][\alpha][\beta]$.  Step 3: We note that $[\beta]$ is not a
+function of alpha and therefore we remove it to obtain $[\alpha|y,\beta]
+\propto [y|\alpha,\beta][\alpha]$. Similarly we obtain $[\beta|y,\alpha]
+\propto [y|\alpha,\beta][\beta]$. We apply step 4 and manipulate
+these algebraically to arrive at the result or, alternatively, we can
+sample them indirectly using the Metropolis-Hastings algorithm (see
+below).
 
 
 \subsection{Metropolis-Hastings algorithm}
  
-The Metropolis-Hastings algorithm is a completely generic method for
+The Metropolis-Hastings (MH) algorithm is a completely generic method for
 sampling from any distribution, say $f(\theta)$. In our applications,
-$f(theta)$ will typically be the full conditional distribution for
-theta. Often, the MH algorithm is used to sample from the full
-conditional distributions and the resulting synthetic algorithm is
-called ``Metropolis within Gibbs'' or similar. Shortly we will
+$f(\theta)$ will typically be the full conditional distribution of
+$\theta$. 
+While we sometimes use Gibbs sampling, we seldom
+use ``pure'' Gibbs sampling because we might use MH to sample from one
+or more of the full conditional distributions.
+When the MH algorithm is used to sample from  full
+conditional distributions of a Gibbs sampler the resulting hybrid algorithm is
+called 
+ {\it Metrpolized Gibbs sampling} or
+more commonly {\it Metropolis-within-Gibbs}.
+Shortly we will
 actually construct such an algorithm for a simple class of models.
-The Metropolis-Hastings algorithm generates candidates from some
+
+The MH algorithm generates candidates from some
 proposal or candidate-generating distribution, that may be conditional
 on the current value of the parameter, denoted by
-$h(theta|theta^{current})$. Then you accept the proposed value with
-probability
+$h(\theta^{*}|\theta^{t})$. Here, $\theta^{*}$ is the {\it candidate}
+or proposed 
+value and $\theta^{t}$ is the current value, i.e., at iteration $t$ of
+the MCMC algorithm.  The proposed value
+is accepted with probability
+XXXX check notation with Rahel XXXXXX
 \[
-f(\theta^{cand}) h(\theta^{current}|\theta^{cand})/
-f(\theta^{current}) h(\theta^{cand}|\theta^{current})
+r = \frac{ f(\theta^{*}) h(\theta^{t}|\theta^{*})}
+    {f(\theta^{t}) h(\theta^{*}|\theta^{t}) }
 \]
-this ratio can sometimes be $>1$ in which case we set it equal to
-1. It is useful to note that $h()$ can be anything at all. Absolutely anything!  You can generate candidate values from a $normal(0,1)$ distribution, from a uniform(-3455,3455) distribution, or anything of proper support.  Note, however, that good choices of $h()$ are those that approximate the posterior distribution. Obviously if $h() = f(\theta|y)$ (i.e., the posterior) then you always accept the draw, and it stands to reason that proposals that are more similar to $f(\theta|y)$ will lead to higher acceptance probabilities. No matter the choice of $h()$,  we can evaluate this ratio numerically because the marginal $f(y)$ cancels from both the numerator and denominator. (That is kind of the magic point here that I should emphasize better above.) 
+which we call the MH acceptance probability. 
+This ratio can sometimes be $>1$ in which case we set it equal to
+1. It is useful to note that $h()$ can be anything at all. Absolutely
+anything!  You can generate candidate values from a $normal(0,1)$
+distribution, from a uniform(-3455,3455) distribution, or anything of
+proper support.  Note, however, that good choices of $h()$ are those
+that approximate the posterior distribution. Obviously if $h() =
+f(\theta|y)$ (i.e., the posterior) then you always accept the draw,
+and it stands to reason that proposals that are more similar to
+$f(\theta|y)$ will lead to higher acceptance probabilities. No matter
+the choice of $h()$, we can evaluate this ratio numerically because
+the marginal $f(y)$ cancels from both the numerator and
+denominator, which is the magic of the MH algorithm.
 
-A special kind of $h()$ are those that are symmetric, which means that $h(a|b) = h(b|a)$ in which case $h(a|b)$ and $h(b|a)$ just cancel out. A type of symmetric proposal useful in many situations is the so-called ``random-walk'' proposal distribution where candidate values are drawn from a normal distribution with mean equal to the current value and some standard deviation, say delta which is prescribed by the user. For parameters that have support on the real line, say alpha in our example above, the random walk proposal generator has us generate $alpha^{*} ~ Normal(alpha^{current},delta)$.  If we set delta very small we have a high probability of accepting the proposal and vice versa.  In practice, we ``tune'' delta to achieve a compromise between reasonable mixing of the Markov chains (see below for an example).
 
-Parameters with bounded support: Many models contain parameters that have a bounded support. E.g., variance parameters live on $[0,\infty]$ or similar. In that case it is sometimes convenient to use a random walk proposal distribution, but just reject parameters that are outside of the parameter space (REF FOR THIS?). 
+A special kind of $h()$ are those that are symmetric, which means that
+$h(a|b) = h(b|a)$ in which case $h(a|b)$ and $h(b|a)$ just cancel
+out from the MH acceptance probability and $r$ is then just the ratio
+of the target density evaluated at the candidate value to that
+evaluated at the current value. 
+A type of symmetric proposal useful in many situations is the
+so-called {\it random-walk} proposal distribution where candidate values
+are drawn from a normal distribution with mean equal to the current
+value and some standard deviation, say $\delta$, which is prescribed by
+the user. For parameters that have support on the real line, e.g., $\alpha$
+in our example above, the random walk proposal generator has us
+generate $\alpha^{*} \sim \mbox{Normal}(\alpha^{t},\delta)$.  If we set $\delta$
+very small we have a high probability of accepting the proposal and
+vice versa.  In practice, we ``tune'' delta to achieve a compromise
+between acceptance rate and efficient mixing of the Markov chains (see below for an
+example) normally assessed by autocorrelation. Low $\delta$ increases
+the acceptance rate but will tend to produce Markov chains with high
+autocorrelation, and vice versa. 
+
+{\bf Parameters with bounded support}: Many models contain parameters that
+have  bounded support. E.g., variance parameters live on $[0,\infty]$,
+parameters that represent probabilities live on $[0,1]$, etc..
+ In that case it is sometimes convenient to use a random
+walk proposal distribution that can generate any real number (e.g., a
+normal random walk proposal). In that case, 
+we can just reject parameters that are
+outside of the parameter space (XXXX REF FOR THIS XXXX). 
 
 
 
 \section{Practical Bayesian Analysis and MCMC}
 
-There are a number of really important practical issues to be considered in any Bayesian analysis and we cover some of these briefly here.
+There are a number of really important practical issues to be
+considered in any Bayesian analysis and we cover some of these briefly
+here.
 
-Prior distributions: Bayesian analysis requires that we choose prior
+\subsection{Choice of prior distributions} 
+
+{\bf XXX integrate this material with previous section on prior
+distributions XXXXXX}
+
+Bayesian analysis requires that we choose prior
 distributions for all of the structural parameters of the model (we
 use the term structural parameter to mean all parameters that aren't
 customary thought of as latent variables). We will strive to use
 priors that are meant to express little or no prior information -
-default or customary ``non-informative'' or diffuse priors. This will be uniform(a,b) priors for parameters that have a natural bounded support and, for parameters that live on the real line we use either (1) diffuse normal priors; (2) ``improper'' uniform priors or (3) sometimes even a bounded uniform(a,b) prior if that greatly improves the performance of WinBUGS or other software doing the MCMC for us.  In WinBUGS a prior with low ``precision'' (precision = 1/sigma2) such as normal(0,.01) will typically be used. Of course tau = 0.01 (sigma2 = 100) might be very informative for a regression parameter that has a high variance. Therefore, we recommend that predictor variables {\it always} be standardized. Clearly  there are a lot of choices for ostensibly non-informative priors, and the degree of non-informativeness depends on the parameterization. For example, a natural non-informative prior for the intercept of a logistic regression
+default or customary ``non-informative'' or diffuse priors. This will
+be $\mbox{Unif}(a,b)$ priors for parameters that have a natural
+bounded support and, for parameters that live on the real line we use
+either (1) diffuse normal priors; (2) ``improper'' uniform priors or
+(3) sometimes even a bounded $\mbox{Unif}(a,b)$ prior if that greatly
+improves the performance of {\bf WinBUGS} or other software doing the MCMC
+for us.  In {\bf WinBUGS} a prior with low ``precision'', $\tau$, where
+$\tau = 1/\sigma^2$, such as $\mbox{Norm}(0,.01)$ will typically be
+used. Of course $\tau = 0.01$ ($\sigma^{2} = 100$) might be very
+informative for a regression parameter that has a high
+variance. Therefore, we recommend that predictor variables {\it
+  always} be standardized. Clearly there are a lot of choices for
+ostensibly non-informative priors, and the degree of
+non-informativeness depends on the parameterization. For example, a
+natural non-informative prior for the intercept of a logistic
+regression
 \[
-logit(p[i]) = a + b*x[i]
+\mbox{logit}(p_{i}) = \alpha + \beta x_{i}
 \]
-Would be $[a] = const$ which is the same as saying $a \sim Unif(\infty,infty)$ or the standard improper ``locally uniform'' prior distribution.  However, we might also use a prior on the parameter $p0 = expit(a)$, which is $Pr(y=1)$ for the value $x=0$. Since $p0$ is a probability we might use $p0 \sim Unif(0,1)$. These two priors can affect results (see Chapter 3.XYZ), yet they are both sensible ``non-informative'' priors. Choice of priors and parameterization is very much problem-specific and often largely subjective. Moreover, it also affects the behavior of MCMC algorithms and therefore the analyst needs to pay some attention to these issues and possibly try different things out. [we should point to some standard refs on this stuff].
+Would be $[\alpha] = \mbox{const}$ which is the same as saying $a \sim
+Unif(\infty,infty)$, the customary improper uniform prior.
+However, we might also use a prior on the parameter $p0
+= logit^{-1}(a)$, which is $Pr(y=1)$ for the value $x=0$. Since $p0$ is a
+probability a natural choice is $p0 \sim Unif(0,1)$. These two priors can
+affect results (see Chapter 3.XYZ), yet they are both sensible
+non-informative priors. Choice of priors and parameterization is
+very much problem-specific and often largely subjective. Moreover, it
+also affects the behavior of MCMC algorithms and therefore the analyst
+needs to pay some attention to this issue and possibly try different
+things out. 
+XXX REFS on prior distributions XXXXXX
 
-Once we have carried-out an analysis by MCMC, there are many other practical issues that we have to confront.  One of the most important is ``Have the chains converged?'' Most MCMC algorithms only guarantee that, eventually, the samples being generated will be from the target posterior distribution. So-called ``convergence'' of the Markov chain is achieved when that happens.  Typically a period of transience is observed in the early part of the MCMC algorithm, and this is usually discarded as the ``burn-in'' period.  
+\subsection{Convergence and so-forth}
+
+Once we have carried-out an analysis by MCMC, there are many other
+practical issues that we have to confront.  One of the most important
+is ``have the chains converged?'' Most MCMC algorithms only guarantee
+that, eventually, the samples being generated will be from the target
+posterior distribution. So-called ``convergence'' of the Markov chain
+is achieved when that happens.  Typically a period of transience is
+observed in the early part of the MCMC algorithm, and this is usually
+discarded as the ``burn-in'' period.
 
 The quick diagnostic to whether convergence has been achieved is that
-your Markov chains look ``grassy'' - see Figure XXX below - then
-you're probably all done. Another way to check convergence is to
-update the parameters some more and see if the posterior changes. It
-is good to confirm convergence using the Rhat statistic (Brooks Gelman
-Rubin statistic \citep{gelman_etal:1996}) which should be close to 1. In practice, 1.2 is probably good enough. For some really complex models 1.3 or 1.4 might be good enough. For some models you can't actually realize a low R-hat. E.g., if the posterior is a discrete mixture of distributions then I think you will always be misled into thinking that your Markov chains have not converged when in fact the chains are just jumping back and forth in the posterior state-space. Another situation is when one of the parameters is on the boundary of the parameter space which might appear to be very poor mixing. This kind of stuff is normally ok and you need to think really hard about the context of the model and the problem before you conclude that your MCMC algorithm is ill-behaved or not.
+your Markov chains look ``grassy'' -- see Fig.  \ref{glms.fig.grassy}
+below.  Another way to check
+convergence is to update the parameters some more and see if the
+posterior changes. It is good to confirm convergence using the
+``R-hat'' statistic ($\hat{R}$) or Brooks-Gelman-Rubin statistic
+\citep{gelman_etal:1996}) which should be close to 1 if the Markov
+chains have converged and sufficient posterior samples have been
+obtained. In practice, $\hat{R} = 1.2$ is probably good enough for
+some problems.  For some models you can't actually realize a low
+$\hat{R}$. E.g., if the posterior is a discrete mixture of distributions
+then you can be misled into thinking that your Markov chains
+have not converged when in fact the chains are just jumping back and
+forth in the posterior state-space. So, for example, using model
+selection methods (section XYZ) sometimes suggests non-convergence.
+Another situation is when one of the parameters is on the boundary of
+the parameter space which might appear to be very poor mixing, but all
+within some extreme region of the parameter space.\footnote{it would
+  be nice if we could compile examples of this later in the book and
+  reference back to this point}.
+This
+kind of stuff is normally ok and you need to think really hard about
+the context of the model and the problem before you conclude that your
+MCMC algorithm is ill-behaved.
 
 Some models exhibit ``poor mixing'' of the Markov chains or what
-people might also call ``slow convergence'' which is a term we would
-disagree with because the samples might well be from the posterior
-(i.e., the Markov chains have converged to the proper stationary
-distribution) but simply mix around the posterior rather
-slowly. Anyway, poor mixing can happen for a huge number of reasons -
-when parameters are highly correlated (even confounded), or barely
-identified from the data, or the algorithms are very terrible and
-probably many other reasons.  Slow mixing equates to high
+people might also say ``have not coverged'' (or ``slow convergence'')
+which is a term we would disagree with because the samples might well
+be from the posterior (i.e., the Markov chains have converged to the
+proper stationary distribution) but simply mix around the posterior
+rather slowly. Anyway, poor mixing can happen for a huge number of
+reasons -- when parameters are highly correlated (even confounded), or
+barely identified from the data, or the algorithms are very terrible
+and probably many other reasons.  Slow mixing equates to high
 autocorrelation in the Markov chain - the successive draws are highly
 correlated, and thus we need to run the MCMC algorithm much longer to
 get an effective sample size that is sufficient for estimation - or to
@@ -779,98 +898,215 @@ reduce autocorrelation is ``thinning'' - i.e., keep every $m^{th}$
 value of the Markov chain output. However, thinning is necessarily
 inefficient from the stand point of inference - you can always get
 more precise posterior estimates by using all of the MCMC output
-regardless of the level of autocorrelation \citep{maceachern_berliner:1994}. Practical considerations might necessitate thinning, even though it is statistically inefficient. For example, in models with many parameters or other unknowns being tabulated, the output files might be enormous and unwieldy to work with. In such cases, thinning is perfectly reasonable. In many cases, how well the Markov chains mix is strongly influenced by parameterization, standardization of covariates, and the prior distributions being used. Some things work better than others, and the investigator should experiment with different settings and try not to become bewildered when things don't work out perfectly. MCMC is an art, and a science. 
+regardless of the level of autocorrelation
+\citep{maceachern_berliner:1994}. Practical considerations might
+necessitate thinning, even though it is statistically inefficient. For
+example, in models with many parameters or other unknowns being
+tabulated, the output files might be enormous and unwieldy to work
+with. In such cases, thinning is perfectly reasonable. In many cases,
+how well the Markov chains mix is strongly influenced by
+parameterization, standardization of covariates, and the prior
+distributions being used. Some things work better than others, and the
+investigator should experiment with different settings and 
+remain calm when things don't work out perfectly. MCMC is an
+art, and a science.
 
 
-The next question: Is the posterior sample large enough?  Never report MCMC results to more than 2 decimal places - because they will always be different! Look at the MC error which is printed by default in *BUGS summaries.  You want that to be smallish relative to the magnitude of the parameter. I'm usually content with 1\% but if you're uncomfortable with monte carlo error, you should run your MCMC algorithm as long as it takes. Note that MC error in summaries of the posterior is not the same as having an ``approximate'' solution in a standard likelihood analysis or similar.  The approximate SE in likelihood inference is actually wrong in its actual value.... XYZ.
+{\bf Is the posterior sample large enough?}  A good rule
+of thumb is that you should never report
+MCMC results to more than 2 decimal places - because they will always
+be different! Look at the MC error which is printed by default in
+summaries of BUGS output.  You want that to be smallish relative to the
+magnitude of the parameter and this might depend on the purpose of the
+analysis. For a preliminary analysis you might settle for a few
+percent whereas for a final analysis then certainly less than 1\% is
+called for, but you can run 
+your MCMC
+algorithm as long as it takes. Note that MC error in summaries of the
+posterior is not the same as having an ``approximate'' solution in a
+standard likelihood analysis or similar.  The approximate SE in
+likelihood inference is actually wrong in its actual value.... XYZ.
 
 
 \subsection{Bayesian confidence intervals} 
+
 The 95\% Bayesian interval based on percentiles of the posterior
 is not a unique interval - there are many of them - and the so-called
 ``highest posterior density'' (HPD) interval is the narrowest
 interval. We might compute that frequently because it is easy to do
 with an integer parameter which $N$ is (See the next chapter). The
-95p\% HPD is not often exactly 95\% but usually slightly more
+95 \% HPD is not often exactly 95\% but usually slightly more
 conservative than nominal because it is the narrowest interval that
 contains at least 95\%  of the posterior mass.
 
-\subsection{Estimating functions of parameters} A benefit of analysis by MCMC is that we can seamlessly estimate functions of parameters by simply tabulating the desired function of the simulated posterior draws. For example, if $\theta$ is the parameter of interest and let $\theta^{(i)}$ for $i=1,2,\ldots,M$ be the posterior samples of $\theta$. Let $\eta = exp(\theta)$, then a posterior sample of $\eta$ can be obtained simply by computing $exp(\theta^{(i)})$ for $i=1,2,\ldots,M$. We give an example in Section XXXX below.
+\subsection{Estimating functions of parameters}
 
+A benefit of analysis by MCMC is that we can seamlessly estimate
+functions of parameters by simply tabulating the desired function of
+the simulated posterior draws. For example, if $\theta$ is the
+parameter of interest and let $\theta^{(i)}$ for $i=1,2,\ldots,M$ be
+the posterior samples of $\theta$. Let $\eta = exp(\theta)$, then a
+posterior sample of $\eta$ can be obtained simply by computing
+$exp(\theta^{(i)})$ for $i=1,2,\ldots,M$. We give another example in
+section 
+\ref{glms.sec.xopt}
+below and throughout this book.
+Almost all SCR models in this book involve at least 1 derived
+parameter. For example, density $D$ is a derived parameter, being a
+function of population size $N$ and the area $A$ of the underlying
+state-space of the point process (see chapter \ref{chapt.scr0}). 
 
 \section{Bayesian Analysis using WinBUGS}
 
-We won't be too concerned with devising our own MCMC algorithms although we will do that one or two times for fun.  More often, we will rely on the freely available software package WinBUGS or other BUGS engines for doing this.  Further, we will execute WinBUGS from within R using the R2WinBUGS package. WinBUGS is an MCMC black box that takes a pseudo-code description of all of the relevant stochastic and deterministic elements of a model and generates an MCMC algorithm for that model. But you never get to see the algorithm. Instead, WinBUGS will run the algorithm and just return the Markov chain output - the posterior samples of model parameters. 
+We won't be too concerned with devising our own MCMC algorithms for
+every analysis
+although we will do that a few times for fun.  More often, we
+will rely on the freely available software package {\bf WinBUGS} or
+{\bf JAGS}
+for doing this.  We will always execute these {\bf BUGS} engines from
+within {\bf R} using the \mbox{\tt R2WinBUGS} (REF XYZ XYZ) or
+\mbox{\tt rjags} pacages. {\bf WinBUGS} and {\bf JAGS} are  MCMC black boxes
+that takes a pseudo-code description (i.e., written in the {\bf BUGS}
+language) of all of the relevant stochastic
+and deterministic elements of a model and generates an MCMC algorithm
+for that model. But you never get to see the algorithm. Instead,
+{\bf WinBUGS}/{\bf JAGS} will run the algorithm and just return the Markov chain output
+- the posterior samples of model parameters. 
 
-The great thing about WinBUGS is that it forces you to become intimate
-with your statistical model - you have to write each element of the
-model down, admit (explicitly) all of the various assumptions,
-understand what the actual probability assumptions are and how data
-relate to latent variables and data and latent variables relate to
-parameters, and how parameters relate to one another. While we will
-use WinBUGS almost exclusively here, there are many BUGS like packages
-now, including JAGS, OpenBUGS, PyMC and others.  Later (chapter MCMC
-XYZ) we will demonstrate a model or two in JAGS. OpenBUGS is the
-current active development tree of the ``BUGS'' language. See
-(\citet{kery:2010}; chapters XXXX) and (\citet{kery_schaub:2011}, Appendix XYZ) for the lowdown on problems/issues with using WinBUGS. That book should also be consulted for a more comprehensive introduction to using WinBUGS. In this example, we're going to accelerate pretty fast.
+The great thing about using the {\bf BUGS} language is that it forces
+you to become intimate with your statistical model - you have to write
+each element of the model down, admit (explicitly) all of the various
+assumptions, understand what the actual probability assumptions are
+and how data relate to latent variables and data and latent variables
+relate to parameters, and how parameters relate to one another. 
 
-We  provide a brief introductory example of a normal regression model using a small simulated data set. The following commands are executed from within your R workspace, the command line being indicated by ``>''. First, simulate a covariate x and observations y having prescribed intercept, slope and variance:
+While we normally use
+{\bf WinBUGS} or {\bf JAGS} in this book, we note that {\bf
+ OpenBUGS} is the current active development tree of the {\bf BUGS}
+language. See \citet[][ch.xyz]{kery:2010} and 
+\citet[][appendix xyz]{kery_schaub:2011} for more on practial analysis
+in {\bf WinBUGS}.
+That book should also be consulted
+for a more comprehensive introduction to using {\bf WinBUGS}. In this
+example, we're going to accelerate pretty fast.
+
+\subsection{Linear Regression in WinBUGS}
+
+We provide a brief introductory example of a normal regression model
+using a small simulated data set. The following commands are executed
+from within your R workspace, the command line being indicated by
+\mbox{\tt ``>''}. First, simulate a covariate $x$ and observations $y$ having
+prescribed intercept, slope and variance:
 \begin{verbatim}
 > x<-rnorm(10)
 > mu<- -3.2+ 1.5*x
 > y<-rnorm(10,mu,sd=4)
 \end{verbatim}
-The WinBUGS model specification for a normal regression model is written within R as a character string input to the command cat() and then dumped to a text file named ``normal.txt'' (alternatively, you can write the model specifications directly within a text file and save it in your current working directory):
+The {\bf BUGS} model specification for a normal regression model is
+written within {\bf R} as a character string input to the command
+\mbox{\tt cat()} and
+then dumped to a text file named \mbox{\tt normal.txt}:
 \begin{verbatim}
 > cat("
 model {
    for (i in 1:10){
-      y[i]~dnorm(mu[i],tau)             # the "likelihood"
+      y[i]~dnorm(mu[i],tau)        # the "likelihood"
       mu[i]<- beta0 + beta1*x[i]   # the linear predictor
      }
-   beta0~dnorm(0,.01)                   # prior distribution
+   beta0~dnorm(0,.01)              # prior distributions
    beta1~dnorm(0,.01)
-   sigma~dunif(0,100)
-   tau<-1/(sigma*sigma)                 # tau is a derived parameter
+   sigma~dunif(0,100)               
+   tau<-1/(sigma*sigma)            # tau is a derived parameter
 }
 ",file="normal.txt")
 \end{verbatim}
+Alternatively, you
+can write the model specifications directly within a text file and
+save it in your current working directory, but we do not usually take
+that approach in this book.
+
+{\bf Remarks:} {\bf 1.} {\bf WinBUGS} parameterizes the normal in
+terms of the mean and inverse-variance, called the precision. Thus,
+\mbox{\tt dnorm(0,.01)} implies a variance of 100; 
+{\bf 2.} We typically use diffuse normal priors for mean parameters, $\beta_0$ and $\beta_1$ in this case, but sometimes we might use uniform priors with suitable bounds -B and +B.
+{\bf 3.} We typically use a $\mbox{Unif}(0,B)$ prior on standard
+deviation parameters 
+(Gelman XXX 2006 XXXX). But sometimes we might use a gamma prior on the precision parameter $\tau$.
+{\bf 4.} In a {\bf WinBUGS} model file, every variable referenced in
+the model description has to be
+either data, which will be input (see below), a random variable which
+must have a probability distribution associated with it using the
+``\verb#~#'', or it has to be a derived parameter connected to variables and
+data using ``\mbox{\tt <-}''.
 
 
-
-{\bf Remarks:}
-\begin{itemize}
-\item[1.]WinBUGS parameterizes the normal in terms of the mean and inverse-variance, called the precision. Thus, dnorm(0,.01) implies a variance of 100.
-\item[2.]We typically use diffuse normal priors for mean parameters, beta0 and beta1 in this case, but sometimes we might use uniform priors with suitable bounds -B and +B.
-\item[3.]We typically use a uniform [0,B] prior on standard deviation parameters (Gelman XXX 2006). But sometimes we might use a gamma prior on the precision parameter tau.
-\item[4.]In a WinBUGS model file, every single element has to be either data which will be input (see below), a random variable which must have a probability distribution associated with it, using the ``~'', or it has to be a derived parameter connected to variables and data using ``<-''.
-
-\end{itemize}
-
-To fit the model, we execute these commands:
+To fit the model, we need to describe various data objects to {\bf
+  WinBUGS}. In particular, 
+we create an {\bf R} list object called \mbox{\tt data} which
+are the data objects identified in the BUGS model file.
+ In the example, the 
+data consist of two objects which exist as $y$ and $x$ in the {\bf R}
+workspace and also in the {\bf WinBUGS} model definition. 
+ We also have to create an {\bf R} function
+that produces a list of starting values \mbox{\tt inits} that get sent to
+{\bf WinBUGS}.
+ Finally, we identify
+the names of the parameters (labeled correspondingly in the {\bf WinBUGS}
+model specification) that we want {\bf WinBUGS} to save the MCMC output
+for. In this example, we will ``monitor'' the parameters 
+$\beta_0$, $\beta_1$, $\sigma$ and $\tau$. 
+{\bf WinBUGS} is executed using the {\bf R} command
+\mbox{\tt bugs()}.
+We set the option \mbox{\tt debug=TRUE} if we want the {\bf WinBUGS}
+GUI to stay open (useful for analyzing MCMC output and looking at the
+{\bf WinBUGS} error log). Also, we set \mbox{\tt working.dir=getwd()}
+so that {\bf WinBUGS} output files and the log file are saved in the
+current {\bf R} working directory.  
+  All of these activities look like this:
+{\small 
 \begin{verbatim}
-> library("R2WinBUGS")    # "attach" the R2WinBUGS library
-> data <- list ( "y","x")
-> inits <- function()
+ library("R2WinBUGS")    # "attach" the R2WinBUGS library
+ data <- list ( "y","x")
+ inits <- function()
   list ( beta1=rnorm(1),beta0=rnorm(1),sigma=runif(1,0,2) )
-> parameters <- c("beta0","beta1","sigma","tau")
-> out<-bugs (data, inits, parameters, "normal.txt", n.thin=2, n.chains=2, n.burnin=2000, n.iter=6000, debug=TRUE,working.dir=getwd())
+ parameters <- c("beta0","beta1","sigma","tau")
+ out<-bugs (data, inits, parameters, "normal.txt", n.thin=2, n.chains=2, 
+             n.burnin=2000, n.iter=6000, debug=TRUE,working.dir=getwd())
 \end{verbatim}
-To fit the model, we execute these commands:
-\begin{verbatim}
-> library("R2WinBUGS")    # "attach" the R2WinBUGS library
-> data <- list ( "y","x")
-> inits <- function()
-  list ( beta1=rnorm(1),beta0=rnorm(1),sigma=runif(1,0,2) )
-> parameters <- c("beta0","beta1","sigma","tau")
-> out<-bugs (data, inits, parameters, "normal.txt", n.thin=2, n.chains=2, n.burnin=2000, n.iter=6000, debug=TRUE,working.dir=getwd())
-\end{verbatim}
+}
 
-{\bf Explanation:} We created an R list object called ``data'' which are the things we have to send to WinBUGS.  In the example above, the data consist of two objects which exist as ``y'' and ``x'' in the R workspace and also in the WinBUGS model definition.  People tend to ask ``how should my data be formatted?'' That depends on how you describe the WinBUGS model and you should read your data in as a .csv file or some other format and manipulated it within R to get into the desired format. There is a non-unique way to describe any particular model and so you have some flexibility. We talk about data format further in the context of capture-recapture models and SCR models in chapters 3 and 4, and later.  We also have to create an R function that produces a list of starting values ``inits'' that get sent to WinBUGS. In general, starting values are optional but we recommend to always provide reasonable starting values of structural parameters, but not necessarily random effects(although the latter will sometimes need to be given to keep WinBUGS from crashing).  Finally, we identify the names of the parameters (labeled correspondingly in the WinBUGS model specification) that we want WinBUGS to save the MCMC output for. In the above example, we are telling WinBUGS to ``monitor'' beta0, beta1, sigma and tau. WinBUGS is executed using the R command ``bugs''. Note that the previously created objects defining data, initial values and parameters to monitor are passed to this function. In addition, various other things are declared: The number of chains, the thinning rate, the number of burnin iterations and the total number of iterations. We set ``debug=TRUE'' if we want the WinBUGS GUI to stay open (useful for analyzing MCMC output and looking at the WinBUGS error log). Also, we set working.dir=getwd() so that WinBUGS output files and the log file are saved in the current R working directory.
+{\bf Remarks:} A common question is ``how should my data be
+formatted?'' That depends on how you describe the model in the {\bf
+  BUGS} language, how your data are input into {\bf R} and
+subsequently formatted.  There is no unique way to describe any
+particular model and so you have some flexibility. We talk about data
+format further in the context of capture-recapture models and SCR
+models in chapter \ref{chapt.scr0} and elsewhere.  In general,
+starting values are optional but we recommend to always provide
+reasonable starting values for structural parameters, but are not
+always necessary for random effects.  Note that the previously created
+objects defining data, initial values and parameters to monitor are
+passed to the function \mbox{\tt bugs()}.  In addition, various other
+things are declared: The number of Markov chains (\mbox{\tt
+  n.chains}), the thinning rate (\mbox{\tt n.thin}),
+the number of burn-in iterations (\mbox{\tt n.burnin}) and the total
+number of iterations
+(\mbox{\tt n.iter}).
+To develop a detailed understanding of the various parameters and
+settings used for MCMC, consult a basic reference such as
+\citet{kery:2010}.
 
 
-You should execute all of the commands given above and then look at the resulting output. Kill the WinBUGS GUI and the data will be read back into R.  We don't want to give instructions on how to navigate and use the GUI - see REF (XYZ) for that.  The object ``out'' prints important summaries by default (this is slightly edited):
 
+You should execute all of the commands given above and then look at
+the resulting output. Kill the {\bf WinBUGS} GUI and the data will be
+read back into {\bf R} (or specify \mbox{\tt debug=FALSE}).  We don't
+want to give instructions on how to navigate and use the GUI - see XYZ
+REF (XYZ) for that.  
+The object \mbox{\tt out} prints important
+summaries by default (this is slightly edited):
+
+{\small
 \begin{verbatim}
 > print(out,digits=2)
 Inference for Bugs model at "normal.txt", fit using WinBUGS,
@@ -889,71 +1125,170 @@ and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
 DIC info (using the rule, pD = Dbar-Dhat)
 pD = 2.6 and DIC = 62.4
 \end{verbatim}
+}
 
-{\bf Remarks:} (1) convergence is assessed using the $\hat{R}$ statistic - which we will write ``Rhat''. A value of Rhat near 1 indicates convergence. Posterior summaries are given.  (2) DIC is the ``deviance information criterion'' (REF XXXX; see below XYZ) which some people use in a manner similar to AIC although it is recognized to have some problems in hierarchical models (XYZ Biometrics ref XYZ).  
+{\bf Remarks:} (1) convergence is assessed using the $\hat{R}$
+statistic -- which we might sometimes write ``$Rhat$''. A value of $Rhat$ near 1
+indicates convergence; (2) DIC is the
+``deviance information criterion'' \citep{spiegelhalter_etal:2002}
+(see section \ref{glms.sec.modsel})
+ which
+some people use in a manner similar to AIC although it is recognized
+to have some problems in hierarchical models \citep{millar:2009}. We
+evaluate this in the context of SCR models in chapter XYZ XYZ.
 
-{\bf Inference about functions of model parameters:}  Using the MCMC draws for a given model we can easily obtain the posterior distribution of any function of model parameters.  We showed this by providing the posterior of ``tau'' when we used ``sigma'' to parameterize the model above.  As another example, suppose that the normal regression model above had a quadratic response function of the form
+\subsection{Inference about functions of model parameters}  
+\label{glms.sec.xopt}
+
+Using the MCMC draws for a given model we can easily obtain the
+posterior distribution of any function of model parameters.  We showed
+this in the above example by providing the posterior of $\tau$ when
+the model was parameterized in terms of standar deviation $\sigma$.
+ As another example, suppose that the
+normal regression model above had a quadratic response function of the
+form
 \[
-	E[y[i]] = \beta0 + \beta1*x[i] + \beta2*x[i]*x[i]
+	E(y_i) = \beta_0 + \beta_1 x_i + \beta_2 x_{i}^{2}
 \]
-Then the optimum response can be found by setting the derivative of this function to 0 and solving for $x$. We find that $df/dx = beta1 + 2*beta2*x = 0$ yields that $xopt = -\beta1/(2*\beta2)$.   We can just take our posterior draws for $beta1$ and $beta2$ and obtain a posterior sample of $xopt$ using those values. As an exercise, take the normal model above and simulate a quadratic response and then describe the posterior distribution of xopt. 
-
+Then the optimum value of $x$, i.e., that corresponding to the optimal
+expected response, can be found by setting the derivative of
+this function to 0 and solving for $x$. We find that 
+\[
+df/dx = \beta_1 +
+2*\beta_2 x = 0
+\]
+yields that $x_{opt} = -\beta_1/(2*\beta_2)$.  We can just
+take our posterior draws for $beta_1$ and $beta_2$ and obtain a
+posterior sample of $x_{opt}$ by this simple calculation. As an exercise, take
+the normal model above and simulate a quadratic response and then
+describe the posterior distribution of $x_{opt}$.
 
 
 \section{Model Checking and Selection}
+\label{glms.sec.modsel}
 
 In general terms model checking - or assessing the adequacy of the
 model - and model selection are quite thorny issues and, despite
-contrary and commonly held belief among practitioners, there are not
+contrary and, sometimes, strongly held belief among practitioners, there are not
 really definitive, general solutions to either problem. We're against
 dogma on these issues and think people need to be open-minded about
 such things and recognize that models can be useful whether or not
 they pass certain statistical tests. Some models are intrinsically
 better than others because they make more biological sense or foster
-understanding or achieve some objective that a bootstrap
-goodness-of-fit test can't decide for you.  In the context of Bayesian
-model checking and selection see \citet{kery:2010}; chapter XYZ, and \citet{link_barker:2009}; chapter XYZ. 
+understanding or achieve some objective that some  bootstrap
+or other goodness-of-fit test can't decide for you. That said, it
+gives you some confidence if your model seems adequate and we try to
+provide some fit assessment in most real applications of SCR models
+We provide a very brief overview of concepts here, but provide more
+detailed coverage in chapter \ref{chapt.gof}.
+See also  
+\citet[][ch. xyz]{kery:2010} and
+\citet[][ch. xyz]{link_barker:2009}
+for specific context related to Bayesian 
+model checking and selection.
 
 \subsection{Goodness-of-fit}
- Goodness-of-fit testing is an important element of any analysis because in a sense our model represents a general set of hypotheses about the ecological and observation processes that generated our data. Thus, if our model ``fits'' in some statistical or scientific sense, then we believe it to be consistent with the hypotheses that went into the model. More formally, we would conclude that the data are {\it not inconsistent} with the hypotheses. If we have enough data, then of course we will reject any set of statistical hypotheses.  Unfortunately, conducting goodness-of-fit tests is not always so easy to do. Moreover, it is never really easy (or especially convenient) to decide if your goodness-of-fit test is worth anything. It might have 0 power!  Despite these difficulties, we will often try to conjure something up that gets the job done. 
 
- Even though we think evaluation of fit is important, we also believe that models can be useful irrespective of whether they fit (as we noted above, with enough data, no model will fit, and some contributing factors to lack-of-fit can be minor or irrelevant to the intended use of the model). As a final point, we can always make a model fit by making the model extremely complex. It seems to us that simple models that you can understand should usually be preferred even if they don't fit. Yet the tension is there to get fitting models which comes naturally at the expense of models that can be interpreted and studied and used.  
+Goodness-of-fit testing is an important element of any analysis
+because  our model represents a general set of hypotheses
+about the ecological and observation processes that generated our
+data. Thus, if our model ``fits'' in some statistical or scientific
+sense, then we believe it to be consistent with the hypotheses that
+went into the model. More formally, we would conclude that the data
+are {\it not inconsistent} with the hypotheses, or that the model
+appears adequate. If we have enough
+data, then of course we will reject any set of statistical hypotheses.
+Conversely, we can always come up with a model that fits by making the
+model extremely complex. Despite this paradox, it seems to us that
+simple models that you can understand should usually be preferred even
+if they don't fit, for example if they embody essential mechanisms
+central to our understanding of things, or
+if we think that some contributing factors to lack-of-fit are minor or
+irrelevant to the scientific context and intended use of the model.
+In other words, models can be useful irrespective of whether they fit
+according to some formal statistical test of fit.  Yet
+the tension is there to obtain fitting models, and this comes naturally at
+the expense of models that can be easily interpreted and studied and
+effectively used. 
+Moreover, conducting goodness-of-fit tests is
+not always so easy to do. Moreover, it is never really easy (or
+especially convenient) to decide if your goodness-of-fit test is worth
+anything. It might have 0 power!
+Despite this,
+we recommend attempting to assess model fit in real applications,
+as a general rule, and we provide some basic guidance here and some more
+specific to SCR models in
+chapter \ref{chapt.gof}. 
 
-To evaluate goodness-of-fit in Bayesian analyses, we will most often  use the Bayesian p-value (Gelman XXYYZZ).  The basic idea is to define a fit statistic and compare the posterior distribution of that statistic to the posterior predictive distribution of that statistic for hypothetical perfect data sets for which the model is correct. For example, with count frequency data, a standard measure of fit is the sum of squares of the ``Pearson residuals'',
+To evaluate goodness-of-fit in Bayesian analyses, we will most often
+use the Bayesian p-value \citep{gelman_etal:1996}.  The basic idea is to define
+a fit statistic or ``discrepancy measure'' and compare the posterior distribution of that
+statistic to the posterior predictive distribution of that statistic
+for hypothetical perfect data sets for which the model is known to be correct. For
+example, with count frequency data, a standard measure of fit is the
+sum of squares of the ``Pearson residuals'',
 \[
-D[i] = (y[i] - E[y[i]])^{2}/Var[ y[i] ]
+D(y_i,\theta) = \frac{(y_i - E(y_i))^{2}}{Var( y_{i} )}
 \]
 The fit statistic based on the squared residuals is
 \[
-FIT = sum_{i} D[i]^{2}
+FIT = \sum_{i} D(y_{i},\theta)^{2}
 \]
 which can be computed at each iteration of a MCMC algorithm given the
-current values of parameters that determine the mean and variance of
-the response distribution.  The equivalent statistic is computed for a
+current values of parameters that determine the 
+ response distribution.  At the same time (i.e., at each MCMC
+ iteration), 
+the equivalent statistic is computed for a
 ``new'' data set, simulated using the current parameter values. The
-Bayesian p-value is simply the posterior probability $Pr(Fit >
-Fitnew)$ which should be close to 0.50 for a good model. In practice
-we judge ``close to 0.50'' as being ``not too close to 0 or 1'' and, as always, closeness is somewhat subjective. We're happy with anything $>.1$ and $<.9$ but might settle for $>.05$ and $<0.95$. In summary, the Bayesian p-value seems like a bootstrap idea, is easy to compute, and widely used as a result.
+Bayesian p-value is simply the posterior probability $\Pr(\mbox{Fit} >
+\mbox{Fit}_{new})$\footnote{Check this definition!}
+ which should be close to $0.50$ for a good model -- one that
+ ``fits'' in the sense that the observed data set is
+ consistent with realizations simulated under the model being fitted
+ to the observed data. In practice
+we judge ``close to 0.50'' as being ``not too close to 0 or 1'' and,
+as always, closeness is somewhat subjective. We're happy with anything
+$>.1$ and $<.9$ but might settle for $>.05$ and $<0.95$. In summary,
+the Bayesian p-value seems like a bootstrap idea, is easy to compute,
+and widely used as a result.
 
-Sometimes a more useful fit statistic is the Freeman-Tukey statistic, in which 
+Another useful fit statistic is the Freeman-Tukey
+statistic\footnote{Ref for this?}, in which 
 \[
-D(x,\theta) = \sum_{j} ( \sqrt(x_{j}) - sqrt(e_{j}) )^2
+D({\bf y},\theta) = \sum_{i} ( \sqrt(y_{i}) - \sqrt(e_{i}) )^2
 \]
-
-\citep{brooks_etal:2000}, where $x_{j}$ is the observed value of observation  $j$ and $e_{j}$ its expected value. In contrast to a chi-square discrepancy, the Freeman-Tukey statistic removes the need to pool cells with small expected values.
+\citep{brooks_etal:2000}, where $y_{i}$ is the observed value of
+observation $i$ and $e_{i}$ its expected value. In contrast to a
+chi-square discrepancy, the Freeman-Tukey statistic removes the need
+to pool cells with small expected values.
 
 
 \subsection{Model Selection }
 
- For model selection we typically use three different methods: First is, let's say, common sense. If a parameter has posterior mass concentrated away from 0 then it seems like it should be regarded as important - that is, it is ``significant.''  This approach seems to have fallen out of favor with all of the interest over the last 10 or 15 years on model selection in ecology. It seems reasonable to us. 
+For model selection we typically use three different methods: First
+is, let's say, common sense. If a parameter has posterior mass
+concentrated away from 0 then it seems like it should be regarded as
+important - that is, it is ``significant.''  This approach seems to
+have fallen out of favor with all of the interest over the last 10 or
+15 years on model selection in ecology. It seems reasonable to us.
 
 
-For regression problems we use the factor weighting idea which is to introduce a set of binary variables $w(k)$ for variable $k$, and express the model as, e.g., for a single covariate model:
+For regression problems we sometimes use the factor weighting idea
+which is to introduce a set of binary variables $w_{k}$ for variable
+$k$, and express the model as, e.g., for a single covariate model:
  \[
- E[y[i]] = a + w*b*x[i]
+ E(y_i) = \alpha + w \beta x_{i}
 \]
-where $w$ is given a Bernoulli prior distribution with some prescribed probability. E.g., $w \sim Bern(0.50)$ to provide a prior probability of 0.50 that variable ``x'' should be an element of the linear predictor. The posterior probability of the event $w=1$ is a gauge of the importance of the variable $x[i]$. i.e.,  high values of $Pr(w=1)$ indicate stronger evidence....close to 0 means not so important, etc...
- This idea seems to be due to Kuo and Mallick (XXX)\footnote{ Is this
+where $w$ is given a Bernoulli prior distribution with some prescribed
+probability. E.g., $w \sim Bern(0.50)$ to provide a prior probability
+of 0.50 that variable ``x'' should be an element of the linear
+predictor. The posterior probability of the event $w=1$ is a gauge of
+the importance of the variable $x[i]$. i.e., high values of $Pr(w=1)$
+indicate stronger evidence....close to 0 means not so important,
+etc...
+ 
+
+This idea seems to be due to Kuo and Mallick (XXX)\footnote{ Is this
    also what people call Zellner's G-priors?} and see
  \citet{royle_dorazio:2008}; ch XX for an example in the context of
  logistic regression. It seems to even work sometimes with fairly
@@ -1180,8 +1515,8 @@ well-mixing.
 \begin{center}
 \includegraphics[height=2.75in]{figs/MCMC3}
 \end{center}
-\caption{Needs a caption}
-\label{fig.MCMC3}
+\caption{nice grassy mcmc output}
+\label{glms.fig.grassy}
 \end{figure}
 
 {\bf Remarks:} We used a specific set of starting values for these
