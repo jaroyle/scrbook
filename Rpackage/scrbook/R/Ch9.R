@@ -20,9 +20,11 @@ int2d <- function(alpha, delta=0.02) {
 
 # Create spatial covariate
 
-spcov <- function(B=1, v=20) {
-    R <- data.frame(x=rep(seq(0, B, length=v), each=v),
-                    y=rep(seq(0, B, length=v), times=v))
+spcov <- function(B=1, pix=0.05) {
+    cell <- seq(0+pix/2, B-pix/2, pix)
+    v <- length(cell)
+    R <- data.frame(x=rep(cell, each=v),
+                    y=rep(cell, times=v))
     D<-e2dist(R,R)
     V<-exp(-D/2)
     Vi<-solve(V)
