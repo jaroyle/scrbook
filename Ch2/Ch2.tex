@@ -302,10 +302,10 @@ we seek is:
   \mbox{present})\Pr(\mbox{present})}{\Pr(\mbox{detected})}
 \]
 Mathematically, this is 
-\[
-\Pr(z=1|y=0) = \Pr(y=0|z=1)\Pr(z=1)/\Pr(y=0) = 
-[(1-p)^{T} \psi]/[ (1-p)^T \psi + (1-\psi) ].
-\]
+\begin{eqnarray*}
+\Pr(z=1|y=0) &= &\Pr(y=0|z=1)\Pr(z=1)/\Pr(y=0)  \\
+             &= & [(1-p)^{T} \psi]/[ (1-p)^T \psi + (1-\psi) ].
+\end{eqnarray*}
 To apply this, 
 suppose that $T=2$ surveys are done at a wetland for a species of
 frog, and the species is not detected there. Suppose further that $\psi
@@ -1574,128 +1574,180 @@ for this data set, is 0, which was 1.0 in this case (calculation
 omitted). This suggests that the basic Poisson model does not fit
 well.
 
-
 \subsection{ Constructing your own MCMC algorithm}
 
-It will be helpful for people to suffer through a couple examples
-building a custom MCMC algorithm. So, here, we build a basic one for
-the Poisson regression model using a Metropolis-within-Gibbs
-approach. First, we will assume that the two parameters have diffuse
-normal priors, say $[\alpha] = norm(0,100)$ and $[\beta]=norm(0,100)$.
-We need to collect the relevant elements of the model which are the
-likelihood $[y|\alpha,\beta] = prod_{i} [y[i]|\alpha\beta] $ which is,
-mathematically, the product of the Poisson pmf evaluated at $y[i]$,
-given particular values of $\beta0$ and $\beta1$. The priors are
-$[\alpha]$ and $[\beta]$. We identify the full conditionals which are
-$[\alpha|\beta, y]$ and $[\beta|\alpha,y]$.  We use the all-purpose
-rule for constructing full conditionals to discover that:
+It might be helpful to suffer through a couple examples
+building custom MCMC algorithms. Here, we develop an MCMC algorithm
+for 
+the Poisson regression model, using a Metropolis-within-Gibbs sampling framework.
+
+We will assume that the two parameters have diffuse
+normal priors, say $[\alpha] = \mbox{Norm}(0,100)$ and
+$[\beta]=\mbox{Norm}(0,100)$ where each has {\it standard deviation}
+100 (recall that {\bf WinBUGS} parameterizes the normal in terms of $1/\sigma^{2}$).
+We need to assemble the relevant elements of the model which are these
+two prior distributions and the 
+likelihood $[{\bf y}|\alpha,\beta] = \prod_{i} [y_i|\alpha \beta] $ which is,
+mathematically, the product of the Poisson pmf evaluated at each $y_i$,
+given particular values of $\alpha$ and $\beta$.
+Next, we need to identify the full conditionals
+$[\alpha|\beta, {\bf y}]$ and $[\beta|\alpha,{\bf y}]$.  We use the all-purpose
+rule for constructing full conditionals
+(section \ref{glms.sec.rules})
+ to discover that:
 \[
- [\alpha|\beta,y] propto [y|\alpha,\beta][\alpha] 
+ [\alpha|\beta,{\bf y}] \propto \left\{ \prod_{i} [y_{i}|\alpha,\beta]\right\}[\alpha] 
 \]
+and
 \[
- [\beta|\alpha,y] propto [y|\alpha,\beta][\beta]
+ [\beta|\alpha,{\bf y}] \propto \left\{ \prod_{i}
+   [y_{i}|\alpha,\beta]\right\} [\beta]
 \]
-Remember we could replace the ``propto'' with ``equals'' if we simply
+Remember, we could replace the ``$\propto$'' with ``$=$'' if we 
 put $[y|\beta]$ or $[y|\alpha]$ in the denominator. But, in general,
 $[y|\alpha]$ or $[y|\beta]$ will be quite a pain to compute and, more
-importantly, it is a constant as far as the operative parameter (beta
-or alpha, respectively) goes so we can just as well ignore it because,
-recall, the MH acceptance probability will be the ratio of the
+importantly, it is a constant as far as the operative parameters
+($\alpha$ or $\beta$,
+respectively) are concerned. Therefore, 
+the MH acceptance probability will be the ratio of the
 ful-conditional evaluated at a candidate draw to that evaluated at the
-current draw. So, the denominator required to change $\propto$ to $=$
-winds up canceling from the MH acceptance probability.  Here we will
-use the random walk candidate generator.  The ``Metropolis within
-Gibbs'' algorithm for a Poisson regression is remarkably simple:
-
-
-
+current draw, and so the denominator required to change $\propto$ to $=$
+winds up canceling from the MH acceptance probability.  
+Here we will
+use the random walk candidate generator so that, for example,
+ $\alpha^{*} \sim \mbox{Normal}(\alpha^{t},\delta)$ where $\delta$ is
+ the standard-deviation of the proposal distribution, which is just a
+ tuning parameter\footnote{ 
+It would help
+lots of people out to see a non-symmetric proposal distribution, and
+the extra step needed to account for it.
+}.
+We remark also that calculations are often done on the log-scale to
+preserve numerical integrity of things when quantities evaluate to
+small or large numbers, so keep in mind, for example, 
+$a*b = exp(log(a) + log(b))$.
+ The ``Metropolis within
+Gibbs'' algorithm for a Poisson regression turns out to be  remarkably simple:
+{\small
 \begin{verbatim}
+set.seed(2013)
 
-I would break this code up into more lines and have objects called ``prior'' and ``prior.candidate'' and ``lambda'' and ``likelihood.candidate''. Annoying stuff that will make it easier for people to understand. Also, remind people that $lik*prior = exp(log(like)+log(prior))$. Lots of people have been running around in the woods for years with traps, and have forgotten math.
-
-You could also mention that this is a random walk M-H. It would help lots of people out to see a non-symmetric proposal distribution, and the extra step needed to account for it.
-
-# put random number seed here
 out<-matrix(NA,nrow=1000,ncol=2)   # matrix to store the output
-beta0<- -1                         # starting values
-beta1<- -.8
+alpha<- -1                         # starting values
+beta <- -.8
 
 # begin the MCMC loop ; do 1000 iterations
 for(i in 1:1000){
 
-# update the beta0 parameter
-lik.curr<- sum(log(dpois(y,exp(beta0+beta1*habitat)))) 
-prior.curr<- log(dnorm(beta0,0,100))
-beta0c<-rnorm(1,beta0,.25)         # generate candidate
-lik.cand<- sum(log(dpois(y,exp(beta0c+beta1*habitat))))
-prior.cand<- log(dnorm(beta0c,0,100))
-if(runif(1)< exp(lik.cand+prior.cand-lik.curr-prior.curr)) beta0<-beta0c
+# update the alpha parameter
+lambda<- exp(alpha+beta*habitat)
+lik.curr<- sum(log(dpois(y,lambda))) 
+prior.curr<- log(dnorm(alpha,0,100))
+alpha.cand<-rnorm(1,alpha,.25)         # generate candidate
+lambda.cand<- exp(alpha.cand + beta*habitat)
+lik.cand<- sum(log(dpois(y,lambda.cand)))
+prior.cand<- log(dnorm(alpha.cand,0,100))
+mhratio<- exp(lik.cand +prior.cand - lik.curr-prior.curr)
+if(runif(1)< mhratio)
+     alpha<-alpha.cand
 
-# update the beta1 parameter
-lik.curr<- sum(log(dpois(y,exp(beta0+beta1*habitat)))) 
-prior.curr<- log(dnorm(beta1,0,100))
-beta1c<-rnorm(1,beta1,.25)
-lik.cand<- sum(log(dpois(y,exp(beta0+beta1c*habitat)))) 
-prior.cand<- log(dnorm(beta1c,0,100))
-if(runif(1)< exp(lik.cand+prior.cand-lik.curr-prior.curr)) beta1<-beta1c
-out[i,]<-c(beta0,beta1)             # save the current values
+# update the beta parameter
+lik.curr<- sum(log(dpois(y,exp(alpha+beta*habitat)))) 
+prior.curr<- log(dnorm(beta,0,100))
+beta.cand<-rnorm(1,beta,.25)
+lambda.cand<- exp(alpha+beta.cand*habitat)
+lik.cand<- sum(log(dpois(y,lambda.cand))) 
+prior.cand<- log(dnorm(beta.cand,0,100))
+mhratio<- exp(lik.cand + prior.cand - lik.curr - prior.curr)
+if(runif(1)< mhratio)  
+     beta<-beta.cand
+
+out[i,]<-c(alpha,beta)             # save the current values
 }
+
+
+plot(out[,1],ylim=c(-1.5,3.3),type="l",lwd=2,ylab="parameter value",
+     xlab="MCMC iteration")
+lines(out[,2],lwd=2,col="red")
 \end{verbatim}
-
+}
 
 \begin{figure}
 \begin{center}
-\includegraphics[height=2.75in]{figs/MCMC1}
+\includegraphics[height=3in,width=4in]{figs/poissonmcmc}
 \end{center}
-\caption{Needs a caption}
-\label{fig.MCMC1}
+\caption{MCMC output for Poisson regression parameters (top trace:
+  intercept $\alpha$; bottom trace: slope $\beta$). This is for
+  $\delta = 0.25$. 
+}
+\label{glms.fig.poissonmcmc}
 \end{figure}
 
 
-Look at the output (beta0 in red, beta1 in black). You might not like the appearance of this output too much but a couple of things are evident: The Markov chains clearly stabilize - ``converge'' --  after about 100 iterations. They also appear to mix very slowly, although this is not so clear given the scale of the y-axis.
- 
-
-We decreased the variance for candidate generating distribution and
-re-ran the MCMC algorithm producing the history plots below. We see
-that the burn-in takes longer but it seems to mix better.
-
-
-Fig. XYZ shows a longer MCMC run (10,000 total iterations) for beta1
-based on discarding the first 400 samples as burn-in. The ``grassy''
+The first 300 iterations of the MCMC history of each parameter 
+is shown in Fig. \ref{glms.fig.poissonmcmc}. The appearance of this is
+not very appealing but a couple of things are evident: First, the
+Markov chains clearly stabilize - ``burn-in'' --  after about 60 or
+70 iterations. They also appear to mix very slowly once convergence is
+achieved, although this is not so clear given the scale of the
+$y$-axis.
+We decreased  the standard deviation
+of the candidate generating distribution from
+$\delta = 0.25$ to $\delta = 0.05$ and re-ran 
+re-ran the MCMC algorithm producing the output shown in
+Fig. \ref{glms.fig.poissonmcmc2}. We see 
+that the burn-in takes longer but it seems to mix better although it
+takes slightly longer to burn-in.
+Using this value of $\delta$ we generated 10,000 posterior samples,
+discarding the first 500 as burn-in, and the result is shown in
+Fig. \ref{glms.fig.poissonmcmc3}, this time seperate panels for each
+parameter. 
+The ``grassy''
 look of the MCMC history is diagnostic of Markov chains that are
-well-mixing.
+well-mixing and we would generally be very satisfied with results that
+look like this.
 
 \begin{figure}
 \begin{center}
-\includegraphics[height=2.75in]{figs/MCMC2}
+\includegraphics[height=3in,width=4in]{figs/poissonmcmc2}
 \end{center}
-\caption{Needs a caption}
-\label{fig.MCMC2}
+\caption{Same as previous fig but with $\delta = 0.05$.}
+\label{glms.fig.poissonmcmc2}
 \end{figure}
 
-
 \begin{figure}
 \begin{center}
-\includegraphics[height=2.75in]{figs/MCMC3}
+\includegraphics[height=4in,width=5in]{figs/poissonmcmc3}
 \end{center}
-\caption{nice grassy mcmc output}
-\label{glms.fig.grassy}
+\caption{nice grassy mcmc output, longer run of previous with $\delta
+  = 0.05$.}
+\label{glms.fig.poissonmcmc3}
 \end{figure}
 
 {\bf Remarks:} We used a specific set of starting values for these
 simulations. It should be clear that starting values closer to the
 mass of the posterior distribution might cause burn-in to occur
 faster. As an exercise, evaluate that.  (2) Clearly the influence of
-the proposal variance term is important. Small values lead to much
+the proposal standard deviation
+term is important. Small values lead to much
 better mixing but it should be noted that values that are too small
-will lead to very slow mixing. We saw that values that were too large
-tended to get the parameters stuck in one spot. This suggests there is
+will slow down burn-in and also lead to high correlation.
+This suggests there is
 an optimal value of the Metropolis-Hastings tuning
-parameter\footnote{Defined previously?}. As an exercise you should
-find that optimal value. (3) For the flat normal prior distributions
+parameter\footnote{Defined previously?????}. As an exercise you should
+contemplate finding that optimal value for this
+problem\footnote{effective sample size definition?} 
+(3) For the flat normal prior distributions
 here we could leave the prior contribution out of the full conditional
-evaluation since it is ``locally constant''. Note also that we have
-used a different prior than in our WinBUGS model specification. As an
+evaluation since it is locally constant, i.e., constant in the vicinity of
+the posterior mass, and thus has no practical effect. Removing the
+prior contribution from the MH acceptance probability is equivalent to
+saying that the parameters have an improper uniform prior, i.e.,
+$\alpha \sim \mbox{const}$, which is commonly used for mean parameters
+in practice. 
+Note also that we have
+used a different prior than in our {\bf WinBUGS} model specification
+given previously. As an
 exercise, evaluate whether this seems to affect the result.
 
 \section{Poisson GLM with Random Effects}
