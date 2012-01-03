@@ -15,8 +15,8 @@ n.k <- table(cut(s[,1], seq(0, 1, 0.2)),
 png("figs/homoPlots.png", width=5, height=2.5, units="in", res=400)
 op <- par(mfrow=c(1, 2), mai=c(0.1, 0.1, 0.1, 0.1))
 plot(s, frame=T, ann=FALSE, axes=FALSE, asp=1, cex=0.5)
-segments(seq(0, 1, 0.2), 0, seq(0, 1, 0.2), 1, col=gray(0.5))
-segments(0, seq(0, 1, 0.2), 1, seq(0, 1, 0.2), col=gray(0.5))
+#segments(seq(0, 1, 0.2), 0, seq(0, 1, 0.2), 1, col=gray(0.5))
+#segments(0, seq(0, 1, 0.2), 1, seq(0, 1, 0.2), col=gray(0.5))
 plot(s, frame=T, ann=FALSE, axes=F, type="n", asp=1)
 segments(seq(0, 1, 0.2), 0, seq(0, 1, 0.2), 1, col=gray(0.5))
 segments(0, seq(0, 1, 0.2), 1, seq(0, 1, 0.2), col=gray(0.5))
@@ -59,15 +59,26 @@ dev.off()
 
 
 # spatial covariate (with mean 0)
-elev.fn <- function(x) x[,1]+x[,2]-1
+#elev.fn <- function(x) x[,1]+x[,2]-1
+elev.fn <- function(x) x[1]+x[2]-1
+
+mu <- function(x, beta) exp(beta*elev.fn(x=x))
+
+library(R2Cuba)
+xx <- cuhre(2, 1, mu, lower=c(0,0), upper=c(1,1), beta=2)
+
+xx <- cuhre(2, 1, mu, lower=c(0,0), upper=c(1,1), beta=2,
+            flags=list("verbose"=0))
+
 
 # 2-dimensional integration over unit square
-int2d <- function(alpha, delta=0.02) {
+int2d <- function(beta, delta=0.02) {
   z <- seq(delta/2, 1-delta/2, delta)
   len <- length(z)
   cell.area <- delta*delta
   S <- cbind(rep(z, each=len), rep(z, times=len))
-  sum(exp(alpha*elev.fn(S)) * cell.area)
+#  sum(exp(beta*elev.fn(S)) * cell.area)
+  sum(exp(beta*(S[,1]+S[,2]-1)) * cell.area)
   }
 
 # Simulate PP using rejection sampling
@@ -75,15 +86,17 @@ set.seed(300225)
 N <- 100
 count <- 1
 s <- matrix(NA, N, 2)
-alpha <- 2 # parameter of interest
+beta <- 2 # parameter of interest
+int.mu <- cuhre(2, 1, mu, beta=beta)$value
+elev.min <- elev.fn(c(0,0)) #elev.fn(cbind(0,0))
+elev.max <- elev.fn(c(1,1)) #elev.fn(cbind(1,1))
+Q <- max(c(exp(beta*elev.min) / int.mu,   #2d(beta),
+           exp(beta*elev.max) / int.mu))   #2d(beta)))
 while(count <= 100) {
   x.c <- runif(1, 0, 1); y.c <- runif(1, 0, 1)
-  s.cand <- cbind(x.c,y.c)
-  elev.min <- elev.fn(cbind(0,0))
-  elev.max <- elev.fn(cbind(1,1))
-  pr <- exp(alpha*elev.fn(s.cand)) / int2d(alpha)
-  Q <- max(c(exp(alpha*elev.min) / int2d(alpha),
-             exp(alpha*elev.max) / int2d(alpha)))
+  s.cand <- c(x.c,y.c)
+#  int.mu <- cuhre(2, 1, mu, beta=beta)$value
+  pr <- exp(beta*elev.fn(s.cand)) / int.mu #2d(beta)
   if(runif(1) < pr/Q) {
     s[count,] <- s.cand
     count <- count+1
@@ -93,8 +106,9 @@ while(count <= 100) {
 
 # Maximum likelihood
 nll <- function(beta) {
-  -sum(beta*elev.fn(s) - log(int2d(beta)))
-  }
+    int.mu <- cuhre(2, 1, mu, beta=beta)$value
+    -sum(beta*elev.fn(s) - log(int.mu))
+}
 starting.value <- 0
 fm <- optim(starting.value, nll, method="Brent",
             lower=-5, upper=5, hessian=TRUE)
@@ -115,17 +129,18 @@ op <- par(mfrow=c(1, 2), mai=c(0.1, 0.1, 0.1, 0.1))
 Sx <- seq(0.01, 0.99, 0.01)
 len <- length(Sx)
 S <- cbind(rep(Sx, each=len), rep(Sx, times=len))
-elev <- elev.fn(S)
+elev.fn2 <- function(x) x[,1]+x[,2]-1
+elev <- elev.fn2(S)
 image(Sx, Sx, matrix(elev, len), col=rgb(0,seq(0.1,1,0.01),0,0.8),
       ann=FALSE, axes=FALSE, asp=1)
 points(s, cex=0.5)
-segments(seq(0, 1, 0.2), 0, seq(0, 1, 0.2), 1, col=gray(0.5))
-segments(0, seq(0, 1, 0.2), 1, seq(0, 1, 0.2), col=gray(0.5))
+#segments(seq(0, 1, 0.2), 0, seq(0, 1, 0.2), 1, col=gray(0.5))
+#segments(0, seq(0, 1, 0.2), 1, seq(0, 1, 0.2), col=gray(0.5))
 box(col=gray(0.5))
 Sx <- seq(0.1, 0.9, 0.2)
 len <- length(Sx)
 S <- cbind(rep(Sx, each=len), rep(Sx, times=len))
-elev <- elev.fn(S)
+elev <- elev.fn2(S)
 image(Sx, Sx,
       matrix(elev, len), xlim=c(0,1), ylim=c(0,1),
       col=rgb(0,seq(0.1,1,0.01),0,0.8),

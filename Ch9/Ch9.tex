@@ -293,21 +293,12 @@ The following \R~commands demonstrate the use of rejection sampling to
 simulate an inhomogeneous point process for the covariate depicted in
 Fig.~\ref{ch9:fig:hetero}.
 
-\hl{use R2Cuba instead of int2d}
-
 \begin{small}
 \begin{verbatim}
 # spatial covariate (with mean 0)
-elev.fn <- function(x) x[,1]+x[,2]-1
-
-# 2-dimensional integration over unit square
-int2d <- function(beta, delta=0.02) {
-  z <- seq(delta/2, 1-delta/2, delta)
-  len <- length(z)
-  cell.area <- delta*delta
-  S <- cbind(rep(z, each=len), rep(z, times=len))
-  sum(exp(beta*elev.fn(S)) * cell.area)
-  }
+elev.fn <- function(x) x[1]+x[2]-1
+# intensity function
+mu <- function(x, beta) exp(beta*elev.fn(x=x))
 
 # Simulate PP using rejection sampling
 set.seed(300225)
@@ -315,14 +306,15 @@ N <- 100
 count <- 1
 s <- matrix(NA, N, 2)
 beta <- 2 # parameter of interest
+int.mu <- cuhre(2, 1, mu, beta=beta)$value
+elev.min <- elev.fn(c(0,0)) #elev.fn(cbind(0,0))
+elev.max <- elev.fn(c(1,1)) #elev.fn(cbind(1,1))
+Q <- max(c(exp(beta*elev.min) / int.mu,   #2d(beta),
+           exp(beta*elev.max) / int.mu))   #2d(beta)))
 while(count <= 100) {
   x.c <- runif(1, 0, 1); y.c <- runif(1, 0, 1)
-  s.cand <- cbind(x.c,y.c)
-  elev.min <- elev.fn(cbind(0,0))
-  elev.max <- elev.fn(cbind(1,1))
-  pr <- exp(beta*elev.fn(s.cand)) / int2d(beta)
-  Q <- max(c(exp(beta*elev.min) / int2d(beta),
-             exp(beta*elev.max) / int2d(beta)))
+  s.cand <- c(x.c,y.c)
+  pr <- exp(beta*elev.fn(s.cand)) / int.mu #2d(beta)
   if(runif(1) < pr/Q) {
     s[count,] <- s.cand
     count <- count+1
@@ -357,8 +349,9 @@ negative-log-likelihood using \verb+R+'s \verb+optim+ function.
 \begin{verbatim}
 # Negative log-likelihood
 nll <- function(beta) {
-  -sum(beta*elev.fn(s) - log(int2d(beta)))
-  }
+    int.mu <- cuhre(2, 1, mu, beta=beta)$value
+    -sum(beta*elev.fn(s) - log(int.mu))
+}
 starting.value <- 0
 fm <- optim(starting.value, nll, method="Brent",
             lower=-5, upper=5, hessian=TRUE)
@@ -368,7 +361,7 @@ c(Est=fm$par, SE=sqrt(1/fm$hessian)) # estimates and SEs
 
 
 Maximizing the likelihood took a small fraction of a second, and we
-obtained an estimate of $\hat{\beta}=2.47$. We could plug in
+obtained an estimate of $\hat{\beta}=1.99$. We could plug in
 this estimate to our linear model at each point in the state-space to
 obtain the MLE for the intensity surface.
 
@@ -401,8 +394,6 @@ real applications.
 Here is some \R~code to simulate the encounter histories under a
 Poisson observation model, which would be appropriate if animals could
 be detected multiple times at a trap during a single occassion.
-
-\hl{add this code to the R package help file for scrIPP}
 
 \begin{small}
 \begin{verbatim}
@@ -448,13 +439,15 @@ do so is:
 
 \begin{small}
 \begin{verbatim}
-D1 <- int2d(beta1, delta=.05)
+D1 <- cuhre(2, 1, mu, lower=c(xlims[1], ylims[1]),
+            upper=c(xlims[2], ylims[2]), beta=beta1)$value
 beta1.cand <- rnorm(1, beta1, tune[3])
-D1.cand <- int2d(beta1.cand, delta=0.05)
-ll.beta1 <- sum(  beta1*elev.fn(S) - log(D1) )
-ll.beta1.cand <- sum( beta1.cand*elev.fn(S) - log(D1.cand) )
+D1.cand <- cuhre(2, 1, mu, lower=c(xlims[1], ylims[1]),
+                 upper=c(xlims[2], ylims[2]), beta=beta1.cand)$value
+ll.beta1 <- sum(  beta1*elev.fn.v(S) - log(D1) )
+ll.beta1.cand <- sum( beta1.cand*elev.fn.v(S) - log(D1.cand) )
 if(runif(1) < exp(ll.beta1.cand - ll.beta1) )  {
-    beta1<-beta1.cand
+     beta1<-beta1.cand
 }
 \end{verbatim}
 \end{small}
@@ -481,7 +474,7 @@ life is very nice when we are working with simulated data.
 
 \begin{verbatim}
 library(scrbook)
-fm1 <- scrIPP(yz, X, M, 3000, xlims=c(-1,1), ylims=c(-1,1),
+fm1 <- scrIPP(yz, X, M, 3000, xlims=c(0,0), ylims=c(-1,1),
             tune=c(0.002, 0.1, 0.25, 0.07) )
 plot(mcmc(fm1$out))
 \end{verbatim}
