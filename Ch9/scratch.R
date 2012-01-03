@@ -265,35 +265,38 @@ sink()
 
 
 library(scrbook)
-library(raster)
 
-set.seed(3453)
-v <- 21
-dat <- spcov(v=v)$R
+
+set.seed(353)
+pix <- 0.05
+dat <- spcov(pix=pix)$R
 npix <- nrow(dat)
 colnames(dat) <- c("x","y","elev")
-image(t(matrix(dat$elev, v, v)))
+cell <- seq(pix/2, 1-pix/2, pix)
+image(cell, cell, t(matrix(dat$elev, 1/pix, 1/pix)), ann=FALSE)
 
 head(dat)
 
 # Simulate IPP
-set.seed(300225)
+set.seed(30275)
 N <- 50
 alpha <- 2
 dat$cp <- exp(alpha*dat$elev) / sum(exp(alpha*dat$elev))
 s.tmp <- rmultinom(1, N, dat$cp) # a single realization to be ignored later
 
-png("figs/discrete.png", width=7, height=7, units="in", res=400)
-image(t(matrix(dat$elev, v, v)))
-points(dat[s.tmp>0,c("x","y")], cex=s.tmp[s.tmp>0])
-box()
-dev.off()
 
 # Trap locations
-xsp <- seq(0.3, 0.7, 0.05)
+xsp <- seq(0.275, 0.725, by=0.05)
 X <- cbind(rep(xsp, each=length(xsp)), rep(xsp, times=length(xsp)))
+str(X)
 
 
+png("figs/discrete.png", width=7, height=7, units="in", res=400)
+image(cell, cell, t(matrix(dat$elev, 1/pix, 1/pix)), ann=FALSE)
+points(dat[s.tmp>0,c("x","y")], cex=s.tmp[s.tmp>0])
+points(X, pch="+")
+box()
+dev.off()
 
 
 
@@ -315,7 +318,7 @@ lam <- matrix(NA, N, ntraps)
 s <- matrix(NA, N, 3)
 colnames(s) <- c("pixID", "x", "y")
 
-set.seed(5588)
+set.seed(557828)
 for(i in 1:N) {
     s.i <- sample(1:npix, 1, prob=dat$cp)
     sx <- dat[s.i, "x"]
@@ -367,13 +370,13 @@ for(i in 1:nrow(y)) {
     }
 }
 ch <- make.capthist(secr.caps, secr.traps, fmt="XY")
-plot(ch, tol=0.0005) # ouch
+#plot(ch, tol=0.0005) # ouch
 
 # Make mask
 
-msk <- make.mask(secr.traps, buffer=0.325, spacing=.05, nx=v)
+msk <- make.mask(secr.traps, buffer=0.275, spacing=.05, nx=v)
 summary(msk)
-plot(msk)
+#plot(msk)
 
 ssArea <- attr(msk, "area")*nrow(msk)
 
@@ -392,7 +395,7 @@ ch9simData <- list(ch.secr=ch, ch.jags=yz, spcov.jags=dat, spcov.secr=msk,
 
 
 
-
+library(scrbook)
 library(secr)
 library(rjags)
 
@@ -472,20 +475,20 @@ pars <- c("sigma", "lam0", "beta", "N")
 # Obtain posterior samples. This takes a few minutes
 # Compile and adapt
 set.seed(03453)
-jm <- jags.model(modfile, jags.data, init, n.chains=2, n.adapt=1000)
+jm <- jags.model(modfile, jags.data, init, n.chains=2, n.adapt=500)
 # MCMC
-jags1 <- coda.samples(jm, pars, n.iter=11000)
+jags1 <- coda.samples(jm, pars, n.iter=5500)
 
 plot(jags1)
-summary(window(jags1, start=2001))
-}
+summary(window(jags1, start=1001))
+
 
 unlink(modfile)
 
 
 
 
-
+save.image("scratch.RData")
 
 
 
@@ -499,9 +502,10 @@ library(scrbook)
 example(ch9secrYjags)
 
 
+plot(window(jags1, start=12001))
 
-summary(window(jags1, start=10001))
-gelman.diag(window(jags1, start=10001))
+summary(window(jags1, start=12001))
+gelman.diag(window(jags1, start=12001))
 
 
 jags.est <- summary(window(jags1, start=10001))
