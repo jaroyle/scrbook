@@ -1,3 +1,4 @@
+Pdflatex previewCh3.tex
 bibtex previewCh3
 bibtex previewCh3
 pdflatex previewCh3.tex

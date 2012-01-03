@@ -2,10 +2,20 @@
 Introduction to Bayesian Analysis of GL(M)Ms Using R/WinBUGS
 }
 \markboth{Chapter 2}{}
-\label{chapt.intro}
+\label{chapt.glms}
 
 \vspace{.3in}
 
+%%%% STUFF TO DO 
+%%% 1. Prior lack of invariance to transformation stuff: Reference and Figure
+%%% 2. Full conditional example from ch. 6 copy notation
+%%% 3. Check out algorithm environment
+%%% 4. reference for sampling from f() with bounded support
+%%% 5. need refs on choosing prior disributions
+%%% 6. Check Bayesian p-value definition
+%%% 7. FIX parameter notation! I have beta0 beta1 , alpha beta, and a,
+%%%     b in the same chapter!   Use alpha beta probably?
+%%% 8. spell check this document 
 
 A major theme of this book is that spatial capture-recapture models
 are, for the most part, just generalized linear models (GLMs) wherein
@@ -212,7 +222,13 @@ where
 
 \section{Bayesian Analysis}
 
-Bayesian analysis is unfamiliar to many ecological researchers because older cohorts of ecologists were largely educated in the classical statistical paradigm of frequentist inference. But advances in technology and increasing exposure to benefits of Bayesian analysis are fast making Bayesians out of people or at least making Bayesian analysis an acceptable, general, alternative to classical, frequentist inference.  
+Bayesian analysis is unfamiliar to many ecological researchers because
+older cohorts of ecologists were largely educated in the classical
+statistical paradigm of frequentist inference. But advances in
+technology and increasing exposure to benefits of Bayesian analysis
+are fast making Bayesians out of people or at least making Bayesian
+analysis an acceptable, general, alternative to classical, frequentist
+inference.
 
 Conceptually, the main thing about Bayesian inference is that it uses
 probability directly to characterize uncertainty about things we don't
@@ -222,16 +238,17 @@ processes using probability, it seems natural also to characterize
 information about unknown ``parameters'' using probability. At least
 this seems natural to us and, we think, most ecologists either
 explicitly adopt that view or tend to fall into that point of view
-naturally. 
-Conversely,
-frequentists use probability in many different ways, but never to
-characterize uncertainty about parameters\footnote{This will be
-  shocking to most readers.}
-It is paradoxical that people readily
+naturally.  Conversely, frequentists use probability in many different
+ways, but never to characterize uncertainty about
+parameters\footnote{To hear this will be shocking to some readers
+  perhaps.} Instead, frequentists use probability to characterize the
+behavior of {\it procedures} such as estimators or confidence
+intervals (see below), which can lead to some inelegant or unnatural
+interpretations of things.  It is paradoxical that people readily
 adopt a philosophy of statistical inference in which the things you
 don't know (i.e., parameters) should {\it not} be regarded as random
 variables, so that, as a consequence, one cannot use probability to
-characterize ones state of knowledge about them. 
+characterize ones state of knowledge about them.
 
 
 \subsection{Bayes Rule}
@@ -239,44 +256,58 @@ characterize ones state of knowledge about them.
 As its name suggests, Bayesian analysis makes use of Bayes' rule in
 order to make direct probability statements about model
 parameters. Given two random variables $z$ and $y$, Bayes rule relates
-the two conditional probability distributions $[z|y]$ and $[y|z]$ by the relationship:
+the two conditional probability distributions $[z|y]$ and $[y|z]$ by
+the relationship:
 \[
 [z|y] = [y|z][z]/[y]
 \]
 Bayes' rule itself is a mathematical fact and there is no debate in
 the statistical community as to its validity and relevance to many
-problems. 
+problems. Generally speaking, these distributions are characterized as
+follows: $[y|z]$ is the conditional probability distribution of $y$
+{\it given} $z$, $[z]$ is the marginal distribution of $z$ and $[y]$
+is the marginal distribution of $y$. In the context of Bayesian
+inference we usually associate specific meanings in which $[y|z]$ is
+thought of as ``the likelihood'', $[z]$ as the ``prior'' and so on. We
+leave this for later because here the focus is on this expression of
+Bayes rule as a basic fact of probability. 
 
 As an example of a simple application of Bayes rule,
 consider the problem of determining species presence at a sample
 location based on imperfect survey information. Let $z$ be a binary
 random variable that denotes species presence $(z=1)$ or absence
-$(z=0)$, let $\Pr(z=1) = \psi$, let $y$ be the {\it observed} presence
+$(z=0)$, let $\Pr(z=1) = \psi$ where $\psi$ is usually called
+occurrence probability, ``occupancy'' \citep{mackenzie_etal:2002} or ``prevalence''. 
+Let $y$ be the {\it observed} presence
 ($y=1$) or absence ($y=0$), and let $p$ be the probability that a
 species is detected in a single survey at a site given that it is
-present. Thus, $\Pr(y=1|z=1)=p$.
+present. Thus, $\Pr(y=1|z=1)=p$. The interpretation of this is that,
+if the species is present, we will only observe presence with
+probability $p$. In addition, we assume here that $\Pr(y=1|z=0) =
+0$. That is, the species cannot be detected if it is not present which
+is a conventional view adopted in most biological sampling problems (but
+see \citet{royle_link:2006}).
 If we survey a site $T$ times but never detect the species,
-then this clearly does not imply that the specie sis not present
+then this clearly does not imply that the species is not present
 ($z=0$) at this site. Rather, our degree of belief in $z=0$ should be
 made with a probabilistic statement
 $\Pr(z=1|y_1=0,\ldots,y_{T}=0)$. If the $T$ surveys are independent so
 that we might regard $y_{t}$ as $iid$ Bernoulli trials, then the total
 number of detections, say $y$, is Binomial with probability $p$ then
 we can use Bayes rule to compute the probability that it is present
-given that it is not detected in $T$ samples as
+given that it is not detected in $T$ samples. In words, the expression
+we seek is:
+\[
+\Pr(\mbox{present} | \mbox{not detected}) = \frac{\Pr(\mbox{not detected} |
+  \mbox{present})\Pr(\mbox{present})}{\Pr(\mbox{detected})}
+\]
+Mathematically, this is 
 \[
 \Pr(z=1|y=0) = \Pr(y=0|z=1)\Pr(z=1)/\Pr(y=0) = 
-[(1-p)^{T} \psi]/[ (1-p)^T \psi + (1-\psi) ]
+[(1-p)^{T} \psi]/[ (1-p)^T \psi + (1-\psi) ].
 \]
-\footnote{
-It would be would be nice to label the different parts of this
-  equation as to their analogy with Bayes' Rule... I know it sounds
-  kind of basic, but I think it might be nice to see that
-  explicitly. Maybe just say something like 'not detected
-  (corresponding to the observation y in equation XX) , z=1
-  (corresponding to theta in eq. XX) and so on... 
-}
-Suppose that $T=2$ surveys are done at a wetland for a species of
+To apply this, 
+suppose that $T=2$ surveys are done at a wetland for a species of
 frog, and the species is not detected there. Suppose further that $\psi
 = .8$ and $p = .5$ are obtained from a prior study.  Then the
 probability that the species is present at this site is
@@ -322,85 +353,294 @@ is:
 \]
 Asserting the general relevance of Bayes rule to all statistical
 problems, we can conclude that the two main features of Bayesian
-inference are that: (1) ``parameters'' are regarded as realizations of
+inference are that: (1) ``parameters'' $\theta$ are regarded as realizations of
 a random variable and, as a result, (2) inference is based on the
-probability distribution of the parameters given the data, which is
+probability distribution of the parameters given the data,
+$[\theta|y]$,
+which is
 called the posterior distribution. This is the result of using Bayes
 rule to combine ``the likelihood'' and the prior distribution.  The
 key concept is regarding parameters as realizations of a random
 variable because, once you admit this conceptual view, this leads
 directly to the posterior distribution, a very natural quantity upon
-which to base inference about things we don't know -  including parameters of statistical models.  
+which to base inference about things we don't know -  including
+parameters of statistical models.  In particular, $[\theta|y]$ is a
+probability distribution for $\theta$ and therefore we can make direct
+probability statements to characterize uncertainty about
+$\theta$. 
 
+The denominator of our invocation of Bayes rule, $[y]$,
+is the marginal distribution of the data $y$.  We note without further
+remark right now that, in many practical problems, this can be an
+enormous pain to compute. The main reason that the Bayesian paradigm
+has become so popular in the last 20 years or so is because methods
+exist for characterizing the posterior distribution that do not
+require that we possess a mathematical understanding of $[y]$, i.e.,
+we never have to compute it or know what it looks like, or know
+anything specific about it.
 
-We note that the denominator of our invocation of Bayes rule, $[y]$, is the marginal distribution of the data $y$.   We note without further remark right now that, in many practical problems, this can be an enormous pain to compute. The main reason that the Bayesian paradigm has become so popular in the last 20 years or so is because methods exist for characterizing the posterior distribution that do not require that we possess a mathematical understanding of $[y]$, i.e., we never have to compute it or know what it looks like, or know anything specific about it. 
-
-
-A common misunderstanding on the distinction between Bayesian and frequentist inference goes something like this ``in frequentist inference parameters are fixed but unknown but in a Bayesian analysis parameters are random.'' At best this is a sad caricature of the distinction and at worst it is downright wrong. What is true is that, to a Bayesian, parameters are random variables. However, a Bayesian assumes, just like a frequentist, that there was a single data-generating value of that parameter - a fixed, and unknown value.  The distinction between Bayesian and frequentist approaches is that Bayesians regard the parameter as a random variable, and its value as the outcome of a random value, on par with the observations. This allows Bayesians to use probability to make direct probability statements about parameters. Frequentist inference procedures do not permit direct probability statements to be made about parameter values- because parameters are not random variables!
+A common misunderstanding on the distinction between Bayesian and
+frequentist inference goes something like this ``in frequentist
+inference parameters are fixed but unknown but in a Bayesian analysis
+parameters are random.'' At best this is a sad caricature of the
+distinction and at worst it is downright wrong. What is true is that,
+to a Bayesian, parameters are random variables. However, a Bayesian
+assumes, just like a frequentist, that there was a single
+data-generating value of that parameter - a fixed, and unknown value
+that produced the given data set.
+The distinction between Bayesian and frequentist approaches is that
+Bayesians regard the parameter as a random variable, and its value as
+the outcome of a random value, on par with the observations. This
+allows Bayesians to use probability to make direct probability
+statements about parameters. Frequentist inference procedures do not
+permit direct probability statements to be made about parameter
+values -- because parameters are not random variables!
 
 While we can understand the conceptual basis of Bayesian inference
-merely by understanding Bayes rule -1 that's really {\it all there is
-  to it} - it is not so easy to understand the basis of  classical
-``frequentist'' inference which is really ``a basket of methods'' with
-little coherent organization. What is mostly coherent in frequentist
-inference is the manner in which items in this ``basket of methods''
-are evaluated - the performance of a given procedure is evaluated by
-``averaging over'' hypothetical realizations of $y$. This leads to
-interpretations that are not so straightforward. For example
-confidence intervals having the interpretation ``95\% probability that the interval contains the true value" and p-values being "the probability of observing an outcome as extreme or more than the one observed''. Moreover, this is conceptually probblematic to some because the hypothetical realizations that characterize the performance of our procedure we will never get to observe.  
+merely by understanding Bayes rule -- that's really all there is to it
+-- it is not so easy to understand the basis of classical
+``frequentist'' inference which is mostly
+like\footnote{Characterization from Sims REF XYZ} a ``basket of
+methods'' with little coherent organization. What is mostly coherent
+in frequentist inference is the manner in which items in this basket
+of methods are evaluated -- the performance of a given procedure is
+evaluated by ``averaging over'' hypothetical realizations of $y$,
+regarding the {\it estimator} as a random variable. For example, if
+$\hat{\theta}$ is an estimator of $\theta$ then the frequentist is
+interested in $E_{y}[\hat{\theta}|y]$ which is used to characterize
+bias. If the expected value of $\hat{\theta}$, when averaged over
+realizations of $y$, is equal to $\theta$, then $\hat{\theta}$ is
+unbiased. 
 
-That said,  we advocate for a pragamatic non-partisian approach to inference because, frankly,  some of these ``bucket of methods'' are actually very convenient in certain situations as we will see in later chapters.
+The view of parameters as fixed constants and estimators as random variables
+leads to interpretations that are not so straightforward. For
+example confidence intervals having the interpretation ``95\%
+probability that the interval contains the true value" and p-values
+being "the probability of observing an outcome as extreme or more than
+the one observed.'' These are far from intuitive interpretations to
+most people.  Moreover, this is conceptually probblematic to some
+because the hypothetical realizations that characterize the
+performance of our procedure we will never get to observe.
+
+While we do tend to favor Bayesian inference for the conceptual
+simplicity (parameters are random, posterior inference), we mostly
+advocate for a pragamatic non-partisian approach to inference because,
+frankly, some of these ``bucket of methods'' are actually very
+convenient in certain situations as we will see in later chapters.
 
 
 \subsection{Prior distributions}
-{\bf It would be nice to explain at some point what a prior can look like/where it can come from, what informative/uninformative means... I though further down the chapter that there was quite a bit of explanation on the posterior, but then you kind of just jump into choosing priors, which, for someone who may not really ever have done a Bayesian analysis, might be a little puzzling }
 
-An oft-touted benefit of Bayesian analysis is the ease with which
-prior information can be included. The manner in which this happens is
-usually largely subjective, but still the need arises from time to
-time. In SCR models we often have a parameter that is closely linked
+
+The prior distribution $[\theta]$ is an important feature of Bayesian
+inference. As a conceptual matter, 
+the prior distribution characterizes ``prior beliefs'' or ``prior
+information'' about a parameter. Indeed, 
+an oft-touted benefit of Bayesian analysis is the ease with which
+prior information can be included in an analysis.
+However, more commonly, the prior is chosen to
+express a lack of prior information, even if previous studies have
+been done and even if the investigator does in fact know quite a bit
+about a parameter. 
+This is because 
+the manner in which prior information is embodied in a prior (and the
+amount of information) is 
+usually very subjective and thus the result can wind up being very
+contentious, e.g., if different investigators might report different
+results based on subjective assessments of things. Thus it is usually
+better to ``let the data speak'' and use priors that reflect absence
+of information beyond the data set being analyzed. 
+
+But still the need occasionally arises to embody prior information or
+beliefs about a parameter formally into the estimation scheme.
+ In SCR models we often have a parameter that is closely linked
 to ``home range radius'' and thus auxiliary information on the home
 range size of a species can be used as prior information (e.g., see
 \citet{chandler_royle:2012} ; also chapter XYZ). 
 
+XXXXXXXX
 
+noninformative prior on one scale is informative on another scale.
+e.g., flat prior on logit(p) is very different from uniform(0,1) on
+p...
+show graphic......
+
+reference to non-invariance of prior distributions to transformation......
+
+XXXXXXXX
 
 \subsection{Posterior Inference}
 
-Posterior inference is the main practical element  of Bayesian analysis. We get to make an inference conditional on the data that we actually observed - i.e., what we actually know.  To us, this seems logical - to condition on what we know. Conversely, frequentist inference is based on considering average performance over hypothetical unobserved data sets (i.e., the ``relative frequency'' interpretation of probability).  Frequentists know that their procedures work well when averaged over all hypothetical, unobserved, data sets but no one ever really knows how well they work for the specific data set analyzed. That seems like a relevant question to biologists who oftentimes only have their one, extremely valuable, data set.
-This distinction comes into play a lot in exposing philosophical biases in the peer review of statistical analyses in ecology in the sense that, despite these opposing conceptual views to inference (i.e. conditional on the data you have, or averaged over hypothetical realizations), those who conduct a Bayesian analysis are often required to provide a frequentist evaluation of their Bayesian procedure.  
+In Bayesian inference, we are not focusing on estimating a single
+point or interval but rather on characterizing a whole distribution --
+the posterior distribution -- from which one can report any summary of
+interest. A point estimate might be the posterior mean, median, mode,
+etc..  In many applications in this book, we will compute 95\%
+Bayesian intervals using the 2.5\% and 97.5\% quantiles of the
+posterior distribution. For such intervals, it is correct to say
+$\Pr(L < \theta < U) = 0.95$. That is, "the probability that $\theta$
+is between $L$ and $U$ is $0.95$". It is not a subtle thing that this
+cannot be said using frequentist methods - although people tend to say
+it anyway and not really understand why it is wrong or even that it is
+wrong. This is actually a failing of frequentist ideas and the
+inability of frequentists to get people to overcome their natural
+tendency to use probability - which is something that, as a
+frequentist, you simply cannot do in the manner that you would like
+to.
 
-  It is worth emphasizing that, in Bayesian inference, we are not focusing on estimating a single point or interval but rather characterizing a whole distribution from which one can report any summary of interest. A point estimate might be the posterior mean, median, mode, etc..  In many applications in this book, we will compute 95% Bayesian intervals using the 2.5% and 97.5% quantiles of the posterior distribution. For such intervals, it is correct to say $Pr(L < theta < U) = 0.95$. That is, "the probability that theta is between L and U is 0.95". It is not a subtle thing that this cannot be said using frequentist methods - although people tend to say it anyway and not really understand why it is wrong or even that it is wrong. This is actually a failing of frequentist ideas and the inability of frequentists to get people to overcome their natural tendency to use probability - which is something that, as a frequentist, you simply cannot do in the manner that you would like to.  
 
 
+Posterior inference is the main practical element of Bayesian
+analysis. We get to make an inference conditional on the data that we
+actually observed - i.e., what we actually know.  To us, this seems
+logical - to condition on what we know. Conversely, frequentist
+inference is based on considering average performance over
+hypothetical unobserved data sets (i.e., the ``relative frequency''
+interpretation of probability).  Frequentists know that their
+procedures work well when averaged over all hypothetical, unobserved,
+data sets but no one ever really knows how well they work for the
+specific data set analyzed. That seems like a relevant question to
+biologists who oftentimes only have their one, extremely valuable,
+data set.  This distinction comes into play a lot in exposing
+philosophical biases in the peer review of statistical analyses in
+ecology in the sense that, despite these opposing conceptual views to
+inference (i.e. conditional on the data you have, or averaged over
+hypothetical realizations), those who conduct a Bayesian analysis are
+often (in ecology, almost always) required to provide a frequentist
+evaluation of their Bayesian procedure.
 
 \subsection{Small sample inference}
-Using Bayesian inference, we obtain an estimate of the posterior distribution which is an exhaustive summary of the state-of-knowledge about an unknown quantity. It is the posterior distribution - not an estimate of that thing. It is also not, usually, an approximation except to within Monte Carlo error (in cases where we use simulation to calculate it).  One of the great virtues of Bayesian analysis which is not really appreciated is that it is completely valid for any particular sample size. i.e., $[theta|y$ is, as precise as we claim it to be, for the particular sample size and observations that we have.  The same cannot be said for almost all frequentist procedures in which estimates or variances are very often based on ``asymptotic approximations'' to the procedure which is actually being employed.  
 
-There seems to be a prevailing view in statistical ecology that classical likelihood-based procedures are virtuous because of the availability of simple formulas and procedures for carrying out inference, such as calculating standard errors, doing model selection by AIC, and assessing goodness-of-fit.  In large samples, this may be an important practical benefit, but the practical validity of these procedures cannot be asserted in most situations involving small samples.  This is not a minor issue because it is typical in many wildlife sampling problems - especially in surveys of carnivores or rare/endangered species - to wind up with a small, sometimes extremely small, data set. For example, a recent paper on the fossa (Cryptoprocta ferox), an endangered carnivore in Madagascar, estimated an adult density of 0.18 adults / km sq based on 20 animals captured over 3 years \citep{hawkins_racey:2005}. A similar paper on the endangered southern river otter (Lontra provocax) estimated a density of 0.25 animals per river km based on 12 individuals captured over 3 years \citep{sepulveda_etal:2007}. \citet{gardner_etal:2010} analyzed data from a study of the Pampas cat, a species for which very little is known, wherein only 22 individual cats were captured .during the two year period.  \citet{trolle_kery:2005} reported only 9 individual ocelots captured and \citet{jackson_etal:2006} captured 6 individual snow leopards using camera trapping. Thus, studies of rare and/or secretive carnivores necessarily and flagrantly violate one of Le Cam's Basic Principles, that of ``If you need to use asymptotic arguments, do not forget to let your number of observations tend to infinity.''\citep{lecam:1990}.
+Using Bayesian inference, we obtain an estimate of the posterior
+distribution which is an exhaustive summary of the state-of-knowledge
+about an unknown quantity. It is the posterior distribution - not an
+estimate of that thing. It is also not, usually, an approximation
+except to within Monte Carlo error (in cases where we use simulation
+to calculate it).  One of the great virtues of Bayesian analysis which
+is not really appreciated is that it is completely valid for any
+particular sample size. i.e., it is $[\theta|y]$, as precise as we
+claim it to be based on our ability to do calculations, for the
+particular sample size and observations that we have even if we have
+only a single datum $y$.  The same cannot be said for almost all
+frequentist procedures in which estimates or variances are very often
+(almost always in practice) based on ``asymptotic approximations'' to
+the procedure which is actually being employed.
 
-The biologist thus faces a dilemma with such data. On one hand, these datasets, and the resulting inference, are often criticized as being poor and unreliable. Or, even worse\footnote{Actual quote from a referee}, ``the data set is so small, this is a poor analysis.''  On the other hand, such data may be all that is available for species that are extraordinarily important for conservation and management.    The Bayesian framework for inference provides a valid, rigorous, and flexible framework that is theoretically justifiable in arbitrary sample sizes. This is not to say that one will obtain precise estimates of density or other parameters, just that your inference is coherent and justifiable from a conceptual and technical statistical point of view. That is, we report the posterior probability $Pr(D|data)$ which is easily interpretable and just what it is advertised to be and we don't need to do a simulation study to evaluate how well some approximate $Pr(D|data)$ deviates from the actual $Pr(D|data)$ because they are precisely the same quantity.
+There seems to be a prevailing view in statistical ecology that
+classical likelihood-based procedures are virtuous because of the
+availability of simple formulas and procedures for carrying out
+inference, such as calculating standard errors, doing model selection
+by AIC, and assessing goodness-of-fit.  In large samples, this may be
+an important practical benefit, but the theoretical validity of these
+procedures cannot be asserted in most situations involving small
+samples.  This is not a minor issue because it is typical in many
+wildlife sampling problems - especially in surveys of carnivores or
+rare/endangered species - to wind up with a small, sometimes extremely
+small, data set. For example, a recent paper on the fossa
+(Cryptoprocta ferox), an endangered carnivore in Madagascar, estimated
+an adult density of 0.18 adults / km sq based on 20 animals captured
+over 3 years \citep{hawkins_racey:2005}. A similar paper on the
+endangered southern river otter (Lontra provocax) estimated a density
+of 0.25 animals per river km based on 12 individuals captured over 3
+years \citep{sepulveda_etal:2007}. \citet{gardner_etal:2010} analyzed
+data from a study of the Pampas cat, a species for which very little
+is known, wherein only 22 individual cats were captured .during the
+two year period.  \citet{trolle_kery:2005} reported only 9 individual
+ocelots captured and \citet{jackson_etal:2006} captured 6 individual
+snow leopards using camera trapping. Thus, studies of rare and/or
+secretive carnivores necessarily and flagrantly violate one of Le
+Cam's Basic Principles, that of ``If you need to use asymptotic
+arguments, do not forget to let your number of observations tend to
+infinity.''\citep{lecam:1990}.
+
+The biologist thus faces a dilemma with such data. On one hand, these
+datasets, and the resulting inference, are often criticized as being
+poor and unreliable. Or, even worse\footnote{Actual quote from a
+  referee}, ``the data set is so small, this is a poor analysis.''  On
+the other hand, such data may be all that is available for species
+that are extraordinarily important for conservation and management.
+The Bayesian framework for inference provides a valid, rigorous, and
+flexible framework that is theoretically justifiable in arbitrary
+sample sizes. This is not to say that one will obtain precise
+estimates of density or other parameters, just that your inference is
+coherent and justifiable from a conceptual and technical statistical
+point of view. That is, we report the posterior probability
+$\Pr(D|data)$ which is easily interpretable and just what it is
+advertised to be and we don't need to do a simulation study to
+evaluate how well some approximate $\Pr(D|data)$ deviates from the
+actual $\Pr(D|data)$ because they are precisely the same quantity.
 
 
 
 \section{Characterizing posterior distributions by MCMC simulation}  
 
-In practice, it is not really feasible to ever compute the marginal probability distribution $Pr(y)$, the denominator resulting from application of Bayes' rule. For decades this impeded the adoption of Bayesian methods by practitioners. Or, the few Bayesian analyses done were based on asymptotic normal approximations to the posterior distribution. While this was useful stuff from a theoretical and technical standpoint and, practically, it allowed people to make the probability statements that they naturally would like to make, it was kind of a bad joke around the Bayesian water-cooler to, on one hand, criticize classical statistics for being, essentially, completely ad hoc in their approach to things but then, on the other hand, have to devise various approximations to what they were trying to characterize. The advent of Markov chain Monte Carlo (MCMC) methods has made it easier to calculate posterior distributions for just about any problem to arbitrary levels of precision.  
+In practice, it is not really feasible to ever compute the marginal
+probability distribution $\Pr(y)$, the denominator resulting from
+application of Bayes' rule. For decades this impeded the adoption of
+Bayesian methods by practitioners. Or, the few Bayesian analyses done
+were based on asymptotic normal approximations to the posterior
+distribution. While this was useful stuff from a theoretical and
+technical standpoint and, practically, it allowed people to make the
+probability statements that they naturally would like to make, it was
+kind of a bad joke around the Bayesian water-cooler to, on one hand,
+criticize classical statistics for being, essentially, completely ad
+hoc in their approach to things but then, on the other hand, have to
+devise various approximations to what they were trying to
+characterize. The advent of Markov chain Monte Carlo (MCMC) methods
+has made it easier to calculate posterior distributions for just about
+any problem to arbitrary levels of precision.
 
-Broadly speaking, MCMC is a class of methods for drawing random numbers (sampling or simulating) from the target posterior distribution.  Thus, even though we might not recognize the posterior as a named distribution or be able to analyze its features analytically, e.g., devise mathematical expressions for the mean and variance, we can use these MCMC methods to obtain a large sample from the posterior and then use that sample to characterize features of the posterior. What we do with the sample depends on our intentions -- typically we obtain the mean or median for use as a point estimate, and take a confidence interval based on Monte Carlo estimates of the quantiles.  These are estimates, but not like frequentist estimates. Rather, they are Monte Carlo estimates with an associated Monte Carlo error which is largely determined arbitrarily by the analyst. They are not estimates qualified by a sampling distribution as in classical statistics. If we run our MCMC long enough then our reported value of $E[theta|y]$ or any feature of the posterior distribution is precisely what we say it is. There is no ``sampling variation'' in the frequentist sense of the word.  In summary, the MCMC samples provide a Monte Carlo characterization of {\it the} posterior distribution.
+Broadly speaking, MCMC is a class of methods for drawing random
+numbers (sampling or simulating) from the target posterior
+distribution.  Thus, even though we might not recognize the posterior
+as a named distribution or be able to analyze its features
+analytically, e.g., devise mathematical expressions for the mean and
+variance, we can use these MCMC methods to obtain a large sample from
+the posterior and then use that sample to characterize features of the
+posterior. What we do with the sample depends on our intentions --
+typically we obtain the mean or median for use as a point estimate,
+and take a confidence interval based on Monte Carlo estimates of the
+quantiles.  These are estimates, but not like frequentist
+estimates. Rather, they are Monte Carlo estimates with an associated
+Monte Carlo error which is largely determined arbitrarily by the
+analyst. They are not estimates qualified by a sampling distribution
+as in classical statistics. If we run our MCMC long enough then our
+reported value of $E[\theta|y]$ or any feature of the posterior
+distribution is precisely what we say it is. There is no ``sampling
+variation'' in the frequentist sense of the word.  In summary, the
+MCMC samples provide a Monte Carlo characterization of {\it the}
+posterior distribution.
 
 
 \section{What Goes on Under the MCMC Hood}
 
-A type of MCMC method relevant to most problems is Gibbs sampling, which is based on the idea of iterative simulation from the ``full conditional'' distributions (also called conditional posterior distributions). The full conditional distribution for an unknown quantity is the conditional distribution of that quantity given every other random variable in the model - the data and all other parameters. For example, for a normal regression model with $y \sim Normal(alpha + beta*x , 1)$ then the two full conditionals are, in symbolic terms,
+We will develop and apply MCMC methods in some detail for spatial
+capture-recapture models in chapter \ref{chapt.mcmc}. Here we provide
+a simple illustration of some basic ideas related to the practice of MCMC.
+
+A type of MCMC method relevant to most problems is Gibbs sampling (REF
+XYZ XYZ),
+which is based on the idea of iterative simulation from the ``full
+conditional'' distributions (also called conditional posterior
+distributions). The full conditional distribution for an unknown
+quantity is the conditional distribution of that quantity given every
+other random variable in the model - the data and all other
+parameters. For example, for a normal regression model with $y \sim
+\mbox{Normal}(\alpha + \beta x , 1)$ then the two full conditionals are, in
+symbolic terms,
 \[ 
 [\alpha|y,\beta]
 \]
  and 
 \[
-[\beta|y,\alpha]
-\]. 
-We might use our knowledge of probability to identify these mathematically. In particular, by Bayes' Rule, [alpha|y,beta] = [y|alpha,beta][alpha|beta]/[y|beta] and similarly for [beta|y,alpha]. For example, if we have priors for [alpha] and [beta] which are also normal distributions, some algebra reveals that 
+[\beta|y,\alpha].
+\]
+We might use our knowledge of probability to identify these
+mathematically. In particular, by Bayes' Rule, $[\alpha|y,\beta] =
+[y|\alpha,\beta][\alpha|\beta]/[y|\beta]$ and similarly for
+$[\beta|y,\alpha]$. For example, if we have priors for $[\alpha]$ and $[\beta]$
+which are also normal distributions, some algebra reveals that
+XXXX COPY NOTATION FFROM CH. 6 XXXXX
 \[
 [\alpha|y,\beta] = Normal(ybar,...weighted variance here...). 
 \]
@@ -409,99 +649,250 @@ Similarly,
  [\beta|y,\alpha] is normal(........) 
 \]
 
-Thus, the MCMC algorithm has us simulate successively and repeatedly from those two distributions. See Gilks et al. (MCMC in practice book REF XXXX) for more examples with the normal model. A conceptual representation of the MCMC algorithm for this simple model is therefore: 
+The MCMC algorithm for this model has us simulate in succession,
+repeatedly, from those two distributions. See \citet{gelman_etal:2004}
+for more examples of Gibbs sampling for the normal model. A
+conceptual representation of the MCMC algorithm for this simple model
+is therefore:
+XXXX Check out ALGORITHM environment XXXXX
 \begin{verbatim}
-Algorithm:
+ Algorithm
 
-0.	Initialize $\alpha$ and $\beta$
+       0. Initialize $\alpha$ and $\beta$
 
-Repeat{
-1.	Draw a new value of $\alpha$ from Eq. \ref{xyz}
+       Repeat{
+           1. Draw a new value of $\alpha$ from Eq. \ref{xyz}
 
-2.	Draw a new value of $\beta$ from Eq. \ref{xyz}
-}
+           2. Draw a new value of $\beta$ from Eq. \ref{xyz}
+       }
 \end{verbatim}
 
-As we just saw for this simple ``normal-normal'' model it is sometimes possible to specify the full conditional distributions analytically. In general, when certain so-called conjugate prior distributions are chosen, the form of full conditional distributions is similar to that of the observation model. In this normal-normal case, choice of normal priors for the mean parameters is the conjugate prior under the normal model, and thus the full-conditional distributions are also normal. This is convenient because, in such cases, we can simulate directly from them using standard methods (or R functions).  But, in practice,  we don't really ever need to know such things because most of the time we can get by using a simple algorithm, called the Metropolis-Hastings (henceforth ``MH'') algorithm, to obtain samples from these full conditional distributions without having to recognize them as specific, named, distributions. As we noted above, this gives us enormous freedom in developing models and analyzing them without having to resolve them mathematically because to implement the MH algorithm   we need only identify the full conditional distribution up to a constant of proportionality, that being the marginal distribution in the denominator (e.g., $[y|beta]$ above).
+As we just saw for this simple ``normal-normal'' model it is sometimes
+possible to specify the full conditional distributions
+analytically. In general, when certain so-called conjugate prior
+distributions are chosen, the form of full conditional distributions
+is similar to that of the observation model. In this normal-normal
+case, the normal distribution for the mean parameters is the conjugate
+prior under the normal model, and thus the full-conditional
+distributions are also normal. This is convenient because, in such
+cases, we can simulate directly from them using standard methods (or
+{\bf R}
+functions).  But, in practice, we don't really ever need to know such
+things because most of the time we can get by using a simple
+algorithm, called the Metropolis-Hastings (henceforth ``MH'')
+algorithm, to obtain samples from these full conditional distributions
+without having to recognize them as specific, named, distributions. 
+This gives us enormous freedom in developing models
+and analyzing them without having to resolve them mathematically
+because to implement the MH algorithm we need only identify the full
+conditional distribution up to a constant of proportionality, that
+being the marginal distribution in the denominator (e.g., $[y|\beta]$
+above).
 
+We will talk about the Metropolis-Hastings algorithm shortly, and we
+will use it extensively in the analysis of SCR models (e.g., chapter
+\ref{chapt.mcmc}). 
 
 \subsection{Rules for constructing full conditional distributions}  
+\label{glms.sec.rules}
 
-The basic strategy for constructing full-conditional distributions for devising MCMC algorithms can be reduced conceptually to a couple of basic steps summarized as follows:
+The basic strategy for constructing full-conditional distributions for
+devising MCMC algorithms can be reduced conceptually to a couple of
+basic steps summarized as follows:
 \begin{itemize}
-\item[(step 1)] collect all stochastic components of the model; 
-\item[(step 2)] Recognize and express the full conditional in question as proportional to the product of all  components; 
-\item[(step 3)] remove the ones that don't have the focal parameter in them. 
+\item[(step 1)] Collect all stochastic components of the model; 
+\item[(step 2)] Recognize and express the full conditional in question
+  as proportional to the product of all components;
+\item[(step 3)] Remove the ones that don't have the focal parameter in them. 
 \item[(step 4)] Do some algebra on the result in order to identify the resulting pdf or pmf. 
 \end{itemize}
-Of the 4 steps, the last of those is the main step that requires quite a bit of statistical experience and intuition because various algebraic tricks can be used to reshape the mess into something noticeable - i.e., a standard, named distribution. But step 4 is not necessary if we decide instead to use the Metrpolis-Hastings algorithm as described below. 
+Of the 4 steps, the last of those is the main step that requires quite
+a bit of statistical experience and intuition because various
+algebraic tricks can be used to reshape the mess into something
+noticeable - i.e., a standard, named distribution. But step 4 is not
+necessary if we decide instead to use the Metrpolis-Hastings algorithm
+as described below.
 
-% KIMMY: dollar-signs around everything with a bracket please! Also convert to \alpha
-% \beta for greek letters
-
-To illustrate for computing $[\alpha|y,\beta]$ we first apply step 1 and identify the model components as $[y|\alpha, \beta]$, $[\alpha]$ and $[\beta]$. Step 2 has us write $[\alpha|y,\beta] \propto [y|\alpha,\beta][\alpha][\beta]$.  We note that $[\beta]$ is not a function of alpha and therefore we delete it to get $[\alpha|y,\beta] \propto [y|\alpha,\beta][\alpha]$. Similarly we get $[\beta|y,\alpha] \propto [y|\alpha,\beta][\beta]$. We can apply step 4 and manipulate these algebraically to arrive at the result or, alternatively, we can sample them indirectly using the Metropolis-Hastings algorithm (see below).   
+To illustrate for computing $[\alpha|y,\beta]$ we first apply step 1
+and identify the model components as: $[y|\alpha, \beta]$, $[\alpha]$
+and $[\beta]$. Step 2 has us write $[\alpha|y,\beta] \propto
+[y|\alpha,\beta][\alpha][\beta]$.  Step 3: We note that $[\beta]$ is not a
+function of alpha and therefore we remove it to obtain $[\alpha|y,\beta]
+\propto [y|\alpha,\beta][\alpha]$. Similarly we obtain $[\beta|y,\alpha]
+\propto [y|\alpha,\beta][\beta]$. We apply step 4 and manipulate
+these algebraically to arrive at the result or, alternatively, we can
+sample them indirectly using the Metropolis-Hastings algorithm (see
+below).
 
 
 \subsection{Metropolis-Hastings algorithm}
  
-The Metropolis-Hastings algorithm is a completely generic method for
+The Metropolis-Hastings (MH) algorithm is a completely generic method for
 sampling from any distribution, say $f(\theta)$. In our applications,
-$f(theta)$ will typically be the full conditional distribution for
-theta. Often, the MH algorithm is used to sample from the full
-conditional distributions and the resulting synthetic algorithm is
-called ``Metropolis within Gibbs'' or similar. Shortly we will
+$f(\theta)$ will typically be the full conditional distribution of
+$\theta$. 
+While we sometimes use Gibbs sampling, we seldom
+use ``pure'' Gibbs sampling because we might use MH to sample from one
+or more of the full conditional distributions.
+When the MH algorithm is used to sample from  full
+conditional distributions of a Gibbs sampler the resulting hybrid algorithm is
+called 
+ {\it Metrpolized Gibbs sampling} or
+more commonly {\it Metropolis-within-Gibbs}.
+Shortly we will
 actually construct such an algorithm for a simple class of models.
-The Metropolis-Hastings algorithm generates candidates from some
+
+The MH algorithm generates candidates from some
 proposal or candidate-generating distribution, that may be conditional
 on the current value of the parameter, denoted by
-$h(theta|theta^{current})$. Then you accept the proposed value with
-probability
+$h(\theta^{*}|\theta^{t})$. Here, $\theta^{*}$ is the {\it candidate}
+or proposed 
+value and $\theta^{t}$ is the current value, i.e., at iteration $t$ of
+the MCMC algorithm.  The proposed value
+is accepted with probability
+XXXX check notation with Rahel XXXXXX
 \[
-f(\theta^{cand}) h(\theta^{current}|\theta^{cand})/
-f(\theta^{current}) h(\theta^{cand}|\theta^{current})
+r = \frac{ f(\theta^{*}) h(\theta^{t}|\theta^{*})}
+    {f(\theta^{t}) h(\theta^{*}|\theta^{t}) }
 \]
-this ratio can sometimes be $>1$ in which case we set it equal to
-1. It is useful to note that $h()$ can be anything at all. Absolutely anything!  You can generate candidate values from a $normal(0,1)$ distribution, from a uniform(-3455,3455) distribution, or anything of proper support.  Note, however, that good choices of $h()$ are those that approximate the posterior distribution. Obviously if $h() = f(\theta|y)$ (i.e., the posterior) then you always accept the draw, and it stands to reason that proposals that are more similar to $f(\theta|y)$ will lead to higher acceptance probabilities. No matter the choice of $h()$,  we can evaluate this ratio numerically because the marginal $f(y)$ cancels from both the numerator and denominator. (That is kind of the magic point here that I should emphasize better above.) 
+which we call the MH acceptance probability. 
+This ratio can sometimes be $>1$ in which case we set it equal to
+1. It is useful to note that $h()$ can be anything at all. Absolutely
+anything!  You can generate candidate values from a $normal(0,1)$
+distribution, from a uniform(-3455,3455) distribution, or anything of
+proper support.  Note, however, that good choices of $h()$ are those
+that approximate the posterior distribution. Obviously if $h() =
+f(\theta|y)$ (i.e., the posterior) then you always accept the draw,
+and it stands to reason that proposals that are more similar to
+$f(\theta|y)$ will lead to higher acceptance probabilities. No matter
+the choice of $h()$, we can evaluate this ratio numerically because
+the marginal $f(y)$ cancels from both the numerator and
+denominator, which is the magic of the MH algorithm.
 
-A special kind of $h()$ are those that are symmetric, which means that $h(a|b) = h(b|a)$ in which case $h(a|b)$ and $h(b|a)$ just cancel out. A type of symmetric proposal useful in many situations is the so-called ``random-walk'' proposal distribution where candidate values are drawn from a normal distribution with mean equal to the current value and some standard deviation, say delta which is prescribed by the user. For parameters that have support on the real line, say alpha in our example above, the random walk proposal generator has us generate $alpha^{*} ~ Normal(alpha^{current},delta)$.  If we set delta very small we have a high probability of accepting the proposal and vice versa.  In practice, we ``tune'' delta to achieve a compromise between reasonable mixing of the Markov chains (see below for an example).
 
-Parameters with bounded support: Many models contain parameters that have a bounded support. E.g., variance parameters live on $[0,\infty]$ or similar. In that case it is sometimes convenient to use a random walk proposal distribution, but just reject parameters that are outside of the parameter space (REF FOR THIS?). 
+A special kind of $h()$ are those that are symmetric, which means that
+$h(a|b) = h(b|a)$ in which case $h(a|b)$ and $h(b|a)$ just cancel
+out from the MH acceptance probability and $r$ is then just the ratio
+of the target density evaluated at the candidate value to that
+evaluated at the current value. 
+A type of symmetric proposal useful in many situations is the
+so-called {\it random-walk} proposal distribution where candidate values
+are drawn from a normal distribution with mean equal to the current
+value and some standard deviation, say $\delta$, which is prescribed by
+the user. For parameters that have support on the real line, e.g., $\alpha$
+in our example above, the random walk proposal generator has us
+generate $\alpha^{*} \sim \mbox{Normal}(\alpha^{t},\delta)$.  If we set $\delta$
+very small we have a high probability of accepting the proposal and
+vice versa.  In practice, we ``tune'' delta to achieve a compromise
+between acceptance rate and efficient mixing of the Markov chains (see below for an
+example) normally assessed by autocorrelation. Low $\delta$ increases
+the acceptance rate but will tend to produce Markov chains with high
+autocorrelation, and vice versa. 
+
+{\bf Parameters with bounded support}: Many models contain parameters that
+have  bounded support. E.g., variance parameters live on $[0,\infty]$,
+parameters that represent probabilities live on $[0,1]$, etc..
+ In that case it is sometimes convenient to use a random
+walk proposal distribution that can generate any real number (e.g., a
+normal random walk proposal). In that case, 
+we can just reject parameters that are
+outside of the parameter space (XXXX REF FOR THIS XXXX). 
 
 
 
 \section{Practical Bayesian Analysis and MCMC}
 
-There are a number of really important practical issues to be considered in any Bayesian analysis and we cover some of these briefly here.
+There are a number of really important practical issues to be
+considered in any Bayesian analysis and we cover some of these briefly
+here.
 
-Prior distributions: Bayesian analysis requires that we choose prior
+\subsection{Choice of prior distributions} 
+
+{\bf XXX integrate this material with previous section on prior
+distributions XXXXXX}
+
+Bayesian analysis requires that we choose prior
 distributions for all of the structural parameters of the model (we
 use the term structural parameter to mean all parameters that aren't
 customary thought of as latent variables). We will strive to use
 priors that are meant to express little or no prior information -
-default or customary ``non-informative'' or diffuse priors. This will be uniform(a,b) priors for parameters that have a natural bounded support and, for parameters that live on the real line we use either (1) diffuse normal priors; (2) ``improper'' uniform priors or (3) sometimes even a bounded uniform(a,b) prior if that greatly improves the performance of WinBUGS or other software doing the MCMC for us.  In WinBUGS a prior with low ``precision'' (precision = 1/sigma2) such as normal(0,.01) will typically be used. Of course tau = 0.01 (sigma2 = 100) might be very informative for a regression parameter that has a high variance. Therefore, we recommend that predictor variables {\it always} be standardized. Clearly  there are a lot of choices for ostensibly non-informative priors, and the degree of non-informativeness depends on the parameterization. For example, a natural non-informative prior for the intercept of a logistic regression
+default or customary ``non-informative'' or diffuse priors. This will
+be $\mbox{Unif}(a,b)$ priors for parameters that have a natural
+bounded support and, for parameters that live on the real line we use
+either (1) diffuse normal priors; (2) ``improper'' uniform priors or
+(3) sometimes even a bounded $\mbox{Unif}(a,b)$ prior if that greatly
+improves the performance of {\bf WinBUGS} or other software doing the MCMC
+for us.  In {\bf WinBUGS} a prior with low ``precision'', $\tau$, where
+$\tau = 1/\sigma^2$, such as $\mbox{Norm}(0,.01)$ will typically be
+used. Of course $\tau = 0.01$ ($\sigma^{2} = 100$) might be very
+informative for a regression parameter that has a high
+variance. Therefore, we recommend that predictor variables {\it
+  always} be standardized. Clearly there are a lot of choices for
+ostensibly non-informative priors, and the degree of
+non-informativeness depends on the parameterization. For example, a
+natural non-informative prior for the intercept of a logistic
+regression
 \[
-logit(p[i]) = a + b*x[i]
+\mbox{logit}(p_{i}) = \alpha + \beta x_{i}
 \]
-Would be $[a] = const$ which is the same as saying $a \sim Unif(\infty,infty)$ or the standard improper ``locally uniform'' prior distribution.  However, we might also use a prior on the parameter $p0 = expit(a)$, which is $Pr(y=1)$ for the value $x=0$. Since $p0$ is a probability we might use $p0 \sim Unif(0,1)$. These two priors can affect results (see Chapter 3.XYZ), yet they are both sensible ``non-informative'' priors. Choice of priors and parameterization is very much problem-specific and often largely subjective. Moreover, it also affects the behavior of MCMC algorithms and therefore the analyst needs to pay some attention to these issues and possibly try different things out. [we should point to some standard refs on this stuff].
+Would be $[\alpha] = \mbox{const}$ which is the same as saying $a \sim
+Unif(\infty,infty)$, the customary improper uniform prior.
+However, we might also use a prior on the parameter $p0
+= logit^{-1}(a)$, which is $Pr(y=1)$ for the value $x=0$. Since $p0$ is a
+probability a natural choice is $p0 \sim Unif(0,1)$. These two priors can
+affect results (see Chapter 3.XYZ), yet they are both sensible
+non-informative priors. Choice of priors and parameterization is
+very much problem-specific and often largely subjective. Moreover, it
+also affects the behavior of MCMC algorithms and therefore the analyst
+needs to pay some attention to this issue and possibly try different
+things out. 
+XXX REFS on prior distributions XXXXXX
 
-Once we have carried-out an analysis by MCMC, there are many other practical issues that we have to confront.  One of the most important is ``Have the chains converged?'' Most MCMC algorithms only guarantee that, eventually, the samples being generated will be from the target posterior distribution. So-called ``convergence'' of the Markov chain is achieved when that happens.  Typically a period of transience is observed in the early part of the MCMC algorithm, and this is usually discarded as the ``burn-in'' period.  
+\subsection{Convergence and so-forth}
+
+Once we have carried-out an analysis by MCMC, there are many other
+practical issues that we have to confront.  One of the most important
+is ``have the chains converged?'' Most MCMC algorithms only guarantee
+that, eventually, the samples being generated will be from the target
+posterior distribution. So-called ``convergence'' of the Markov chain
+is achieved when that happens.  Typically a period of transience is
+observed in the early part of the MCMC algorithm, and this is usually
+discarded as the ``burn-in'' period.
 
 The quick diagnostic to whether convergence has been achieved is that
-your Markov chains look ``grassy'' - see Figure XXX below - then
-you're probably all done. Another way to check convergence is to
-update the parameters some more and see if the posterior changes. It
-is good to confirm convergence using the Rhat statistic (Brooks Gelman
-Rubin statistic \citep{gelman_etal:1996}) which should be close to 1. In practice, 1.2 is probably good enough. For some really complex models 1.3 or 1.4 might be good enough. For some models you can't actually realize a low R-hat. E.g., if the posterior is a discrete mixture of distributions then I think you will always be misled into thinking that your Markov chains have not converged when in fact the chains are just jumping back and forth in the posterior state-space. Another situation is when one of the parameters is on the boundary of the parameter space which might appear to be very poor mixing. This kind of stuff is normally ok and you need to think really hard about the context of the model and the problem before you conclude that your MCMC algorithm is ill-behaved or not.
+your Markov chains look ``grassy'' -- see Fig.  \ref{glms.fig.grassy}
+below.  Another way to check
+convergence is to update the parameters some more and see if the
+posterior changes. It is good to confirm convergence using the
+``R-hat'' statistic ($\hat{R}$) or Brooks-Gelman-Rubin statistic
+\citep{gelman_etal:1996}) which should be close to 1 if the Markov
+chains have converged and sufficient posterior samples have been
+obtained. In practice, $\hat{R} = 1.2$ is probably good enough for
+some problems.  For some models you can't actually realize a low
+$\hat{R}$. E.g., if the posterior is a discrete mixture of distributions
+then you can be misled into thinking that your Markov chains
+have not converged when in fact the chains are just jumping back and
+forth in the posterior state-space. So, for example, using model
+selection methods (section XYZ) sometimes suggests non-convergence.
+Another situation is when one of the parameters is on the boundary of
+the parameter space which might appear to be very poor mixing, but all
+within some extreme region of the parameter space.\footnote{it would
+  be nice if we could compile examples of this later in the book and
+  reference back to this point}.
+This
+kind of stuff is normally ok and you need to think really hard about
+the context of the model and the problem before you conclude that your
+MCMC algorithm is ill-behaved.
 
 Some models exhibit ``poor mixing'' of the Markov chains or what
-people might also call ``slow convergence'' which is a term we would
-disagree with because the samples might well be from the posterior
-(i.e., the Markov chains have converged to the proper stationary
-distribution) but simply mix around the posterior rather
-slowly. Anyway, poor mixing can happen for a huge number of reasons -
-when parameters are highly correlated (even confounded), or barely
-identified from the data, or the algorithms are very terrible and
-probably many other reasons.  Slow mixing equates to high
+people might also say ``have not coverged'' (or ``slow convergence'')
+which is a term we would disagree with because the samples might well
+be from the posterior (i.e., the Markov chains have converged to the
+proper stationary distribution) but simply mix around the posterior
+rather slowly. Anyway, poor mixing can happen for a huge number of
+reasons -- when parameters are highly correlated (even confounded), or
+barely identified from the data, or the algorithms are very terrible
+and probably many other reasons.  Slow mixing equates to high
 autocorrelation in the Markov chain - the successive draws are highly
 correlated, and thus we need to run the MCMC algorithm much longer to
 get an effective sample size that is sufficient for estimation - or to
@@ -510,98 +901,215 @@ reduce autocorrelation is ``thinning'' - i.e., keep every $m^{th}$
 value of the Markov chain output. However, thinning is necessarily
 inefficient from the stand point of inference - you can always get
 more precise posterior estimates by using all of the MCMC output
-regardless of the level of autocorrelation \citep{maceachern_berliner:1994}. Practical considerations might necessitate thinning, even though it is statistically inefficient. For example, in models with many parameters or other unknowns being tabulated, the output files might be enormous and unwieldy to work with. In such cases, thinning is perfectly reasonable. In many cases, how well the Markov chains mix is strongly influenced by parameterization, standardization of covariates, and the prior distributions being used. Some things work better than others, and the investigator should experiment with different settings and try not to become bewildered when things don't work out perfectly. MCMC is an art, and a science. 
+regardless of the level of autocorrelation
+\citep{maceachern_berliner:1994}. Practical considerations might
+necessitate thinning, even though it is statistically inefficient. For
+example, in models with many parameters or other unknowns being
+tabulated, the output files might be enormous and unwieldy to work
+with. In such cases, thinning is perfectly reasonable. In many cases,
+how well the Markov chains mix is strongly influenced by
+parameterization, standardization of covariates, and the prior
+distributions being used. Some things work better than others, and the
+investigator should experiment with different settings and 
+remain calm when things don't work out perfectly. MCMC is an
+art, and a science.
 
 
-The next question: Is the posterior sample large enough?  Never report MCMC results to more than 2 decimal places - because they will always be different! Look at the MC error which is printed by default in *BUGS summaries.  You want that to be smallish relative to the magnitude of the parameter. I'm usually content with 1\% but if you're uncomfortable with monte carlo error, you should run your MCMC algorithm as long as it takes. Note that MC error in summaries of the posterior is not the same as having an ``approximate'' solution in a standard likelihood analysis or similar.  The approximate SE in likelihood inference is actually wrong in its actual value.... XYZ.
+{\bf Is the posterior sample large enough?}  A good rule
+of thumb is that you should never report
+MCMC results to more than 2 decimal places - because they will always
+be different! Look at the MC error which is printed by default in
+summaries of BUGS output.  You want that to be smallish relative to the
+magnitude of the parameter and this might depend on the purpose of the
+analysis. For a preliminary analysis you might settle for a few
+percent whereas for a final analysis then certainly less than 1\% is
+called for, but you can run 
+your MCMC
+algorithm as long as it takes. Note that MC error in summaries of the
+posterior is not the same as having an ``approximate'' solution in a
+standard likelihood analysis or similar.  The approximate SE in
+likelihood inference is actually wrong in its actual value.... XYZ.
 
 
 \subsection{Bayesian confidence intervals} 
+
 The 95\% Bayesian interval based on percentiles of the posterior
 is not a unique interval - there are many of them - and the so-called
 ``highest posterior density'' (HPD) interval is the narrowest
 interval. We might compute that frequently because it is easy to do
 with an integer parameter which $N$ is (See the next chapter). The
-95p\% HPD is not often exactly 95\% but usually slightly more
+95 \% HPD is not often exactly 95\% but usually slightly more
 conservative than nominal because it is the narrowest interval that
 contains at least 95\%  of the posterior mass.
 
-\subsection{Estimating functions of parameters} A benefit of analysis by MCMC is that we can seamlessly estimate functions of parameters by simply tabulating the desired function of the simulated posterior draws. For example, if $\theta$ is the parameter of interest and let $\theta^{(i)}$ for $i=1,2,\ldots,M$ be the posterior samples of $\theta$. Let $\eta = exp(\theta)$, then a posterior sample of $\eta$ can be obtained simply by computing $exp(\theta^{(i)})$ for $i=1,2,\ldots,M$. We give an example in Section XXXX below.
+\subsection{Estimating functions of parameters}
 
+A benefit of analysis by MCMC is that we can seamlessly estimate
+functions of parameters by simply tabulating the desired function of
+the simulated posterior draws. For example, if $\theta$ is the
+parameter of interest and let $\theta^{(i)}$ for $i=1,2,\ldots,M$ be
+the posterior samples of $\theta$. Let $\eta = exp(\theta)$, then a
+posterior sample of $\eta$ can be obtained simply by computing
+$exp(\theta^{(i)})$ for $i=1,2,\ldots,M$. We give another example in
+section 
+\ref{glms.sec.xopt}
+below and throughout this book.
+Almost all SCR models in this book involve at least 1 derived
+parameter. For example, density $D$ is a derived parameter, being a
+function of population size $N$ and the area $A$ of the underlying
+state-space of the point process (see chapter \ref{chapt.scr0}). 
 
 \section{Bayesian Analysis using WinBUGS}
 
-We won't be too concerned with devising our own MCMC algorithms although we will do that one or two times for fun.  More often, we will rely on the freely available software package WinBUGS or other BUGS engines for doing this.  Further, we will execute WinBUGS from within R using the R2WinBUGS package. WinBUGS is an MCMC black box that takes a pseudo-code description of all of the relevant stochastic and deterministic elements of a model and generates an MCMC algorithm for that model. But you never get to see the algorithm. Instead, WinBUGS will run the algorithm and just return the Markov chain output - the posterior samples of model parameters. 
+We won't be too concerned with devising our own MCMC algorithms for
+every analysis
+although we will do that a few times for fun.  More often, we
+will rely on the freely available software package {\bf WinBUGS} or
+{\bf JAGS}
+for doing this.  We will always execute these {\bf BUGS} engines from
+within {\bf R} using the \mbox{\tt R2WinBUGS} (REF XYZ XYZ) or
+\mbox{\tt rjags} pacages. {\bf WinBUGS} and {\bf JAGS} are  MCMC black boxes
+that takes a pseudo-code description (i.e., written in the {\bf BUGS}
+language) of all of the relevant stochastic
+and deterministic elements of a model and generates an MCMC algorithm
+for that model. But you never get to see the algorithm. Instead,
+{\bf WinBUGS}/{\bf JAGS} will run the algorithm and just return the Markov chain output
+- the posterior samples of model parameters. 
 
-The great thing about WinBUGS is that it forces you to become intimate
-with your statistical model - you have to write each element of the
-model down, admit (explicitly) all of the various assumptions,
-understand what the actual probability assumptions are and how data
-relate to latent variables and data and latent variables relate to
-parameters, and how parameters relate to one another. While we will
-use WinBUGS almost exclusively here, there are many BUGS like packages
-now, including JAGS, OpenBUGS, PyMC and others.  Later (chapter MCMC
-XYZ) we will demonstrate a model or two in JAGS. OpenBUGS is the
-current active development tree of the ``BUGS'' language. See
-(\citet{kery:2010}; chapters XXXX) and (\citet{kery_schaub:2011}, Appendix XYZ) for the lowdown on problems/issues with using WinBUGS. That book should also be consulted for a more comprehensive introduction to using WinBUGS. In this example, we're going to accelerate pretty fast.
+The great thing about using the {\bf BUGS} language is that it forces
+you to become intimate with your statistical model - you have to write
+each element of the model down, admit (explicitly) all of the various
+assumptions, understand what the actual probability assumptions are
+and how data relate to latent variables and data and latent variables
+relate to parameters, and how parameters relate to one another. 
 
-We  provide a brief introductory example of a normal regression model using a small simulated data set. The following commands are executed from within your R workspace, the command line being indicated by ``>''. First, simulate a covariate x and observations y having prescribed intercept, slope and variance:
+While we normally use
+{\bf WinBUGS} or {\bf JAGS} in this book, we note that {\bf
+ OpenBUGS} is the current active development tree of the {\bf BUGS}
+language. See \citet[][ch.xyz]{kery:2010} and 
+\citet[][appendix xyz]{kery_schaub:2011} for more on practial analysis
+in {\bf WinBUGS}.
+That book should also be consulted
+for a more comprehensive introduction to using {\bf WinBUGS}. In this
+example, we're going to accelerate pretty fast.
+
+\subsection{Linear Regression in WinBUGS}
+
+We provide a brief introductory example of a normal regression model
+using a small simulated data set. The following commands are executed
+from within your R workspace, the command line being indicated by
+\mbox{\tt ``>''}. First, simulate a covariate $x$ and observations $y$ having
+prescribed intercept, slope and variance:
 \begin{verbatim}
 > x<-rnorm(10)
 > mu<- -3.2+ 1.5*x
 > y<-rnorm(10,mu,sd=4)
 \end{verbatim}
-The WinBUGS model specification for a normal regression model is written within R as a character string input to the command cat() and then dumped to a text file named ``normal.txt'' (alternatively, you can write the model specifications directly within a text file and save it in your current working directory):
+The {\bf BUGS} model specification for a normal regression model is
+written within {\bf R} as a character string input to the command
+\mbox{\tt cat()} and
+then dumped to a text file named \mbox{\tt normal.txt}:
 \begin{verbatim}
 > cat("
 model {
    for (i in 1:10){
-      y[i]~dnorm(mu[i],tau)             # the "likelihood"
+      y[i]~dnorm(mu[i],tau)        # the "likelihood"
       mu[i]<- beta0 + beta1*x[i]   # the linear predictor
      }
-   beta0~dnorm(0,.01)                   # prior distribution
+   beta0~dnorm(0,.01)              # prior distributions
    beta1~dnorm(0,.01)
-   sigma~dunif(0,100)
-   tau<-1/(sigma*sigma)                 # tau is a derived parameter
+   sigma~dunif(0,100)               
+   tau<-1/(sigma*sigma)            # tau is a derived parameter
 }
 ",file="normal.txt")
 \end{verbatim}
+Alternatively, you
+can write the model specifications directly within a text file and
+save it in your current working directory, but we do not usually take
+that approach in this book.
+
+{\bf Remarks:} {\bf 1.} {\bf WinBUGS} parameterizes the normal in
+terms of the mean and inverse-variance, called the precision. Thus,
+\mbox{\tt dnorm(0,.01)} implies a variance of 100; 
+{\bf 2.} We typically use diffuse normal priors for mean parameters, $\beta_0$ and $\beta_1$ in this case, but sometimes we might use uniform priors with suitable bounds -B and +B.
+{\bf 3.} We typically use a $\mbox{Unif}(0,B)$ prior on standard
+deviation parameters 
+(Gelman XXX 2006 XXXX). But sometimes we might use a gamma prior on the precision parameter $\tau$.
+{\bf 4.} In a {\bf WinBUGS} model file, every variable referenced in
+the model description has to be
+either data, which will be input (see below), a random variable which
+must have a probability distribution associated with it using the
+``\verb#~#'', or it has to be a derived parameter connected to variables and
+data using ``\mbox{\tt <-}''.
 
 
-
-{\bf Remarks:}
-\begin{itemize}
-\item[1.]WinBUGS parameterizes the normal in terms of the mean and inverse-variance, called the precision. Thus, dnorm(0,.01) implies a variance of 100.
-\item[2.]We typically use diffuse normal priors for mean parameters, beta0 and beta1 in this case, but sometimes we might use uniform priors with suitable bounds -B and +B.
-\item[3.]We typically use a uniform [0,B] prior on standard deviation parameters (Gelman XXX 2006). But sometimes we might use a gamma prior on the precision parameter tau.
-\item[4.]In a WinBUGS model file, every single element has to be either data which will be input (see below), a random variable which must have a probability distribution associated with it, using the ``~'', or it has to be a derived parameter connected to variables and data using ``<-''.
-
-\end{itemize}
-
-To fit the model, we execute these commands:
+To fit the model, we need to describe various data objects to {\bf
+  WinBUGS}. In particular, 
+we create an {\bf R} list object called \mbox{\tt data} which
+are the data objects identified in the BUGS model file.
+ In the example, the 
+data consist of two objects which exist as $y$ and $x$ in the {\bf R}
+workspace and also in the {\bf WinBUGS} model definition. 
+ We also have to create an {\bf R} function
+that produces a list of starting values \mbox{\tt inits} that get sent to
+{\bf WinBUGS}.
+ Finally, we identify
+the names of the parameters (labeled correspondingly in the {\bf WinBUGS}
+model specification) that we want {\bf WinBUGS} to save the MCMC output
+for. In this example, we will ``monitor'' the parameters 
+$\beta_0$, $\beta_1$, $\sigma$ and $\tau$. 
+{\bf WinBUGS} is executed using the {\bf R} command
+\mbox{\tt bugs()}.
+We set the option \mbox{\tt debug=TRUE} if we want the {\bf WinBUGS}
+GUI to stay open (useful for analyzing MCMC output and looking at the
+{\bf WinBUGS} error log). Also, we set \mbox{\tt working.dir=getwd()}
+so that {\bf WinBUGS} output files and the log file are saved in the
+current {\bf R} working directory.  
+  All of these activities look like this:
+{\small 
 \begin{verbatim}
-> library("R2WinBUGS")    # "attach" the R2WinBUGS library
-> data <- list ( "y","x")
-> inits <- function()
+ library("R2WinBUGS")    # "attach" the R2WinBUGS library
+ data <- list ( "y","x")
+ inits <- function()
   list ( beta1=rnorm(1),beta0=rnorm(1),sigma=runif(1,0,2) )
-> parameters <- c("beta0","beta1","sigma","tau")
-> out<-bugs (data, inits, parameters, "normal.txt", n.thin=2, n.chains=2, n.burnin=2000, n.iter=6000, debug=TRUE,working.dir=getwd())
+ parameters <- c("beta0","beta1","sigma","tau")
+ out<-bugs (data, inits, parameters, "normal.txt", n.thin=2, n.chains=2, 
+             n.burnin=2000, n.iter=6000, debug=TRUE,working.dir=getwd())
 \end{verbatim}
-To fit the model, we execute these commands:
-\begin{verbatim}
-> library("R2WinBUGS")    # "attach" the R2WinBUGS library
-> data <- list ( "y","x")
-> inits <- function()
-  list ( beta1=rnorm(1),beta0=rnorm(1),sigma=runif(1,0,2) )
-> parameters <- c("beta0","beta1","sigma","tau")
-> out<-bugs (data, inits, parameters, "normal.txt", n.thin=2, n.chains=2, n.burnin=2000, n.iter=6000, debug=TRUE,working.dir=getwd())
-\end{verbatim}
+}
 
-{\bf Explanation:} We created an R list object called ``data'' which are the things we have to send to WinBUGS.  In the example above, the data consist of two objects which exist as ``y'' and ``x'' in the R workspace and also in the WinBUGS model definition.  People tend to ask ``how should my data be formatted?'' That depends on how you describe the WinBUGS model and you should read your data in as a .csv file or some other format and manipulated it within R to get into the desired format. There is a non-unique way to describe any particular model and so you have some flexibility. We talk about data format further in the context of capture-recapture models and SCR models in chapters 3 and 4, and later.  We also have to create an R function that produces a list of starting values ``inits'' that get sent to WinBUGS. In general, starting values are optional but we recommend to always provide reasonable starting values of structural parameters, but not necessarily random effects(although the latter will sometimes need to be given to keep WinBUGS from crashing).  Finally, we identify the names of the parameters (labeled correspondingly in the WinBUGS model specification) that we want WinBUGS to save the MCMC output for. In the above example, we are telling WinBUGS to ``monitor'' beta0, beta1, sigma and tau. WinBUGS is executed using the R command ``bugs''. Note that the previously created objects defining data, initial values and parameters to monitor are passed to this function. In addition, various other things are declared: The number of chains, the thinning rate, the number of burnin iterations and the total number of iterations. We set ``debug=TRUE'' if we want the WinBUGS GUI to stay open (useful for analyzing MCMC output and looking at the WinBUGS error log). Also, we set working.dir=getwd() so that WinBUGS output files and the log file are saved in the current R working directory.
+{\bf Remarks:} A common question is ``how should my data be
+formatted?'' That depends on how you describe the model in the {\bf
+  BUGS} language, how your data are input into {\bf R} and
+subsequently formatted.  There is no unique way to describe any
+particular model and so you have some flexibility. We talk about data
+format further in the context of capture-recapture models and SCR
+models in chapter \ref{chapt.scr0} and elsewhere.  In general,
+starting values are optional but we recommend to always provide
+reasonable starting values for structural parameters, but are not
+always necessary for random effects.  Note that the previously created
+objects defining data, initial values and parameters to monitor are
+passed to the function \mbox{\tt bugs()}.  In addition, various other
+things are declared: The number of Markov chains (\mbox{\tt
+  n.chains}), the thinning rate (\mbox{\tt n.thin}),
+the number of burn-in iterations (\mbox{\tt n.burnin}) and the total
+number of iterations
+(\mbox{\tt n.iter}).
+To develop a detailed understanding of the various parameters and
+settings used for MCMC, consult a basic reference such as
+\citet{kery:2010}.
 
 
-You should execute all of the commands given above and then look at the resulting output. Kill the WinBUGS GUI and the data will be read back into R.  We don't want to give instructions on how to navigate and use the GUI - see REF (XYZ) for that.  The object ``out'' prints important summaries by default (this is slightly edited):
 
+You should execute all of the commands given above and then look at
+the resulting output. Kill the {\bf WinBUGS} GUI and the data will be
+read back into {\bf R} (or specify \mbox{\tt debug=FALSE}).  We don't
+want to give instructions on how to navigate and use the GUI - see XYZ
+REF (XYZ) for that.  
+The object \mbox{\tt out} prints important
+summaries by default (this is slightly edited):
+
+{\small
 \begin{verbatim}
 > print(out,digits=2)
 Inference for Bugs model at "normal.txt", fit using WinBUGS,
@@ -620,105 +1128,292 @@ and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
 DIC info (using the rule, pD = Dbar-Dhat)
 pD = 2.6 and DIC = 62.4
 \end{verbatim}
+}
 
-{\bf Remarks:} (1) convergence is assessed using the $\hat{R}$ statistic - which we will write ``Rhat''. A value of Rhat near 1 indicates convergence. Posterior summaries are given.  (2) DIC is the ``deviance information criterion'' (REF XXXX; see below XYZ) which some people use in a manner similar to AIC although it is recognized to have some problems in hierarchical models (XYZ Biometrics ref XYZ).  
+{\bf Remarks:} (1) convergence is assessed using the $\hat{R}$
+statistic -- which we might sometimes write ``$Rhat$''. A value of $Rhat$ near 1
+indicates convergence; (2) DIC is the
+``deviance information criterion'' \citep{spiegelhalter_etal:2002}
+(see section \ref{glms.sec.modsel})
+ which
+some people use in a manner similar to AIC although it is recognized
+to have some problems in hierarchical models \citep{millar:2009}. We
+evaluate this in the context of SCR models in chapter XYZ XYZ.
 
-{\bf Inference about functions of model parameters:}  Using the MCMC draws for a given model we can easily obtain the posterior distribution of any function of model parameters.  We showed this by providing the posterior of ``tau'' when we used ``sigma'' to parameterize the model above.  As another example, suppose that the normal regression model above had a quadratic response function of the form
+\subsection{Inference about functions of model parameters}  
+\label{glms.sec.xopt}
+
+Using the MCMC draws for a given model we can easily obtain the
+posterior distribution of any function of model parameters.  We showed
+this in the above example by providing the posterior of $\tau$ when
+the model was parameterized in terms of standar deviation $\sigma$.
+ As another example, suppose that the
+normal regression model above had a quadratic response function of the
+form
 \[
-	E[y[i]] = \beta0 + \beta1*x[i] + \beta2*x[i]*x[i]
+	E(y_i) = \beta_0 + \beta_1 x_i + \beta_2 x_{i}^{2}
 \]
-Then the optimum response can be found by setting the derivative of this function to 0 and solving for $x$. We find that $df/dx = beta1 + 2*beta2*x = 0$ yields that $xopt = -\beta1/(2*\beta2)$.   We can just take our posterior draws for $beta1$ and $beta2$ and obtain a posterior sample of $xopt$ using those values. As an exercise, take the normal model above and simulate a quadratic response and then describe the posterior distribution of xopt. 
-
+Then the optimum value of $x$, i.e., that corresponding to the optimal
+expected response, can be found by setting the derivative of
+this function to 0 and solving for $x$. We find that 
+\[
+df/dx = \beta_1 +
+2*\beta_2 x = 0
+\]
+yields that $x_{opt} = -\beta_1/(2*\beta_2)$.  We can just
+take our posterior draws for $beta_1$ and $beta_2$ and obtain a
+posterior sample of $x_{opt}$ by this simple calculation. As an exercise, take
+the normal model above and simulate a quadratic response and then
+describe the posterior distribution of $x_{opt}$.
 
 
 \section{Model Checking and Selection}
+\label{glms.sec.modsel}
 
 In general terms model checking - or assessing the adequacy of the
 model - and model selection are quite thorny issues and, despite
-contrary and commonly held belief among practitioners, there are not
+contrary and, sometimes, strongly held belief among practitioners, there are not
 really definitive, general solutions to either problem. We're against
 dogma on these issues and think people need to be open-minded about
 such things and recognize that models can be useful whether or not
 they pass certain statistical tests. Some models are intrinsically
 better than others because they make more biological sense or foster
-understanding or achieve some objective that a bootstrap
-goodness-of-fit test can't decide for you.  In the context of Bayesian
-model checking and selection see \citet{kery:2010}; chapter XYZ, and \citet{link_barker:2009}; chapter XYZ. 
+understanding or achieve some objective that some  bootstrap
+or other goodness-of-fit test can't decide for you. That said, it
+gives you some confidence if your model seems adequate and we try to
+provide some fit assessment in most real applications of SCR models
+We provide a very brief overview of concepts here, but provide more
+detailed coverage in chapter \ref{chapt.gof}.
+See also  
+\citet[][ch. xyz]{kery:2010} and
+\citet[][ch. xyz]{link_barker:2009}
+for specific context related to Bayesian 
+model checking and selection.
 
 \subsection{Goodness-of-fit}
- Goodness-of-fit testing is an important element of any analysis because in a sense our model represents a general set of hypotheses about the ecological and observation processes that generated our data. Thus, if our model ``fits'' in some statistical or scientific sense, then we believe it to be consistent with the hypotheses that went into the model. More formally, we would conclude that the data are {\it not inconsistent} with the hypotheses. If we have enough data, then of course we will reject any set of statistical hypotheses.  Unfortunately, conducting goodness-of-fit tests is not always so easy to do. Moreover, it is never really easy (or especially convenient) to decide if your goodness-of-fit test is worth anything. It might have 0 power!  Despite these difficulties, we will often try to conjure something up that gets the job done. 
 
- Even though we think evaluation of fit is important, we also believe that models can be useful irrespective of whether they fit (as we noted above, with enough data, no model will fit, and some contributing factors to lack-of-fit can be minor or irrelevant to the intended use of the model). As a final point, we can always make a model fit by making the model extremely complex. It seems to us that simple models that you can understand should usually be preferred even if they don't fit. Yet the tension is there to get fitting models which comes naturally at the expense of models that can be interpreted and studied and used.  
+Goodness-of-fit testing is an important element of any analysis
+because  our model represents a general set of hypotheses
+about the ecological and observation processes that generated our
+data. Thus, if our model ``fits'' in some statistical or scientific
+sense, then we believe it to be consistent with the hypotheses that
+went into the model. More formally, we would conclude that the data
+are {\it not inconsistent} with the hypotheses, or that the model
+appears adequate. If we have enough
+data, then of course we will reject any set of statistical hypotheses.
+Conversely, we can always come up with a model that fits by making the
+model extremely complex. Despite this paradox, it seems to us that
+simple models that you can understand should usually be preferred even
+if they don't fit, for example if they embody essential mechanisms
+central to our understanding of things, or
+if we think that some contributing factors to lack-of-fit are minor or
+irrelevant to the scientific context and intended use of the model.
+In other words, models can be useful irrespective of whether they fit
+according to some formal statistical test of fit.  Yet
+the tension is there to obtain fitting models, and this comes naturally at
+the expense of models that can be easily interpreted and studied and
+effectively used. 
+Moreover, conducting goodness-of-fit tests is
+not always so easy to do. Moreover, it is never really easy (or
+especially convenient) to decide if your goodness-of-fit test is worth
+anything. It might have 0 power!
+Despite this,
+we recommend attempting to assess model fit in real applications,
+as a general rule, and we provide some basic guidance here and some more
+specific to SCR models in
+chapter \ref{chapt.gof}. 
 
-To evaluate goodness-of-fit in Bayesian analyses, we will most often  use the Bayesian p-value (Gelman XXYYZZ).  The basic idea is to define a fit statistic and compare the posterior distribution of that statistic to the posterior predictive distribution of that statistic for hypothetical perfect data sets for which the model is correct. For example, with count frequency data, a standard measure of fit is the sum of squares of the ``Pearson residuals'',
+To evaluate goodness-of-fit in Bayesian analyses, we will most often
+use the Bayesian p-value \citep{gelman_etal:1996}.  The basic idea is to define
+a fit statistic or ``discrepancy measure'' and compare the posterior distribution of that
+statistic to the posterior predictive distribution of that statistic
+for hypothetical perfect data sets for which the model is known to be correct. For
+example, with count frequency data, a standard measure of fit is the
+sum of squares of the ``Pearson residuals'',
 \[
-D[i] = (y[i] - E[y[i]])^{2}/Var[ y[i] ]
+D(y_i,\theta) = \frac{(y_i - E(y_i))^{2}}{Var( y_{i} )}
 \]
 The fit statistic based on the squared residuals is
 \[
-FIT = sum_{i} D[i]^{2}
+FIT = \sum_{i} D(y_{i},\theta)^{2}
 \]
 which can be computed at each iteration of a MCMC algorithm given the
-current values of parameters that determine the mean and variance of
-the response distribution.  The equivalent statistic is computed for a
+current values of parameters that determine the 
+ response distribution.  At the same time (i.e., at each MCMC
+ iteration), 
+the equivalent statistic is computed for a
 ``new'' data set, simulated using the current parameter values. The
-Bayesian p-value is simply the posterior probability $Pr(Fit >
-Fitnew)$ which should be close to 0.50 for a good model. In practice
-we judge ``close to 0.50'' as being ``not too close to 0 or 1'' and, as always, closeness is somewhat subjective. We're happy with anything $>.1$ and $<.9$ but might settle for $>.05$ and $<0.95$. In summary, the Bayesian p-value seems like a bootstrap idea, is easy to compute, and widely used as a result.
+Bayesian p-value is simply the posterior probability $\Pr(\mbox{Fit} >
+\mbox{Fit}_{new})$\footnote{Check this definition!}
+ which should be close to $0.50$ for a good model -- one that
+ ``fits'' in the sense that the observed data set is
+ consistent with realizations simulated under the model being fitted
+ to the observed data. In practice
+we judge ``close to 0.50'' as being ``not too close to 0 or 1'' and,
+as always, closeness is somewhat subjective. We're happy with anything
+$>.1$ and $<.9$ but might settle for $>.05$ and $<0.95$. In summary,
+the Bayesian p-value seems like a bootstrap idea, is easy to compute,
+and widely used as a result.
 
-Sometimes a more useful fit statistic is the Freeman-Tukey statistic, in which 
+Another useful fit statistic is the Freeman-Tukey
+statistic\footnote{Ref for this?}, in which 
 \[
-D(x,\theta) = \sum_{j} ( \sqrt(x_{j}) - sqrt(e_{j}) )^2
+D({\bf y},\theta) = \sum_{i} ( \sqrt(y_{i}) - \sqrt(e_{i}) )^2
 \]
-
-\citep{brooks_etal:2000}, where $x_{j}$ is the observed value of observation  $j$ and $e_{j}$ its expected value. In contrast to a chi-square discrepancy, the Freeman-Tukey statistic removes the need to pool cells with small expected values.
+\citep{brooks_etal:2000}, where $y_{i}$ is the observed value of
+observation $i$ and $e_{i}$ its expected value. In contrast to a
+chi-square discrepancy, the Freeman-Tukey statistic removes the need
+to pool cells with small expected values.
 
 
 \subsection{Model Selection }
 
- For model selection we typically use three different methods: First is, let's say, common sense. If a parameter has posterior mass concentrated away from 0 then it seems like it should be regarded as important - that is, it is ``significant.''  This approach seems to have fallen out of favor with all of the interest over the last 10 or 15 years on model selection in ecology. It seems reasonable to us. 
+For model selection we typically use three different methods: First
+is, let's say, common sense. If a parameter has posterior mass
+concentrated away from 0 then it seems like it should be regarded as
+important - that is, it is ``significant.''  This approach seems to
+have fallen out of favor with all of the interest over the last 10 or
+15 years on model selection in ecology. It seems reasonable to us.
 
 
-For regression problems we use the factor weighting idea which is to introduce a set of binary variables $w(k)$ for variable $k$, and express the model as, e.g., for a single covariate model:
+For regression problems we sometimes use the factor weighting idea
+which is to introduce a set of binary variables $w_{k}$ for variable
+$k$, and express the model as, e.g., for a single covariate model:
  \[
- E[y[i]] = a + w*b*x[i]
+ E(y_i) = \alpha + w \beta x_{i}
 \]
-where $w$ is given a Bernoulli prior distribution with some prescribed probability. E.g., $w \sim Bern(0.50)$ to provide a prior probability of 0.50 that variable ``x'' should be an element of the linear predictor. The posterior probability of the event $w=1$ is a gauge of the importance of the variable $x[i]$. i.e.,  high values of $Pr(w=1)$ indicate stronger evidence....close to 0 means not so important, etc...
- This idea seems to be due to Kuo and Mallick (XXX)\footnote{ Is this
-   also what people call Zellner's G-priors?} and see
- \citet{royle_dorazio:2008}; ch XX for an example in the context of
- logistic regression. It seems to even work sometimes with fairly
- complex hierarchical models of a certain form. E.g.,
- \citet{royle:2008} applied it to a random effects model where w
- multiplied the random effect. WinBUGS can be very sensitive and
- temperamental to things but sometimes it does things that appear to
- be quite remarkable. The problem with this approach is that its
- effectiveness and results will typically be highly sensitive to the
- prior distribution on the structural parameters (e.g., see
- \citet{royle_dorazio:2008} table XYZ). The reason for this is obvious: If $w = 0$ for the current iteration of the MCMC algorithm, so that ``b'' is sampled from the prior distribution, and the prior distribution is very diffuse, then extreme values of ``b'' are likely. When the current value of ``b'' is far away from the mass of the posterior when $w=1$, then the Markov chain may only jump from $w=0$ to $w=1$ infrequently.  One seemingly reasonable solution to this problem (Aitken XYZ) is to fit the full model to obtain posterior distributions for all parameters, and then use those as prior distributions in a ``model selection'' run of the MCMC algorithm.  This seems preferable to an arbitrary restriction of the prior support to improve the performance of the MCMC algorithm. 
+where $w$ is given a Bernoulli prior distribution with some prescribed
+probability. E.g., $w \sim Bern(0.50)$ to provide a prior probability
+of 0.50 that variable $x$ should be an element of the linear
+predictor. The posterior probability of the event $w=1$ is a gauge of
+the importance of the variable $x$. i.e., high values of $\Pr(w=1)$
+indicate stronger evidence to support that ``$x$ is in the model''
+whereas values of $\Pr(w=1)$ close to 0 suggest that $x$ is less
+important.
 
-A third method that we like to fall-back on is subject-matter context. It seems that there are some situations where one should not have to do model selection because it is necessitated by the specific situation at hand. SCR models are such an example. We will see that ``spatial location'' of individuals is an element of the model. The simpler, reduced, model is an ordinary capture-recapture model (i.e., next chapter), but it seems silly to think about actually using the reduced model even if we could concoct some statistical test to refute the more complex model.  Other examples are when effort, area or sample rate is a covariate. One might prefer to have such things in models regardless of whether or not they pass some statistical litmus test (yet you can always find referees to argue for pedantic procedure over thinking). 
-	
-Many problems can be approached using one of these methods but there are also broad classes of problems that can't and, for those, you're out of luck. In later chapters we will address model selection in specific contexts and we hope those will prove useful.  
+ 
+
+This idea seems to be due to \citet{kuo_mallick:1998}\footnote{ Is
+  this also what people call Zellner's G-priors?} and see
+\citet[][ch. XXXX]{royle_dorazio:2008} for an example in the context
+of logistic regression. This approach seems to even work sometimes
+with fairly complex hierarchical models of a certain form. E.g.,
+\citet{royle:2008} applied it to a random effects model to evaluate
+the importance of the random effect component of the model.  The main
+problem with this approach is that its effectiveness and results will
+typically be highly sensitive to the prior distribution on the
+structural parameters (e.g., see \citet[][table xyz]{royle_dorazio:2008}).
+The reason for this is obvious: If $w = 0$ for the current
+iteration of the MCMC algorithm, so that $\beta$ is sampled from the
+prior distribution, and the prior distribution is very diffuse, then
+extreme values of $\beta$ are likely. Consequently, when the current value of
+$\beta$ is 
+far away from the mass of the posterior when $w=1$, then the Markov
+chain may only jump from $w=0$ to $w=1$ infrequently.  One seemingly
+reasonable solution to this problem (Aitken XYZ FIND THIS
+XXXXX\footnote{see Royle 2008 paper for reference}) is to fit the full
+model to obtain posterior distributions for all parameters, and then
+use those as prior distributions in a ``model selection'' run of the
+MCMC algorithm.  This seems preferable to more-or-less arbitrary restriction of
+the prior support to improve the performance of the MCMC algorithm.
+
+A third method that that we advocate is subject-matter
+context. It seems that there are some situations -- some models -- where one should not
+have to do model selection because it is necessitated by the specific
+context of the problem, thus rendering a formal hypotesis test pointless
+\citep{johnson:1999}.
+SCR models are such an example. In SCR models, we will see that
+``spatial location'' of individuals is an element of the model. The
+simpler, reduced, model is an ordinary capture-recapture model which
+is not spatially explicit (i.e., chapter \ref{chapt.closed}),
+but it seems silly and pointless to think about actually using the
+reduced model even if we could concoct some statistical test to refute
+the more complex model.  The simpler model is manifestly wrong but,
+more importantly, not even a plausible data-generating model!
+Other examples are when effort, area or
+sample rate is used as a covariate. One might prefer to have such things in
+models regardless of whether or not they pass some statistical litmus
+test (although one can always find referees to argue for pedantic procedure
+over thinking). 
+
+
+Many problems can be approached using one of these methods but there
+are also broad classes of problems that can't and, for those, you're
+on your own. In later chapters we will address model selection in
+specific contexts and we hope those will prove useful for a majority
+of the situations you encounter. 
 
 
 \section{Poisson GLMs}
-The Poisson GLM (also known as ``Poisson regression'') is probably the most relevant and important class of models in all of ecology. The basic model assumes observations $y(i); i=1,2,...,n$ follow a Poisson distribution with mean lambda which we write
-\[
- 	y(i) ~Poisson(\lambda)\]
+\label{glms.sec.poisson}
 
-Commonly $y(i)$ is a count of animals or plants at some point in space and lambda might depend on i. For example, $i$ might index point count locations in a forest, BBS route centers, or sample quadrats, or similar.  If covariates are available it is typical to model them as linear effects on the log mean. If $x(i)$ is some measured covariate associated with observation $i$. Then,
+The Poisson GLM (also known as ``Poisson regression'') is probably the
+most relevant and important class of models in all of ecology. The
+basic model assumes observations $y_{i}; i=1,2,...,n$ follow a Poisson
+distribution with mean $\lambda$ which we write
+\[
+ 	y_{i} \sim \mbox{Poisson}(\lambda)
+\]
+Commonly $y_{i}$ is a count of animals or plants at some point in
+space and lambda might depend on i. For example, $i$ might index point
+count locations in a forest, BBS route centers, or sample quadrats, or
+similar.  If covariates are available it is typical to model them as
+linear effects on the log mean. If $x(i)$ is some measured covariate
+associated with observation $i$. Then,
 \[
  	log(x(i)) = \alpha  + \beta*x(i)
 \]
-While we only specify the mean of the Poisson model directly, the Poisson model (and all GLMs) has a ``built-in'' variance which is directly related to the mean. In this case, $Var(y) = E(y) = \lambda$. Thus the model accommodates a linear increase in variance with the mean.  Another extremely useful feature of the Poisson model is the property of ``compound additivity''. If $y(1)$ and $y(2)$ are Poisson random variables with means $\lambda[1]$ and $\lambda[2]$, then $y(1)+y(2)$ is Poisson with mean$(\lambda[1]+\lambda[2])$. Thus, if the observations can be viewed as an aggregate of counts over some finer scale, then the mean aggregates in a corresponding manner.  Multinomial random variables have a direct relationship to Poisson random variables. If $y(1)$ and $y(2)$ are $iid$ Poisson then, conditional on their total $T = y(1) + y(2)$, they have a multinomial distribution with sample size T and cell probabilities $\lambda[1]/(\lambda[1]+\lambda[2])$ and $\lambda[2]/(\lambda[1]+\lambda[2])$.  These are some of the reasons the Poisson distribution is extremely useful in ecology.
 
+While we only specify the mean of the Poisson model directly, the
+Poisson model (and all GLMs) has a ``built-in'' variance which is
+directly related to the mean. In this case, $\mbox{Var}(y) = \mbox{E}(y) =
+\lambda$. Thus the model accommodates a linear increase in variance
+with the mean.  
 
+\subsection{Important properties of the Poisson distribution}
+\label{glms.sec.properties}
+
+There are two properties of the Poisson distribution
+that make it extremely useful in ecology. First 
+is the property of {\it compound additivity}. If $y_1$ and $y_2$ are
+Poisson random variables with means $\lambda_1$ and $\lambda_2$,
+then their sum $N=y_1+y_2$ is Poisson with mean $\lambda_1+\lambda_2$. Thus,
+if the observations can be viewed as an aggregate of counts over some
+finer unit of measurement, then the mean aggregates in a corresponding
+manner. 
+Secondly, the Poisson distribution has a direct relationship to the multinomial.
+If $y_1$ and $y_2$ are $iid$ Poisson then,
+conditional on their sum $N = y_1 + y_2$, their joint distribution is multinomial
+ with sample size $N$ and cell probabilities
+$\lambda_1/(\lambda_1+\lambda_2)$ and
+$\lambda_2/(\lambda_1+\lambda_2)$.  As a result of this, most
+multinomial models can be analyzed as a Poisson GLM and {\it vice versa}.
 
 \subsection{Example: Breeding Bird Survey Data}
 
-As an example we consider a classical situation in ecology where counts of an organism are made at a collection of spatial locations. In this particular example, we have mourning dove counts made along North American Breeding Bird Survey (BBS) routes in Pennsylvania, USA. A route consists of 50 stops separated by 0.5 mile. For the purposes here we are defining y[i] = route total count and he sample location will be marked by the center point of the BBS route.  The survey is run annually and the data set we have is 1966-1998. BBS data can be obtained online at http:....xyz.xyz.xyz.  We will make use of the whole data set shortly but for now we're going to focus on a specific year of counts - 1990 - for no particular reason. For 1990 there were 77 active routes. We have the data stored in a .csv file where rows index the unique route, column 1 is the route ID, columns 2-3 are the route coordinates (longitude/latitude), column 4 is a habitat covariate ``forest cover'' (standardized, see below) and the remaining columns are the yearly counts. Years for which a route was not run are coded as ``NA'' in the data matrix. We imagine that this will be a typical format for many ecological studies, perhaps with more columns representing covariates.  To read in the data and display the first few elements of this matrix, do this:
-
+As an example we consider a classical situation in ecology where
+counts of an organism are made at a collection of spatial
+locations. In this particular example, we have mourning dove counts
+made along North American Breeding Bird Survey (BBS) routes in
+Pennsylvania, USA. A route consists of 50 stops separated by 0.5
+mile. For the purposes here we are defining $y_i$ = route total count
+and he sample location will be marked by the center point of the BBS
+route.  The survey is run annually and the data set we have is
+1966-1998. BBS data can be obtained online at \mbox{\tt http:\//\//www.pwrc.usgs.gov\//bbs\//}.
+We will make use of the whole data set shortly but for now we're going
+to focus on a specific year of counts -- 1990 -- for the sake of
+building a simple model. 
+ For 1990 there were 77 active routes. We have the data stored
+in a \mbox{\tt .csv} file\footnote{check this data format} where rows index the unique route, column 1 is the
+route ID, columns 2-3 are the route coordinates (longitude/latitude),
+column 4 is a habitat covariate ``forest cover'' (standardized, see
+below) and the remaining columns are the yearly counts. Years for
+which a route was not run are coded as ``\mbox{\tt NA}'' in the data matrix. We
+imagine that this will be a typical format for many ecological
+studies, perhaps with more columns representing covariates.  To read
+in the data and display the first few elements of this matrix, do
+this:
+{\small 
 \begin{verbatim}
 > a<-read.csv("pa-bbsdovedata-all.csv")
 > data[1:2,1:6]
@@ -726,51 +1421,90 @@ As an example we consider a classical situation in ecology where counts of an or
 1 72002 -80.445 41.501 -0.3871372  NA  24
 2 72003 -80.347 41.214 -1.0171629  NA  NA
 \end{verbatim}
+}
 
-It is useful to display the pattern in counts. For that we use a spatial dot plot - where we plot the coordinates of the observations and mark the color of the plotting symbol based on the magnitude of the count.  We have a special plotting function for that which is called \mbox{\tt spatial.plot()} and it is available with the supplemental materials. Actually, what we want to do here is plot the log-count (+1 of course!) which displays a notable pattern that could be related to something. We can ponder the potential effects that might lead to dove counts being high....Corn fields, telephone wires, barn roofs along with misidentification of pigeons, these could all correlated reasonably well with these counts for all we know. Unfortunately we don't have any of that information. 
+It is useful to display the spatial pattern in the observed counts. For that we use a
+spatial dot plot - where we plot the coordinates of the observations
+and mark the color of the plotting symbol based on the magnitude of
+the count.  We have a special plotting function for that which is
+called \mbox{\tt spatial.plot()} and it is available with the
+supplemental {\bf R} package. 
+Actually, what we want to do here is plot the
+log-count (+1 of course) which (Fig. \ref{glms.fig.padovecounts}) displays a notable pattern that could
+be related to something. The {\bf R} commands for obtaining this figure are:
+{\small 
+\begin{verbatim}
+data<-read.csv("pa-bbsdovedata-all.csv")
+y<-data[,29]  # pick out 1990
+notna<-!is.na(y)
+y<-y[notna]
+spatial.plot(data[notna,2:3],y)
+\end{verbatim}
+}
+ We can ponder the potential effects that
+might lead to dove counts being high....corn fields, telephone wires,
+barn roofs along with misidentification of pigeons, these could all
+correlated reasonably well with the observed count of mourning doves.
+Unfortunately we don't have any of that information.
 
 \begin{figure}
 \begin{center}
 \includegraphics[height=2.75in]{figs/PA1}
 \end{center}
 \caption{Needs a caption}
-\label{fig.PA1}
+\label{glms.fig.padovecounts}
 \end{figure}
 
-We do have a measure of forest cover in the vicinity of each point which is contained in the data set (``habitat''). This was derived from a larger GIS coverage of the state (provided in the data file ``pahabdata'') which can be plotted using the spatial.plot function using the following commands
+We do have a measure of forest cover in the vicinity of each point
+which is contained in the data set (variable ``habitat''). This was derived
+from a larger GIS coverage of the state (provided in the data file
+``\mbox{\tt pahabdata.csv}'') which can be plotted using the \mbox{\tt spatial.plot} function
+using the following commands
+{\small 
 \begin{verbatim}
 > map('state',regions="penn",lwd=2)
 > spatial.plot(pahabdata[,2:3],pahabdata[,"dfor"],cx=2)
 > map('state',regions="penn",lwd=2,add=TRUE)
 \end{verbatim}
-
-
+}
+where the result appears in Fig. \ref{glms.fig.paforest}. 
+We see a prominent pattern that indicates high forest coverage in the
+central part of the state and low forest cover in the SE.  Inspecting
+the previous figure of log-counts suggests a relationship between
+counts and forest cover which is perhaps not surprising.
 \begin{figure}
 \begin{center}
 \includegraphics[height=2.75in]{figs/PA2}
 \end{center}
 \caption{Needs a caption}
-\label{fig.PA21}
+\label{glms.fig.paforest}
 \end{figure}
 
-
-We see a prominent pattern that indicates high forest coverage in the
-central part of the state and low forest cover in the SE.  Inspecting
-the previous figure of log-counts suggests a relationship between
-counts and forest cover which is not surprising.
-
 \subsection{Doing it in WinBUGS}
-Here we demonstrate how to fit a Poisson GLM in WinBUGS using the covariate $x(i) =$ forest cover. It is advisable that $x(i)$ be standardized in most cases as this will improve mixing of the Markov chains. Recall that the data we have stored include a standardized covariate (forest cover) and so we don't have to worry about that here.  To read the BBS data into R and get things set up for WinBUGS we issue the following commands: 
+
+Here we demonstrate how to fit a Poisson GLM in {\bf WinBUGS} using the
+covariate $x_{i} =$ forest cover. It is advisable that $x_i$ be
+standardized in most cases as this will improve mixing of the Markov
+chains. Recall that the data we have stored include a standardized
+covariate (forest cover) and so we don't have to worry about that
+here.  To read the BBS data into {\bf R} and get things set up for
+{\bf WinBUGS}
+we issue the following commands:
+{\small 
 \begin{verbatim}
 data<-read.csv("pa-bbsdovedata-all.csv")
-y<-data[,29]  # pick out 1990
+y<-data[,29]                        # pick out 1990
 notna<-!is.na(y)
-y<-y[notna]
-habitat<-data[notna,4]
-library("R2WinBUGS")
-data <- list ( "y","M","habitat")
+y<-y[notna]                         # discard missing
+habitat<-data[notna,4]              # get habitat data
+library("R2WinBUGS")                # load R2WinBUGS
+data <- list ( "y","M","habitat")   # bundle data for WinBUGS
 \end{verbatim}
-Now we write out the Poisson model specification in WinBUGS pseudo-code, provide initial values, identify parameters to be monitored and then execute WinBUGS:
+} 
+Now we write out the Poisson model specification in {\bf WinBUGS}
+pseudo-code, provide initial values, identify parameters to be
+monitored and then execute {\bf WinBUGS}:
+{\small 
 \begin{verbatim}
 cat("
 model {
@@ -785,10 +1519,16 @@ model {
 
 inits <- function()  list ( beta0=rnorm(1),beta1=rnorm(1))
 parameters <- c("beta0","beta1")
-out<-bugs (data, inits, parameters, "PoissonGLM.txt", n.thin=2, n.chains=2, n.burnin=2000,n.iter=6000,debug=TRUE,working.dir=getwd())
+out<-bugs (data, inits, parameters, "PoissonGLM.txt", n.thin=2,n.chains=2, 
+                n.burnin=2000,n.iter=6000,debug=TRUE,working.dir=getwd())
 \end{verbatim}
-
-{\bf Remarks:} (1) Note the close correspondence in how the model is specified here compared with the normal regression model previously. As an exercise you should discuss the specific differences between the BUGS model specifications for the normal and Poisson models.
+} 
+{\bf Remarks:} (1) Note the close correspondence in how the model is
+specified here compared with the normal regression model
+previously. As an exercise you should discuss the specific differences
+between the {\bf BUGS} model specifications for the normal and Poisson
+models.
+{\small 
 \begin{verbatim}
 > print(out,digits=3)
 Inference for Bugs model at 
@@ -800,13 +1540,15 @@ beta0       3.151  0.025    3.102    3.135    3.151    3.168    3.199 1.001  230
 beta1      -0.498  0.021   -0.539   -0.512   -0.498   -0.484   -0.457 1.001  3000
 fit       869.930 19.856  835.500  855.700  868.600  881.900  913.602 1.002  1600
 fitnew     76.709 12.519   54.098   68.107   76.215   84.510  102.602 1.001  3000
-deviance 1116.605  2.014 1115.000 1115.000 1116.000 1117.000 1122.000
-1.001  3000
+deviance 1116.605  2.014 1115.000 1115.000 1116.000 1117.000 1122.000 1.001  3000
 \end{verbatim}
+}
 
-
-We might wonder whether this model provides an adequate fit to our data.  To evaluate that, we used a Bayesian p-value analysis with fit statistic based on the Freeman-Tukey residual by replacing the model specification above with this:
-
+We might wonder whether this model provides an adequate fit to our
+data.  To evaluate that, we used a Bayesian p-value analysis with fit
+statistic based on the Freeman-Tukey residual by replacing the model
+specification above with this:
+{\small 
 \begin{verbatim}
 cat("
 model {
@@ -824,27 +1566,52 @@ model {
  beta0~dunif(-5,5)
  beta1~dunif(-5,5)
 }
-
-
 ",file="PoissonGLM.txt")
 \end{verbatim}
-The Bayesian p-value is the proportion of times $fitnew > fit$ which, for this data set, is 0, which was 1.0 in this case (calculation omitted). This suggests that the basic Poisson model does not fit well. 
+}
+The Bayesian p-value is the proportion of times $fitnew > fit$ which,
+for this data set, is 0, which was 1.0 in this case (calculation
+omitted). This suggests that the basic Poisson model does not fit
+well.
 
 
 \subsection{ Constructing your own MCMC algorithm}
 
-It will be helpful for people to suffer through a couple examples building a custom MCMC algorithm. So, here, we build a basic one for the Poisson regression model using a Metropolis-within-Gibbs approach. First, we will assume that the two parameters have diffuse normal priors, say $[\alpha] = norm(0,100)$ and $[\beta]=norm(0,100)$.  We need to collect the relevant elements of the model which are the likelihood $[y|\alpha,\beta] = prod_{i} [y[i]|\alpha\beta] $ which is, mathematically, the product of the Poisson pmf evaluated at $y[i]$, given particular values of $\beta0$ and $\beta1$. The priors are $[\alpha]$ and $[\beta]$. We identify the full conditionals which are $[\alpha|\beta, y]$ and $[\beta|\alpha,y]$.  We use the all-purpose rule for constructing full conditionals to discover that:
+It will be helpful for people to suffer through a couple examples
+building a custom MCMC algorithm. So, here, we build a basic one for
+the Poisson regression model using a Metropolis-within-Gibbs
+approach. First, we will assume that the two parameters have diffuse
+normal priors, say $[\alpha] = norm(0,100)$ and $[\beta]=norm(0,100)$.
+We need to collect the relevant elements of the model which are the
+likelihood $[y|\alpha,\beta] = prod_{i} [y[i]|\alpha\beta] $ which is,
+mathematically, the product of the Poisson pmf evaluated at $y[i]$,
+given particular values of $\beta0$ and $\beta1$. The priors are
+$[\alpha]$ and $[\beta]$. We identify the full conditionals which are
+$[\alpha|\beta, y]$ and $[\beta|\alpha,y]$.  We use the all-purpose
+rule for constructing full conditionals to discover that:
 \[
  [\alpha|\beta,y] propto [y|\alpha,\beta][\alpha] 
 \]
 \[
  [\beta|\alpha,y] propto [y|\alpha,\beta][\beta]
 \]
-Remember we could replace the ``propto'' with ``equals'' if we simply put $[y|\beta]$ or $[y|\alpha]$ in the denominator. But, in general, $[y|\alpha]$ or $[y|\beta]$ will be quite a pain to compute and, more importantly, it is a constant as far as the operative parameter (beta or alpha, respectively) goes so we can just as well ignore it because, recall, the MH acceptance probability will be the ratio of the ful-conditional evaluated at a candidate draw to that evaluated at the current draw. So, the denominator required to change $\propto$ to $=$ winds up canceling from the MH acceptance probability.  Here we will use the random walk candidate generator.  The ``Metropolis within Gibbs'' algorithm for a Poisson regression is remarkably simple:
+Remember we could replace the ``propto'' with ``equals'' if we simply
+put $[y|\beta]$ or $[y|\alpha]$ in the denominator. But, in general,
+$[y|\alpha]$ or $[y|\beta]$ will be quite a pain to compute and, more
+importantly, it is a constant as far as the operative parameter (beta
+or alpha, respectively) goes so we can just as well ignore it because,
+recall, the MH acceptance probability will be the ratio of the
+ful-conditional evaluated at a candidate draw to that evaluated at the
+current draw. So, the denominator required to change $\propto$ to $=$
+winds up canceling from the MH acceptance probability.  Here we will
+use the random walk candidate generator.  The ``Metropolis within
+Gibbs'' algorithm for a Poisson regression is remarkably simple:
 
-%% Kimmy: test this R code out below and see what happens!
 
-\begin{verbatim}I would break this code up into more lines and have objects called ``prior'' and ``prior.candidate'' and ``lambda'' and ``likelihood.candidate''. Annoying stuff that will make it easier for people to understand. Also, remind people that $lik*prior = exp(log(like)+log(prior))$. Lots of people have been running around in the woods for years with traps, and have forgotten math.
+
+\begin{verbatim}
+
+I would break this code up into more lines and have objects called ``prior'' and ``prior.candidate'' and ``lambda'' and ``likelihood.candidate''. Annoying stuff that will make it easier for people to understand. Also, remind people that $lik*prior = exp(log(like)+log(prior))$. Lots of people have been running around in the woods for years with traps, and have forgotten math.
 
 You could also mention that this is a random walk M-H. It would help lots of people out to see a non-symmetric proposal distribution, and the extra step needed to account for it.
 
@@ -911,8 +1678,8 @@ well-mixing.
 \begin{center}
 \includegraphics[height=2.75in]{figs/MCMC3}
 \end{center}
-\caption{Needs a caption}
-\label{fig.MCMC3}
+\caption{nice grassy mcmc output}
+\label{glms.fig.grassy}
 \end{figure}
 
 {\bf Remarks:} We used a specific set of starting values for these

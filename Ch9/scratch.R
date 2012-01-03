@@ -284,7 +284,6 @@ alpha <- 2
 dat$cp <- exp(alpha*dat$elev) / sum(exp(alpha*dat$elev))
 s.tmp <- rmultinom(1, N, dat$cp) # a single realization to be ignored later
 
-
 # Trap locations
 xsp <- seq(0.275, 0.725, by=0.05)
 X <- cbind(rep(xsp, each=length(xsp)), rep(xsp, times=length(xsp)))
