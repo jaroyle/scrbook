@@ -462,6 +462,9 @@ jags.data <- with(ch9simData, {
     })
 str(jags.data)
 
+all(matrix(jags.data$elevation, 20, byrow=T) ==
+    matrix(covariates(msk)$elev, 20))
+
 init <- function() {
     list(sigma=runif(1), lam0=runif(1), beta=rnorm(1),
          s=sample.int(jags.data$nPix, jags.data$M, replace=TRUE),
@@ -473,13 +476,18 @@ pars <- c("sigma", "lam0", "beta", "N")
 
 # Obtain posterior samples. This takes a few minutes
 # Compile and adapt
+system.time({
 set.seed(03453)
-jm <- jags.model(modfile, jags.data, init, n.chains=2, n.adapt=500)
-# MCMC
-jags1 <- coda.samples(jm, pars, n.iter=5500)
+jm <- jags.model(modfile, jags.data, init, n.chains=2, n.adapt=1000)
+jags1 <- coda.samples(jm, pars, n.iter=10000)
+})
 
 plot(jags1)
-summary(window(jags1, start=1001))
+summary(jags1)
+
+summary(window(jags1, start=3501))
+plot(window(jags1, start=3501))
+
 
 
 unlink(modfile)
@@ -498,16 +506,16 @@ save.image("scratch.RData")
 # compare results
 
 library(scrbook)
-example(ch9secrYjags)
+#example(ch9secrYjags)
 
 
-plot(window(jags1, start=12001))
+plot(window(jags1, start=5001))
 
-summary(window(jags1, start=12001))
-gelman.diag(window(jags1, start=12001))
+summary(window(jags1, start=5001))
+gelman.diag(window(jags1, start=5001))
 
 
-jags.est <- summary(window(jags1, start=10001))
+jags.est <- summary(window(jags1, start=5001))
 jags.r <- cbind(jags.est$stat[,1:2], jags.est$quant[,c(1,5)])
 
 secr.est <- predict(secr1)
