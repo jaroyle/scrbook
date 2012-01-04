@@ -150,24 +150,45 @@ whether our Markov chain has indeed converged is an important part of
 MCMC sampling and we will speak about some common diagnostics in
 Section XX.
 
+
+
 \section{Types of MCMC sampling}
-There are several MCMC algorithms, the most popular being Gibbs sampling and Metropolis-Hastings sampling. We will be dealing with these two classes in more detail and use them to construct the MCMC algorithms for SCR models. Also, we will briefly review alternative techniques that are applicable in some situations. 
+
+There are several MCMC algorithms, the most popular being Gibbs
+sampling and Metropolis-Hastings sampling. We will be dealing with
+these two classes in more detail and use them to construct the MCMC
+algorithms for SCR models. Also, we will briefly review alternative
+techniques that are applicable in some situations.
+
+
 \subsection{Gibbs sampling}
-Gibbs sampling was named after the physicist J.W. Gibbs by \citet{geman_geman:1984}, who applied the algorithm to a Gibbs distribution \footnote{a distribution from physics we are not going to worry about, since it has no immediate connection with Gibbs sampling other than giving it its name}. The roots of Gibbs sampling can be traced back to work of \citet{metropolis_ulam:1953}, and it is actually closely related to Metropolis sampling (see Chapter 11.5 in \citet{gelman_etal:2004}, for the link between the two samplers). We will focus on the technical aspects of this algorithm, but if you find yourself hungry for more background, \citet{casella_george:1992} provide a more in-depth introduction to the Gibbs sampler.   
+
+Gibbs sampling was named after the physicist J.W. Gibbs by
+\citet{geman_geman:1984}, who applied the algorithm to a Gibbs
+distribution \footnote{a distribution from physics we are not going to
+  worry about, since it has no immediate connection with Gibbs
+  sampling other than giving its name}. The roots of Gibbs sampling
+can be traced back to work of \citet{metropolis_ulam:1953}, and it is
+actually closely related to Metropolis sampling (see Chapter 11.5 in
+\citet{gelman_etal:2004}, for the link between the two samplers). We
+will focus on the technical aspects of this algorithm, but if you find
+yourself hungry for more background, \citet{casella_george:1992}
+provide a more in-depth introduction to the Gibbs sampler.
+
 In Chapter 2 you already heard about the basic principles of Gibbs
 sampling\footnote{maybe we should think out chapter 2 and concentrate
   that material here?}. But as a refresher, let's go back to our
 simple example from above to understand the motivation and functioning
 of Gibbs sampling. Recall that for a Normal model with known variance
-and a Normal prior for $mu$, the posterior distribution of $mu|y$ is also
-Normal. Conversely, with a fixed (known) $mu$, but unknown variance, the
-conjugate prior for $sig^2$ is an Inverse Gamma distribution with shape and scale parameters a and b:
+and a Normal prior for $\mu$, the posterior distribution of $\mu|y$ is also
+Normal. Conversely, with a fixed (known) $\mu$, but unknown variance, the
+conjugate prior for $\sigma^2$ is an Inverse-Gamma distribution with shape and scale parameters $a$ and $b$:
 \[ 
-sig^2 \sim IvGamma(a,b),
+\sigma^2 \sim Iv-Gamma(a,b),
 \]
-With fixed a and b, the posterior $p(sig|mu,y)$ is also an Inverse Gamma distribution, namely:
+With fixed $a$ and $b$, the posterior $p(sig|mu,y)$ is also an Inverse Gamma distribution, namely:
 \begin{equation}
-sig|\mu,y ~ Inv Gamma (an, bn),						
+sig|\mu,y \sim Inv Gamma (an, bn),						
 \label{eq. 3}
 \end{equation}
  where  $an = n/2   + a$ and $bn = 1/2 \sigma (yi-mu)^2+ b$
@@ -201,8 +222,12 @@ distribution of Eq. \ref{eq. 3}, using mu(1) as value for mu...
 In our example we have no additional parameters, so we only need step 0 through to 2. 
 Repeat Steps 1 to d for K = a large number of samples.
 In terms of R coding, this means we have to write Gibbs updaters for mu and sig and embed them into a loop over K iterations. The final code in the form of an R function is shown in Panel 1.
+
 \begin{verbatim}
-Panel 1: R-code for a Gibbs sampler for a Normal model with unknown mu and sig and conjugate (Normal and Inverse Gamma, respectively) priors for both parameters.
+Panel 1: R-code for a Gibbs sampler for a Normal model with unknown mu
+and sig and conjugate (Normal and Inverse Gamma, respectively) priors
+for both parameters.
+
 Normal.Gibbs<-function(y=y,mu0=mu0, sig0=sig0, a=a,b=b,niter=niter) {
 
 ybar<-mean(y)
@@ -287,6 +312,7 @@ remaining samples are your estimates of mu and sig:
 \end{figure}
 
 \subsection{ Metropolis-Hastings sampling   }
+
 Although it is applicable to a wide range of problems, the limitations of Gibbs sampling are immediately obvious – what if we do not want to use conjugate priors (or what if we cannot recognize the full conditional distribution as a parametric distribution, or simply do not want to worry about these issues)? The most general solution is to use the Metropolis-Hastings (MH) algorithm, which also goes back to the work by \citet{metropolis_ulam:1953}. You saw the basics of this algorithm in Chapter 2. In a nutshell, because we do not recognize the posterior $p(\theta|y)$ as a parametric distribution, the MH algorithm generates samples from a known proposal distribution, say $h(\theta)$, that depends on $\theta$ at t-1. The t-th sample is accepted or rejected based on its joint posterior probability density compared to the density of the sample at t-1. The original Metropolis algorithm requires $h(\theta)$ to be symmetric so that $h(thetat|thetat-1) = h(thetat-1|thetat)$; but a later development of the algorithm by \citet{hastings:1970} lifted this condition. Using a symmetric proposal distribution makes life a little easier and we are going to limit our coverage of the Metropolis-Hastings sampler to this specific case. Specifically, we are going to use a Normal proposal distribution, which is also referred to as 'random walk Metropolis-Hastings sampling'. It is worth knowing that there are alternative formulations of the algorithm. For example, in the independent M-H, $\theta$ t does not depend on $\theta$ t-1, while the Langevin algorithm \citep{roberts_etal:1998} aims at avoiding the random walk by favoring moves towards regions of higher posterior probability density. The interested reader should look up these algorithms in \citet{robert_casella:2004} or \citet{robert_casella:2010}.
 
 Building a MH sampler can be broken down into several steps. We are going to demonstrate these steps using a different but still simple and common model – the logit-normal or logistic regression model. For simplicity, assume that 
@@ -323,8 +349,10 @@ $\theta$ (t)  &= &   $\theta$ (t) \mbox{with probability min(r,1)}//
 We can do that by drawing a random number u from a Uniform (0,1) and accept $\theta$t if $u<r$
 Repeat for t = a large number of samples. 
 The R code for this MH sampler is provided in Panel 2.
+{\small
 \begin{verbatim}
 Panel 2: R code to run a Metropolis sampler on a simple Logit-Normal model.
+
 Logreg.MH<-function(y=y, mu0=mu0, sig0=sig0, niter=niter) {
 
 out<-c()
@@ -348,6 +376,7 @@ out[iter]<-theta
 return(out)
 }
 \end{verbatim}
+}
 
 The reason we sum the logs of the likelihood and the prior, rather than multiplying the original values, is simply computational. The product of small probabilities can be numbers very close to 0, which computers do not handle well. Thus we add the logarithms, sum, and exponentiate to achieve the desired result. Similarly, in case you have forgotten some elementary math, $x/y = exp(log(x)-log(y))$, with the latter being favored for computational reasons. 
 
@@ -356,8 +385,11 @@ In Step 1 of the MH sampler we had to choose a variance for the Normal proposal 
 You can easily check acceptance rates for the parameters you monitor (that are part of your output) using the rejectionRate() function of the package coda (we will talk more about this package a little later on). Do not let the term 'rejection rate' confuse you; it is simply 1 – acceptance rate. There may be parameters – for example, individual values of a random effect or latent variables – that you do not want to save, though, and in our next example we will show you a way to monitor their acceptance rates with a few extra lines of code. 
 
 \subsection{ Metropolis-within-Gibbs }
+
 One weakness of the MH sampler is that formulating the joint posterior when evaluating whether to accept or reject the candidate values for $\theta$ becomes increasingly complex or inefficient as the number of parameters in a model increases. It is probably going to sound like MCMC sampling is too good to be true – but in these cases you can simply combine MH sampling and Gibbs sampling. You can use Gibbs sampling to break down your high-dimensional parameter space into easy-to-handle one-dimensional conditional distributions and use MH sampling for these conditional distributions. Better yet – if you have some conjugacy in your model, you can use the more efficient Gibbs sampling for these parameters and one-dimensional MH for all the others. You have already seen the basics of how to build both types of algorithms, so we can jump straight into an example here and build a Metropolis-within-Gibbs algorithm.
+
 \section{ GLMMs – Poisson regression with a random effect }
+
 Let's assume a model that gets us closer to the problem we ultimately want to deal with – a GLMM. Here, we assume we have Poisson counts, y, from i plots in j different study sites, and we believe that the counts are influenced by some plot-specific covariate, x, but that there is also a random site effect. So our model is:
 \[
 yij \sim Poisson (lamij)
@@ -369,17 +401,17 @@ Let's use Normal priors on a and b,  \[
 aj \sim Normal (mua, siga)
 \] 
 and 
-\[b \sim Normal (mub, sigb)\].
-
+\[
+b \sim Normal (mub, sigb)
+\].
 \footnote{Why is b a hyperparameter?}
 Since we want to estimate the random effect in this model, we do not
-specify mua and siga, but instead, estimate them as well, so we have
+specify $\mu_a$ and $\sigma_a$, but instead, estimate them as well, so we have
 to specify hyperpriors for these parameters:
-\begin{verbatim}
- mua\simNormal(mu0, sig0)
-
-siga\simInvGamma(a0, b0)
-\end{verbatim}
+\begin{eqnarray*}
+\mu_a  &\sim &  Normal(mu0, sig0)  \\
+\sigma_{a} & \sim & InvGamma(a0, b0)
+\end{eqnarray*}
 
 With the model fully specified, we can compile the full conditionals, breaking the multi-dimensional parameter space into one-dimensional components:
 \begin{verbatim}
@@ -406,7 +438,6 @@ p(mua|a) \propto p(a|mua, siga) *p(mua)
 \[
 p(siga|a) \propto p(a|mua, siga) *p(siga)
 \]
-
 Since we assumed a to come from a Normal distribution, the choice of priors for mua – Normal – and siga – Inverse Gamma – leads to the same conjucagy we observed in our initial Normal model, so that both hyperparameters can be updated using Gibbs sampling.
 
 Now let' build the updating steps for these full conditionals. Again, for the MH steps that update a and b we use Normal proposal distributions with standard deviations sigha and sighb.
@@ -434,9 +465,14 @@ where  $an = na/2   + a0$, and $bn = 1/2 \Sigma (a(1)-mua(1))^2+ b0$.
 
 We repeat these steps over K iterations of the MCMC algorithm. 
 In this example we may not want to save each value for a, but are only interested in their mean and standard deviation. Since these two parameters will change as soon as the value for one element in a changes, their acceptance rates will always be close to 1 and are not representative of how well your algorithm performs. To monitor the acceptance rates of parameters you do not want to save, you simply need to add a few lines of code into your updater to see how often the individual parameters are accepted. The full code for the MCMC algorithm of our Poisson GLMM in Panel 3 shows one way how to monitor acceptance of individual a's.
+
+{\small
 \begin{verbatim}
-Panel 3: R code for the Metropolis-within-Gibbs sampler for a Poisson regression with random intercepts.
-Pois.reg<-function(y=y,site=site,mu0=mu0,sig0=sig0,a0=a0,b0=b0, mub=mub, sigb=sigb, niter=niter){
+Panel 3: R code for the Metropolis-within-Gibbs sampler for 
+a Poisson regression with random intercepts.
+
+Pois.reg<-function(y=y,site=site,mu0=mu0,sig0=sig0,a0=a0,b0=b0, 
+          mub=mub, sigb=sigb, niter=niter){
 
 lev<-length(unique(site))     #number of sites
 a<-runif(lev,-5,5)		#initial values a
@@ -450,8 +486,8 @@ colnames(out)<-c('mua','siga','b')
 for (iter in 1:niter) {
 
 #update a
-aUps<-0			#initiate counter for acceptance rate of a
-for (j in 1:lev) { 			#loop over sites 
+aUps<-0			  #initiate counter for acceptance rate of a
+for (j in 1:lev) { 	  #loop over sites 
 a.cand<-rnorm(1, a[j], 0.1)	#update intercepts a one at a time
 loglike<- sum(dpois (y[site==j], exp(a[j] + b*x[site==j]), log=TRUE))  
 logprior<- dnorm(a[j], mua,siga, log=TRUE)
@@ -495,18 +531,18 @@ out[iter,]<-c(mua, sqrt(siga), b)
 }
 
 return(out)
-
+}
+\end{verbatim}
 }
 
-\end{verbatim}
-
-
 \subsection{Rejection sampling and slice sampling }
+
 While MH and Gibbs sampling are probably the most widely applied algorithms for posterior approximation, there are other options that work under certain circumstances and may be more efficient when applicable. WinBUGS applies these algorithms and we want you to be aware that there is more out there to approximate posterior distributions than Gibbs and MH. 
 One alternative algorithm is rejection sampling. Rejection sampling is not an MCMC method, since each draw is independent of the others. The method can be used when the posterior $p(\theta|y)$ is not a known parametric distribution but can be expressed in closed form. Then, we can use a so-called envelope function, say, $g(\theta)$, that we can easily sample from, with the restriction that $p(\theta|y) < M * g(\theta)$. We then sample a candidate value for $\theta$ from $g(\theta)$, calculate $r = p(\theta|y)/M*g(\theta)$ and keep the sample with the probability r. M is a constant that has to be picked so that r E [0,1], for example by evaluating both $p(\theta|y)$ and $g(\theta)$ at n points and looking at their ratios. Rejection sampling only works well if $g(\theta)$ is similar to $p(\theta|y)$, and packages like WinBUGS use adaptive rejection sampling \citep{gilks_wild:1992}, where a complex algorithm is used to fit an adequate and efficient g(theta)based on the first few draws. Though efficient in some situations, rejection sampling does not work well with high-dimensional problems, since it becomes increasingly hard to define a reasonable envelope function. For an example of rejection sampling in the context of SCR models, see Chapter 9. 
 Another alternative is slice sampling \citep{neal:2003}. In slice sampling, we sample uniformly from the area under the plot of $p(\theta|y)$. Considering a single univariate theta. Let's define an auxiliary variable, $U \sim  Uniform(0, p(\theta|y))$. Then, $\theta$ can be sampled from the vertical slice of $p(\theta|y)$ at U (Figure 4):
+
 \begin{verbatim}
-theta|U \simUnif(B),
+\theta|U \sim \mbox{Unif}(B),
 \end{verbatim}
 where $B = {\theta: U < p(\theta|y)}$
 
@@ -529,6 +565,7 @@ Both rejection sampling and slice sampling can be applied on one-dimensional con
 
 
 \section{MCMC algorithm for the basic spatial capture-recapture model}
+
 By now you have seen how to build MCMC algorithms for some basic generalized linear models. Now, we'll walk you through the steps of building your own MCMC sampler for the basic SCR model (i.e. without any individual, site or time specific covariates) with both a Poisson and a binomial encounter process. 
 As usual, we will have to go through two general steps before we write the MCMC algorithm:
 
@@ -563,11 +600,10 @@ Lamij =  lam0 * exp(-Dij2/2*sig2),
 where lam0 is the baseline trap encounter rate at $Dij=0$ and sig controls the shape of the half-normal function. 
 
 In order to estimate the number of si in S, N, we use data augmentation (sect. 3.XYZ) and create M-n all-0 encounter histories, where n is the number of individuals we observed and M is an arbitrary number that is larger than N. We estimate N by summing over the auxiliary data augmentation variables, zi, which is 1 if the individual is part of the population and 0 if not, and assume that zi is a random Bernoulli variable,
-\begin{verbatim}
 \[
-zi \simbernoulli(psi).
+z_{i} \sim \mbox{Bern}(\psi)
 \]
-\end{verbatim}
+
 
 To link the two model components, we modify our trap encounter model to
 \[
@@ -596,22 +632,26 @@ Sig|s, lam0, z, y propto [y| s, lam0, z, sig]
 \]
 The R code to update sigma is shown in Panel 4. \footnote{ Somewhere in chapter 2 i added a comment about rejecting parameters outside of the parameter space as being an ok thing to do. Richard said he read something in Robert and Casella’s book on that. Hopefully he can remember where and we can cite it back in Ch 2 and again here.  It could be mentioned in a sentence or two up in the MCMC section.}
 
+{\small
 \begin{verbatim}
-Panel 4: R code to update sigma within an MCMC algorithm for an SCR model when using an improper prior
-        sig.cand <- rnorm(1, sigma, 0.1)	#draw candidate value
-        if(sig.cand>0){   #automatically reject sig.cand that are <0
-            lam.cand <- lam0*exp(-(D*D)/(2*sig.cand*sig.cand))
-            ll<- sum(dpois(y, lam*z, log=TRUE))
-            llcand <- sum(dpois(y, lam.cand*z, log=TRUE))
-            if(runif(1) < exp( llcand  - ll) ){
-                ll<-llcand
-                lam<-lam.cand
-                sigma<-sig.cand
-            }
-        }
+Panel 4: R code to update sigma within an MCMC algorithm for 
+an SCR model when using an improper prior
+
+
+sig.cand <- rnorm(1, sigma, 0.1)	#draw candidate value
+ if(sig.cand>0){   #automatically reject sig.cand that are <0
+     lam.cand <- lam0*exp(-(D*D)/(2*sig.cand*sig.cand))
+     ll<- sum(dpois(y, lam*z, log=TRUE))
+     llcand <- sum(dpois(y, lam.cand*z, log=TRUE))
+     if(runif(1) < exp( llcand  - ll) ){
+         ll<-llcand
+         lam<-lam.cand
+         sigma<-sig.cand
+      }
+  }
 
 \end{verbatim}
-
+}
 These steps are analogous for lam0 and si and we will use MH steps for
 all of these parameters. Similar to the random intercepts in our
 Poisson GLMM, we update each si individually. Note that to be fully
@@ -632,8 +672,10 @@ zi|y, sigma, lam0, s propto [y|z,sigma, lam0, s] * [zi]
 and since $zi \sim Bernoulli(psi)$, 
 the term has to be taken into account when updating zi. The R code for updating zi is shown in Panel 5.
 
+{\small
 \begin{verbatim}
 Panel 5: R code to update z…
+
         zUps <- 0		#set counter to monitor acceptance rate
         for(i in 1:M) {
             if(seen[i])	#no need to update seen individuals, since their z =1
@@ -650,8 +692,10 @@ Panel 5: R code to update z…
             }
         }
 \end{verbatim}
+}
 
-Psi itself is a hyperparameter of the model, with an uninformative prior distribution of Unif(0,1) or Beta(1,1), so that
+$\psi$
+itself is a hyperparameter of the model, with an uninformative prior distribution of Unif(0,1) or Beta(1,1), so that
 \[
 Psi|z \propto [z|psi] * Beta(1,1)
 \]
@@ -681,8 +725,13 @@ pij=1-exp(-lamij)
 \]
 Recall from Chapter 2 that this is the complementary log-log (cloglog) link function, which constrains pij to fall between 0 and 1.
 For our MCMC algorithm that means that, instead of using a Poisson likelihood, $Poisson(y|sigma,lam0,s,z)$, we use a Binomial likelihood, $Binomial(y,K|sigma,lam0,s,z)$, in all the conditional distributions. As an example, Panel 6 shows the updating step for lam0 under a binomial encounter model. The full MCMC code for the binomial SCR can be found in the online supplements.
+
+{\small
 \begin{verbatim}
-Panel 6: MCMC updater for lam0 in a SCR model with Binomial encounter process and cloglog link function on detection. Here, pmat = 1-exp(-lam). 
+Panel 6: MCMC updater for lam0 in a SCR model with Binomial encounter
+process and cloglog link function on detection. Here, pmat =
+1-exp(-lam). 
+
         lam0.cand <- rnorm(1, lam0, 0.1)
         if(lam0.cand >0){   #automatically reject lam0.cand that are <0
             lam.cand <- lam0.cand*exp(-(D*D)/(2*sigma*sigma))
@@ -696,6 +745,7 @@ Panel 6: MCMC updater for lam0 in a SCR model with Binomial encounter process an
             }
         } 
 \end{verbatim}
+}
 
 Another possibility is to model variation in the individual and site specific detection probability, pij, directly, without any transformation, such that
 \begin{verbatim}
