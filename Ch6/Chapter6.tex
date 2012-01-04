@@ -25,14 +25,19 @@ samplers for SCR models in R.
   
 
 \subsection{Why build your own MCMC algorithm?}
+
 The standard program we have used so far to run MCMC analyses is WinBUGS \citep{gilks_etal:1994}. The wonderful thing about WinBUGS is that it will automatically use the most appropriate and efficient form of MCMC sampling for the model specified by the user.
+
 The fact that we have such a Swiss Army knife type of MCMC machine begs the question: Why would anyone want to build their own MCMC algorithm? For one, there are a limited number of distributions and functions implemented in WinBUGS. While OpenBUGS provides more options, some more complex models may be impossible to build within these programs. A very simple example from spatial capture-recapture that can give you a headache in WinBUGS is when your state-space is an irregular-shaped polygon, rather than an ideal rectangle that can be characterized by four pairs of coordinates. It is easy to restrict activity centers to any arbitrary polygon in R using an ESRI shapefile (and we will show you an example in a little bit), but you cannot use a shape file in a BUGS model. 
+
 Sometimes implementing an MCMC algorithm in R may be faster than in WinBUGS - especially if you want to run simulation studies where you have hundreds or more simulated data sets, several years' worth of data or other large models, this can be a big advantage. 
+
 Finally, building your own MCMC algorithm is a great exercise to understand how MCMC sampling works. So while using the BUGS language requires you to understand the structure of your model, building an MCMC algorithm requires you to think about the relationship between your data, priors and posteriors, and how these can be efficiently analyzed and characterized. Not to mention that, if you are an R junkie, it can actually be fun.   
 However, if you don't think you will ever sit down and write your own MCMC sampler, consider skipping this chapter - apart from coding it will not cover anything SCR-related that is not covered by other, more model-oriented chapters as well.
 
 
 \section{MCMC and posterior distributions}
+
 As mentioned in Chapter 2, MCMC is a class of simulation methods for drawing (correlated) random numbers from a target distribution, which in Bayesian inference is the posterior distribution. 
 As a reminder, the posterior distribution is a probability
 distribution for an unknown parameter, say $\theta$, given a set of
@@ -67,40 +72,59 @@ between 0.49 and 0.82.
 \label{densityvsdetection.fig}
 \end{figure}
 
-The posterior distribution summarizes all we know about a parameter and thus, is the central object of interest in Bayesian analysis. Unfortunately, in many if not most practical applications, it is nearly impossible to directly compute the posterior. Recall Bayes’ theorem:
+The posterior distribution summarizes all we know about a parameter
+and thus, is the central object of interest in Bayesian
+analysis. Unfortunately, in many if not most practical applications,
+it is nearly impossible to directly compute the posterior. Recall
+Bayes’ theorem:
 \begin{equation}
 p(theta|y) = p(y|\theta) * p(\theta) / p(y),
-\label{eq. 1}
+\label{mcmc.eq.bayes}
 \end{equation}
-where $\theta$ is the parameter of interest, y is the observed data, $p(\theta|y)$  is the posterior,  $p(y|\theta)$ the likelihood of the data conditional on $\theta$, $p(\theta)$ the prior probability of $\theta$, and, finally, $p(y)$ is the marginal probability of the data, which can also be written as
+where $\theta$ is the parameter of interest, $y$ is the observed data,
+$p(\theta|y)$ is the posterior, $p(y|\theta)$ the likelihood of the
+data conditional on $\theta$, $p(\theta)$ the prior probability of
+$\theta$, and, finally, $p(y)$ is the marginal probability of the
+data, which can also be written as
 \[
 p(y) = \int p(y|\theta) * p(\theta) dtheta
 \]
 
-This marginal probability is a normalizing constant that ensures that the posterior integrates to 1. You read in Chapter 2 that this integral is often hard or impossible to evaluate, unless you are dealing with a really simple model.  
-For example, consider that you have a Normal model, with a set of n observations, y that come from a Normal distribution:
+This marginal probability is a normalizing constant that ensures that
+the posterior integrates to 1. You read in Chapter 2 that this
+integral is often hard or impossible to evaluate, unless you are
+dealing with a really simple model.  For example, consider that you
+have a Normal model, with a set of n observations, $y$ that come from a
+Normal distribution:
 \[
-y \sim Normal (mu, sig),
+ y \sim \mbox{Normal}(\mu, \sigma),
 \]
-where sig is known and our objective is to obtain an estimate of mu using Bayesian statistics. To fully specify the model in a Bayesian framework, we first have to define a prior distribution for mu. Recall from Chapter 2 that for certain data models, certain priors lead to conjugacy – i.e. if you choose the right prior for your parameter, your posterior distribution will be of a known parametric form. The conjugate prior for the mean of a normal model is also a Normal distribution:
+where $\sigma$ is known and our objective is to obtain an estimate of
+$\mu$ using Bayesian statistics. To fully specify the model in a Bayesian
+framework, we first have to define a prior distribution for $\mu$. Recall
+from Chapter 2 that for certain data models, certain priors lead to
+conjugacy – i.e. if you choose the right prior for your parameter,
+your posterior distribution will be of a known parametric form. The
+conjugate prior for the mean of a normal model is also a Normal
+distribution:
 \[
-mu ~ Normal (mu0, sig0^2)
+\mu \sim \mbox{Normal}(\mu_0, \sigma_{0}^{2})
 \]
-If $mu0$ and $sig0^2$ are fixed, the posterior for mu has the following form (for the algebraic proof, see XXX):
+If $\mu_{0}$ and $\sigma_{0}^{2}$ are fixed, the posterior for $\mu$ has the following form (for the algebraic proof, see XXX):
 \begin{equation}
-mu|y ~ Normal (mun, sign^2)							
-\label{eq. 2}
+\mu|y \sim \mbox{Normal}(\mu_{n}, \sigma_{n}^{2})
+\label{mcmc.eq.mu-posterior}
 \end{equation}
 where
 \[ 
-mun =  (sig^2 / sig^2  +n* sig0^2)*  mu0 + (n * sig0^2 / sig^2  +n* sig0^2) *y-bar 
+\mu_{n} =  (sig^2 / sig^2  +n* sig0^2)*  mu0 + (n * sig0^2 / sig^2  +n* sig0^2) *y-bar 
 \]
 And
 \[
  sign^2 = sig^2 * sig0^2 / (sig^2 + n*sig0^2)
 \]
 We can directly obtain estimates of interest from this Normal posterior distribution, such as the mean mu-hat and its variance; we do not need to apply MCMC, since we can recognize the posterior as a parametric distribution, including the normalizing constant $p(y)$.
-But generally we will be interested in more complex models with several, say n, parameters. In this case, computing $p(y)$ from Eq. \ref{eq. 1} requires n-dimensional integration, which is can be difficult or impossible. Thus, the posterior distribution in generally only known up to a constant of proportionality:
+But generally we will be interested in more complex models with several, say n, parameters. In this case, computing $p(y)$ from Eq. \ref{mcmc.eq.bayes} requires n-dimensional integration, which is can be difficult or impossible. Thus, the posterior distribution in generally only known up to a constant of proportionality:
 \[
 p(\theta|y) propto p(y|\theta) * p(\theta)
 \]

@@ -489,7 +489,7 @@ where $B = {\theta: U < p(\theta|y)}$
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=3in]{figs/slicesampling}
+\includegraphics[height=2in]{figs/slicesampling}
 \end{center}
 \caption{Slice sampling. For...} 
 \label{slicesample.fig}
@@ -893,6 +893,49 @@ Finally, observe that we are converting candidate coordinates of S back to meter
 
 \section{MCMC software packages}
 Throughout most of this book we will use WinBUGS and, occasionally, JAGS to run MCMC analyses. Here, we will briefly discuss the main pros and cons of these two programs as well as WinBUGS successor OpenBUGS. You can find scripts to simulate data and run the basic SCR model in all three programs in the online supplementary material (simSCR0poisBUGS). 
+
 \subsection{WinBUGS}
-In a nutshell, WinBUGS (and the other programs) do everything that we just went through in this chapter (and quite a bit more). Looking through your model, WinBUGS determines which parameters it can use standard Gibbs sampling for (i.e. for conjugate full conditional distributions). Then, it determines, in the following hierarchy, whether to use adaptive rejection sampling, slice sampling or – in the 'worst' case – Metropolis-Hastings sampling for the other full conditionals \citep{spiegelhalter_etal:2003). If it uses MH sampling, it will automatically tune the updater so that it works efficiently.
-While WinBUGS is a convenient piece of software that is still widely used, its major drawback is that it is no longer being developed, i.e. no new functions or distributions are added and no bugs are fixed.   
+In a nutshell, WinBUGS (and the other programs) do everything that we just went through in this chapter (and quite a bit more). Looking through your model, WinBUGS determines which parameters it can use standard Gibbs sampling for (i.e. for conjugate full conditional distributions). Then, it determines, in the following hierarchy, whether to use adaptive rejection sampling, slice sampling or – in the 'worst' case – Metropolis-Hastings sampling for the other full conditionals \citep{spiegelhalter_etal:2003}. If it uses MH sampling, it will automatically tune the updater so that it works efficiently.
+While WinBUGS is a convenient piece of software that is still widely used, its major drawback is that it is no longer being developed, i.e. no new functions or distributions are added and no bugs are fixed.
+
+\subsection{OpenBUGS}
+OpenBUGS is essentially the successor of WinBUGS. While the latter is
+no longer worked on, OpenBUGS is constantly developed further. The
+name 'OpenBUGS' refers to the software being open source, so users do
+not need to download a license key, like they have to for WinBUGS
+(although the license key for WinBUGS is free and valid for life). 
+
+Compared to WinBUGS, OpenBUGS has a lot more built-in functions. The
+method of how to determine the right updater for each model parameter
+has changed and the user can manually control the MCMC algorithm used
+to update model parameters.  Several other changes have been
+implemented in OpenBUGS and a detailed list of differences between the
+two BUGS versions, can be found at
+http://www.openbugs.info/w/OpenVsWin 
+
+While OpenBUGS is a useful program for a lot of MCMC sampling
+applications, for reasons we do not understand, simple SCR models do
+not converge in OpenBUGS. It is therefore advisable that you check any
+OpenBUGS SCR model results against result from WinBUGS. Also,
+currently, the R package BRugs \citep{thomas_etal:2006} – necessary
+for running OpenBUGS through R – has problems with 64-bit machines, so
+you may have to use the 32-bit version of R and OpenBUGS in order to
+make it work. The BUGS project site at http://www.openbugs.info
+provides a lot of information on and download links for OpenBUGS. 
+
+There is an extensive help archive for both WinBUGS and OpenBUGS and you can subscribe to a mailing list, where people pose and answer questions of how to use these programs at http://www.mrc-bsu.cam.ac.uk/bugs/overview/list.shtml
+
+\subsection{JAGS – Just Another Gibbs Sampler}
+JAGS, currently at Version 3.1.0, is another free program for analysis of Bayesian hierarchical models using MCMC simulation. Originally, JAGS was the only program using the BUGS language that would run on operating systems other than the 32 bit Windows platforms. By now, there are OpenBUGS versions for Linux or Macintosh machines. 
+JAGS 'only' generates samples from the posterior distribution; analysis of the output is done in R – either by running JAGS through R using either the packages rjags \citep{plummer:2011} or R2jags \citep{su_yajima:2011}, or by using coda on your JAGS output. The program, manuals and rjags can be downloaded at http://sourceforge.net/projects/mcmc-jags/files/
+When run from within R using the package rjags or R2jags, writing a JAGS model is virtually identical to writing a WinBUGS model. However, some functions may have slightly different names and you can look up available functions and their use in the JAGS manual. One potential downside is that JAGS can be very particular when it comes to initial values. These may have to be set as close to truth as possible for the model to start. Although JAGS lets you run several parallel Markov chains, this characteristic interferes with the idea of using overdispersed initial values for the different chains. Also, we have occasionally experienced JAGS to crash and take the R GUI with it. Only re-installing both JAGS and rjags seemed to solve this problem. 
+On the plus side, JAGS usually runs a little faster than WinBUGS, sometimes considerably faster (see section 4.XYZ), is constantly being developed and improved and it has a variety of functions that are not available in WinBUGS. For example, JAGS allows you to supply observed data for some deterministic functions of unobserved variables. In BUGS we cannot supply data to logical nodes. Another useful feature is that the adaptive phase of the model (the burn-in) is run separately from the sampling from the stationary Markov chains. This allows you to easily add more iterations to the adaptive phase if necessary without the need to start from 0. There are other, more subtle differences and there is an entire manual section on differences between JAGS and OpenBUGS.   
+For questions and problems there is a JAGS forum online at http://sourceforge.net/projects/mcmc-jags/forums/forum/610037.
+\footnote{As we make progress on the book, lets be sure  to add linkages to places where we use JAGS in examples.}
+
+\section{Summary and Outlook}
+While there are a number of flexible and extremely useful software packages to perform MCMC simulations, it sometimes is more efficient to develop your own MCMC algorithm. Building an MCMC code follows three basic steps: Identify your model including priors and express full conditional distributions for each model parameter. If full conditionals are parametric distributions, use Gibbs sampling to draw candidate parameter values from this distributions; otherwise use Metropolis-Hastings sampling to draw candidate values from a proposal distribution and accept or reject them based on their posterior probability densities. 
+These custom-made MCMC algorithms give you more modeling flexibility than existing software packages, especially when it comes to handling the state-space: In BUGS (and JAGS for that matter) we define a continuous rectangular state-space using the corner coordinates to constrain the Uniform priors on the activity centers s. But what if a continuous rectangle isn't an adequate description of the state-space? In this chapter we saw that in R it only takes a few lines of code to use any arbitrary polygon shapefile as the state-space, which is especially useful when you are dealing with coastlines or large bodies of water that need removing from the state-space. Another example is the SCR R package SPACECAP \citep{gopalaswamy_etal:2011} that was developed because implementation of an SCR model with a discrete state-space was inefficient in WinBUGS. 
+Another situations in which using BUGS/JAGS becomes increasingly complicated or inefficient is when using point processes other than the Uniform Poisson point process which underlies the basic SCR model (see Chapter X). In the Chapters 9 and XX you will see examples of different point processes, implemented using custom-made MCMC algorithms. \footnote{Richard, Beth expand on that?}
+Finally, the Chapters XX and XX deal with unmarked or partially marked populations using hand-made MCMC algorithms to handle the (partially) latent individual encounter histories. While some of these models can be written in BUGS/JAGS, \footnote{the Poisson one for partially marked we wrote in BUGS and it should work with a known number of marked; the Bernoulli in JAGS with the dsum() function should work for the fully unknown; maybe some others? I don’t remember. We may have to try writing the others before saying that they don’t work in BUGS/JAGS; they are certainly much faster in R, though.}, they are painstakingly slow; others cannot be implemented in BUGS/JAGS at all.    
+In conclusion, while you can certainly get by using BUGS/JAGS for standard SCR models, knowing how to write your own MCMC sampler allows you to tailor these models to your specific needs. 
