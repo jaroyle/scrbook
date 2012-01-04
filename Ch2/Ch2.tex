@@ -1700,7 +1700,7 @@ that the burn-in takes longer but it seems to mix better although it
 takes slightly longer to burn-in.
 Using this value of $\delta$ we generated 10,000 posterior samples,
 discarding the first 500 as burn-in, and the result is shown in
-Fig. \ref{glms.fig.poissonmcmc3}, this time seperate panels for each
+Fig. \ref{glms.fig.grassy}, this time seperate panels for each
 parameter. 
 The ``grassy''
 look of the MCMC history is diagnostic of Markov chains that are
@@ -1721,7 +1721,7 @@ look like this.
 \end{center}
 \caption{nice grassy mcmc output, longer run of previous with $\delta
   = 0.05$.}
-\label{glms.fig.poissonmcmc3}
+\label{glms.fig.grassy}
 \end{figure}
 
 {\bf Remarks:} We used a specific set of starting values for these
@@ -1752,137 +1752,203 @@ exercise, evaluate whether this seems to affect the result.
 
 \section{Poisson GLM with Random Effects}
 
-What we will be doing in most of this book is dealing with random effects in GLM-like models - models that are usually referred to as generalized linear mixed models (GLMMs).
+What we will be doing in most of this book is dealing with random
+effects in GLM-like models - similar to what
+are usually referred to as generalized
+linear mixed models (GLMMs). We provide a brief introduction by way of
+example, extending our Poisson regression model to include a random effect.
 
-{\bf The Log-Normal mixture:} The classical situation involves a GLM with a normally distributed random effect. The linear predictor of the Poisson model is extended simply by adding a noise term, say:
+ANDY STOPPED HERE
+
+{\bf The Log-Normal mixture:} The classical situation involves a GLM
+with a normally distributed random effect that is additive on the
+linear predictor. For the Poisson case, we have:
 \[
- 	log(\lambda(i)) = \alpha  + \beta*x(i) + \eta[i]
+ 	log(\lambda_{i}) = \alpha  + \beta x_{i} + \eta_{i}
 \]
-where $\eta[i]~normal(0,\sigma2)$.  A natural alternative is to have $exp(\eta[i])/\sim\gamma(a,b)$ which would correspond to a negative binomial kind of over-dispersion whereas the normal noise has a different mean/variance relationship (the interested reader should work that out).   Choosing between such possibilities is not a topic we will get into here because it doesn't seem possible to provide general guidance on it. Anyhow, it is really amazingly simple to express this model in WinBUGS and have WinBUGS draw samples from the posterior distribution using the following code for the BBS dove counts: 
+where $\eta_{i} \sim \mbox{Normal}(0,\sigma^{2})$.  A natural
+alternative is to have multiplicative gamma-distributed noise, 
+$exp(\eta_{i}) \sim  \mbox{Gamma}(a,b)$ which would correspond to a
+negative binomial kind of over-dispersion, implying a different
+mean/variance relationship to the log-normal mixture (the interested
+reader should work that out).   Choosing between such possibilities is
+not a topic we will get into here because it doesn't seem possible to
+provide general guidance on it.
+For this model we carried-out a goodness-of-fit evaluation using the
+Bayesian p-value based on a Pearson residual statistic. See also
+\citep[][ch. 18]{kery:2010}
+for an example involving a binomial mixed model\footnote{Kery has
+  noticed that such tests probably have 0 power. Should use the
+  marginal frequency of the data}. 
+ Anyhow, it is really amazingly simple
+to express this model in {\bf WinBUGS} and have {\bf WinBUGS}  draw samples from the posterior distribution using the following code for the BBS dove counts: 
+{\small 
 \begin{verbatim}
 data<-read.csv("pa-bbsdovedata-all.csv")
 locs<-data[,2:3]
 habitat<-data[,4]
-y<-data[,29]
-notna<-!is.na(y)  # to remove missing values
-y<-y[notna]
-locs<-locs[notna,]
-habitat<-habitat[notna]
+y<-data[,29]     # grab year 1990 
 M<-length(y)
+
+set.seed(2013)
 
 cat("
 model {
-            for (i in 1:M){
-               y[i]~dpois(lam[i])
-               log(lam[i])<- beta0+beta1*habitat[i] + eta[i]
-               eta[i] ~ dnorm(0,tau)
-               }
- beta0~dunif(-5,5)
- beta1~dunif(-5,5)
+  for (i in 1:M){
+     y[i]~dpois(lam[i])
+     log(lam[i])<- alpha+ beta*habitat[i] + eta[i]
+     frog[i]<-beta*habitat[i] + eta[i]
+     eta[i] ~ dnorm(0,tau)
+     d[i]<-  pow(pow(y[i],0.5)-pow(lam[i],0.5),2)
+  
+     ynew[i]~dpois(lam[i])
+     dnew[i]<- pow(pow(ynew[i],0.5)-pow(lam[i],0.5),2)
+   }
+ fit<-sum(d[])
+ fitnew<-sum(dnew[])
+
+ alpha~dunif(-5,5)
+ beta~dunif(-5,5)
  sigma~dunif(0,10)
  tau<-1/(sigma*sigma)
 }
+
+",file="model.txt")
+data <- list ( "y","M","habitat")
+inits <- function()
+  list ( alpha=rnorm(1),beta=rnorm(1),sigma=runif(1,0,4))
+parameters <- c("alpha","beta","sigma","tau","fit","fitnew")
+library("R2WinBUGS")
+
+out<-bugs (data, inits, parameters, "model.txt", n.thin=2,n.chains=2,
+ n.burnin=1000,n.iter=5000,debug=TRUE)
 \end{verbatim}
-I have removed the final several R commands which package up the data and execute WinBUGS as those commands are largely redundant with the previous demo.  The summary results are:
+}
+This produces the following posterior summary statistics:
+{\small
 \begin{verbatim}
-> print(out,digits=3)
+> print(out,digits=2)
 Inference for Bugs model at "model.txt", fit using WinBUGS,
  2 chains, each with 5000 iterations (first 1000 discarded), n.thin = 2
  n.sims = 4000 iterations saved
-            mean     sd    2.5%     25%     50%     75%   97.5%  Rhat n.eff
-beta0      2.967  0.076   2.817   2.915   2.969   3.020   3.111 1.006   430
-beta1     -0.518  0.073  -0.657  -0.566  -0.517  -0.470  -0.374 1.008  4000
-sigma      0.598  0.059   0.491   0.556   0.594   0.634   0.725 1.004   640
-tau        2.883  0.569   1.904   2.489   2.836   3.233   4.149 1.004   640
-fit       19.885  3.190  14.119  17.670  19.705  21.902  26.610 1.001  4000
-fitnew    20.043  3.422  14.100  17.630  19.770  22.292  27.360 1.001  4000
-deviance 446.255 12.290 424.000 437.700 445.600 454.100 472.302 1.001  4000
+           mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
+alpha      2.98  0.08   2.82   2.93   2.98   3.03   3.12 1.00  1400
+beta      -0.53  0.07  -0.68  -0.58  -0.53  -0.49  -0.38 1.01   350
+sigma      0.60  0.06   0.49   0.56   0.59   0.64   0.73 1.00  2000
+tau        2.88  0.57   1.88   2.47   2.86   3.24   4.12 1.00  2000
+fit       26.58  3.72  19.87  23.96  26.37  29.01  34.46 1.00  4000
+fitnew    26.83  3.90  19.60  24.12  26.68  29.36  35.04 1.00  4000
+deviance 445.94 12.18 424.00 437.40 445.20 453.90 471.50 1.00  4000
 
-For each parameter, n.eff is a crude measure of effective sample size,
-and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
-
-DIC info (using the rule, pD = Dbar-Dhat)
-pD = 66.0 and DIC = 512.2
-DIC is an estimate of expected predictive error (lower deviance is better).
-> 
-
+[... some output deleted ...]
 \end{verbatim}
-
+}
 The Bayesian p-value for this model is
 \begin{verbatim}
 > mean(out$sims.list$fit>out$sims.list$fitnew)
-[1] 0.473
->
+[1] 0.4815
 \end{verbatim}
 indicating a pretty good fit. Given the site-level random effect, it
 would be surprising for this model to not fit! One thing we notice is
 that the posterior standard deviations of the regression parameters
-are much higher, a result of the excess variation. (we would also
+are much higher, a result of the excess variation. Wwe would also
 notice much less precise predictions of hypothetical new
-observations).
+observations.
+
+
+ANDY STOPPED HERE. 
+
+
 
 
 \section{Binomial GLMs}
 
-Another class of statistical models that are very important in ecology are binomial models. We use binomial models for count data whenever the observations are counts or frequencies and it is natural to condition on a ``sample size'' - the maximum frequency possible in a sample, say $K$ (i.e., $K$ is known). The random variable, $y/le K$, is then the frequency of occurrences out of $K$. The parameter of the binomial models is $p$, often called ``success probability'' which is related to the expected value of $y$ by $E[y] = pK$. Binomial GLMs or binomial regression models are often referred to as logistic regression, but that term really only applies when the logistic link is used to model the relationship between $p$ and covariates (see below).
+Another extremely important class of models in ecology are
+binomial models. We use binomial models for count data whenever the
+observations are counts or frequencies and it is natural to condition
+on a ``sample size'', say $K$, the maximum frequency possible in a sample.
+ The random variable, $y \le K$, is then the
+frequency of occurrences out of $K$ ``trials''. The parameter of the binomial
+models is $p$, often called ``success probability'' which is related
+to the expected value of $y$ by $E(y) = pK$. Usually we are interested
+in modeling covariates that affect the parameter $p$, and such models
+are called binomial GLMs , binomial
+regression models or logistic regression, although logistic regression 
+ really only applies when the logistic link is used to model
+the relationship between $p$ and covariates (see below).
 
-One of the most typical Binomial GLMs occurs when the sample size
+One of the most typical binomial GLMs occurs when the sample size
 equals 1 and the outcome, $y$, is ``presence'' ($y=1$) or ``absence''
 ($y=0$) of a species. This is a classical ``species distribution''
 modeling situation. A special situation occurs when presence/absence
-is observed with error \citep{mackenzie_etal:2002,
-  mackenzie_etal:2006, kery_etal:2010}. In that case, $K>1$ samples
-are usually required in order to estimate model parameters
-effectively. In standard binomial regression problems the sample size
+is observed with error \citep{mackenzie_etal:2002,tyre_etal:2003}.
+In that case, $K>1$ samples
+are usually needed for effective estimation of model parameters.
+
+ In standard binomial regression problems the sample size
 is fixed by design but interesting models also arise when the sample
-size is itself a random variable. These are the N-mixture models
+size is itself a random variable. These are the $N$-mixture models
 \citep{royle:2004, kery_etal:2005, royle_dorazio:2008, kery:2010}
-ch. 22) and related models (in this case, $N$ being the sample size
-which we labeled K above). This is actually a little bit confusing
-because the binomial index is usually referred to as ``sample size''
-but in this context N is actually a ``population size''.  A useful
+and related models (in this case, $N$ being the sample size,
+which we labeled $K$ above)\footnote{Some of the jargon is actually a little
+bit confusing here
+because the binomial index is customarily referred to as ``sample size''
+but in the context of $N$-mixture models $N$ is actually the
+``population size''}.  
+Another 
 situation in which the binomial sample size is ``fixed'' is closed
 population capture-recapture models in which a population of
 individuals is sampled $K$ times.  The number of times each individual
 is encountered is a binomial outcome with parameter - encounter
-probability - $p$, based on a sample of size $K$.  We consider such
-models in the following chapter.
+probability -- $p$, based on a sample of size $K$.  In addition, the
+total number of unique individuals observed, $n$, is also a binomial
+random variable based onpopulation size $N$.  We consider such
+models in the chapter \ref{chapt.closed}.
 
 
 \subsection{Binomial regression}
 
- In binomial models, covariates are modeled on a suitable transformation (the link function) of the binomial success probability, $p$.  Let  $x_{i}$ denote some measured covariate for sample unit $i$ and let $p_{i}$ be the success probability for unit i.  The standard choice is the ``logit'' link function which is:
+In binomial models, covariates are modeled on a suitable
+transformation (the link function) of the binomial success
+probability, $p$.  Let $x_{i}$ denote some measured covariate for
+sample unit $i$ and let $p_{i}$ be the success probability for unit $i$.
+The standard choice is the ``logit'' link function which is:
 \[
-log(p[i]/(1-p[i])) = \alpha + \beta*x[i]
+log(p_i/(1-p_i)) = \alpha + \beta*x_{i}.
 \]
-with inverse ``expit''
+The inverse-logit (or ``expit'') is
 \[
-p[i] = expit(\alpha + \beta*x[i]) = exp(\alpha + \beta*x[i])/(1 + exp(\alpha + \beta*x[i])) 
+p_{i} = \mbox{expit}(\alpha + \beta*x_{i}) = 
+ \frac{ \exp(\alpha + \beta*x_{i})}
+      {1 + \exp(\alpha + \beta*x_{i} ) }
 \]
 There are many other possible link functions. However, ecologists seem
-to blindly adopt the logit link function without question to such an
-extent that you are likely to be questioned by referees and associate
-editors if you use some alternative link (unless you are doing species
-distribution modeling, in which case any explicit link function will
-be questioned by some referees).  We sometimes use the ``complementary
-log-log'' (= ``cloglog'') link function in ecological applications
-because it can often be justified based on subject-matter
-considerations (\citet{royle_dorazio:2008}; section XYZ) or natural
-scaling relationships germane to the problem.  For example, the
-cloglog link arises as the ``probability of a count greater than 0''
-under a Poisson model. That is, $\Pr(y>0) = 1-exp(- \lambda)$ in which case
+to adopt the logit link function without question in most
+applications\footnote{a notable exception is distance sampling, which
+  is all about choosing among link functions}.  We sometimes use the
+``complementary log-log'' (= ``cloglog'') link function in ecological
+applications because it arises naturally in many situations
+\citep[][p. 150]{royle_dorazio:2008}. For example, consider the
+``probability of observing a count greater than 0'' under a Poisson
+model: $\Pr(y>0) = 1-exp(- \lambda)$. In that case,
 \[
 cloglog(p) =log(- log(1-p)) = log(\lambda)
 \]
-So that if you have covariates in your linear predictor for $E[y]$ under a Poisson model then they are linear on the complementary log-log link of p. We will use the cloglog link in some analyses of SCR models in Chapter 4 and elsewhere.  
-
-A natural situation in which the cloglog link arises is modeling occupancy in which $N \sim Poisson(A*\lambda)$ and you have site area, A, measured for every sample. In this case the probability that the site is occupied, psi, is related to area on the cloglog scale. i.e.,
+So that if you have covariates in your linear predictor for $E(y)$
+under a Poisson model then they are linear on the complementary
+log-log link of $p$. 
+In models of species occurrence it seems natural to view occupancy as
+being derived from local abundance $N$
+\citep{royle_nichols:2003,royle_dorazio:2006,dorazio:2007}.
+Therefore, 
+models of local abundance in which $N \sim \mbox{Poisson}(A \lambda)$
+for a habitat patch of area $A$ implies a model for occupancy $\psi$
+of the form
 \[
  cloglog(\psi) = log(A) + log(\lambda).
 \]
-There seems to be perennial debate over whether site area should be a
-covariate on ``detection'' or ``occupancy'' and the above argument
-suggests the latter.
+We will use the cloglog link in some analyses of
+SCR models in chapter \ref{chapt.scr0} and elsewhere.
 
 
 \subsection{ Example: Waterfowl Banding Data}
@@ -1890,19 +1956,42 @@ suggests the latter.
 It would be easy to consider a standard ``distribution modeling''
 application where $K=1$ and the outcome is occurrence ($y=1$) or not
 ($y=0$) of some species. Such examples abound in books (e.g.,
-\citet{royle_dorazio:2008}, ch. 3; \citet{kery:2010}, chapter 21 XYZ?;
-\citet{kery_schaub:2011}, chapter XYZ) and in the literature (see
-\citet{kery_etal:2010}; \citet{kery_etal:2010} XYZ).  Instead, we will consider an example involving band returns of waterfowl which were analyzed by Royle and Dubovsky (200X)\footnote{not happy about this example. Anyone got a better one?}.  
+\citet[][ch. 3]{royle_dorazio:2008}; \citet[][ch. 21]{kery:2010};
+\citet[][ch. 13]{kery_schaub:2011}) and in the literature.
+Instead, we will 
+consider an example involving band returns of waterfowl which were
+analyzed by \citet{royle_dubovsky:2001}\footnote{I hate this example.
+  Anyone got a better one thats not distribution modeling?}.  
 
-For these data, $y[i]$ is the number of waterfowl bands recovered out of $B[i]$ birds banded at some location $s[i]$. In this case $B[i]$ is fixed. Thinking about recovery rate as being proportional to harvest rate, we wanted to explore geographic gradients in recovery rate resulting from variability in harvest pressure experienced by populations depending on their migration ecology. As such, we fit a basic binomial GLM with a linear response to geographic coordinates (including an interaction term). The data are provided on the web supplement along with an R script to do the post-processing. Here we just provide the part of the script for creating the model and calling WinBUGS:
+For these data, $y_i$ is the number of waterfowl bands recovered out
+of $B_i$ birds banded at some location ${\bf s}_{i}$. In this case $B_{i}$ is
+fixed. Thinking about recovery rate as being proportional to harvest
+rate, we use these data to explore geographic gradients in recovery rate
+resulting from variability in harvest pressure experienced by
+populations depending on their migration ecology. As such, we fit a
+basic binomial GLM with a linear response to geographic coordinates
+(including an interaction term). The data are provided with the {\bf
+  R} package \mbox{\tt scrbook}. Here we 
+ provide the part of the script for creating the model and fitting the
+ model in
+{\bf WinBUGS} using the \mbox{\tt bugs} function.
+There are few structural differences between this model and the
+Poisson GLM fitted previously. The main things are due to the data
+structure (we have a matrix here instead of a vector) and otherwise we
+change the main distributional assumption to binomial (specified with
+\mbox{\tt dbin}) and then use the \mbox{\tt logit} function to relate
+the parameter $p_{it}$ to the covariates.  Here is the script:
 
+{\small 
 \begin{verbatim}
+load("mallarddata")  # not sure how this will look
+
 sink("model.txt")
 cat("
 model {
  for(t in 1:5){
     for (i in 1:nobs){
-       m[i,t] ~ dbin(p[i,t], R[i,t])
+       y[i,t] ~ dbin(p[i,t], B[i,t])
        logit(p[i,t]) <- alpha0[t] + alpha1*X[i,1] + alpha2*X[i,2] + alpha3*X[i,1]*X[i,2]
      }
 }
@@ -1916,19 +2005,21 @@ model {
 ",fill=TRUE)
 sink()
 
-data <- list('R', 'm', 'nobs','X')
-inits <- 	function(){
-list(alpha0=rnorm(5),alpha1=0,alpha2=0,alpha3=0)
-}
+data  <- list(B=mallard.bandings, y=mallard.recoveries,
+             nobs=nrow(banding.locs),X=banding.locs)
+inits <- function(){
+      list(alpha0=rnorm(5),alpha1=0,alpha2=0,alpha3=0) }
 parms <- list('alpha0','alpha1','alpha2','alpha3')
-out <- bugs(data,inits, parms,"model.txt",n.chains=3,
- 					n.iter=2000,n.burnin=1000,
-					n.thin=2, debug=TRUE)
+out   <- bugs(data,inits, parms,"model.txt",n.chains=3,
+ 	n.iter=2000,n.burnin=1000, n.thin=2,debug=TRUE)
 \end{verbatim}
+}
+
 
 Posterior summaries of model parameters are as follows:
-
+{\small
 \begin{verbatim}
+> print(out,digits=3)
 Inference for Bugs model at "model.txt", fit using WinBUGS,
  3 chains, each with 2000 iterations (first 1000 discarded), n.thin = 2
  n.sims = 1500 iterations saved
@@ -1943,30 +2034,71 @@ alpha2       0.020 0.006    0.009    0.016    0.020    0.024    0.031 1.001  150
 alpha3       0.000 0.001   -0.002   -0.001    0.000    0.000    0.002 1.001  1500
 deviance  1716.001 4.091 1710.000 1713.000 1715.000 1718.000 1726.000 1.001  1500
 
-For each parameter, n.eff is a crude measure of effective sample size,
-and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
-
-DIC info (using the rule, pD = Dbar-Dhat)
-pD = 7.9 and DIC = 1723.9
-DIC is an estimate of expected predictive error (lower deviance is better).
+[... some output deleted ...]
 \end{verbatim}
+}
 
-The basic result suggests a negative east-west gradient and a positive south to north gradient but no interaction. A map of the response surface is given below. We could use DIC to do some model selection - i.e., try models without the interaction term, or models with a quadratic term, or with a constant intercept, etc., but we don't pursue that here. We did an MCMC run where we saved the binomial parameter p and computed the Bayesian p-value [double use of ``p'' here is confusing!] using a fit statistic based on the Freeman-Tukey statistic (see Section XXX above). The result indicates that the linear response surface model does not provide an adequate fit of the data. The reader should contemplate whether this invalidates the basic interpretation of the result.
+The basic result suggests a negative east-west gradient and a positive
+south to north gradient but no interaction. A map of the response
+surface is shown in Fig. \ref{glms.fig.bandrecovery}.
+ We did an additional MCMC run where we saved the binomial
+parameter $p$ and computed the Bayesian p-value (double use of ``p''
+here is confusing, but I guess that happens sometimes!) 
+using a fit statistic based on the Freeman-Tukey
+statistic (see Section XXX above). The result indicates that the
+linear response surface model does not provide an adequate fit of the
+data. The reader should contemplate whether this invalidates the basic
+interpretation of the result.
 
 
 \begin{figure}
 \begin{center}
 \includegraphics[height=2.75in]{figs/responsesurface}
 \end{center}
-\caption{Needs a caption}
-\label{fig.responsesurface}
+\caption{Predicted recovery rate of bands.}
+\label{glms.fig.bandrecovery}
 \end{figure}
-
-\section{Stuff on hierarchical models here?}
 
 \section{ Summary and Outlook}
 
+GLMs and GLMMs are the most useful statistical methods in all of
+ecology. The principles and procedures underlying these methods are
+relevant to nearly all modeling and analysis problems in every branch
+of ecology. Moreover, understanding how to analyze these models is
+crucial in a huge number of diverse problems. If you understand and
+can conduct classical likelihood and Bayesian analysis of Poisson and
+binomial GLM(M)s, then you will be successful analyzing and
+understanding more complex classes of models that arise. We will see
+shortly that spatial capture-recapture models are a type of GLMM
+and thus having a basic
+understanding of the conceptual origins and formulation of GLM(M)s and
+their analysis is extremely useful. 
 
-GLMs and GLMMs are the most useful statistical methods in all of ecology. The principles and procedures underlying these methods are relevant to nearly all modeling and analysis problems in every branch of ecology. Moreover, understanding how to analyze these models is crucial in a huge number of diverse problems. If you understand and can conduct classical likelihood and Bayesian analysis of Poisson and binomial GLM(M)s, then you will be successful analyzing and understanding more complex classes of models that arise.We will see shortly that spatial capture-recapture models are just a type of GLMM (i.e., a GLM with a random effect) and thus having a basic understanding of the conceptual origins and formulation of GLMs and their analysis is extremely useful. We note that GLMs are routinely analyzed by likelihood methods but we have focused on Bayesian analysis here in order to develop the tools that are less familiar to most ecologists.  In particular, Bayesian analysis of GLMs with random effects (i.e., GLMMs) is relatively straightforward because the models are easy to analyze conditional on the random effect, using methods of MCMC.  Thus, we will often analyze SCR models in later chapters by MCMC, explicitly adopting a Bayesian inference framework.
+We note that GLM(M)s are routinely
+analyzed by likelihood methods but we have focused on Bayesian
+analysis here in order to develop the tools that are less familiar to
+most ecologists.  In particular, Bayesian analysis of models with random
+effects is relatively straightforward because the models
+are easy to analyze conditional on the random effect, using methods of
+MCMC.  Thus, we will often analyze SCR models in later chapters by
+MCMC, explicitly adopting a Bayesian inference framework.
+In that regard, the various {\bf BUGS} engines ({\bf WinBUGS}, {\bf
+  OpenBUGS}, {\bf JAGS}) are enormously useful because they
+provide an accessible platform for 
+carrying out  analyses by MCMC by just
+describing the model, and not having to worry about how to actually
+build MCMC algorithms.  That said, the {\bf BUGS} language is more important
+than just to the extent that it enables one to do MCMC - it is useful
+as a modeling tool because it fosters understanding, in the sense that
+it forces you to become intimate with your model. You have to write
+down all of the probability assumptions, the relationships between
+observations and latent variables and parameters. This is really a
+great learning paradigm that you can grow with. 
 
-In that regard, BUGS engines are enormously useful because they provides a straightforward way to carry out analyses by MCMC by just describing the model, and not having to worry about how to actually build MCMC algorithms.  That said, the BUGS language is more important than just to the extent that it enables one to do MCMC - it is useful as a modeling tool because it fosters understanding, in the sense that it forces you to become intimate with your model. You have to write down all of the probability assumptions, the relationships between observations and latent variables and parameters. This is really a great learning paradigm that you can grow with. Skills gained in Bayesian analysis of the GLMMs covered in this chapter will be directly transferrable and useful for the SCR models addressed subsequently. Before getting to that, however, it will be useful to talk about more basic, conventional closed population capture-recapture models and these are the topic of the next Chapter. 
+While we have emphasized Bayesian analysis in this chapter, and make
+primary use of it through the book, we 
+we will provide an introduction to likelihood analysis in chapter
+\ref{chapt.mle} and use those  methods also from time to time.
+ Before getting to that, however, it will be useful to
+talk about more basic, conventional closed population
+capture-recapture models and these are the topic of the next chapter.
