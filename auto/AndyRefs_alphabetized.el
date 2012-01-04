@@ -2,7 +2,6 @@
  (lambda ()
     (LaTeX-add-bibitems
      "bibby_buckland:1987"
-     "dorazio:2007"
      "agresti:2002"
      "airoldi_etal:2006"
      "alho:1990"
@@ -114,6 +113,7 @@
      "dinsmore_etal:2002"
      "Distribution1993a"
      "dodd_etal:2004"
+     "dorazio:2007"
      "dorazio_etal:2008"
      "dorazio_royle_rejoinder:2005"
      "dorazio_royle:2003"
