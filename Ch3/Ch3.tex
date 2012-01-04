@@ -773,7 +773,7 @@ and analyze and we provide a number of examples in chapt. 8. XXXXX ?? XXXXX
 \section{ Models with individual heterogeneity}
 \label{closed.sec.modelmh}
 
-ANDY STOPPED HERE 
+
 
 Here we consider models with individual-specific encounter probability
 parameters, say $p_{i}$, which we model according to some probability
@@ -801,14 +801,13 @@ models seek to do just that, by modeling heterogeneity due to the
 spatial organization of individuals in relation to traps or other
 encounter mechanism.  For additional background and applications of
 Model $M_{h}$ see \citet[][chapt. 6]{royle_dorazio:2008} and
-\citet[][chapt. xxx]{kery_schaub:2011}.
-
+\citet[][chapt. 6]{kery_schaub:2011}.
 
 Model $M_{h}$ has important historical relevance to spatial
 capture-recapture situations \citep{karanth:1995} because
 investigators recognized that the juxtaposition of individuals with
 the array of trap locations should yield heterogeneity in encounter
-probability, and thus it became common to use some version of Model Mh
+probability, and thus it became common to use some version of Model $M_h$
 in spatial trapping arrays to estimate $N$.  While this doesn't
 resolve the problem of not knowing the area relevant to $N$, it does
 yield an estimator that accommodates the heterogeneity in $p$ induced
@@ -818,7 +817,7 @@ To see how this juxtaposition induces heterogeneity, we have to
 understand the relevance of movement in capture-recapture models.
 Imagine a quadrat that can be uniformly searched by a crew of
 biologists for some species of reptile (see
-\citet{royle_young:2008}).  Figure \ref{fig.3.quadrat} shows a 
+\citet{royle_young:2008}).  Figure \ref{closed.fig.quadrat} shows a 
 sample quadrat searched repeatedly over a period of time. Further,
 suppose that species exhibits some sense of spatial fidelity in the
 form of a home range or territory, and individuals move about their
@@ -830,16 +829,19 @@ explicitly using hierarchical models \citep{royle_young:2008,
 the vicinity of the study area is liable to experience variable
 exposure to encounter due to the overlap of its home range with the
 sampled area - essentially the long-run proportion of times the
-individual is within the sample plot boundaries, say $\phi_{i}$. We
+individual is within the sample plot boundaries, say $\phi$. We
 might model the exposure of an individual to capture by supposing that
 $z_{i} = 1$ if individual $i$ is available to be captured (i.e.,
-within the survey plot) during any sample, and 0 otherwise. Then,
+within the survey plot) during any sample, and $0$ otherwise. Then,
 $\Pr(z_{i}=1) = \phi$.  In the context of spatial studies, it is
 natural that $\phi$ should depend on {\it where} an individual lives,
 i.e., it should be individual-specific $\phi_{i}$
 \citep{chandler_etal:2011}. This system describes, precisely, that of
-``random temporary emigration'' \citep{kendall_etal:1997} where $\phi$
-is individual-specific.  Conceptually, SCR models aim to deal with
+``random temporary emigration'' \citep{kendall_etal:1997} where $\phi_{i}$
+is the individual-specific probability of being ``available'' for
+capture.  
+
+Conceptually, SCR models aim to deal with
 this problem of variable exposure to sampling due to movement in the
 proximity of the trapping array explicitly and formally with auxiliary
 spatial information.  If individuals are detected with probability
@@ -890,13 +892,15 @@ If $N$ is known, it is worth taking note of the essential simplicity
 of Model $M_h$ as a binomial GLMM.  This is a type of model that is
 widely applied in just about every scientific discipline and using
 standard methods of inference based either on integrated likelihood
-\citep{laird_ware:1982, berger_etal:1999} or standard Bayesian
+\citep{laird_ware:1982, berger_etal:1999} which we discuss in
+chapt. \ref{chapt.mle} or standard Bayesian
 methods. However, because $N$ is not known, inference is somewhat more
 challenging. We address that here using Bayesian analysis based on
-data augmentation. Although we use Bayesian methods here, we note that
+data augmentation (DA). Although we use data augmentation in the context of
+Bayesian methods here, we note that
 heterogeneity models formulated under DA are easily analyzed by
 conventional likelihood methods as zero-inflated binomial mixtures
-\citep{royle:2006} and more traditional analysis of model Mh based on
+\citep{royle:2006} and more traditional analysis of model $M_h$ based on
 integrated likelihood, without using data augmentation, has been
 considered by \citet{coull_agresti:1999}, \citet{dorazio_royle:2003},
 and others.
@@ -915,7 +919,7 @@ prescribe a distribution for $p_{i}$. Here we assume
 \mathrm{logit}(p_{i}) \sim \mbox{Normal}(\mu,\sigma^2)
 \]
 The basic {\bf BUGS} description for this model, assuming a
-$\mbox{Unif}(0,1)$ prior for $p_{0} = \mbox{logit}^{-1}(\mu)$ is given
+$\mbox{Unif}(0,1)$ prior for $p_{0} = \mbox{logit}^{-1}(\mu)$, is given
 as follows:
 {\small 
 \begin{verbatim}
@@ -934,25 +938,141 @@ for(i in 1:(nind+nz)){
   y[i]~dbin(mu[i],J)  #  observation model
  }
 
-N<-sum(z[1:(nind+nz)])
+N<-sum(z[1:(nind+nz)])  # N is a derived parameter
 }
 \end{verbatim}
 } 
 
 
-\subsection{Analysis of Fort Drum data}
+\subsection{Analysis of the Fort Drum data}
 
 The logit-normal heterogeneity model was fitted to the bear data from
-the Fort Drum study producing the posterior distribution for $N$ shown
-in Figure \ref{fig.bearMh}. Posterior summaries of parameters are
-given in Table \ref{tab.Mh}.  We used $M=350$ for this analysis and we
-note that the posterior mass of $N$ is located well away from this
-upper bound (Figure XYZ), indicating that sufficient data augmentation
-was used.  To fit this model to the Fort Drum data, the reader can use
-the BUGS model description above in conjunction with the script
-provided for Model M0 in section XXXXX.  Additional R commands for
-organizing the black bear data and setting things up for WinBUGS are
-provided in the Online Supplement.
+the Fort Drum study, and we used data augmentation to produce a data
+set of $M=300$ individuals.  We ran the model using {\bf JAGS}.
+
+\begin{verbatim}
+[... get data as before ....]
+
+set.seed(2013)
+
+cat("
+model{
+p0 ~ dunif(0,1)       # prior distributions
+mup<- log(p0/(1-p0))
+taup~dgamma(.1,.1)
+sigmap<-sqrt(1/taup)
+psi~dunif(0,1)
+
+for(i in 1:(nind+nz)){
+  z[i]~dbern(psi)     # zero inflation variables
+  lp[i] ~ dnorm(mup,taup) # individual effect
+  logit(p[i])<-lp[i]
+  mu[i]<-z[i]*p[i]
+  y[i]~dbin(mu[i],K)  #  observation model
+ }
+
+N<-sum(z[1:(nind+nz)])
+}
+",file="modelMh.txt")
+
+library("rjags")
+jm<- jags.model("modelMh.txt", data=data1, inits=inits, n.chains=4,
+                 n.adapt=1000)
+jout<- coda.samples(jm, params1, n.iter=50000, thin=1)
+\end{verbatim}
+
+ANDY IS WORKING THIS SECTION RIGHT NOW
+
+This produces the posterior distribution for $N$ shown
+in Fig. \ref{closed.fig.bearMh}. Posterior summaries of parameters are
+given as follows:
+{\small
+\begin{verbatim}
+> summary(jout)
+
+Iterations = 1001:201000
+Thinning interval = 1 
+Number of chains = 4 
+Sample size per chain = 2e+05 
+
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
+
+           Mean      SD  Naive SE Time-series SE
+N      106.6913 46.9809 5.253e-02       1.414777
+p0       0.0867  0.0585 6.541e-05       0.001640
+psi      0.2679  0.1188 1.328e-04       0.003525
+sigmap   1.9279  0.4948 5.532e-04       0.014094
+
+2. Quantiles for each variable:
+
+            2.5%      25%      50%      75%    97.5%
+N      59.000000 77.00000 93.00000 120.0000 241.0000
+p0      0.005357  0.03948  0.07746   0.1244   0.2192
+psi     0.140612  0.19193  0.23542   0.3043   0.6044
+sigmap  1.126729  1.57266  1.86898   2.2218   3.0521
+\end{verbatim}
+}
+We used $M=300$ for this analysis and we
+note that the posterior mass of $N$ is concentrated away from this
+upper bound (Fig. \ref{closed.fig.bearMh}), but there is a long right tail. Maybe or
+maybe not sufficient data augmentation.
+The model runs effectively in WinBUGS but sometimes with apparently
+inefficient mixing for reasons we don't understand.
+I did one run in WinBUGS with 200k iterations after 1k burnin and
+obtained this:
+
+
+> print(fit1,digits=2)
+Inference for Bugs model at "modelMh.txt", fit using WinBUGS,
+ 3 chains, each with 201000 iterations (first 1000 discarded)
+ n.sims = 6e+05 iterations saved
+           mean    sd   2.5%    25%    50%    75%  97.5% Rhat  n.eff
+p0         0.09  0.06   0.01   0.04   0.08   0.13   0.22    1  96000
+sigmap     1.91  0.49   1.12   1.55   1.86   2.21   3.02    1  40000
+psi        0.26  0.11   0.14   0.19   0.23   0.30   0.59    1 140000
+N        105.27 45.24  59.00  76.00  92.00 120.00 233.00    1 170000
+deviance 184.59 17.51 153.80 172.20 183.40 195.70 222.10    1  42000
+
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+
+DIC info (using the rule, pD = var(deviance)/2)
+pD = 153.3 and DIC = 337.8
+DIC is an estimate of expected predictive error (lower deviance is better).
+> 
+> summary(as.mcmc.list(fit1))
+
+Iterations = 1001:201000
+Thinning interval = 1 
+Number of chains = 3 
+Sample size per chain = 2e+05 
+
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
+
+              Mean       SD  Naive SE Time-series SE
+deviance 184.59114 17.50790 2.260e-02       0.441877
+N        105.27047 45.24424 5.841e-02       2.125486
+p0         0.08846  0.05932 7.658e-05       0.002751
+psi        0.26437  0.11456 1.479e-04       0.005298
+sigmap     1.91285  0.49054 6.333e-04       0.023224
+
+2. Quantiles for each variable:
+
+              2.5%      25%       50%      75%    97.5%
+deviance 1.538e+02 172.2000 183.40000 195.7000 222.1000
+N        5.900e+01  76.0000  92.00000 120.0000 233.0000
+p0       5.952e-03   0.0402   0.07845   0.1277   0.2198
+psi      1.399e-01   0.1900   0.23370   0.3022   0.5855
+sigmap   1.118e+00   1.5520   1.86100   2.2150   3.0180
+
+> 
+
+
+
+
+
 
 The posterior mode compares well with the MLE which we obtained using
 the R code contained in Panel 6.1 of \citet{royle_dorazio:2008}.  The
@@ -969,26 +1089,8 @@ results in about $0.37$ individuals/$km^2$. The reader should carry
 out this analysis to confirm the estimates, and also obtain the $95\%$
 confidence interval.
 
-\begin{verbatim}
-\begin{table}
-\centering
-\caption{
-Parameter estimates for Model $M_{h}$ (logit-normal model for 
- $p$)   fitted  to the Fort Drum hair-snare study data.
- Get final estimates and then tabularize this.
-}
-\begin{tabular}{lrrrrr}
-\hline
-node	 mean	 sd	 MC error	2.5%	median	97.5%	start	sample
-N	111.6	48.15	2.413	61.0	97.0	250.0	1001	30000
-deviance	185.8	17.6	0.4929	154.8	184.6	223.0	1001	30000
-p0	0.07999	0.05713	0.002736	0.004606	0.06944	0.208	1001	30000
-psi	0.3201	0.1388	0.006863	0.1643	0.2808	0.7163	1001	30000
-sigmap	1.992	0.5087	0.02465	1.17	1.935	3.135	1001	30000
-\end{tabular}
-\label{tab.Mh}
-\end{table}
-\end{verbatim}
+
+
 
 \begin{verbatim}
 \begin{figure}
@@ -997,22 +1099,27 @@ sigmap	1.992	0.5087	0.02465	1.17	1.935	3.135	1001	30000
 \caption{Posterior of $N$ for Fort Drum bear study data under the
 logit-normal version of model $M_h$. We will reproduce this from R.
 XXX The picture is not the correct picture.   }
-\label{fig.bearMh}
+\label{closed.fig.bearMh}
 \end{figure}
 \end{verbatim}
 
 \subsection{Building your own MCMC algorithm}
 
 For fun, we construct our own MCMC algorithm using a Metropolized
-Gibbs sampler.  In Chapter \ref{chapt.mcmc} we devise an MCMC
-algorithm for a spatial capture-recapture model and the basic
+Gibbs sampler for Model $M_{h}$.  In chapter \ref{chapt.mcmc} we devise MCMC
+algorithms for spatial capture-recapture models and the basic
 conceptual and technical considerations are entirely analogous to
-Model Mh.
+Model $M_h$.
 
-To begin, we identify the joint posterior distribution which we know
+To begin, we first collect all of our model components
+which are as follows: $[y_{i}| p_{i},z_{i}]$,
+$[p_{i}|\mu_{p},\sigma_{p}]$, and $[z_{i}|\psi]$
+for {\it each} $i=1,2,\ldots,M$ and then prior distributions
+$[\mu_{p}]$, $[\sigma_{p}]$ and $[\psi]$. 
+
+We know  the joint posterior distribution 
 is proportional to the joint distribution of all elements
-$y_{i},p_{i},z_{i}$ and also the prior distributions of $\mu_{p}$ and
-$\sigma_{p}$, and the data augmentation parameter $\psi$:
+$y_{i},p_{i},z_{i}$ and also the prior distributions of the prior parameters:
 \[
 \left\{ \prod_{i=1}^{M} [y_{i}|p_{i},z_{i}][p_{i}|\mu_{p},\sigma_{p}]
 [z_{i}|\psi] \right\} [\mu_{p},\sigma_{p},\psi]
