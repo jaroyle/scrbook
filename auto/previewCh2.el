@@ -33,5 +33,10 @@
      "latex2e"
      "bk10"
      "book"
-     "Ch2/Ch2")))
+     "Ch2/Ch2"
+     "Ch3/Ch3"
+     "Ch4/Chapter4"
+     "Ch5/Ch5"
+     "Ch6/Chapter6"
+     "Ch11/Ch11")))
 
