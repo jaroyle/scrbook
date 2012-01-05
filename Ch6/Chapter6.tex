@@ -4,7 +4,11 @@ MCMC Details
 \markboth{Chapter 6}{}
 \label{chapt.closed}
 
-
+%%% NOTES
+%%% Andy's working through this doing format edits mostly and math
+%%% stuff , but not in order
+%%% anytime you see a XXX or XYZ that is a marker to change some
+%%% hard-wired reference to a float
 
 \vspace{.3in}
 
@@ -224,6 +228,8 @@ Repeat Steps 1 to d for K = a large number of samples.
 In terms of R coding, this means we have to write Gibbs updaters for mu and sig and embed them into a loop over K iterations. The final code in the form of an R function is shown in Panel 1.
 
 \begin{verbatim}
+Andy will build the panel environment here soon.
+
 Panel 1: R-code for a Gibbs sampler for a Normal model with unknown mu
 and sig and conjugate (Normal and Inverse Gamma, respectively) priors
 for both parameters.
@@ -256,11 +262,19 @@ return(out)
 }
 \end{verbatim}
 
-This is it! You can use the code NormalGibbs.R in the online appendix to simulate some data, $y \sim Normal (5, 0.5)$ and run your first Gibbs sampler. Your output will be a table with two columns, one per parameter, and K rows, one per iteration. For this 2-parameter example you can visualize the joint posterior by plotting samples of mu against samples of sig (Fig 2):
+This is it! You can use the code \mbox{\tt NormalGibbs.R} in the {\bf
+  R} package \mbox{\tt scrbook}
+to simulate some data, $y \sim \mbox{Normal}(5, 0.5)$ and run your first
+Gibbs sampler. Your output will be a table with two columns, one per
+parameter, and $K$ rows, one per iteration. For this 2-parameter example
+you can visualize the joint posterior by plotting samples of $\mu$
+against samples of $\sigma$ (Fig. 2 XXX):
 \begin{verbatim}
 plot(out[,1], out[,2])
 \end{verbatim}
-The marginal distribution of each parameter is approximated by just examining the samples of this particular parameter – you can visualize it by plotting a histogram of the samples (Figure 3 a, b):
+The marginal distribution of each parameter is approximated by just
+examining the samples of this particular parameter – you can visualize
+it by plotting a histogram of the samples (Fig. 3 a, b XXX):
 \begin{verbatim}
 par(mfrow=c(1,2))
 hist(out[,1]); hist (out[,2])
@@ -313,28 +327,57 @@ remaining samples are your estimates of mu and sig:
 
 \subsection{ Metropolis-Hastings sampling   }
 
-Although it is applicable to a wide range of problems, the limitations of Gibbs sampling are immediately obvious – what if we do not want to use conjugate priors (or what if we cannot recognize the full conditional distribution as a parametric distribution, or simply do not want to worry about these issues)? The most general solution is to use the Metropolis-Hastings (MH) algorithm, which also goes back to the work by \citet{metropolis_ulam:1953}. You saw the basics of this algorithm in Chapter 2. In a nutshell, because we do not recognize the posterior $p(\theta|y)$ as a parametric distribution, the MH algorithm generates samples from a known proposal distribution, say $h(\theta)$, that depends on $\theta$ at t-1. The t-th sample is accepted or rejected based on its joint posterior probability density compared to the density of the sample at t-1. The original Metropolis algorithm requires $h(\theta)$ to be symmetric so that $h(thetat|thetat-1) = h(thetat-1|thetat)$; but a later development of the algorithm by \citet{hastings:1970} lifted this condition. Using a symmetric proposal distribution makes life a little easier and we are going to limit our coverage of the Metropolis-Hastings sampler to this specific case. Specifically, we are going to use a Normal proposal distribution, which is also referred to as 'random walk Metropolis-Hastings sampling'. It is worth knowing that there are alternative formulations of the algorithm. For example, in the independent M-H, $\theta$ t does not depend on $\theta$ t-1, while the Langevin algorithm \citep{roberts_etal:1998} aims at avoiding the random walk by favoring moves towards regions of higher posterior probability density. The interested reader should look up these algorithms in \citet{robert_casella:2004} or \citet{robert_casella:2010}.
+Although it is applicable to a wide range of problems, the limitations
+of Gibbs sampling are immediately obvious – what if we do not want to
+use conjugate priors (or what if we cannot recognize the full
+conditional distribution as a parametric distribution, or simply do
+not want to worry about these issues)? The most general solution is to
+use the Metropolis-Hastings (MH) algorithm, which also goes back to
+the work by \citet{metropolis_ulam:1953}. You saw the basics of this
+algorithm in Chapter 2. In a nutshell, because we do not recognize the
+posterior $p(\theta|y)$ as a parametric distribution, the MH algorithm
+generates samples from a known proposal distribution, say $h(\theta)$,
+that depends on $\theta$ at t-1. The $t^{th}$ sample is accepted or
+rejected based on its joint posterior probability density compared to
+the density of the sample at t-1. The original Metropolis algorithm
+requires $h(\theta)$ to be symmetric so that
+$h(\theta^{t}|\theta^{t-1}) = h(\theta^{t-1}|\theta^{t})$; but a later
+development of the algorithm by \citet{hastings:1970} lifted this
+condition. Using a symmetric proposal distribution makes life a little
+easier and we are going to limit our coverage of the
+Metropolis-Hastings sampler to this specific case. Specifically, we
+are going to use a Normal proposal distribution, which is also
+referred to as 'random walk Metropolis-Hastings sampling'. It is worth
+knowing that there are alternative formulations of the algorithm. For
+example, in the independent M-H, $\theta^{t}$ does not depend on
+$\theta^{t-1}$, while the Langevin algorithm \citep{roberts_etal:1998}
+aims at avoiding the random walk by favoring moves towards regions of
+higher posterior probability density. The interested reader should
+look up these algorithms in \citet{robert_casella:2004} or
+\citet{robert_casella:2010}.
 
 Building a MH sampler can be broken down into several steps. We are going to demonstrate these steps using a different but still simple and common model – the logit-normal or logistic regression model. For simplicity, assume that 
 \[
-y \sim Bernoulli(exp(\theta)/1+ exp(\theta))   
+y \sim \mbox{Bern}(\exp(\theta)/(1+ exp(\theta)))
 \]
 and 
 \[ 
-theta \sim Normal (mu0, sig)
+\theta \sim \mbox{Normal}(\mu_0, \sigma)
 \]
 The following steps are required to set up a random walk MH algorithm:
 
 {\flushleft Step 0: Choose initial values, $\theta$(0).}
+
 {\flushleft Step 1: Generate a proposed value of $\theta$ at t from h(thetat|thetat-1). }
 We often use a Normal proposal distribution, so we draw $\theta$1 from $Normal(theta0, sigh^2)$, where $sigh^2$ is the variance of the Normal proposal distribution, a tuning parameter  that we have to set. 
-{\flushleft Step2: Calculate the ratio of posterior densities for the proposed and the original value for $\theta$: }
+
+{\flushleft Step 2: Calculate the ratio of posterior densities for the proposed and the original value for $\theta$: }
 \[
-r = p(\theta(t)|y) / p(\theta(t-1)|y)
+r = p(\theta^{t}|y) / p(\theta^{t-1}|y)
 \]
 In our example, 
 \[
-r = Bernoulli(y|thetat) * Normal(thetat|mu0, sig0) / Bernoulli(y|thetat-1) * Normal(thetat-1|mu0, sig0)
+r = \mbox{Bern}(y|\theta^{t}) * Normal(\theta^{t}|\mu_0, \sigma_0) / Bernoulli(y|thetat-1) * Normal(thetat-1|mu0, sig0)
 \]
 Step 3: Set 
 \begin{verbatim}
@@ -346,9 +389,11 @@ $\theta$ (t)  &= &   $\theta$ (t) \mbox{with probability min(r,1)}//
 %this kept causing errors
 
 
-We can do that by drawing a random number u from a Uniform (0,1) and accept $\theta$t if $u<r$
-Repeat for t = a large number of samples. 
-The R code for this MH sampler is provided in Panel 2.
+We can do that by drawing a random number $u$ from a
+$\mbox{Unif}(0,1)$ and accept $\theta^{t}$ if 
+$u<r$.
+Repeat for $t = 1,2,\ldots$ a large number of samples. 
+The {\bf R} code for this MH sampler is provided in Panel 2 XXXX.
 {\small
 \begin{verbatim}
 Panel 2: R code to run a Metropolis sampler on a simple Logit-Normal model.
