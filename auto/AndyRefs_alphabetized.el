@@ -1,6 +1,12 @@
 (TeX-add-style-hook "AndyRefs_alphabetized"
  (lambda ()
     (LaTeX-add-bibitems
+     "higdon:1998"
+     "higdon:2002"
+     "hurlbert:1984"
+     "simons_etal:2009"
+     "gelman_rubin_1992"
+     "moldenhaer_regelski_1996"
      "bibby_buckland:1987"
      "agresti:2002"
      "airoldi_etal:2006"
@@ -416,6 +422,7 @@
      "royle_etal:2009"
      "royle_kery:2007"
      "royle_kery:200X"
+     "royle_etal:2011ms"
      "royle_etal:2011mee"
      "royle_etal:2011jwm"
      "royle_gardner:2011"
