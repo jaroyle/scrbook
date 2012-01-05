@@ -1,7 +1,18 @@
-(TeX-add-style-hook "previewCh14"
+(TeX-add-style-hook "previewCh11"
  (lambda ()
     (LaTeX-add-bibliographies
-     "../AndyRefs_alphabetized")
+     "AndyRefs_alphabetized")
+    (LaTeX-add-labels
+     "chapt.intro"
+     "chapt.glms"
+     "chapt.closed"
+     "chapt.scr0"
+     "chapt.poisson"
+     "chapt.mcmc"
+     "chapt.gof"
+     "chapt.covariates"
+     "chapt.ipp"
+     "chapt.open")
     (TeX-add-symbols
      "R"
      "bugs"
@@ -12,6 +23,7 @@
      "color"
      "soul"
      "verbatim"
+     "hyperref"
      "natbib"
      "lineno"
      "graphicx"
@@ -21,5 +33,5 @@
      "latex2e"
      "bk10"
      "book"
-     "Ch14")))
+     "Ch11/Ch11")))
 
