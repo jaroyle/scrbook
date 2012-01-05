@@ -33,6 +33,7 @@
      "amsfonts"
      "amsmath"
      "float"
+     "elsst-book"
      "latex2e"
      "bk10"
      "book"
