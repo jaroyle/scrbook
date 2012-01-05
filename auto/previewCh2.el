@@ -13,8 +13,17 @@
      "chapt.covariates"
      "chapt.ipp"
      "chapt.open")
+    (TeX-add-symbols
+     "R"
+     "bugs"
+     "jags"
+     "secr"
+     "scrbook")
     (TeX-run-style-hooks
+     "color"
+     "soul"
      "verbatim"
+     "hyperref"
      "natbib"
      "lineno"
      "graphicx"
@@ -24,5 +33,5 @@
      "latex2e"
      "bk10"
      "book"
-     "Ch2/ch2")))
+     "Ch2/Ch2")))
 

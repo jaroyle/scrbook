@@ -24,5 +24,5 @@
      "latex2e"
      "bk10"
      "book"
-     "Ch6/Ch6")))
+     "Ch6/Chapter6")))
 

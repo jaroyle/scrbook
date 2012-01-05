@@ -19,6 +19,7 @@
      "color"
      "soul"
      "verbatim"
+     "hyperref"
      "natbib"
      "lineno"
      "graphicx"
@@ -28,5 +29,5 @@
      "latex2e"
      "bk10"
      "book"
-     "Chapter4")))
+     "Ch4/Chapter4")))
 
