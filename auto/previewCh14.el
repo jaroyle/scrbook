@@ -12,8 +12,7 @@
      "chapt.gof"
      "chapt.covariates"
      "chapt.ipp"
-     "chapt.open"
-     "chapt.unmarked")
+     "chapt.open")
     (TeX-run-style-hooks
      "hyperref"
      "natbib"
