@@ -961,8 +961,8 @@ cat("
 model{
 p0 ~ dunif(0,1)       # prior distributions
 mup<- log(p0/(1-p0))
-taup~dgamma(.1,.1)
-sigmap<-sqrt(1/taup)
+sigmap ~ dunif(0,10)
+taup<- 1/(sigmap*sigmap)
 psi~dunif(0,1)
 
 for(i in 1:(nind+nz)){
@@ -977,86 +977,126 @@ N<-sum(z[1:(nind+nz)])
 }
 ",file="modelMh.txt")
 
+data1<-list(y=ytot, nz=nz, nind=nind,K=K) 
+params1= c('p0','sigmap','psi','N')
+inits =  function() {list(z=as.numeric(ytot>=1), psi=.6, p0=runif(1),
+          sigmap=runif(1,.7,1.2),lp=rnorm(M,-2)) }
+
 library("rjags")
 jm<- jags.model("modelMh.txt", data=data1, inits=inits, n.chains=4,
                  n.adapt=1000)
-jout<- coda.samples(jm, params1, n.iter=50000, thin=1)
+jout<- coda.samples(jm, params1, n.iter=200000, thin=1)
 \end{verbatim}
 }
-
-
-CHANGE THIS TO RUN SIGMA ~ DUNIF(0,5) PRIOR INSTEAD OF TAUY
-
-{\bf
-ANDY IS WORKING THIS SECTION RIGHT NOW.  KEY ISSUE IS THAT BEAR DATA
-HAVE VERY LONG RIGHT TAIL. PSSIBLY NOT EVEN IDENTIFIABLE FOR
-LOGIT-NORMAL MODEL. NEED TO RUN WINBUGS AND JAGS FOR M=500 AND RUN A
-200K RUN AND THEN MAYBE A 500K RUN TO SEE HOW THINGS LOOK.
-THEN RUN MY R CODE BELOW FOR 5 MILLION ITERS OR SOME bs like that.
-I'm not sure if this is a teaching moment (Link 2003) or if we need a
-different example here!
-}
-
 This produces the posterior distribution for $N$ shown
 in Fig. \ref{closed.fig.bearMh}. Posterior summaries of parameters are
 given as follows:
 {\small
 \begin{verbatim}
 > summary(jout)
-Iterations = 1001:201000
-Thinning interval = 1
-Number of chains = 4
-Sample size per chain = 2e+05
+
+Iterations = 2001:202000
+Thinning interval = 1 
+Number of chains = 4 
+Sample size per chain = 2e+05 
 
 1. Empirical mean and standard deviation for each variable,
    plus standard error of the mean:
 
-            Mean       SD  Naive SE Time-series SE
-N      108.63259 52.53176 5.873e-02       2.077726
-p0       0.08615  0.05919 6.618e-05       0.001950
-psi      0.21841  0.10615 1.187e-04       0.004141
-sigmap   1.94096  0.51014 5.703e-04       0.018244
+           Mean       SD  Naive SE Time-series SE
+N      117.7740 56.31633 6.296e-02       1.960115
+p0       0.0728  0.05522 6.174e-05       0.001655
+psi      0.2366  0.11362 1.270e-04       0.003909
+sigmap   2.0795  0.53096 5.936e-04       0.016789
 
 2. Quantiles for each variable:
 
-           2.5%      25%      50%      75%    97.5%
-N      59.00000 77.00000 93.00000 121.0000 261.0000
-p0      0.00418  0.03852  0.07657   0.1240   0.2210
-psi     0.11230  0.15373  0.18920   0.2457   0.5241
-sigmap  1.11906  1.57643  1.87752   2.2386   3.1166
+            2.5%      25%       50%      75%    97.5%
+N      62.000000 82.00000 102.00000 134.0000 277.0000
+p0      0.003143  0.02842   0.06077   0.1066   0.2036
+psi     0.117269  0.16377   0.20522   0.2712   0.5560
+sigmap  1.211900  1.69434   2.02113   2.4028   3.2694
 \end{verbatim}
 }
+
+
 We used $M=500$ for this analysis and we
 note that  while the posterior mass of $N$ is concentrated away from this
 upper bound (Fig. \ref{closed.fig.bearMh}), the posterior has an
 extremely long right tail, with some posterior values at the upper
 bound $N=500$. Maybe or
-maybe not sufficient data augmentation.
+maybe not sufficient data augmentation.\footnote{
+{\bf to do: } insert final results. longer run. more data
+augmentation. compare with winbugs.
+}
 The model runs effectively in {\bf WinBUGS} but sometimes with apparently
 inefficient mixing for reasons that may be related to bad starting
 values. In some cases this was resolved if we supplied starting values
 for the $logit(p_{i})$ parameters and $\tau$.
 
-{\bf to do: } insert final results. longer run. more data
-augmentation. compare with winbugs.
 
+Because of the skewed posterior we see that the posterior mean ($N=117$)
+is
+considerably higher than the posterior mode ($N=102$). Moreover, 
+posterior summaries are estimated with a relatively high error
+(``Time-series SE'' of around 2.0)\footnote{need to define this somewhere}.
+Further, it may be surprising that the posterior mode does not compare
+well with the MLE. To compute the posterior mode we could easily find
+the posterior value of $N$ with the highest mass because $N$ is
+discrete. But we want to smooth out some of the Monte Carlo error a
+bit so we used a smoothing spline to the posterior frequencies of $N$
+as follows:
+\begin{verbatim}
+>  tt<-table(jout[[1]][,"N"])[1:80]
+>  xg<-as.numeric(names(tt))
+>  plot(xg,tt)
+>  sp<- smooth.spline(xg,tt,df=9)
+>  sp$x[sp$y==max(sp$y)]
+[1] 80
+\end{verbatim}
+The \mbox{\tt df} argument controls the degree of smoothing and we
+find in this case that the modal value (i.e., 80) is not too sensitive
+to the smoothing parameter but this should be checked in any specific
+instance\footnote{we need to give examples of using \mbox{\tt
+    density()} to obtain modes}.
 
-
-The posterior mode compares well with the MLE which we obtained using
+To compare with the MLE, we used 
 the {\bf R} code contained in Panel 6.1 of \citet{royle_dorazio:2008}.  The
 MLE of $log(n_{0})$, the logarithm of the number of uncaptured
 individuals, is $log(n0) = 3.86$ and therefore the MLE is $\hat{N} =
-exp(3.86)+47 = 94.47$ consistent with the apparent mode in Fig. \ref{closed.fig.bearMh}.
+exp(3.86)+47 = 94.47$ which is not at all consistent with the apparent
+mode in 
+Fig. \ref{closed.fig.bearMh}.
 \footnote{We note that the result is inconsistent with Gardner et
   al. (2009) who reported an MLE of 104.1 ($density = 0.437
   inds/km^2$) although we do not know the reason for this at the
-  present time.}  To convert this to density we use the buffered area
-as computed above (255.3 $km^2$)\footnote{WRONG \#} and perform the
-required summary analysis on the posterior samples of $N$, which
-results in about $0.37$ individuals/$km^2$. The reader should carry
-out this analysis to confirm the estimates, and also obtain the $95\%$
-confidence interval.
+  present time.}  
+%To convert this to density we use the buffered area
+%as computed above (255.3 $km^2$)\footnote{WRONG \#} and perform the
+%required summary analysis on the posterior samples of $N$, which
+%results in about $0.37$ individuals/$km^2$. The reader should carry
+%out this analysis to confirm the estimates, and also obtain the $95\%$
+%confidence interval.
 
+Comments: First of all the posterior for this model and data set is
+very sensitive to prior distributions. While MLEs are invariant to
+transformation of the parameters, the posterior distribution
+definitely is {\it not} invariant. In the present case, the use of a
+$\mbox{Unif}(0,1)$ prior for $p_{0} = expit(\mu)$ is somewhat
+informative -- in particular, it is not at all ``flat'' on the scale
+of $\mu$ -- and this affects the posterior.  We generally always
+recommend use of a $Unif(0,1)$ prior for $expit(\mu)$ in such
+models. That said, we were surprised at this result, and we
+experimented with other prior configurations including putting a flat
+prior on $\mu$ directly. This specific prior suggests the possibility
+that the posterior distribution may be improper for that prior
+specification. This kind of small sample instability has been widely
+noted in Model Mh \citep{fienberg_etal:1999, dorazio_royle:2003} and
+is not unrelated to sensitivity to
+model which has also been identified as an important issue in model
+$M_{h}$ \citep{dorazio_royle:2003,link:2003}.
+Conclusion: The mode is well-defined but the data set is sparse and
+hence inferences are poor and sensitive to model choices. Get over it.
 
 
 \begin{figure}
