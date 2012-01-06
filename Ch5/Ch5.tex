@@ -370,39 +370,25 @@ assumption that ${\bf s}$ is uniform on the state-space ${\cal
 in chapt. \ref{chapt.scr0} we 
 used a discrete state-space in developing a Bayesian analysis of the
 model in order to be able to modify the state-space in a flexible
-manner.
-
- Bayesian analysis requires simulation of the point process
-conditional on the observations, and this can be a difficult task when
-the state-space is continuous but has irregular geometry.  Conversely,
-if the state-space is a regular polygon then Bayesian analysis by MCMC
-is possibly more efficient with a continuous state-space. We emphasize
-that the state-space is a part of the model. In some cases there won’t
-be a natural choice of state space beyond ``some large rectangle
-containing the trap grid'' and, in such cases, for regular detection
-functions the estimate of density is invariant to the size of the
-state-space (i.e., the buffer) as long as it is sufficiently
-large. However if there are good reasons to restrict the state-space,
-it will tend to have an influence on the likelihood and hence AIC and
-so forth.  As an illustration, lets do that by changing the state
-space here......Use my polygon clipping stuff ..... 
+manner. In that case, we could use the discretized state-space as the
+integration grid and just feed it into our integrated likelihood
+routine. 
 
 In summary, we note that, for the basic SCR model, integrated
 likelihood is a really easy calculation when $N$ is known. Even for $N$
 unknown it is not too difficult, and we will do that shortly.
 However, if you can solve the known-$N$ problem then you should be able
 to do a real analysis, for example by considering different values of
-N and computing the results for each value and then making a plot of
-the log-likelihood or AIC and choosing the value of N that produces
+$N$ and computing the results for each value and then making a plot of
+the log-likelihood or AIC and choosing the value of $N$ that produces
 the best log likelihood or AIC. As a homework problem we suggest that
-the reader take the code given above and try to estimate N without
+the reader take the code given above and try to estimate $N$ without
 modifying the code – by just repeatedly calling that code for
 different values of $N$ and trying to deduce the best value.
 Nevertheless, we will formalize the unknown-$N$ problem shortly.
 
-
-  We
-note that the software package {\bf DENSITY} \citep{efford_etal:2004} implements
+The
+software package {\bf DENSITY} \citep{efford_etal:2004} implements
 certain types of SCR models using integrated likelihood methods.
 {\bf DENSITY} has been made into an {\bf R} package called \mbox{\tt secr} \citep{efford:2011}
 and we provide an analysis of some data using \mbox{\tt secr} shortly along
@@ -426,16 +412,16 @@ ${N \choose n}$
  ways to realize a sample of size $n$. The combinatorial term
 involves the unknown $n_{0}$ and thus it must be included in the likelihood.
 
-{\bf DETAILS NEEDED HERE }
-
-To summarize, when $N$ is unknown, the $n$ observed encounter histories
-have a multinomial distribution with probabilities pi(i) and sample
-size N\footnote{ Maybe you could show an alternative simulation script
-  to generate data using the rmultinom function. This would make it a
-  little more clear for people}. The last cell – the ``zero cell'' is
-computed by carrying out the integral in expression XYZ above for the
-all-zero encounter history and we have to account for the fact that
-there are $n_{0} = N-n$ such encounter histories.
+Operationally then, things proceed much as before: 
+We compute the marginal probability of each observed ${\bf y}_{i}$,
+i.e., by removing the latent ${\bf s}_{i}$ by integration. In
+addition, we 
+ compute the marginal probability of the ``all-zero'' encounter
+history ${\bf y}_{n+1}$, and make sure to weight it $n_{0}$ times. We
+accomplish this by ``padding'' the data set with a single encounter
+history having $y_{n+1,j}=0$ for all traps $j=1,2,\ldots,J$. Then we
+be sure to include the combinatorial term in the likelihood or
+log-likelihood computation. We demonstrate this shortly.
 
 To analyze a specific case, we’ll read in our fake data set (simulated
 using the parameters given above). To set some things up in our
@@ -458,9 +444,9 @@ state-space representing the trap locations (${\bf X}$) buffered by 2 units.
 As before, the likelihood is defined in the {\bf R} workspace as an
 {\bf R}
 function which takes an argument being the unknown parameters of the
-model and additional arguments as prescribed. In particular, as
-before, we provide the encounter history matrix ${\bf y}$, the trap locations
-traplocs, the spacing of the integration grid ($\delta$) and the
+model and additional arguments as prescribed. In particular, 
+ we provide the encounter history matrix ${\bf y}$, the trap locations
+\mbox{\tt traplocs}, the spacing of the integration grid ($\delta$) and the
 state-space buffer. Here is the new likelihood function:
 \begin{verbatim}
 intlik2<-function(parm,y=y,delta=.3,X=traplocs,ssbuffer=2){
@@ -480,10 +466,10 @@ G<-cbind(rep(xg,npix.y),sort(rep(yg,npix.x)))
 nG<-nrow(G)
 D<- e2dist(X,G) 
 
-alpha0<-parm[1]
-alpha1<-parm[2]
+alpha<-parm[1]
+theta<-parm[2]
 n0<-exp(parm[3])
-probcap<- plogis(alpha0)*exp(-alpha1*D*D)
+probcap<- plogis(alpha)*exp(-theta*D*D)
 Pm<-matrix(NA,nrow=nrow(probcap),ncol=ncol(probcap))
 ymat<-rbind(y,rep(0,ncol(y)))
 
@@ -532,7 +518,7 @@ state-space buffer) is
 Which differs from the data-generating value ($N=100$) as we might
 expect. We usually will present an estimate of uncertainty assocated
 with this MLE which we can obtain by inverting the Hessian. Note that
-$Var(\hat{N}) = n + Var(\hat{n}_{0})$.
+$Var(\hat{N}) = n + \mbox{Var}(\hat{n}_{0})$.
 Since we
 have parameterized the model in terms of $log(n_{0})$ we use a delta
 approximation to obtain the variance on the scale of $n_{0}$ as
@@ -543,6 +529,10 @@ follows:
 > sqrt(260)
 [1] 16.12452
 \end{verbatim}
+Therefore, the asymptotic ``Wald-type'' confidence interval for $N$ is
+$110.91 +/- 1.96 \times 16.125 = (79.305, 142.515)$. To report this in
+terms of density, we scale appropriately by the area of the prescribed
+state-space which is $64$ units of area (i.e., an $8 \times 8$ square).
 
 \subsection{Exercises}
 
@@ -583,37 +573,65 @@ Note that this likelihood analysis is based on the standard likelihood
 in which $N$ (or $n_{0}$) is an explicit parameter. This is usually called
 the ``joint likelihood'' or ``unconditional likelihood''.  We could also
 express the joint likelihood using data augmentation, replacing the
-parameter $N$ with $\psi$ \citep[e.g.,][sec. xyz]{royle_dorazio:2008}.
-We don't go into detail here, but we do note that the
+parameter $N$ with $\psi$ \citep[e.g., see sec. 7.1.6][for an example]{royle_dorazio:2008}.
+We don't go into detail here, but we note that the
 likelihood under data augmentation is a zero-inflated binomial
-mixture – precisely as an occupancy type model \citep{royle:2006}.
-The interested reader could adapt the material from \citet{royle_dorazio:2008}
-with the {\bf R} code given above for the likelihood and
-implement the likelihood analysis based on the model under data
-augmentation. While we can carryout likelihood analysis of
+mixture – precisely an occupancy type model \citep{royle:2006}.
+Thus, while it is possible to carryout likelihood analysis of
 models under data augmentation, we primarily advocate data
 augmentation for Bayesian analysis.
 
 
 \subsection{ Extensions}
 
-There are other types of covariates of interest: behavioral response,
-sex-specificity of parameters and all of these things. Some of these
-can be added directly to the likelihood – if the covariate is fixed
-and known for all individuals captured or not. This excludes most
-covariates but it does include behavioral response. Sex-specificity is
-more difficult since sex is not known for uncaptured
-individuals. Trap-specific covariates such as trap type or status, or
-time-specific covariates such as date, are relatively easy to deal
-with (we leave these as exercises).  We apply these various models in
-Chapter XXXX. To analyze such models, we do Bayesian analysis of the
-joint likelihood facilitated by the use of data augmentation. For
-covariates that are not fixed and known for all individuals, it is
-hard to do MLE for these based on the joint likelihood as we have
-developed above. Instead what people normally do is use what is
-colloquially referred to as the ``Huggins-Alho'' type model which is one
-of the approaches taken in the software package 
-\mbox{\tt secr} \citep[][see sec. \ref{mle.sec.secr}]{efford:2011}.
+We have only considered basic SCR models with no additional
+covariates. However, in practice, we are interested in other types of
+covariate effects including ``behavioral response'', 
+sex-specificity of parameters, and potentially other effects. Some of
+these  can be added directly to the likelihood – if the covariate is fixed
+and known for all individuals captured or not. An example is a
+behavioral response, which amounts to having a covariate $x_{ik}=1$ if
+individual $i$ was captured prior to occasion $k$ and $x_{ik}=0$
+otherwise. For uncaptured individuals, $x_{ik}=0$ for all $k$.
+ \citet{royle_etal:2011jwm} called this a global behavioral
+response because the covariate is defined for all traps, no matter the
+trap in which an individual was captured. We could also define a {\it
+  local} behavioral response which occurs at the level of the trap,
+i.e., $x_{ijk}=1$ if individual $i$ was captured in trap $j$ prior to
+occassion $k$, etc.. 
+Trap-specific covariates such as trap type or status, or
+time-specific covariates such as date, are easily accommodated as
+well. As an example, \citet{kery_etal:2010} develop a model for the
+European wildcat in which traps are either baited or not (a
+trap-specific covariate with only 2 values), and also encounter
+probability varies over time in the form of a quadratic seasonal response.
+We consider models with behavioral response or fixed covariates in
+chapter XXXX, although 
+the integrated likelihood routines we provided above can be
+modified directly for such cases, which we leave to the interested reader. 
+
+Sex-specificity is more difficult to deal with since sex is not known
+for uncaptured individuals (and sometimes not even for all captured
+individuals).  To analyze such models, we do Bayesian analysis of the
+joint likelihood facilitated by the use of data augmentation
+\citep{gardner_etal:2010,russell_etal:2012}. For covariates that are
+not fixed and known for all individuals, it is somewhat more
+challenging to do MLE for these based on the joint likelihood as we
+have developed above. Instead it is more conventional to use what is
+colloquially referred to as the ``Huggins-Alho'' type model which is
+one of the approaches taken in the software package \mbox{\tt secr}
+\citep[][see sec. \ref{mle.sec.secr}]{efford:2011}. This idea is
+motivated by thinking about unequal probability sampling methods known
+as Horvitz-Thompson sampling \citep[e.g.,
+see][]{overton_stehman:1995}.  We don't use that method anywhere in
+this book because it represents a paradigm shift in the inference
+framework which is done historically only for convenience (i.e., ease
+of constructing an estimator) and not for philosophical or theoretical
+reasons.
+
+
+
+
 
 
 \section{Classical model selection and assessment}
