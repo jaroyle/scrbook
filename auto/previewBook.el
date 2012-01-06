@@ -4,11 +4,7 @@
      "AndyRefs_alphabetized")
     (LaTeX-add-labels
      "chapt.intro"
-     "chapt.closed"
-     "chapt.scr0"
      "chapt.poisson"
-     "chapt.mle"
-     "chapt.mcmc"
      "chapt.gof"
      "chapt.covariates"
      "chapt.ipp"
@@ -42,5 +38,6 @@
      "Ch4/Chapter4"
      "Ch5/Ch5"
      "Ch6/Chapter6"
-     "Ch11/Ch11")))
+     "Ch11/Ch11"
+     "Ch14/Ch14")))
 
