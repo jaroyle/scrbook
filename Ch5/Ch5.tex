@@ -1,5 +1,5 @@
 \chapter{
-Likelihood Analysis of SCR Models
+Likelihood Analysis of Spatial Capture-Recapture Models
 }
 \markboth{Chapter 5}{}
 \label{chapt.mle}
@@ -30,8 +30,10 @@ models are
 routinely analyzed by likelihood methods. In particular, likelihood
 analysis is based on the integrated likelihood in which the random
 effects are removed by integration from the likelihood. In SCR models,
-the random effect, ${\bf s}$ , i.e., the 2-dimensional coordinate, is a
-bivariate random effect. In this chapter, we show that it is
+the random effect, ${\bf s}$, i.e., the 2-dimensional coordinate, is a
+bivariate random effect. 
+
+In this chapter, we show that it is
 straightforward to compute the maximum likelihood estimates (MLE) for
 SCR models by integrated likelihood. We develop the MLE framework
 using {\bf R}, and we also provide a basic introduction to an {\bf R} package
@@ -44,9 +46,9 @@ does not pose any difficulty at all. We generalize the model to allow
 for unknown $N$ using both conventional ideas based on the ``joint
 likelihood'' \citep[e.g.,][]{borchers_etal:2002}
 and also using a formulation
-based on data augmentation.  We consider likelihood analysis of SCR
-models in the context of the wolverine camera trapping study \citep{magoun_etal:2011}
- we analyzed in previous chapters to compare/contrast the
+based on data augmentation.  We obtain the MLEs for 
+the SCR model from the wolverine camera trapping study \citep{magoun_etal:2011}
+ analyzed in previous chapters to compare/contrast the
 results.
 
 \section{Likelihood analysis }
@@ -72,7 +74,7 @@ the simplest SCR model with known-$N$ in order to understand the
 underlying mechanics and basic concepts. These are directly relevant to
 the manner in which many capture-recapture models are classically
 analyzed, such as model Mh, and individual covariate models (see
-chapt. 6 from \citet{royle_dorazio:2008}). To develop integrated
+chapt. \ref{chapt.closed} and  \citet[][chapt. 6]{royle_dorazio:2008}). To develop integrated
 likelihood for SCR models, we first identify the conditional
 likelhiood. 
 
@@ -91,26 +93,30 @@ The joint distribution of the data for individual $i$ is the product
 of $J$ such terms (i.e., contributions from each of $J$ traps).
 \[
   [{\bf y}_{i} | {\bf s}_{i} , \theta] = 
-  \prod_{j} \mbox{Bin}(K, p_{\theta}({\bf x}_{j},{\bf s}_{i})
+  \prod_{j=1}^{J} \mbox{Bin}(K, p_{\theta}({\bf x}_{j},{\bf s}_{i}) )
 \]
 We note that this assumes that encounter of individual $i$ in each
 trap is independent of encounter in every other trap, conditional on
 ${\bf s}_{i}$, this is the fundamental property of SCR0 or
 ``multi-catch'' traps. 
 
- The so-called ``marginal likelihood'' is computed by removing
-${\bf s}_{i}$, by integration, from the conditional-on-${\bf s}$ likelihood. That
+ The so-called marginal likelihood is computed by removing
+${\bf s}_{i}$, by integration (hence also {\it integrated} likelihood), from the conditional-on-${\bf s}$
+likelihood and regarding the {\it marginal} distribution of the data
+as 
+the likelihood. That
 is, we compute:
 \[
   [y|\theta] = 
-\int_{{\cal S}} {\cal L}( \theta | {\bf y}_{i} |{\bf s}_{i}) g({\bf s}_{i}) d{\bf s}_{i}
+\int_{{\cal S}}  [ \theta | {\bf y}_{i} |{\bf s}_{i}] g({\bf s}_{i}) d{\bf s}_{i}
 \]
-here $g(s) = 1/||{\cal S}||$.
+In most SCR models, $g({\bf s}) = 1/||{\cal S}||$ (but see chapt. \ref{chapt.ipp}).
 
 The joint likelihood for all $N$ individuals, assuming independence of
 encounters among individuals, is the product of $N$ such terms:
 \[
-          \prod_{i}  f(y[i,j])
+{\cal L}(\theta | {\bf y}_{1},{\bf y}_{2},\ldots, {\bf y}_{N}) =     \prod_{i=1}^{N}
+[{\bf y}_{i}|\theta]
 \]
 We emphasize that two independence assumptions are explicit in this
 development: independence of trap-specific encounters within
@@ -123,8 +129,10 @@ The key operation for computing the likelihood is solving a
   R} packages that implement a number of 
  multi-dimensional integration routines
 including \mbox{\tt adapt} \citep{genz_etal:2007} and \mbox{\tt R2cuba}
-\citep{hahn_etal:2011}. In practice, we won't rely
-on these extraneous {\bf R} packages but instead will use perhaps less
+\citep{hahn_etal:2011}.  In practice, we won't rely
+on these extraneous {\bf R} packages (except see
+chapt. \ref{chapt.ipp} for an application of \mbox{\tt Rcuba})
+but instead will use perhaps less
 efficient methods in which we replace the integral with a summation
 over an equal area mesh of points on the state-space ${\cal S}$ and explicitly
 evaluate the integrand at each point. We invoke the rectangular rule
@@ -136,29 +144,32 @@ integrand on a regular grid of points of equal area and compute the
 average of
 the integrand over that grid of points. 
 Let $u=1,2,\ldots,nG$ index a grid of
-$nG$ points, ${\bf s}_{u}$,  where the area of grid cell $u$ is $A$.
-In this case, the integrand, i.e., the marginal probability of
-$y_{ij}$, is approximated by  
+$nG$ points, ${\bf s}_{u}$,  where the area of grid cell $u$ is
+constant, say $A$.
+In this case, the integrand, i.e., the marginal pmf of 
+${\bf y}_{i}$, is approximated by  
 \begin{equation}
-          f(y_{ij}|\theta) = \frac{1}{nG} \sum_{u=1}^{nG}  f( {\bold
-            y}_{i} |{\bf s}_u)
+         [{\bf y}_{i}|\theta] = \frac{1}{nG} \sum_{u=1}^{nG}  [ {\bf
+            y}_{i} |{\bf s}_u, \theta]
 \label{mle.eq.intlik}
 \end{equation}
 
 This is a specific case of the general expression that could be used
-for approximating the integral for any arbitrary bivariate
-distribution $g(u)$. The general case is
+for approximating the integral for any arbitrary (bivariate or otherwise)
+distribution $g({\bf s})$. The general case is
 \[
 [y]  = \frac{A}{nG} \sum_{u} [y|{\bf s}_{u}] [{\bf s}_{u}]
 \]
- In the present context note that $[{\bf s}] = (1/A)$
+ In the present context it happens that  $[{\bf s}] = (1/A)$
 and thus the grid-cell area cancels in the above
-expression to yield eq. \ref{mle.eq.intlik}.
+expression to yield eq. \ref{mle.eq.intlik}, but we commonly apply
+this in the context of normal prior distributions, as we did for
+likelihood analysis of Model $M_{h}$ in  sec. \ref{closed.sec.modelmh}).
+The rectangular rule for integration can be seen as an application of
+the Law of Total Probability for a discrete random variable ${\bf
+  s}$, having $nG$ 
+unique values with equal probabilities $1/nG$.
 
-Not surprisingly this the same answer we get if {\cal S} were inherently
-discrete, having $nG$ unique values with equal probabilities $1/nG$,
-and we apply the Law of Total Probability directly to compute the
-marginal probability  $[y|\theta]$.
 
 
 \subsection{ Implementation (simulated data)}
@@ -209,8 +220,8 @@ We next create an {\bf R} function that defines the likelihood as a function
 of the data objects $y$ and $X$ which were created above but, in general,
 you would read these files into {\bf R}, e.g., from a .csv file.
 In addition to these data
-objects, we need to have defined the various quantities associated
-with the integration grid ${\bf G}$ and $nG$.
+objects, we need to have defined the  quantities $G$ and $nG$ associated
+with the integration grid.
 However, instead of worrying about making all of these objects and
 keeping track of them we just put that code above into the likelihood
 function and pass $\delta$ as an additional (optional) argument and a
@@ -221,7 +232,6 @@ based on the integrated likelihood:
 
 {\small 
 \begin{verbatim}
-
 intlik1<-function(parm,y=y,delta=.2,X=traplocs,ssbuffer=2){
 
 Xl<-min(X[,1]) - ssbuffer 
@@ -237,9 +247,9 @@ G<-cbind(rep(xg,npix),sort(rep(yg,npix)))
 nG<-nrow(G)
 D<- e2dist(X,G)  
 
-alpha0<-parm[1]
-alpha1<-parm[2]
-probcap<- plogis(alpha0)*exp(-alpha1*D*D)
+alpha<-parm[1]
+theta<-parm[2]
+probcap<- plogis(alpha)*exp(-theta*D*D)
 Pm<-matrix(NA,nrow=nrow(probcap),ncol=ncol(probcap))
                     # all zero encounter histories
 n0<-sum(apply(y,1,sum)==0) 
@@ -280,11 +290,13 @@ exponentiated on the next line, producing lik.cond, the
 conditional-on-s likelihood (Eq. \ref{mle.eq.cond-on-s}
 above). The marginal
 likelihood (\mbox{\tt lik.marg}) sums up the conditional elements weighted by
-$\Pr({\bf s})$ (formula XXX above).
-Finally, this function assumes that $K$, the number
+$\Pr({\bf s})$ (Eq. \ref{mle.eq.intlik} above).
+This is a fairly primative function which doesn't allow much
+flexibility in the data structure. For example, it assumes that $K$,
+the number 
 of replicates, is constant for each trap. Further, it assumes that the
-state-space is a square. As an exercise, consider resolving these two
-issues by generalizing the code.
+state-space is a square. We generalize this to some extent later in
+this chapter. 
 
 Here is the {\bf R} command for maximizing the likelihood and saving the
 results into an object called \mbox{\tt frog}.  The output is a list of the
@@ -331,31 +343,36 @@ the variance-covariance matrix using the commands:
 \end{verbatim}
 
 It is worth drawing attention to the fact that the estimates are
-different than the Bayesian estimates reported in the previous chapter
-(section XYZ)!!! How can that be?!  There are several reasons for
+different than the Bayesian estimates reported previously in chapt. \ref{chapt.scr0}.
+How can that be?!  There are several reasons for
 this.  First Bayesian inference is based on the posterior distribution
 and it is not generally the case that the MLE should correspond to any
 particular value of the posterior distribution. If the prior
-distributions in a Bayesian analysis are uniform, then the mode of the
+distributions in a Bayesian analysis are uniform, then the
+(multivariate) mode of the
 posterior is the MLE, but note that Bayesians almost always report
-posterior means and so there will typically be a discrepancy
+posterior {\it means} and so there will typically be a discrepancy
 there. Secondly, we have implemented an approximation to the integral
 here and there might be a slight bit of error induced by that. We will
 evaluate that shortly. Third, the Bayesian analysis by MCMC is subject
 to some amount of Monte Carlo error which the analyst should always be
 aware of in practical situations.  All of these different explanations
 are likely responsible for some of the discrepancy. Accounting for
-these, as a practical matter, we see general consistency between the
+these, we see general consistency between the
 two estimates.
 
 To compute the integrated likelihood we used a discrete representation
 of the state-space so that the integral could be approximated as a
 summation over possible values of ${\bf s}$ with each value being
 weighted by its probability of occurring, which is $1/nG$ under the
-assumption that s is uniform on the state-space ${\cal S}$. In chapter 4 we
+assumption that ${\bf s}$ is uniform on the state-space ${\cal
+  S}$. Recall
+in chapt. \ref{chapt.scr0} we 
 used a discrete state-space in developing a Bayesian analysis of the
 model in order to be able to modify the state-space in a flexible
-manner. Bayesian analysis requires simulation of the point process
+manner.
+
+ Bayesian analysis requires simulation of the point process
 conditional on the observations, and this can be a difficult task when
 the state-space is continuous but has irregular geometry.  Conversely,
 if the state-space is a regular polygon then Bayesian analysis by MCMC
@@ -381,7 +398,10 @@ the best log likelihood or AIC. As a homework problem we suggest that
 the reader take the code given above and try to estimate N without
 modifying the code – by just repeatedly calling that code for
 different values of $N$ and trying to deduce the best value.
-Nevertheless, we will formalize the unknown-$N$ problem shortly.  We
+Nevertheless, we will formalize the unknown-$N$ problem shortly.
+
+
+  We
 note that the software package {\bf DENSITY} \citep{efford_etal:2004} implements
 certain types of SCR models using integrated likelihood methods.
 {\bf DENSITY} has been made into an {\bf R} package called \mbox{\tt secr} \citep{efford:2011}
