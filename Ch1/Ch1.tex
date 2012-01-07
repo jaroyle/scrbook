@@ -1,0 +1,1523 @@
+\chapter{
+Introduction to Spatial Capture-Recapture Models
+}
+\markboth{Introduction}{}
+\label{chapt.intro}
+
+% Edited 11/02/2011 by Andy
+
+\vspace{.3in}
+
+Information about abundance or density of populations, and their vital
+rates, is fundamental to applied ecology and conservation biology.  To
+that end, a huge variety of statistical methods have been devised, and
+among these, the most well-developed are collectively known as
+capture-recapture (or capture-mark-recapture) methods. For example,
+the volumes by \citet{seber:1982}, \citet{borchers_etal:2002},
+\citet{williams_etal:2002}, and \citet{amstrup_etal:2005} are largely
+synthetic treatments of such methods, and contributions on modeling
+and estimation using capture-recapture are plentiful in the
+peer-reviewed ecology literature.  Capture-recapture techniques make
+use of individual encounter history data, by which we mean sequences
+of 0's and 1's denoting if an individual was encountered at a
+particular trap during a certain time period. For example, the
+encounter history ``010'' indicates that this individual was
+encountered only during the second of three trapping occasions. [add
+an illustrative table maybe?] As we will see, these data contain
+information about encounter probability, abundance, and other
+parameters of interest in the study of population dynamics.
+
+A diverse and growing number of methods exist for obtaining encounter
+history data. Such methods are, naturally, taxa-specific. They include
+classical ``traps'' which capture and retain animals until visited by
+a biologist who removes the individual, marks it, or otherwise molests
+it in some scientific fashion.  Small-mammal traps and mist nets for
+birds are standard examples. Traps that physically capture and
+restrain individuals are common, but capture-recapture methods no
+longer require ``capture'' or even physical marking of individuals.
+Individuals can be pseudo-identified by, for example, marking
+locations on a map. And, recent technological advances have produced a
+large number of passive detection devices that produce individual
+encounter history data. These include camera traps
+\citep{karanth_nichols:1998, oconnell_etal:2010} and methods that obtain DNA
+samples such as hair snares for bears \citep{gardner_etal:2010}, scent
+posts for many carnivores \citep{kery_etal:2010}, and related methods which allow DNA
+to be extracted from scat, urine or animal tissue in order to identify
+individuals.  This book is concerned with how such data can be used to
+carry out inference about animal abundance or density, and other
+demographic parameters such as survival, recruitment, and movement
+using new classes of capture-recapture models which utilize auxiliary
+spatial information related to the encounter process.  We refer to
+such methods as spatial capture-recapture (SCR) models\footnote{In
+the literature the term spatially explicit capture-recapture (SECR) is
+also used}.
+
+As the name implies, the primary feature of SCR models that
+distinguishes them from traditional CR methods is that they make use
+of the spatial information inherent to capture-recapture studies. That
+is, the encounter histories are associated with spatial coordinates,
+and these coordinates are informative about home range
+characteristics, movement and space usage.
+As we will see, this allows us to overcome two of the
+primary limitations of non-spatial methods, namely, traditional CR
+methods do not allow one to estimate density, and do not account for
+heterogeneity in encounter probability that results from the spatial
+organization of animals and traps. Thus, spatial modeling is not just
+a fun academic exercise; it provides a solution to basic problems in
+the study of animal populations that have been acknowledged for more
+than 70 years \citep{dice:1938}.
+
+\subsection{Why is density so important? }
+
+Capture-recapture methods were designed to estimate population size
+$N$, but they generally cannot be used to
+formally estimate density. Why is 
+this problematic? 
+The primary reason is that estimates of $N$ are ``scaled'' by some
+unknown area and therefore applying estimates of $N$ obtained by
+closed population models to other areas is problematic. Thus, it is
+difficult to make 
+inferences beyond the scope of our immediate study, i.e., to other
+populations or areas. For example, suppose we designed an elegant
+CR study and obtained an estimate of $N=100$ ($SE=1$) short-tailed
+shrews ({\it Blarina carolinensis}). We are very excited because our
+estimate is precise and shrews are the shit. But then suppose that a
+manager asks us how many shrews are likely to occur in a new tract of
+forest being acquired for shrew conservation. Our excitement level
+quickly declines because we can't answer the question. If we knew the
+area within which our 100 shrews occurred (the effective sample area),
+we could easily answer the question. That is, if the 100 shrews
+occupied 1 ha ($D=100 shrews/ha$), and the new forest patch is 10 ha,
+we could tell the manager that there are likely to be $100*10 = 1000$
+shrews in the new forest.
+
+This simple example is extremely common in practical applications.
+Ecologists typically sample only a small fraction of the area used by
+a species, but want to estimate total population size, ie the total
+number of individuals occurring in sampled {\it and unsampled}
+areas. Because SCR methods yield estimates of density, simple area
+expansion can be used to make such inferences. In contrast, with
+traditional CR methods it is difficult to make inferences beyond the
+ambiguously defined area in which the trap array was placed.
+
+\subsection{Conceptual and Technical Scope of this Book}
+
+In this book, we try to achieve a broad methodological scope from
+basic closed population models using a number of distinct observation
+models on up to open population models - spatial versions of
+conventional Jolly-Seber models.  The main methodological and
+conceptual themes of this book are:
+
+\begin{itemize}
+\item[(1)] Hierarchical modeling. We develop hierarchical models
+  consisting of explicit models for both the observation process and
+  the underlying ``ecological process'' which describes the
+  organization of individuals in space.
+
+\item[(2)] Formal inference using both classical (frequentist,
+  likelihood-based) and Bayesian methods. We often emphasize
+  Bayesian analysis because this allows us to focus the technical
+  formulation of models, and spatial capture-recapture is mainly
+  concerned with modeling random effects and estimating functions of
+  random effects. However, we also explore likelihood methods using existing
+  software such as the R package SECR \citep{efford:2011}, as well as
+  development of custom solutions along the way.  
+
+\item[(3)] In developing Bayesian analyses of SCR models, we emphasize
+  the use of the BUGS language for describing models. The BUGS
+  language emphasizes the syntactic description of the essential
+  assumptions of models in a special kind of pseudo-code language,
+  which is used in software (WinBUGS, JAGS, OpenBUGS) to devise Markov
+  chain Monte Carlo (MCMC) algorithms for Bayesian analysis of
+  models. The BUGS language focuses your thinking on model development
+  and lets you develop an understanding of models at the level of
+  their basic assumptions and structure.  Despite our focus on
+  describing models using the BUGS language, we also show readers how
+  to devise their own MCMC algorithms for Bayesian analysis of SCR
+  models, which can be convenient (even necessary) in some practical
+  situations.
+
+\item[(4)] Data augmentation -- dealing with the fact that population
+  size, $N$, is unknown is a challenging technical problem in
+  capture-recapture models. We confront this problem in almost every
+  chapter of this book. To deal with it we use a technical device
+  called {\it data augmentation} which is extremely useful for
+  analysis of capture-recapture models that are specified
+  ``conditional on $N$'' \citep{royle_etal:2007}.
+\end{itemize}
+
+Altogether, these different conceptual and methodological elements
+provide for a formulation of SCR models that essentially renders them
+as variations of generalized linear mixed models (GLMMs).This in a
+sense makes them consistent with many important methodologies used in
+ecology (e.g., see \citet{zuur_etal:2009, kery_etal:2010}), and
+because of the connection with standard modeling concepts, we believe
+that the material presented in this book can be understood and used by
+most ecologists with some modeling experience. Our intent is to
+provide a comprehensive resource for ecologists interested in
+understanding and applying the SCR models to solve common problems
+faced in the study of population dynamics. Although we aim to reach a
+broad audience, at times we go into details that may only be of
+interest to advanced practitioners who need to extend these models for
+unique situations.  We hope that these advanced topics will not
+discourage those new to these methods, but instead we believe this
+material will allow readers to advance their understanding and become
+less reliant on restrictive tools and software.
+
+This book is not a book about Bayesian analysis, not a book about
+hierarchical models, not a book about capture-recapture, and not about
+programming in R. In a sense though, our book integrates elements of
+all of these things into what we hope is a coherent package for
+analyzing data from this enormous class of data collection methods
+that produce spatially-explicit capture-recapture data.   As such, we
+expect that people have a basic understanding of statistical models
+and classical inference (What is frequentist inference? what is a
+likelihood? Generalized linear model? Generalized linear mixed
+model?), Bayesian analysis (what is s a prior distribution and a
+posterior distribution?), R programming, and maybe even a little bit
+of practical Bayesian analysis (MCMC and perhaps the BUGS language).
+The ideal candidate for reading this book has basic knowledge of these
+topics. However, we do provide introductory chapters on the necessary
+components which we hope can serve as a brief and cursory tutorial for
+those who might have only limited technical knowledge, e.g., many
+carnivore biologists who implement field sampling programs but do not
+have extensive experience analyzing data. We don't believe that a
+basic understanding of capture-recapture models is necessary because
+we develop those models from the ground up (chapter 3). In what
+follows in the remainder of this introductory chapter, we reveal some
+of the deficiencies of standard non-spatial capture-recapture models
+within the context of a real example. After that we address the
+conceptual and technical foundations of SCR models and our approach to
+analyzing them. 
+
+
+\section{A Conceptual Introduction to Spatial Capture Recapture}
+
+Before we delve into the specifics of SCR, we want to provide a simple
+conceptual overview and introduce some key notation. Our introduction
+of SCR models follows our belief that models should closely reflect
+the processes being studied. That is, it is always better to directly
+model the ecological process of interest rather than just some index
+that may or may not be related to the actual parameter in
+question. For this reason, it is good to begin our discussion of SCR
+models by simply describing what we think is happening in the real
+world. We believe that few ecologists would argue with the following
+three statements (the SCR postulates) that motivate the development of
+SCR models:
+
+{\bf The SCR Postulates:}
+\begin{itemize}
+\item[1.] Animals are distributed in space and move about within some area (e.g., a home range).
+\item[2.] Ecologists impose an array of traps or detection devices to sample the population. 
+\item[3.] Animals that live and move about in close proximity to traps are more likely to be encountered than those far from traps.
+\end{itemize}
+
+These statements are intuitive and hardly contentious, and they point
+to two ecological processes (distribution and movement), and one
+observation process (detection as a function of distance between a
+trap and an animal's area of activity). SCR models assert statistical
+descriptions for each of these three processes so that we can estimate
+population density, model population dynamics, and study the processes
+affecting distribution and movement.
+
+As an example, let's assume that $N$ animals occur within an explicit
+spatial region denoted by ${\cal S}$
+(e.g., a polygon).  Each animal moves around some activity center
+whose two-dimensional coordinates are denoted ${\bf s}_i;
+i=1,2,...,N$. An animal's location at a specific point in time is
+referenced by the coordinates ${\bf u}_{it}; t=1,2,...,T$. For
+simplicity, let's assume that activity centers are uniformly
+distributed in space, and movements are symmetric around these
+activity centers. We now have a model of the ecological state process,
+which we can write using the following notation
+\[
+{\bf s}_{i} \sim \mbox{Uniform}({\cal S})
+\]
+And
+\[
+{\bf u}_{it} \sim \mbox{Normal}({\bf s}_{i}, \sigma)
+\]
+To reiterate, these are statistical statements of two basic hypotheses
+that (1) activity centers are uniformly distributed in two-dimensional
+space, and (2) movements are normally distributed around the activity
+centers. It is helpful to visualize this model by mapping the outcomes
+of a single simulation. Below we provide simple R commands to do so.
+
+{\small
+\begin{verbatim}
+set.seed(36372)       # so that results can be reproduced
+N <- 10               # population size
+                      # create trap coordinates:
+x <- cbind(rep(seq(0.1,0.9,0.2), each=5), rep(seq(0.1,0.9,0.2), times=5)) 
+                      # generate individual home range centroids
+s <- cbind(runif(N), runif(N))    
+                      # create nice graphic:
+plot(x, pch= "+", xlim=c(0,1), ylim=c(0,1), xlab="Easting", ylab="Northing")
+points(s, pch=16, col="blue") 
+for(t in 1:5) {
+  points(cbind(rnorm(N, s[,1], 0.05), rnorm(N, s[,2], 0.05)), col="green",pch=20)
+}
+\end{verbatim}
+}
+
+Figure 1 shows the results of executing these R commands. The crosses
+in the figure are trap locations, the blue circles are the locations
+of each animal's activity center, and the green circles are animal
+locations at 5 points in time.  The resulting plot not only
+illustrates a simple state model for animal distribution and movement,
+but it also hints at the potential influence of the distance between
+animals and traps on the detection process. One would expect that the
+traps in the northern part of the study area would capture more
+animals than those in the south because fewer animals occur in the
+south and movements are small. Clearly the encounter rate will also
+depend upon the methods used to capture the animals, which we describe
+in the next section.
+
+\begin{figure}
+\begin{center}
+\includegraphics[height=3in]{Ch1/figs/northingeasting}
+\end{center}
+\caption{Needs a caption. Make this larger?}
+\label{fig.Rcommands}
+\end{figure}
+
+\section{Lions and Tigers and Bears, oh my:  Genesis of
+Spatial capture-recapture data}
+
+A diverse number of methods and devices exist for producing individual
+encounter history data with auxiliary spatial information about
+individual locations. Historically, physical ``trap'' have been widely
+used to sample animal populations. These include live traps, leg-hold
+traps, mist nets, pitfall traps and many other types of
+devices. Although these are still widely used, huge advances have been
+made in developing new methodologies for obtaining encounter history
+data non-invasively.
+
+\subsection{Camera trapping}
+
+Considerable recent work has gone into the development of
+camera-trapping methodologies. For a historical overview of this
+method see \citet{kays_etal:2008, kucera_barrett:2011}.  Several
+recent synthetic works have been published including
+\citet{nichols_karanth:2002}, and an edited volume by
+\citet{oconnell_etal:2010} devoted solely to camera trapping concepts
+and methods. As a method for estimating abundance some of the earliest
+work that relates to the use of camera trapping data in
+capture-recapture models originates from Karanth and colleagues
+\citep{karanth:1995, karanth_nichols:1998, karanth_nichols:2000}. In
+studies that use camera trapping, cameras are situated along trails or
+at baited stations and individual animals are photographed and
+subsequently identified either manually by a guy sitting around
+matching pictures, or sometimes now using computational
+methods. Camera trapping methods are widely used for species that have
+stripe or spotting patterns that are unique. As such, the method is
+now widely applied to tigers \citep{karanth:1995,
+  karanth_nichols:1998}, ocelots
+\citep{trolle_kery:2003,trolle_kery:2005}, leopards
+\citep{balme_etal:2010}, and many other cat species. Camera traps are
+also used for other species such as wolverines
+\citep{magoun_etal:2011}, and even species that are less easy to
+identify uniquely such as mountain lions and coyotes
+(e.g. \citet{kelly_etal:2008}.  We note that even for species that are
+not readily identified by pelage patterns, it is possibly to use
+camera traps in conjunction with spatial capture-recapture models to
+estimate density, if an initial sample of individuals can be collared
+or tagged in some way so that subsequent encounter by camera-traps can
+yield individual information. In this way, the probability of
+encounter can be estimated from the camera traps based on the
+pre-marked individuals, and this is applied to the frequencies of
+unmarked individuals to estimate density.
+
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=5in]{Ch1/figs/wolverinetiger}
+\end{center}
+\caption{Wolverine in camera trap from A. Magoun (left). Picture of Tiger in
+  camera trap from U. Karanth (right)}
+\label{fig.wolverinetiger}
+\end{figure}
+
+\subsection{DNA Sampling}
+
+Recent technological advances in the extraction and analysis of
+genetic information have made a huge positive impact on studying
+animal populations. DNA obtained from hair, blood or scat is now
+routinely used to obtain individual identity and encounter history
+information about individuals \citep{taberlet_bouvent:1992,
+  woods_etal:1999, mills_etal:2000, schwartz_monfort:2008}.  A common
+method is based on the use of ``hair snares'' (Fig. \ref{fig.bearcat})
+which are widely used to study bear populations
+\citep{woods_etal:1999, gardner_etal:2010, garshelis_etal:2006,
+  kendall_etal:2009}.  A sample of hair is obtained as individuals
+pass under or around barbed-wire (or other physical mechanism) to take
+bait. Hair snares have also been used to sample felid populations
+\citep{garciaalaniz_etal:2010} and other species. DNA information can
+also be extracted from urine and as a result DNA can be used to study
+feline populations which are attracted to scent-sticks and deposit
+urine which is subsequently analyzed in the lab
+\citep{valiere_taberlet:2000, kery_etal:2010}.
+
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=5in]{Ch1/figs/bearcat}
+\end{center}
+\caption{Picture of hair snare. Bear (left). European wildcat
+  (right). Pictures from??}
+\label{fig.bearcat}
+\end{figure}
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=5in]{Ch1/figs/beardog}
+\end{center}
+\caption{Guy holding fisher (left). Scat dog team working the ground
+  (right). Pictures from Craig Thompson.}
+\label{fig.fisherscatdog}
+\end{figure}
+
+
+There are other methods which don't fall into a nice clean taxonomy of
+devices. DNA-based encounter histories can be obtained from scat
+samples located along roads or trails or by specially trained dogs
+\citep{mackay_etal:2008} searching space
+(Fig. \ref{fig.fisherscatdog}). This method has been used in studies
+of martens, fishers \citep{thompson_etal:inpress}, lynx, coyotes,
+birds \citet{kery_etal:2010}, and many other species. We might search
+space on foot and pick up individuals and physically mark them
+somehow. This is pretty common in surveys that involve reptiles and
+amphibians, e.g., we might walk transects through a forest and pick-up
+box turtles \citep{hall_etal:1999} or search space for lizards
+\citep{royle_young:2008} and also surveys designed to obtain animal
+scat. These methods don't seem like normal capture-recapture in the
+sense that the encounter of individuals is not associated with
+specific locations of traps, but SCR models are equally relevant for
+analysis of such data (see Chapter XY and Z).
+
+
+\section{ Historical Context: A Brief Synopsis of the Literature}
+
+Spatial capture-recapture is a relatively new methodological
+development, at least with regard to formal estimation and
+inference. However, the basic problems that motivate the need for
+formal spatially-explicit models have been recognized for decades and
+quite a large number of ideas have been proposed to deal with these
+problems. The standard approach even now is to estimate $N$ using
+conventional closed population models \citep{otis_etal:1978} and then
+try to associate with this estimate some specific sampled area, say $A$,
+the area which is contributing individuals to the population for which
+$N$ is being estimated. The strategy is to define $A$ by placing a buffer
+of say $W$ around the trap array or some polygon which encloses the trap
+array. The historical context is well-stated by \citep{obrien:2011}
+from which we draw this description:
+
+\begin{quote}
+  ``At its most simplistic, $A$ may be described by a concave polygon
+  defined by connecting the outermost trap locations ($A_{tp}$; Mohr
+  1947). This assumes that animals do not move from outside the
+  bounded area to inside the area or vice versa. Unless the study is
+  conducted on a small island or a physical barrier is erected in the
+  study area to limit movement of animals, this assumption is unlikely
+  to be true. More often, a boundary area of width $W$ ($A_{w}$) is added to
+  the area defined by the polygon $A_{tp}$ to reflect the area beyond the
+  limit of the traps that potentially is contributing animals to the
+  abundance estimate (Otis et al. 1978). The sampled area, also known
+  as the effective area, is then $A(W) = A_{tp} + A_{w}$. Calculation of the
+  buffer strip width ($W$) is critical to the estimation of density and
+  is problematic because there is no agreed upon method of estimating
+  $W$. Solutions to this problem all involve ad hoc methods that date
+  back to early attempts to estimate abundance and home ranges based
+  on trapping grids 
+  \citep[see][]{hayne:1949}. \citet{dice:1938} first drew attention
+  to this problem in small mammal studies and recommended using
+  one-half the diameter of an average home range. Other solutions have
+  included use of inter-trap distances (Blair 1940; Burt 1943), mean
+  movements among traps, maximum movements among traps (Holdenried
+  1940, Hayne 1949), nested grids \citep{otis_etal:1978}, and assessment
+  lines (Smith et al. 1971).''
+\end{quote}
+
+The idea of using 1/2 mean maximum distance moved
+\citep{wilson_anderson:1985a} seems to be the standard approach even
+today, presumably justified by Dice''s suggestion to use 1/2 the home
+range diameter. Alternatively, some studies have used the full MMDM
+(e.g. \citet{parmenter_etal:2003}). And, sometimes home range size is
+estimated by telemetry \citep{karanth:1995}. This is usually combined
+with an AIC-based selection from among the closed-population models in
+\citet{otis_etal:1978} which most often suggests heterogeneity (Model
+Mh).  Almost all of these early methods were motivated by studies of
+small mammals using classical ``trapping grids'' but, more recently,
+their popularity has increased with the advent of new technologies and
+especially related to non-invasive sampling methods such as camera
+trapping. In particular, the series of papers by Karanth and Nichols
+\citep{karanth:1995, karanth_nichols:1998, karanth_nichols:2002} 
+has led to fairly widespread adoption of these ideas.
+
+\subsection{Seems like a subsection should be here}
+
+Some of the heuristic ideas based on buffer strips do have some
+technical justification in the sense of estimating parameters of an
+underlying movement model from observed movements. For example, if we
+let $x$ be a random variable indicating movement outcomes of an
+individual about its  home range center, and suppose that $x$ has pdf
+$g(x)$ then we can understand properties of MMDM by studying the
+properties of the sample order statistics, as the maximum distance
+moved is the sample range based on a sample of observations of
+individual locations. As an illustration, imagine a 1-dimensional
+system where individuals have a home range that amounts to a line
+segment. Then suppose that individual movements are $\mbox{uniform}(0,A)$. It
+can be shown that the sampling distribution of the sample range, R,
+scaled by $A$, say $R/A$ has a beta distribution, $\mbox{beta}(n-1,2)$ 
+\citep[][p. 235]{casella_berger:2002}
+and thus the diameter of the home range, i.e. $A$, is
+estimated (biasedly) by$ R/( (n-1)/(n+1) )$. For large $n$ we could then
+say that the sample range, i.e., ''maximum distance moved'' seems like a good estimator of home range diameter and, therefore, $R/2$ is an estimator of home-range radius.  
+
+There are a number of technical issues that arise in attempting to use
+such heuristics to justify the application in practice. For one, the
+moments of the sample order statistics are strongly affected by sample
+size, which is typically quite small (per individual encountered) and
+thus, in general, are biased and estimated with variable precision
+depending on sample size. For example, the expected value of MMDM is
+$k(n)*A$ , i.e., the true home range diameter is related to observed
+MMDM by some function of sample size, $k(n)$, that increases to 1. In
+the case where the underlying movement model is uniform, $k(n) =
+(n-1)/(n+1)$ (from above) which motivates a formula for ``adjusting''
+observed MMDM for small sample size. We suspect that many such
+formulae are obtainable depending on the assumed movement distribution
+\citep[e.g., formula 6.16 in][]{obrien:2011}. We might also think about taking
+the {\it maximum} (over individuals) of the maximum distance moved
+because under the specific model considered here (iid uniform) then
+all individuals have the same home range radius. This increases our
+sample size ($n$) and thus the observed sample range should be more
+accurate. Another issue of somewhat more importance (and less easy to
+rectify) is that the {\it observation} of movement outcomes is biased
+by the locations of traps. We cannot observe movements ``off the
+trapping grid'' (or between traps) and thus our observed movements
+will generally be smaller than expected under any particular model
+(the uniform in this case). Moreover, the trap spacing also induces a
+discreteness to the movements that causes a further level of
+approximation based on hypothetical movement
+distributions. Nevertheless, formal analysis of `` buffering''
+strategies based on sample order statistics under specific models for
+movement does at least provide some heuristic support for specific
+choices.  The interested reader should ponder the distribution of the
+sample minimum, maximum and range under other distributions such as a
+normal (and bivariate normal), exponential distribution and perhaps
+others. In addition, contemplate the effect of censoring of movements
+to some arbitrary limit ($B<A$) to mimic bias in observed movement
+outcomes due to a finite trap grid.
+
+\subsection{Some other subsection?}
+
+The use of buffer strips is conventional and widespread due to the
+heuristic appeal of that idea and its easy implementation, but other
+conceptual approaches exist to address specific problems motivated by
+the spatial context of capture-recapture data. D.R. Anderson came up
+with the idea of the ``trapping web'' \citep{anderson_etal:1983} which
+does not seem to have been widely adopted in practice.
+% although there
+%is a clear mathematical formalization to the trapping web design
+%\citep{link_barker:1994}. 
+One reason for this is 
+the design is somewhat restrictive in the sense that it requires
+a large number of traps be organized in close proximity to one
+another. Another intuitively appealing idea is that by
+\citet{white_shenk:2000} who discuss ``correcting bias of grid
+trapping estimates'' by recognizing that the basic problem is like
+random temporary emigration \citep{kendall_etal:1999}  where individuals flip a coin with
+probability $\phi$ to determine if they are ``available'' to be sampled or not.
+White and Shenk's idea was to estimate $\phi$ from radio telemetry, as the
+proportion of time an individual spends in the study area. They obtain
+the estimated super-population size by using standard closed
+population models and then obtain density by $\hat{D} =
+\hat{N}\hat{\phi}/A$ where $A$ is the nominal area of the trapping array
+(e.g., minimum convex hull).  A problem with this approach is that 
+individuals
+that were radio collared represent a biased sample i.e.,
+you fundamentally have to sample individuals randomly from the
+population {\it in proportion to their exposure to sampling}
+ and that seems practically impossible to accomplish.
+%any better for radio collaring than you can for the basic
+%capture-recapture study itself.  
+That said, the temporary emigration
+analogy is a good heuristic for understanding SCR models and has a
+precise technical relevance to certain models.
+
+Another very interesting idea is that of using some summary of
+``average location'' as an individual covariate in standard
+capture-recapture models. \citet{boulanger_mclellan:2001} use
+distance-to-edge (DTE) as a covariate in the Huggins-Alho type of
+model. \citet{ivan:2012} uses this approach in conjunction with an
+adjustment to the estimated N obtained by estimating the proportion of
+time individuals are ``on the area formally covered by the grid''
+using radio telemetry.  We do not dwell too much on these different
+variations but we do note that the use of DTE as an individual
+covariate amounts to some kind of intermediate model between simple
+closed population models and fully spatial capture-recapture models,
+which we address directly in Chapter 3. We note that no adjustment
+based on telemetry information is necessary if one were simply to
+place a prior distribution on the individual covariate (which is not
+to say that telemetry data isn't useful, just that the same objective
+can be achieved without telemetry data).
+
+While these procedures are all heuristically appealing, they are also
+essentially ad hoc in the sense that the underlying model remains
+unspecified or at least imprecisely characterized and so there is
+little or no basis for modifying, extending or generalizing the
+methods. These methods are distinctly {\it not} model-based procedures
+even though they might well be heuristically appealing under specific
+movement models. Despite this, there seems to be an enormous amount of
+literature developing, evaluating and ``validating'' these literally
+dozens of heuristic ideas that solve specific problems, as well as
+various related tweeks and tunings of them and really it hasn't led to
+any substantive breakthroughs that are sufficiently general or
+theoretically rigorous.
+
+
+\subsection{The modern age}
+
+\citet{efford:2004} was the first to formalize an explicit model for
+spatial capture-recapture problems in the context of trapping arrays.
+He adopted a Poisson point process model to describe the distribution
+of individuals and then what is essentially a distance sampling
+formulation of the observation model which describes the probability
+of detection as a function of individual location, regarded as a
+latent variable governed by the point process model. While earlier
+(and contemporary) methods of estimating density from trap arrays have
+been ad hoc in the sense of lacking a formal description of the
+spatial model, Efford achieved a formalization of the model, but
+adopted a more or less ad hoc framework for inference under that
+spatial model using a simulation based method known as inverse
+prediction.
+
+Recently, there has been a flurry of effort devoted to formalizing
+inference under this model-based framework for the analysis of spatial
+capture-recapture data. There are two distinct lines of work which
+adopt the model-based formulation in terms of the underlying point
+process but differ primarily by the manner in which inference is
+achieved. One approach is a classical inference approach based on
+likelihood \citep{borchers_efford:2008}, and the other adopts a
+Bayesian framework for inference. To motivate the origins and
+relevance of these approaches, we note that, fundamentally, spatial
+capture-recapture models are related to classical ``individual
+covariate'' models (colloquially referred to as Huggins-Alho 
+models) in capture-recapture \citep{huggins:1989, alho:1990}.
+In particular, individual covariate models 
+are based on a logit model where the
+individual covariate is observed, whereas it is unobserved in SCR
+models. To accommodate that, a prior distribution for the individual
+covariate is required. In essence then, SCR models are similar to a
+fully model-based formulation of classical HA models (see
+\citet{royle:2009}). A classical argument in favor of the HA model is
+that it ``doesn't require assumptions about the covariate'' but the
+assumption is explicit in capture-recapture models and thus it is
+natural to attack inference based on the ``joint likelihood''
+\citep{borchers_etal:2002}. This has proven necessary in certain other
+classes of individual covariate models in which natural models arise
+for the individual covariate, such as time-varying individual
+covariates \citep{bonner_schwarz:2006}, or covariates with measurement
+error (e.g., distance sampling; see
+\citet[][ch. 7]{royle_dorazio:2008}). 
+The model-based formulation is easily adapted to standard
+individual covariate models as well \citep{royle:2008}. Throughout
+this book we rely heavily on Bayesian inference of the joint
+likelihood, using the formulation based on data-augmentation
+\citep{royle_etal:2007, royle_young:2008, royle:2009} though we also
+discuss the development of likelihood-based inference in chapter 5 and
+apply those methods in some cases.
+
+
+\section{ A Motivating Example }
+ 
+We confront some of the issues that motivate the need for spatial
+capture-recapture models by considering analysis of data from a study
+design to estimate black bear abundance Fort Drum Military
+Installation in upstate New York (see Ch. 3 for more details). The
+specific data used here are encounter histories on 47 individuals
+obtained from an array of 38 baited ``hair snares'' during June and
+July 2006. The study area and locations of the 38 hair snares are
+shown in Fig. \ref{fig.hairsnares}.  Barbed wire traps (see
+Fig. \ref{fig.bearcat}) were baited and checked for hair samples each
+week for eight weeks.  Analysis of these data appears in
+\citet{gardner_etal:2010} and we use the data in a number of analyses
+in later chapters.
+
+\begin{figure}
+\begin{center}
+\includegraphics[height=3in]{Ch1/figs/hairsnares}
+\end{center}
+\caption{Locations of black bear hair snares on Fort Drum.}
+\label{fig.hairsnares}
+\end{figure}
+
+We regarded this data set as a standard capture-recapture data set -
+an encounter history matrix with 47 rows and 8 columns, where each
+entries $y_{ik}=1$ if individual $i$ was captured in sample $k$ and
+$y_{ij}=0$ otherwise. There is a standard closed population model,
+colloquially referred to as ``Model M0'' (see Ch. 3), which assumes
+that encounter probability $p$ is constant for all individuals and
+sample periods.  We fitted Model M0 to the Fort Drum data using
+traditional likelihood methods, yielding the maximum likelihood
+estimate (MLE) of $\hat{N} = 49.19$ with an asymptotic standard error
+(SE) of $1.9$.
+
+The key issue in using closed population models with such data is how
+on earth do we interpret this estimate of $N=49.19$ bears? Does it
+represent the entire population of Fort Drum? Certainly not! Should we
+assert that it applies to the southern half of Fort Drum below some
+arbitrary line? Surely bears move on and off of Fort Drum without
+regard to hypothetical boundaries. Without additional information
+there is simply no way of converting this estimate of $N$ to density,
+and hence it is really not meaningful biologically. To resolve this
+problem, we will adopt the customary approach of converting $N$ to $D$
+by buffering the convex hull around the trap array. The convex hull
+has area $157.135 km^2$. We follow \citet{bales_etal:2005} in
+buffering the convex hull of the trap array by the radius of the mean
+female home range size. The mean female home range radius was
+estimated \citep{wegan:2008} for our study region to be $2.19$ km, and
+the area of the convex hull buffered by $2.19$ km is $277.01$ km$^2$. (R
+commands to compute the convex hull, buffer it, and compute the area
+are given in the Online Supplement).  Hence, the estimated density
+here is approximately $0.178$ bears/km$^2$ for an estimated population
+size obtained using Model M0.  We could assert that the problem has
+been solved, go home, and have a beer.  But then, on the other hand,
+maybe we should question this estimated home range radius from
+\citep{wegan:2008} and, instead, rely on a buffer width based on
+one-half MMDM estimated from the data as is more customary
+\citep{dice:1938}. In that case the buffer width is $1.19$ km, and the
+resulting estimated density is increased to $0.225$ bears/ha$^2$ about
+27 \% larger.  On the other hand we might decide to use the full MMDM
+(REF XYZ) which is $2.37$ km, pretty close to the telemetry-based estimate
+and therefore providing a similar estimate of density ($0.171$ bears/ha$^2$.
+
+In thinking about the use of model M0, we might naturally question
+some of the basic assumptions that go into that model. The obvious one
+to question is that which declares that $p$ is constant. One obvious
+source of variation in $p$ is variation {\it among individuals}. We
+expect that individuals may have more or less exposure to trapping due
+to their location relative to traps. This has led many to consider
+capture-recapture models that allow for individual heterogeneity in
+$p$. Such models have the colloquial name of ``Model Mh.''
+We fitted this model (see ch. 3 for details) to the Fort Drum data
+using each of the 3 buffer widths previously described (telemetry, 1/2
+MMDM and MMDM), producing the estimates reported in Table
+\ref{tab.fdests}.
+
+So what do we have here?  Our density estimates span quite a range
+from $0.17$ to $0.43$ bears/km$^2$ depending on which estimator of $N$ we use and
+what buffer strip we apply. Should we feel strongly about one or the other?
+AIC favors model Mh by more than 30 units, but which buffer should we
+prefer?  
+%Moreover, we could find more variations of 
+%model Mh to choose among, but see \citep{link:2003}. 
+How do we characterize uncertainty of the buffer ``estimate''?  And,
+in what sense is the
+buffer even an estimate of something? What is it an estimate of? Who
+knows?  Other issues we can't address: trap-specific covariates.
+In summary, there's not a compelling solution to be derived from
+this ``estimate $N$ conjure up a buffer'' approach. 
+
+\begin{table}[ht]
+\centering
+\caption{Table on estimates of D for the Fort Drum data
+using M0 and Mh and different buffers.}
+\begin{tabular}{ll|cc} 
+\hline
+model & buffer &  $\hat{D}$ & SE \\ \hline
+M0   & telemetry &  0.178 & 0.178 \\
+M0    & MMDM     &  0.171 & 0.171\\
+M0   & 1/2 MMDM  &  0.225 & 0.225\\
+Mh(ln) & telemetry &0.341 & 0.144\\
+Mh(ln) & MMDM    &  0.327 & 0.138\\
+Mh(ln) & 1/2 MMDM & 0.432 & 0.183\\
+\end{tabular}
+\label{tab.fdests}
+\end{table}
+
+\section{Extension of Closed Population Models}
+
+The deficiency with classical closed population models is that they
+have no spatial context. $N$ is just an integer parameter that applies
+equally well to some population in a computer, estimating the number
+of unique words in a book, or a bucket full of goldfish.  The question
+of {\it where} the $N$ items belong is central both to interpretation
+of data and estimates from all capture-recapture studies and, in fact,
+to the construction of spatial capture-recapture models considered in
+this book.  Surely it must matter whether the $N$ items exist 
+in a book, or a goldfish bowl, or a landscape patch!
+
+Thus, the essential problem is that classical closed population models
+are too simple - they ignore the spatial attribution of traps and
+encounter events, movement and variability in exposure of individuals
+to trap proximity, and they do not yield estimates {\it density}.
+These are not problems per se but rather features (features
+not bugs!) of this overly-simple class of models, and they 
+should be addressed formally by the development of
+more general models.  Spatial capture-recapture models are
+statistical and mathematical models that extend non-spatial
+``ordinary'' capture-recapture models to accommodate the spatial
+structure inherent in sampling animal populations - i.e., trap
+locations, individual locations, and individual use of space.
+
+The solution to the various issues that arise in the application of
+ordinary capture-recapture models is to extend the closed population
+model so that $N$ becomes spatially explicit.  A natural way is to
+define a point process \citep{efford:2004} that describes how
+individuals are organized in space and that, when points are
+aggregated over space, the value $N$ is derived in a meaningful way.
+Thus, in this book, we adopt the view that the locations of the N
+individuals in the population are a {\it realization of a spatial
+  point process}.
+
+
+\subsection{Abundance as the Aggregation of a Point Process}
+
+Spatial point process models represent a major methodological theme in
+spatial statistics \citep[][ch. xyz]{cressie:1992} and they are
+widely applied as models for many ecological phenomena 
+\citep{stoyan_penttinen:2000,illian:2008}. Point process models apply to
+situations in which the random variable in question represents the
+locations of events or objects: trees in a forest, weeds in a field,
+bird nests, etc.  As such, it seems natural to describe the
+organization of individuals in space using point process models. 
+
+One
+of the key features of SCR models is that the point locations are
+latent, or unobserved, and we only obtain imperfect information about
+the point locations by observing individuals at trap or observation
+locations.  Thus, the realized locations of individuals represent a
+type of ``thinned'' point process, where the thinning mechanism is not
+random but, rather, biased by the observation mechanism.  It is
+natural to think about the observed point process as some kind of a
+compound or aggregate point process with a set of ``parent'' nodes
+being the locations of individuals and the observed locations as
+``offspring'' - i.e., a Poisson cluster process (PCP). In that
+context, density estimation is analogous to estimating the number of
+parents in the PCP \citep{chandler_royle:2012}. Other types of point
+process models for the realized locations have direct relevance to SCR
+models (See \citet{chandler_royle:2012}, discussed in chapter XYZ).
+
+In the context of SCR models, we suppose there is a point on the
+landscape that we'll think of as a home range center or, if this is
+unappealing, we can think of it as the centroid of an individual's
+activities during the time of sampling. In general, this point is
+unknown for any individual but if we could track an individual over
+time and take many observations then we could perhaps get a good idea
+of where that point is.  We'll think of the collection of these points
+as defining the spatial distribution of individuals in the
+population. Most of the recent developments in modeling and inference
+from spatial encounter history data, including most methods discussed
+in this book, are predicated on the view that individuals are
+organized in space according to a relatively simple point process
+model. More specifically, we assume that the collection of individual
+activity centers are ``iid'' random variables distributed uniformly
+over some region. This is consistent with the assumption that the
+activity centers represent the realization of a Poisson point process
+or, if the total number of activity centers if fixed, then this is
+usually referred to as a binomial point process.
+
+We use the terms home range or activity center interchangeably. The
+term ``home range center'' suggests that models are only relevant to
+animals that exhibit such behavior of establishing home ranges or
+territories and since not all species do that, perhaps the
+construction of SCR models based on this idea is flawed. This isn't
+really true -- the notion of a home range center is just a conceptual
+device and we don't view this concept as being strictly consistent
+with classical notions of animal territories but rather our view is
+that a territory is inherently dynamic, temporally and thus also a
+transient quantity - where the animal lived during the period of
+study.  Whether or not individuals of a species establish home ranges
+is therefore irrelevant - once a precise time period is defined,
+individuals certainly must occupy distinct regions in space. In other
+words, the definition of ``home range center'' is predicated, in a
+sense, on the specification of a time period over which individuals
+are studied. A term that might be less offensive than ``home range
+center'' is ``centroid of space usage (CSU)'' which should not
+conflict directly with preconceived understandings and interpretations
+of home range\footnote{Utilization distribution is the same thing
+  I guess?}.
+
+
+\subsection{The state-space}
+
+If we let ${\bf s}_{i}; i=1,2,\ldots,N$ be the locations of individual
+activity centers, then the question ``what are the possible values of
+${\bf s}$?'' needs to be addressed because the individual ${\bf
+  s}_{i}$ are {\it unknown}. As a technical matter, we will regard
+them as random effects and thus in order to apply standard methods of
+statistical inference we need to provide a distribution for these
+random effects.  In the context of the point process model, the
+possible values of the point locations referred to as the
+``state-space'' of the point process and this is some region or set of
+points which we will denote by ${\cal S}$. In the relevant context,
+${\cal S}$ is a region within which points are located - essentially a
+prior distribution for s[i] (or, equivalently, the random effects
+distribution). In the context of animal studies as a description of
+where individuals that could be captured are located it encloses our
+study area -- the region within which we might have located traps or
+detection devices.  The state-space of the point process should
+accommodate all individuals that could have been captured in the study
+area.
+
+In the practical application of SCR models, in most cases estimates of
+density will be relatively insensitive to choice of state-space (see
+Section XYZ) unless there are meaningful features to the state-space
+which should be accommodated. For example, if the region within which
+traps are located contains a coastline or a huge body of water then
+clipping that out of the state-space will typically have a large
+effect on density. This should be expected because, insofar as the
+state-space serves as a prior distribution on the latent variables
+${\bf s}_{i}$ then, {\it the state-space is very much a
+  component of the model. } We discuss choosing the state-space in
+Chapter 4.
+
+When the underlying point process is well-defined, including a precise
+definition of the state-space, this in turn induces a precise
+definition of the parameter N ``population size'' as the number of
+individual activity centers located within the prescribed state-space.
+A deficiency with some classical methods of ``adjustment'' is they
+attempted to prescribe something like a state-space - a ``sampled
+area'' - except absent any precise linkage of individuals with the
+state-space. SCR models formalize the linkage between individuals and
+space and, in doing so, provide an explicit definition of $N$
+associated with 
+a well-defined spatial region, and hence
+density. In a sense, the whole idea of SCR models is that by defining
+this point process and its state-space ${\cal S}$, this gives context and
+meaning to $N$ which can be estimated directly for that specific
+state-space. Thus, it is fixing ${\cal S}$ that resolves the problem of
+``unknown area'' that was addressed previously (Section XXXX). But the
+existence of an explicit state-space ${\cal S}$ is kind of beside the
+point -- ${\cal S}$ is really not always terribly important
+itself. Instead, as soon as you give the latent variables ${\bf s}$ a
+place to live, then you achieve spatial explicitness of the model
+which is our primary objective.
+
+
+
+
+
+\section{Hierarchical Models and Inference}
+
+The term hierarchical modeling (or hierarchical model) has become
+something of a buzzword over the last decade with hundreds of papers
+published in ecological journals using that term.
+So then, what exactly is a hierarchical
+model, anyhow? Obviously, this term stems from the root ``hierarchy''
+which means:
+
+\vspace{.1in}
+
+{\flushleft
+Definition: {\it hierarchy} (noun) -- a series of ordered groupings of people or things within a system; 
+}
+
+\vspace{.1in}
+
+In the case of a hierarchical model (hierarchical being the adjective
+form of hierarchy), the ``things'' are probability distributions, and
+they are ordered according to their conditional probability structure.
+Thus, a hierarchical model is {\it an ordered series of models,
+  ordered by their conditional probability structure}.  
+
+If we declare
+that the random variable $y = $ \# of times an individual is
+encountered in a trap out of $T=10$ days has a binomial(10, p)
+distribution then this is but a single model and, thus, not a
+hierarchical model. If, however, we declare that 
+\[
+y \sim Bin(10,p)
+\]
+{\it and} 
+\[ 
+p \sim beta(1,1)
+\] 
+then this is kind of a cheap pedestrian
+hierarchical model according to our definition although it is barely
+more interesting than the previous non-hierarchical model.  
+
+On the
+other hand, suppose we have a collection of observations $y_{i}$ for
+individuals $i=1,2,...,N$ and we declare 
+\[
+y_{i} \sim Bin(T, p_{i})
+\]
+ and
+\[
+p_{i}\sim beta(\mu, \tau)
+\] 
+then we have a more interesting
+hierarchical model, this being a specific version of ``Model Mh'' (see
+ch. 3 and \citet{dorazio_royle:2003}).  
+
+A canonical hierarchical model in ecology is this
+elemental model of species occurrence or distribution
+\citep{mackenzie_etal:2002, tyre_etal:2003, kery:2011}:
+\[
+y_{i}|z_{i} \sim \mbox{Bin}(K,z \,  p)
+\]
+\[
+z_{i} \sim \mbox{Bern}(\psi)
+\]
+where  $y_{i} = $ observation of presence/absence at a site $i$ and
+$z_{i} = $ occurrence status ($z_{i}=1$ if a species occurs at  site
+$i$ and $z_{i}=0$ if not). 
+
+With these examples, 
+we expand on our definition of a hierarchical model as we will use it in this book:
+
+\vspace{.1in}
+
+{\flushleft Definition: {\it Hierarchical Model}: A model with
+  explicit component models that describe variation in the data due to
+  (spatial/temporal) variation in {\it ecological process}, and due to
+  {\it imperfect observation} of the process.  
+}
+
+
+\subsection{Anatomy of a hierarchical model}
+
+Interesting hierarchical models in ecology typically 
+contain the following components:
+\begin{itemize}
+\item[{\bf 1.}] {\it Observations}, $y(s,t)$ -- ``data''
+\item[{\bf 2.}] {\it Observation model} $[y|z,\theta_1]$
+\item[{\bf 3.}] {\it State variable}, $z(s,t)$: outcome of ecological {\it process} of interest
+\item[{\bf 4.}] {\it Process model}  $[z|\theta_2]$ 
+\item[{\bf 5.}] {\it Parameters}, $\theta_1$, $\theta_2$, that govern
+  the observation and state processes
+\end{itemize}
+
+
+\subsection{Models don't have political views!} 
+
+Whereas hierarchical modeling is a conceptual and framework for
+formulating models, the method of inference is independent of model
+formulation. Hierarchical models can be analyzed by Bayesian and
+non-Bayesian methods. A model is not Bayesian or frequentist -- what
+you do to that model is Bayesian or frequentist!
+\[
+\bullet \mbox{"Hierarchical model"} \ne  \mbox{"Bayesian"}!!!
+\]
+Thus, analysis of hierarchical models is easily achieved using either
+Bayesian or classical (likelihood, frequentist) methods. By
+``analysis'' we mean any type of estimation, characterization of
+uncertainty, prediction, model selection, or evaluation and we are not
+dogmatic about our choice of inference methods. That said, we do
+recognize a benefit of the Bayesian approach which is that it
+emphasizes model construction and not the construction of
+procedures. The Nobel prize\footnote{called something else besides
+  Nobel, officially} winning econometrician Christopher Sims (Slides
+from the Hotelling Lecture 6/29/2007 at Duke University - cite his
+webpage) said it this way: ``Bayesian inference is a way of thinking,
+not a basket of 'Methods''' Conversely, ecologistis that are subjected
+to a classical statistical curriculum often have only a vague sense of
+what the model is that any particular procedure is employing.  We
+agree with Little \citet{little:2006} 
+that there should be more emphasis on understanding statistical
+modeling, and less emphasis on statistical methods.  Toss the ``basket
+of methods'' out the window and learn how to model!
+
+
+
+\subsection{Spatial Capture-Recapture models as hierarchical models}
+
+Most models considered in this book describe the encounter of
+individuals conditional on the ``activity center'' of the individual,
+which is a latent variable (i.e., unobserved random effect).  The
+collection of these latent variables represents the outcome of an
+ecological process describing how individuals distribute themselves
+over the landscape. Moreover, how individuals are encountered in traps
+is, in some cases, the result of a model governing movement.  As such,
+these models are examples of hierarchical models that contain formal
+model components representing both ecological process and also the
+observation of that process. In \citet{royle_dorazio:2008} such models
+were labeled as ``explicit'' hierarchical models because the process
+component of the model corresponds to an actual or real
+physical/biological or ecological process - the distribution of
+individuals in space and their movements.  This is as opposed to
+hierarchical models in which the process is ``implicit'' - usually
+represented by a spatially or temporally indexed random effect that is
+only, at best, a surrogate for something of ecological relevance
+(``time effects'', ``space effects'' etc.).
+
+{\bf Characterization of SCR models here maybe?}
+
+
+\section{Analysis of spatial capture-recapture models}
+
+We rely strictly on principles and procedures of {\it parametric
+  inference} in our analysis of hierarchical models in general and,
+specifically, of spatial capture-recapture models. Parametric
+inference is that in which we make explicit probability assumptions
+about how the data were generated. Inference procedures are then
+developed under the assumption that the model is truth, because formal
+parametric inference procedures that we understand the joint
+probability distribution of everything that is a realization of a
+random variable. There are two popular flavors of parametric
+inference: {\bf Classical inference}: The joint probability distribution
+of observations is the {\bf likelihood}. We maximize it to obtain MLEs
+and do other fun things to it. We evaluate procedures by thinking
+about what would happen over replicate realizations of data to which
+our procedures are applied.  {\bf Bayesian inference} is based on the
+posterior distribution, which is the joint probability distribution of
+the data and also parameters and possibly other quantities including
+latent variables or random effects.
+
+Because SCR models contain a collection of latent variables - random
+effects -- a natural framework for classical analysis of the models is
+based on integrated likelihood \citep{laird_ware:1982,berger_etal:1999}. That is, while
+the observation model is conceptualized conditional on the random
+effects (the locations of individuals), classical inference is
+formally based on the likelihood constructed from the {\it marginal}
+probability distribution of the observations (i.e., {\it
+  unconditional} on the random effect). The random effects are removed
+from the conditional likelihood by integration (which is accomplished
+numerically in spatial capture-recapture models). This approach to
+inference has been formalized in the context of SCR models by
+\citet{borchers_efford:2008, efford:2011}, and implemented for some
+classes of models in the software package DENSITY \citep{efford:2004}
+and the R package \mbox{\tt secr} \citep{efford:XYZ}.
+
+Bayesian analysis is another natural framework for the analysis of
+models containing latent variables or random effects.  Under this
+approach, analysis of the model is based on Monte Carlo simulation
+from the posterior distribution, which is the product of the
+conditional likelihood, the distribution of the random effects, and
+perhaps other distributions.  This approach was developed by
+\citet{royle_young:2008}, and was motivated by work focused on
+modeling individual effects in capture-recapture models. In
+particular, a convenient reparameterization of individual covariate
+models can be obtained using a method known as data augmentation
+\citep{royle_etal:2007}, see \citet{royle:2008} for an application to
+classical individual covariate models in \citet{royle:2008}. The close
+similarity between individual covariate models and spatial
+capture-recapture models, with the individual's activity center ${\bf
+  s}$ being the individual covariate, led to the application of the
+data augmentation method described by \citet{royle_young:2008} and subsequent papers. 
+
+These two technical formulations (classical inference based on
+integrated likelihood and Bayesian) both provide rigorous solutions to
+the inference problems posed by spatial capture-recapture data.  As a
+technical matter, \citet{borchers_efford:2008} and related work assume
+a Poisson point process that is unconditional on $N$ whereas Royle and
+Young (2008) and related work assume a binomial point process model
+which is conditional on $N$.  More importantly, Borchers and Efford
+develop the analysis in a way that is unconditional on the point
+process (which is removed from the conditional likelihood by
+integration).  Conversely, the analysis of \citet{royle_young:2008} is
+conditional on the underlying point process. As a technical matter,
+Bayesian analysis allows us to analyze the model that is conditional
+on the underlying point process and will otherwise have more
+flexibility - open populations, using telemetry data, etc.. as will be
+demonstrated in later chapters.  More generally, integrated likelihood
+for complex point process models may prove difficult, and so analysis
+of the model that is conditional on the underlying point process will
+prove to be more versatile and generalizable. We say this only
+tentatively and throughout this book we are not exclusive in our views
+of inference and use Bayesian and classical methods of inference
+interchangeable and opportunistically in this book.
+
+We don't want to get too much into the technical foundations of
+Bayesian analysis because there are many good books now including
+\citet{link_barker:2009}.  \citet{kery:2010, mccarthy:2007,
+  king_etal:2009} and probably others by the time this book is
+finished. That said, the basic ideas are worth highlighting for those
+unfamiliar with the ideas.  But Bayesian analysis is introduced at a
+level required to get through this book in Chapter 2.
+
+
+\subsection{Implementing hierarchical models}
+
+In our experience, students in ecology and even many established
+scientists simply cannot separate what they need to do from how to do
+it.  They cannot distinguish clearly (either conceptually or actually)
+the difference between the model for their data, and the actual
+procedure of how to estimate parameters of that model, or make
+predictions - ie., how to do the calculations. Sometimes this issue
+raises itself in an email from some hapless grad student wondering
+``what is the right statistical test for this type of data?''  In a
+sense it is this view that drives our approach to developing elements
+of this book.
+
+In contemporary statistical ecology, models and methods are sometimes
+obscured by named procedures often that are completely uninformative,
+the technical details of which hide in obscurity in some black boxes
+such as MARK, PRESENCE, DISTANCE, etc., known only by the few
+specialist experts in the field. While it is sometimes convenient to
+refer to a type or class of models by a name (logistic regression or
+even ``model Mh'') in order to emphasize a broad concept or
+methodological area, this is only useful if the fundamental
+statistical and mathematical structure underlying that name is
+clear. As such, we try to focus on model development and keep the
+model development distinct from how to combine our data with the model
+to produce estimates and so forth. We talk a lot about hypothetical
+data we wish we could observe - complete data sets - data sets as if
+$N$ were known, etc.. We talk about the model in precise terms and
+then break down various ways for analyzing the model either using
+likelihood methods or Bayesian methods or some black-box that does one
+or the other.
+
+To fit models, we rely heavily on the various implementations of the
+BUGS language including WinBUGS \citep{lunn_etal:2000}, JAGS (find
+correct ref XXX) and OpenBUGS (find correct ref XXX). We really like
+the BUGS language, not necessarily as a computational device for
+fitting models but because the BUGS language really emphasizes
+understanding of what the model is and fosters understanding how to
+build models - as Kery says ``it frees the modeler in you.''  (direct
+citation for this would be nice).  However, in addition to using the
+BUGS language and its various implementations, we also develop our own
+R code both for doing MCMC (some of which exists in the ``unmarked'' R
+package) and also maximum likelihood, for which we also use the R
+package SECR \citep{efford:2011}.
+
+
+\subsection{This section has no home}
+
+Of much more practical relevance is that many of the models described
+here have a formulation that closely resembles generalized linear
+models (GLMs) in which the individual activity centers appear as a
+random effect \citep{royle_etal:2009, royle_gardner:2011}, similar to
+generalized linear {\it mixed} models (GLMMs) which are pervasive in
+the literature of many disciplines including ecology.  This actually
+has, we think, some profound consequences both conceptually and
+practically (in terms of implementation). For example, as a result,
+SCR models should by conceptually accessible to practitioners with
+some basic statistical understanding and experience.  And, we believe
+that practitioners will have some flexibility in developing models
+that fit their specific situation. Quite simply - given existing
+software, it is easy for practitioners to specify models, even if they
+lack the technical know-how to fit those models. As said by Marc Kery
+(exact REF XXX) - in the context of his WinBUGS book - the BUGS
+language ``frees the modeler in you'' (this quote is maybe out of
+place a little bit).
+
+
+
+\section{Characterization of SCR models}
+
+For the purposes of this book, an SCR model is any ``individual
+encounter model'' (not just ``capture-recapture''!) where auxiliary
+spatial information is also obtained. To be more precise we could as
+well use the term ``Spatial capture and/or recapture'' but that is
+slightly unwieldy and, besides, it also abbreviates to SCR. The class
+of SCR models includes traditional capture-recapture models with
+auxiliary spatial information. However, we will see that some SCR
+models do not involve ``recapture'' (e.g., distance sampling) and,
+indeed, some don't even involve ``capture'' or even unique
+identification of individuals! We discuss such models in later
+chapters of this book.
+
+Conceptually SCR models involve a collection of random
+variables, ${\bf s}$, ${\bf u}$ and $y$ where ${\bf s}$ are the
+activity or home range centers, ${\bf u}$ is the location of the
+individual at the time of sampling (i.e., where the observer records
+the animal) which we think of as realizations from some movement
+model, and $y$ is the ``response variable'' - what the observer
+records. E.g., $y=1$ means ``detected'' and $y=0$ means ``not
+detected'' but many other types of responses are possible.
+A broad class of models for estimating density are unified by a
+hierarchical model involving explicit models for
+animal home range centers ${\bf s}$, movement outcomes ${\bf u}$, and
+encounter data $y$.  In some cases, we don't observe $y$ but rather
+summaries of $y$, say $n(y)$, yet it might be convenient in such cases
+to retain an explicit focus on $y$ in terms of model construction.
+We thus introduce a sequence of models - a hierarchical model -
+to relate these random variables and it goes something like this:
+{\small 
+\begin{verbatim}
+# NEED A graphic made out of this somehow
+# possibly a Directed Acyclic Graph with some parameters, 
+# Fixed nodes, and stochastic nodes, might look cool. 
+
+Home range center    movement model   observation model  [data summarization]
+   g(s)                  h(u|s)            f(y|u)	        n(y)
+\end{verbatim}
+}
+Thus, models covered in this book all have distinct
+characteristics related to the following decomposition as a
+hierarchical model:
+\[
+f(y|{\bf u})h({\bf u}|{\bf s})g({\bf s}).
+\]
+
+Every model we talk about in this book has either all of these
+components or a subset of them. Examples
+of such models are:
+\begin{enumerate}
+\item[$\bullet$] Classical distance sampling
+\item[$\bullet$] Spatial capture-recapture models with fixed arrays of traps
+  \citep{efford:2004, borchers_efford:2008, royle_etal:2009,
+    royle_etal:2009, gardner_etal:2010}
+\item[$\bullet$] Search-encounter models \citep{royle_young:2008, royle_etal:2011}.
+\item[$\bullet$] Capture-recapture distance-sampling \citep{borchers_etal:1998}.
+\end{enumerate}
+In some classes of models, components for ${\bf u}$ and ${\bf s}$ will be confounded.
+e.g., if ${\bf s}$ are uniform in space and ${\bf u}$ is
+a random draw from some distribution centered at ${\bf s}$, then we might as
+well define ${\bf u}^{*}=\Pr({\bf u})=\int_{s} [{\bf u}|{\bf s}][{\bf
+  s}]ds$ which will itself by uniform
+for reasonable choices of $[{\bf u}|{\bf s}]$.  Some examples
+of typical spatial capture-recapture models include:
+How these various model components are manifest in specific cases is
+described as follows:
+\begin{itemize}
+\item[1.] {\bf Distance sampling -- } The last 2 stages of the hierarchy
+  are confounded (implicitly) and so analysis is based on the model
+  $[y|u*] [u*]$. The ``process model'' is that of ``uniformity'': ${\bf u}^{*}
+  \sim Unif({\cal S})$. Sometimes it is argued that distance sampling
+  estimators are ``pooling robust'' which is a way of saying they are
+  (or may be)
+  relatively insensitive to this assumption. That may be true, but the
+  construction of distance sampling estimators makes explicit the
+  uniformity assumption as a mathematical fact.
+
+\item[2.] {\bf Spatial capture-recapture model with a fixed array of traps} --
+SCR models appear to have little in common with distance sampling
+because observations are made only at a pre-defined set of discrete
+locations -- where traps are placed. However, the models are closely
+related in terms of our hierarchical representation above\footnote{Really
+they're kind of like point-count distance sampling where the identity
+of individuals is preserved across point samples , and distance is a
+latent variable. i.e., SCR-DS. I feel like this point should be
+emphasized somehow. Here? Later?}
+In SCR models based on fixed arrays, 
+we cannot estimate both
+$\Pr(y=1|{\bf u})$ and $\Pr({\bf u}|{\bf s})$ -- the probability  that
+an individual ``moves to ${\bf u}$'' cannot be seperated from the
+probability that it is detected given that it moves to ${\bf u}$,
+because of the fact that the observation locations are fixed by
+design.
+Formally, such SCR models confound $[y|{\bf u}]$  with $[{\bf
+  u}|{\bf s}]$ so that the observation model arises as:
+\[
+ [y|{\bf s}] = \int_{u} [y|{\bf u}][{\bf u}|{\bf s}] du
+\]
+This confounding happens because SCR sampling is spatially biased -
+restricted to a fixed pre-determined set of locations. 
+
+Conversely,
+distance sampling confounds $[{\bf u}|{\bf s}][{\bf s}]$ because, essentially, there is
+only a single realization of the encounter process.  
+
+It is probably
+reasonable to assume that $\Pr(y=1|{\bf u})=1$ or at least it is locally
+constant for most devices (e.g., cameras, etc..), and thus the
+detection model will have the interpretation in terms of movement (see
+chapter XXX.YY).
+
+\item[3.] {\bf Search-encounter models -- } What we call
+  ``search-encounter'' models \citep{royle_etal:2011}
+  are kind of a hybrid model - combining features of SCR models and
+  features of distance sampling. Like distance sampling they allow for
+  encounters in continuous space which provide direct observations
+  from $[{\bf u}|{\bf s}]$.
+Thus, the
+  hierarchical model is fully identified.
+
+\item[4.] {\bf Capture-recapture/distance-sampling -- } See
+  \citet{borchers_etal:1998}. As with the search-encounter models the
+full hierarchical model is identified:
+$[y|{\bf u}][{\bf u}|{\bf s}][{\bf s}]$ but the quantities don't
+really mean the same thing as before. 
+
+To understand this, we expand the model to accommodate imperfect
+measurements of ${\bf u}$. Let ${\bf u}_{obs}$ be an observation of
+${\bf u}$ (i.e., made with error). A larger hiearchical model is this:
+\[
+[y|{\bf u}][{\bf u}_{obs}|{\bf u}][{\bf u}|{\bf s}][{\bf s}]
+\]
+If we make replicate ``instantaneous'' observations of location, then
+information is provided about 
+ $[{\bf u}_{obs}|{\bf u}]$ (i.e., measurement error). However, in a normal
+ distance sampling application, with instantaneous sampling, we don't
+ learn anything about $[{\bf u}|{\bf s}]$, 
+in effect, we are again confounding $[{\bf u}|{\bf s}]$ and $[{\bf
+  s}]$: ${\bf u}^{*} = \int_{s} [{\bf u}|{\bf s}][{\bf s}] ds$. So the CR-DS model focuses on:
+\[
+[y|{\bf u}^{*}][{\bf u}_{obs}|{\bf u}^{*}][{\bf u}^{*}].
+\]
+Structurally, this is the same basic model as the search-encounter
+model notwithstanding (1) that it is usually talked about in terms of
+repeated measures of distance instead of location and (2) the 2nd
+component of the hierarchy is not movement (an ecological process) but
+rather ``measurement error'' and (3) the third component is not a home
+range center but rather a movement outcome (``instantaneous
+location'').  Thus, while the models are structurally identically, the
+meaning and interpretation of quantities are distinct. 
+
+%These are
+%mostly all semantic and conceptual distinctions which are easy to
+%define in a convenient table:
+%\begin{table}[ht]
+%\centering
+%\title{What things mean in each model.}
+%\begin{tabular}{c|cc}
+%           &   Search encounter models     &  CR-DS  \\  \hline
+%  $\sigma$    &  movement       &   measurement error  \\
+% ${\bf s}$ & activity center & instaneous location \\
+%\end{tabular}
+%\end{table}
+\end{itemize}
+
+
+\subsection{Other elements of SCR models}
+
+There are other considerations to think about developing here.
+
+\subsubsection{1. The state-space.}
+
+ The state-space of the
+underlying point process: is it continuous or discrete (e.g.,
+polygons)?
+
+\subsubsection{2. individual locations.}
+
+Are the observation locations (of individuals) fixed
+points or made in continuous space, or even polygons?
+
+\subsubsection{3. spatial sampling.}
+
+What is the nature of spatial sampling?
+Statistically structured or unstructured
+(haphazard or opportunistically). 
+
+Broadly speaking we differentiate
+between two situations: Sampling based on fixed arrays or sampling
+based on ``search encounter'' methods. The former includes things like
+camera traps, hair snares, mist nets and conventional traps. Fixed
+arrays limit the observation location to pre-defined points, where
+traps are located. Using such methods the model is a little simpler
+because the ``movement process'' of individuals is confounded with the
+``observation process''.
+The 2nd type of model -- search encounter models -- typically
+will allow locations in continuous space, possibly only restricted by
+polygon boundaries \citep{royle_young:2008}. 
+Search-encounter data
+usually allow for the separate modeling and estimation of movement
+model parameters from encounter model parameters but not always,
+depending on whether replication of the sampling is done.  The
+classical DS model with no replication (i.e., t=1) is a basic model
+which confounds the two processes.
+
+\subsubsection{4. observation model.}
+
+Properties of the ``detection apparatus'' induce statistical
+properties of the random variable $y$. Some typical ``observation
+models'' include:
+Bernoulli, binomial, Poisson,
+multinomial. 
+
+
+Depending on the type of device being considered, certain restrictions
+on the observable variable are induced which suggest specific
+probability models for the observable random variable. One type of a
+device is what we think of as the classical ``camera trap'' and which
+\citet{efford:2011} refers to as a ``proximity detector''. We can take
+pictures of or detect any number of individuals and an individual can
+be caught in any number of traps, and an arbitrary number of
+times. Iid Bernoulli model is convenient but if you think the
+re-encounters are valuable then you can have a frequency model.  Bear
+hair snares are slightly different because you cannot differentiate
+re-encounters.
+
+The standard observation model that applies for ``single-catch''
+\citep{efford_etal:2004} traps posits that individuals are encountered
+in at most one trap per sample occasion and traps only hold one
+individual.  Unfortunately we're really screwed in the single-catch
+situation.
+
+A ``multi-catch'' is like a mist-net or other things - individual is
+captured and restrained but traps hold > 1 individual. In this case,
+the observation model is a multinomial. Iid is assumed.  There are
+many variations on all of these models and new models. E.g., Telemetry
+data. Incidental observations of individuals.
+
+\subsubsection{5. modeling distance}
+
+An important part of the observation model of every SCR model is the
+manner in which {\it distance} between individuals and observation
+locations (``sampler'') enters into the model. 
+This depends on whether the sampling is done at a point, along a line,
+or uniformly over some polygon.
+
+Observation location $x$ is a point.  We record individual location at
+point $x$ or at some other location $u$. Distance is either $||x-s||$
+or $||x-u||$.
+
+Observation location is a ``line'':
+(i) if we note point on line {\it and} $u$ then radial distance $||x - u||$
+(ii) We don't observe point on line we might use ``closest distance''
+(standar distance sampling)
+(iii) we may or may not observe ${\bf u}$.
+(iv) we might only record ${\bf u}$ but not the point on the line. In
+that case we could use closest-distance or ``total hazard''.
+
+More often, distance samplers approximate this with the closest linear
+distance to the line, i.e., $min_{x} ||u-x||$.  Someone told me that
+this has been found to work better in practice but clearly it is not the
+correct description of the observation mechanism (when $x$ is available).
+An alternative is to use the cumulative hazard (from Buckland and Hayes paper)
+where we sum the hazard from the start of the line up to point $x$.
+
+
+
+\section{Summary and Outlook}
+
+Spatial capture-recapture models are an extension of ordinary
+capture-recapture models to accommodate the spatial organization of
+both individuals in a population and the observation mechanism (e.g.,
+locations of traps).  They resolve problems which have been recognized
+historically and for which various ad hoc solutions have been
+suggested: heterogeneity in encounter probability due to the spatial
+organization of individuals relative to traps and also that a
+well-defined sample area does not exist in most studies, and thus
+estimates of N using ordinary capture-recapture models cannot be
+related directly to density.
+
+
+\subsection{The Promise and Pitfalls of SCR models}
+
+Ecological scientists study elements of ecological theory using
+observational data that exhibits various biases relating to the
+observation mechanisms employed. In the context of capture-recapture,
+we observe individual encounter history data from which we can use SCR
+models to infer where individual live, how they organize themselves in
+space and move around in space and how they interact with other
+individuals.  Moreover, SCR models show great promise in their ability
+to integrate explicit ecological theories directly into the models so
+that we can directly test hypotheses. For example, point process
+models can be used to model inhibition, clustering or interactions
+among individuals.
+
+Thus, SCR models are capture-recapture models that enable ecologists
+to explicitly integrate biological context and theory with encounter
+history data, which is something that has always been the focus of
+``open population'' models but never, until very recently, has been
+considered formally in closed population models. We therefore believe
+that SCR models will enable ecologists to test theories of space usage
+and environmental effects, social behavior and other important
+theories.
+
+
+\subsection{Where to from here?}
+
+In chapter 2 we provide the basic analysis tools to understand and
+analyze SCR models - namely GLMs with random effects, and their
+analysis in R and WinBUGS.  Because SCR models represent extensions of
+basic closed population models, we cover ordinary closed population
+models in chapter 3 wherein, along with chapter 4, we will see that
+SCR models are a type of individual covariate model, which are
+conceptual and technical intermediates between Model Mh and classical
+individual covariate models.  In subsequent chapters we will cover a
+bunch of different types of SCR models related to the type of
+encounter process - e.g., type of trap - and also different
+embellishments of the basic model structure as alluded to in section
+XYZ above.  We will consider many different extensions of SCR models
+to accommodate covariates on encounter probability, and density. We
+also consider important practical extensions such as SCR for open
+populations (Chapter xyz), combining SCR data with auxiliary
+information from telemetry (chapter XYZ) and multiple encounter
+methods (chapter XYZ).
