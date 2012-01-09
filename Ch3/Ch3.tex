@@ -1182,10 +1182,10 @@ We implement an MCMC algorithm for this model in the following block
 of {\bf R} code.  The basic structure is: initialize the parameters
 and create any required output or intermediate data holders, and then
 begin the main MCMC loop which, in this case, generates 100000
-samples.
+samples.\footnote{This data grabbing function is not implemented yet}
 
+{\small
 \begin{verbatim}
-
 ## obtain the bear data by executing the previous data grabbing
 ## function
 
@@ -1193,7 +1193,6 @@ temp<-getdata()
 M<-temp$M
 K<-temp$K
 ytot<-temp$ytot
-
 
 ###
 ### MCMC algorithm for Model Mh
@@ -1251,7 +1250,7 @@ psi<-rbeta(1, sum(z) + 1, M-sum(z) + 1)
 out[i,]<- c(mu,sigma,psi,sum(z))
 }
 \end{verbatim}
-
+}
 
 
 {\bf Remarks}: (1) for parameters with bounded support, i.e.,
@@ -1296,17 +1295,18 @@ begin with the basic binomial observation model:
 y_{i} \sim \mbox{Bin}(K, p_{i})
 \]
 and we assume also  a model for encounter probability according to:
-\[
- \mbox{logit}(p_{i}) = \alpha_{0} + \alpha_{1} x_{i}
-\]
+\begin{equation}
+ \mbox{logit}(p_{i}) = \alpha + \beta x_{i}
+\label{closed.eq.ha}
+\end{equation}
 Classical examples of covariates influencing detection probability are
 type of animal (juvenile/adult or male/female), a continuous covariate
-such as body mass \citep[][chapt. 6]{royle_dorazio:2008}, or a
+such as body mass \citep[][ch. 6]{royle_dorazio:2008}, or a
 discrete covariate such as group or cluster size. For example, in
 models of aerial survey data, it is natural to model detection
 probabilities as a function of the observation-level individual
 covariate, ``group size'' \citep{royle:2008, royle:2009,
-  langtimm_etal:2010}.
+  langtimm_etal:2011}.
 
 Such ``individual covariate models'' are similar in structure to Model
 $M_{h}$, except that the individual effects are {\it observed} for the
@@ -1317,39 +1317,39 @@ elsewhere. Specifically, they are such models, but where the
 individual covariate is a partially observed latent variable similar..
 That is, unlike Model Mh, we do have some direct information about the
 latent variable, which comes from the spatial locations/distribution
-of individual recaptures. More on that later.
+of individual recaptures.
 
 Traditionally, estimation of $N$ in individual covariate models is
 achieved using methods based on ideas of unequal probability sampling
-(i.e., Horwitz-Thompson estimation), see \citet{huggins:1989} and
-\citet{alho:1990}. An estimator of $N$ is
+(i.e., Horwitz-Thompson estimation; see \citet{huggins:1989} and
+\citet{alho:1990}). An estimator of $N$ is
 \[
-\hat{N} = \sum_{i} \frac{1}{\tilde{p}_{i}}
+\hat{N} = \sum_{i}^{n} \frac{1}{\tilde{p}_{i}}
 \]
 where $\tilde{p}_{i}$ is the probability that individual $i$ appeared
-in the sample.  That is, $\tilde{p}_{i} = \Pr(y_{i}>0)$.  In practice,
-$\tilde{p}_{i}$ is estimated from the conditional-likelihood formed by
-the encounter histories. Namely,
-\[
-\Pr(y_{i}|y_{i}>0) = \Pr(y_{i})/\Pr(y_{i}>0)
-\]
-where we substitute
+in the sample.  That is, $\tilde{p}_{i} = \Pr(y_{i}>0)$
+where, in closed population capture-recapture models, 
 \[
 \Pr(y_{i}>0) = (1- (1-p_{i})^K)
 \]
-with
+where $p_{i}$ is a function of parameters $\alpha$ and $\beta$
+according to
+Eq. \ref{closed.eq.ha}.
+In practice, parameters are estimated 
+from the conditional-likelihood of the observed encounter histories
+which is, for observation $y_{i}$, 
 \[
-\mbox{logit}(p_{i}) = \alpha_{0} + \alpha_{1} x_{i}
+{\cal L}(\alpha, \beta | y_{i}) = \frac{ \mbox{Bin}(y_{i}|\alpha,\beta) } { \tilde{p}_{i}}.
 \]
 
 Here we take a formal model-based approach to Bayesian analysis of
 such models using data augmentation \citep{royle:2009}. Classical
-likelihood analysis of the so-called ``full likelihood'' is covered in
-some detail by \citet{borchers_etal:2002}.  For Bayesian analysis of
+likelihood analysis of the so-called ``full likelihood'' is covered 
+ by \citet{borchers_etal:2002}.  For Bayesian analysis of
 individual covariate models, because the individual covariate is
 unobserved for the $N-n$ uncaptured individuals, we require a model to
 describe variation among individuals, essentially allowing the sample
-to be extrapolated to the population.  For our present purposes, we
+to be extrapolated to the population\footnote{weak argument}.  For our present purposes, we
 consider a continuous covariate and we assume that it has a normal
 distribution:
 \[
@@ -1361,18 +1361,15 @@ particular, reformulation of the model under DA yields a basic
 zero-inflated binomial model of the form:
 \begin{eqnarray*}
 z_{i} &\sim& \mbox{Bern}(\psi) \\
-y_{i}|{z_{i}\! =\! 1} &\sim& \mbox{Bin}(K,p_{i}) \\
+y_{i}|{z_{i}\! =\! 1} &\sim& \mbox{Bin}(K,p_{i}(x_{i})) \\
 y_{i} |{ z_{i}\! =\! 0} &\sim& \delta(0)  \\
+x_{i} & \sim & \mbox{Normal}(\mu,\sigma^{2})
 \end{eqnarray*}
-In addition, we assume that $p_{i}$ is functionally related to a
-covariate $x_{i}$, e.g., by the logit model given above, and we assume
-a distribution for $x_i$ appropriate for the context.
-
-Fully spatial capture-recapture models essentially use this
+Fully spatial capture-recapture models use this
 formulation with a latent covariate that is directly related to the
 individual detection probability (see next Section). As with the
-previous models, implementation is trivial in the BUGS language. The
-BUGS specification is very similar to that for model $M_h$, but we
+previous models, implementation is trivial in the {\bf BUGS} language. The
+{\bf BUGS} specification is very similar to that for model $M_h$, but we
 require the distribution of the covariate to be specified, along with
 priors for the parameters of that distribution.
 
@@ -1389,10 +1386,11 @@ exposure to traps should have higher encounter probabilities and vice
 versa.  A version of this idea was put forth by
 \citet{boulanger_mclellan:2001} (see also \citet{ivan:2012}), but
 using the Huggins-Alho estimator and with covariate ``distance to
-edge'' of the trapping array. A limitation of this basic approach is
+edge'' of the trapping array. A limitation of this  approach is
 that it does not provide a solution to the problem that the trap area
 is fundamentally ill-defined, nor does it readily accommodate the
 inherent and heterogeneous variation in this measured covariate.
+But here we do this analysis anyway.................
 Here, we provide an example of this type of heuristically motivated
 approach using the fully model-based individual covariate model
 described above analyzed by data augmentation. We take a slightly
@@ -1404,8 +1402,9 @@ size is distributed. After you read later chapters of this book, it
 will be apparent that SCR models represent a formalization of this
 heuristic procedure.
 
-For our purposes here, we define $x_{i} = ||s_{i} - x_{0}||$ where $s_{i}$
-is the average encounter location of individual $i$ and $x_{0}$ is the
+For our purposes here, we define $x_{i} = ||{\bf s}_{i} - {\bf
+  x}_{0}||$ where ${\bf s}_{i}$
+is the average encounter location of individual $i$ and ${\bf x}_{0}$ is the
 centroid of the trap array.  Conceptually, individuals in the middle
 of the array should have higher probability of encounter and, as
 $x_{i}$ increases, $p_{i}$ should therefore decrease. We note that we
@@ -1423,9 +1422,11 @@ thus so is $x_{i}$. Thus,
 it is a latent variable, or random effect, and we need therefore to
 specify a probability distribution for it.
 As a measurement of distance we know it must be
-positive-valued. Suppose further than we imagine no individual could
-have a home range radius larger than $D_{max}$. As such, we think a
-reasonable distribution for this individual covariate is
+positive-valued. Also beyond a certain distance individuals should not
+be exposed at all so we should be able to pick some large number
+$D_{max}$ beyond which we ................ complete this though....
+As such, we use this distribution for the individual covariate
+``distance from center of the trap array''
 \[
  x_{i} \sim uniform(0,D_{max})
 \]
@@ -1437,28 +1438,10 @@ define and compute.
 \subsubsection{Fort Drum Bear Study}
 
 We have to do a little bit of data processing to fit this individual
-covariate model to the Fort Drum data. To compute the average location
-of capture for each individual and the distance from the centroid of
-the trap array, we execute the following R instructions:
+covariate model to the Fort Drum data. 
+We compute the individual covariate ${\bf x}_{i}$ using the {\bf R} script
+provided in \mbox{\tt scrbook}......
 
-\begin{verbatim}
-avg.s<-matrix(NA,nrow=nind,ncol=2)
-for(i in 1:nind){
-tmp<-NULL
-for(j in 1:T){
-aa<-bearArray[i,,j]
-if(sum(aa)>0){
- 	aa<-  trapmat[aa>0,]
- 	tmp<-rbind(tmp,aa)
-}
-}
-avg.s[i,]<-c(mean(tmp[,1]),mean(tmp[,2]))
-}
-Cx<-mean(trapmat[,1])
-Cy<-mean(trapmat[,2])
-avg.s<-rbind(avg.s,matrix(NA,nrow=nz,ncol=2))
-xcent<- sqrt( (avg.s[,1]-Cx)^2 +  (avg.s[,2]-Cy)^2)
-\end{verbatim}
 
 To define the maximum distance (maxD) from the centroid, we use that
 of the farthest trap, and so maxD is computed as follows:
