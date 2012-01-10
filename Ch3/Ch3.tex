@@ -1285,7 +1285,6 @@ although they too can be updated directly from their full-conditional.
 \section{Individual Covariate Models: Toward Spatial Capture-Recapture}
 \label{closed.sec.indcov}
 
-{\bf ANDY STOPPED EDITING HERE}
 
 A standard situation in capture-recapture models is when an individual
 covariate is measured, and this covariate is thought to influence
@@ -1390,7 +1389,7 @@ edge'' of the trapping array. A limitation of this  approach is
 that it does not provide a solution to the problem that the trap area
 is fundamentally ill-defined, nor does it readily accommodate the
 inherent and heterogeneous variation in this measured covariate.
-But here we do this analysis anyway.................
+
 Here, we provide an example of this type of heuristically motivated
 approach using the fully model-based individual covariate model
 described above analyzed by data augmentation. We take a slightly
@@ -1422,9 +1421,11 @@ thus so is $x_{i}$. Thus,
 it is a latent variable, or random effect, and we need therefore to
 specify a probability distribution for it.
 As a measurement of distance we know it must be
-positive-valued. Also beyond a certain distance individuals should not
-be exposed at all so we should be able to pick some large number
-$D_{max}$ beyond which we ................ complete this though....
+positive-valued. Thinking about this like a distance sampling problem
+lets first try to make $x_{i}$ uniform from $0$ to some large number,
+say $D_{max}$, beyond which it would be difficult to imagine an
+individual being captured. For example, $D_{max}$ should be at a home
+range diameter past the furthest trap from the center.
 As such, we use this distribution for the individual covariate
 ``distance from center of the trap array''
 \[
@@ -1434,35 +1435,29 @@ where $D_{max}$ is a specified constant.  In practice, people have
 used distance from edge of the trap array but that is less easy to
 define and compute.
 
+{\bf ANDY STOPPED RIGHT HERE}
+
+{\bf Note: I'm a little cautious about stumbling through an analysis
+  that is blatently wrong -- but I'm hoping it will evolve into a
+  learning experience for the reader.}
+
 
 \subsubsection{Fort Drum Bear Study}
 
 We have to do a little bit of data processing to fit this individual
 covariate model to the Fort Drum data. 
 We compute the individual covariate ${\bf x}_{i}$ using the {\bf R} script
-provided in \mbox{\tt scrbook}......
-
-
-To define the maximum distance (maxD) from the centroid, we use that
-of the farthest trap, and so maxD is computed as follows:
-
-\begin{verbatim}
-minx<- min(trapmat[,1]-Cx)
-maxx<-max(trapmat[,1]-Cx)
-miny<- min(trapmat[,2]-Cy)
-maxy<- max(trapmat[,2]-Cy)
-# most extreme point determines maxD
-ul<- c(minx,maxy)
-maxD<- sqrt(  (ul[1]-0)^2 + (ul[2]-0)^2)
-\end{verbatim}
-
-For the bear data the maxD was about 11.5 km. As such, the model
-described above will produce an estimate of the population size of
-bears within 11.5 units of the trap centroid\footnote{To be convincing
-  this might  need a little bit of hand-holding}. The BUGS model
-specification and R commands to package the data and fit the model are
+provided in \mbox{\tt scrbook}.
+We picked $D_{max} = 11.5$ $km^2$ which is about the distance from the
+array center to the furthest trap. 
+Once we specific $D_{max}$ then the implication is that the population
+size parameter applies to the area 
+within 11.5 units of the trap centroid\footnote{To be convincing
+  this might  need a little bit of hand-holding}. The {\bf BUGS} model
+specification and {\bf R} commands to package the data and fit the model are
 as follows:
 
+{\small
 \begin{verbatim}
 cat("
 model{
@@ -1482,14 +1477,35 @@ for(i in 1:(nind+nz)){
 N<-sum(z[1:(nind+nz)])
 }
 ",file="modelMcov.txt")
-data2<-list(y=ytot,nz=nz,nind=nind,K=T,xcent=xcent,maxD=11.5)
+data2<-list(y=ytot,nz=nz,nind=nind,K=K,xcent=xcent,maxD=11.5)
 params2<-list('p0','psi','N','beta')
 inits =  function() {list(z=z, psi=psi, p0=runif(1),beta=rnorm(1) ) }
 fit2 = bugs(data2, inits, params2, model.file="modelMcov.txt",working.directory=getwd(),
        debug=T, n.chains=3, n.iter=4000, n.burnin=1000, n.thin=4)
 \end{verbatim}
+}
 
-Posterior summaries are given in Table \ref{tab.maxD} XYZ, and the posterior distribution of $N$ is given in Figure XYZ. It might be perplexing that the estimated N is much lower than obtained by model Mh but there is a good explanation for this, discussed subsequently. That issue notwithstanding, it is worth pondering how this model could be an improvement (conceptually or technically) over some other model/estimator including M0 and Mh considered previously. Well, for one, we have accounted formally for heterogeneity due to spatial location of individuals relative to exposure to the trap array, characterized by the centroid of the array. Moreover, we have done so using a model that is based on an explicit mechanism, as opposed to a phenomenological one such as Model Mh. Moreover, importantly, using our new model, {\it the estimated N applies to an explicit area which is defined by our prescribed value of maxD}. That is, this area is a fixed component of the model and the parameter N therefore has explicit spatial context, as the number of individuals with home range centers less than maxD from the centroid of the trap array. As such, the implied ``effective trap area''\footnote{This is a bad use of this term. We have never defined ETA or ESA. What is it, exactly?} for any maxD is that of a circle with radius maxD.
+Posterior summaries are given in Table \ref{tab.maxD} XYZ, and the
+posterior distribution of $N$ is given in Fig. \ref{closed.fig.ha}. It might be
+perplexing that the estimated N is much lower than obtained by model
+$M_h$ but there is a good explanation for this, discussed
+subsequently. That issue notwithstanding, it is worth pondering how
+this model could be an improvement (conceptually or technically) over
+some other model/estimator including M0 and Mh considered
+previously. Well, for one, we have accounted formally for
+heterogeneity due to spatial location of individuals relative to
+exposure to the trap array, characterized by the centroid of the
+array. Moreover, we have done so using a model that is based on an
+explicit mechanism, as opposed to a phenomenological one such as Model
+Mh. Moreover, importantly, using our new model, {\it the estimated N
+  applies to an explicit area which is defined by our prescribed value
+  of maxD}. That is, this area is a fixed component of the model and
+the parameter N therefore has explicit spatial context, as the number
+of individuals with home range centers less than maxD from the
+centroid of the trap array. As such, the implied ``effective trap
+area''\footnote{This is a bad use of this term. We have never defined
+  ETA or ESA. What is it, exactly?} for any maxD is that of a circle
+with radius maxD.
 
 \begin{verbatim}
 %% Not sure whether this should be a table or verbatim print-out
@@ -1515,11 +1531,13 @@ We'll remake this figure in R.  For now, insert it as is.
 \includegraphics[width=3.5in]{Ch3/figs/Nchains}
 \end{center}
 \caption{Needs a caption}
-\label{fig.nchains}
+\label{closed.fig.ha}
 \end{figure}
 
 \subsection{Extension of the Model}
+
 One important issue in understanding the meaning of estimates produced under the individual covariate model  is that the uniform distribution on maxD implies that density is {\it not constant} over space. In particular, this model implies that it {\it decreases} as we move away from the centroid of the trap array. This is one reason we have a lower estimate of density than that obtained previously and also why, if we were to increase maxD, we would see density continue to decrease: $x[i] \sim \mbox{Uniform}(0,maxD)$ implies constant N in each distance band from the centroid but obviously the {\it area} of each distance band is increasing.  The reader can verify this as a homework exercise.
+
 Obviously, the use of an individual covariate model is {\it not} restricted to use of this specific distribution for the individual covariate. Clearly, it is a bad choice and, therefore,  we should think about whether we can choose a better distribution for maxD - one that doesn't imply a decreasing density as distance from the centroid increases.  Conceptually, what we want to do is impose a prior on distance from the centroid, $x$, such that density is proportional to the amount of area in each successive distance band as you move farther away from the centroid.  In fact, there is theory that exists which tells us what the correct distribution of $x$ is $2x/maxD^2$. This can be derived by noting that $F(x) = Pr(X<x) = pi*x*x/pi*maxD*maxD$ . Then, $f(x) = dF/dx = 2*x/(maxD*maxD)$.  This might be called a triangular distribution, I think, which makes sense because the incremental area in each additional distance band increases linearly with radius (i.e., distance from centroid). It is sometimes comforting to verify things empirically:
 \begin{verbatim}
 > u<-runif(10000,-1,1)
@@ -1573,8 +1591,18 @@ fit = bugs(data2, inits, params2, model.file="modelMcov.txt",working.directory=g
        debug=FALSE, n.chains=3, n.iter=11000, n.burnin=1000, n.thin=2)
 \end{verbatim}
 
-This is a useful model because it induces a clear definition of area in which the population of $N$ individuals reside. Under this model, that area is defined  by specification of maxD. We can apply the model for different values of maxD and observe that the estimated $N$ varies with $maxD$. Fortunately, we see empirically, that while N seems highly sensitive to the prescribed value of $maxD$, density seems to be invariant to $maxD$ as long as it is chosen to be sufficiently large. We fit the model for $maxD=12$ (points in close proximity to the trap arra)  to 20 for and the results are given in Table \ref{tab.xyz}.
+This is a useful model because it induces a clear definition of area
+in which the population of $N$ individuals reside. Under this model,
+that area is defined by specification of $D_{max}$. We can apply the model
+for different values of $D_{max}$ and observe that the estimated $N$ varies
+with $D_{max}$. Fortunately, we see empirically, that while $N$ seems
+highly sensitive to the prescribed value of $D_{max}$, density seems to
+be invariant to $D_{max}$ as long as it is chosen to be sufficiently
+large. We fit the model for $D_{max}=12$ (points in close proximity to
+the trap arra) to 20 for and the results are given in Table
+\ref{tab.xyz}.
 
+\begin{verbatim}
 \begin{table}
 \caption{Table: Analysis of Fort Drum bear hair snare data using the individual covariate model, for different values of Dmax, the upper limit of the uniform distribution of `distance from centroid of the trap array' }
 \begin{tabular}{cccc}
@@ -1587,9 +1615,7 @@ This is a useful model because it induces a clear definition of area in which th
 [6,]  20 0.250 0.044
 \end{tabular}
 \end{table}
-%ANDY - I couldn't get this to show up right, I'll look into it if I
-%get a chance
-
+\end{verbatim}
 
 We see that the posterior mean and SD of density (individuals per square km) appear insensitive to choice of $maxD$ once we get a slight ways away from the maximum observed value of about 11.5. The estimated density of 0.250 per km$^2$ is actually quite a bit lower than we reported using model Mh (0.37, see section XYZ above) for which sample area is not an explicit feature of the model. On the other hand it is higher than that reported from Model M0 using the buffered area (0.195). There is no basis really for comparing or contrasting these various estimates and it would be a useful philosophical exercise for the reader to discuss this matter. In particular, application of model M0 and Mh are distinctly {\it not} spatially explicit models -- the area within which the population\footnote{We need to look back at Chapter 1 and make sure we quit calling this ``sample area'' - it really isn't that at al, but rather the area within which N resides.} resides is not defined under either model. There is therefore no reason at all to think that the estimates produced under either model, using a buffered area, are justifiable based on any theory. In fact, we would get exactly the same estimate of $N$ no matter what we declare the area to be. On the other hand, the individual covariate model explicitly describes a distribution for ``distance from centroid'' that is a reasonable and standard null model - it posits, in the absence of direct information, that individual home range centers are randomly distributed in space and that probability of detection depends on the distance between home range center and the centroid of the trap array. Under this definition of the system, we see that density is invariant to the choice of sample area which seems like a desirable feature. The individual covariate model is not ideal, however, because it does not make full use of the spatial information in the data set, i.e., the trap locations and the locations of each individual encounter.
 
