@@ -45,6 +45,19 @@ traditional SCR studies because many SCR datasets include some
 individuals that cannnot be identified due to poor photo quality or
 indistiguishable natural markings.
 
+It's also interesting to note that by disregarding individual
+identity, we wind up with a model that closely resembles another large
+class of spatial models, known as convolution models
+\citep{wolpert_ickstadt:1998,higdon:1998}. These
+models have been used for purposes as varied as describing oceanic
+surface temperatures and correlation in tree locations within managed
+forests. The Chandler-Royle model offers an improvement in
+some respects over existing convolution models because it does not
+require arbitrary decisions about the location and number of ``support
+points''. We will clarify this later in the chapter, and briefly
+mention how this model can be used outside of SCR contexts for general
+purpose spatial modeling of correlated count data.
+
 
 \section{Existing Models for Inference About Density in Unmarked Populations}
 
@@ -177,96 +190,70 @@ again, suppose that we have $J$ traps surveyed on $K$ time periods
 during which no births or deaths occur. Suppose also that an
 individual can be encountered at multiple traps during a single time
 period, say one night during a camera-trapping study. If individuals
-might also be encountered multiple times at a single trap during a
+can also be encountered multiple times at a single trap during a
 night, then the encounter history data could be regarded as
 \begin{equation}
- z_{irt} \sim \mbox{Poisson}(\lambda_{ir}).
+ z_{ijk} \sim \mbox{Poisson}(\lambda_{ij}).
 \label{eq.latentPoisson}
 \end{equation}
-if the animals were marked.
+if the animals were marked. Here $\lambda_{ij}$ is the encounter rate
+for individual $i$ at trap $j$. A common form of this parameter is
+\[
+\lambda_{ij} = \lambda_0 \exp(\| {\bf x_j - s_i} \| / 2\sigma^2)
+\]
+where $\lambda_0$ is the baseline encounter rate and $\sigma$ is the
+scale parameter describing the distance-related decay in encounter
+rate.
+
+When individuals cannot be uniquely identified, the $z_{ijk}$ cannot
+be directly observed. So just when you thought we ran out of things to
+treat as latent variables, we are now going to regard even the encounter
+histories as latent. The data are now just a reduced-information
+summary of the latent encounter histories. That is, they are the
+sample- and trap-specific totals, aggregated over all individuals:
+\[
+n_{jk} = \sum_{i=1}^{N} z_{ijk}.
+\]
+This data structure, a matrix of counts made at a collection of
+sampling locations on one or more occasions is extremely common in
+ecology. Note also that the reason why we can get by with a single
+occasion of data ($J \equiv 1$) is that, under the Poisson model,
+\begin{equation}
+n_{jk} \sim \mbox{Poisson}( \Lambda_{j} )
+\label{eq:nagg}
+\end{equation}
+where
+\[
+ \Lambda_{j} = \lambda_0 \sum_{i} k_{ij},
+\]
+and because $\Lambda_r$ does not depend on $t$, we can
+aggregate the replicated counts, defining
+$n_{j.} = \sum_{k} n_{jk}$ and then
+\[
+ n_{j.} \sim \mbox{Poisson}( K \Lambda_{j} )
+\]
+As such, $K$ and $\lambda_{0}$ serve equivalent roles as affecting
+baseline encounter rate. This has been noted elsewhere
+\citep{efford_etal:2009}.
+
+
+We imagine that other observation models
+might be possible (see Discussion) although we focus here on the
+Poisson encounter model because it has considerable relevance to
+animal surveys, and has additional methodological context related to
+point process models which we address in the Discussion.
 
 
 
 
 \section{Encounter Histories as Latent Variables}
 
-Just when you thought we ran out of things to treat as latent
-variables, we are now going to regard even the data itself as latent.
+
 
 
 State model is the same as other SCR models.
 
 
-It is natural to regard the encounter rate of an individual
-as a function of the Euclidean distance between the individual's
-activity center and the trap location, $d_{ir} = \| {\bf x_r} - {\bf
-  s_i} \|$.
-To be precise about this, we let $z_{irt}$ be the encounter frequency
-of
-individual $i$ in trap $r$ during occasion $t$. While we will adopt the view
-that  the variables $z_{irt}$ are latent variables (see below), it will
-be convenient to formulate the model in terms of these variables.
-
-Therefore, we assume that the expected encounter frequency of an
-individual in some trap is related to $d_{ir}$ as follows:
-\[
-E[z_{irt}] = \lambda_{ir} = \lambda_0 k_{ir}
-\]
-where $\lambda_0$ is the expected encounter rate at $d=0$ and $k_{ir}$
-is some positive-valued
-function of distance $d_{ir}$. We assume
-\[
-k_{ir} = exp(-d_{ir}^2 / 2\sigma^2)
-\]
-where $\sigma$ is a scale parameter related to home
-range size. $\sigma$ also determines the degree of correlation among
-counts since animals with large home ranges are more likely to be
-detected at multiple traps relative animals with small home ranges.
-The phenomenon is analogous to correlation induced by averaging
-spatial noise, in which case there is a unique correlation between the
-smoothing kernel and the induced covariance function
-\citep{higdon:2002}.
-
-We emphasize that our focus is on
-situations in which individuals are {\it not}
-uniquely identifiable, and therefore the encounter frequencies
-for each individual
-cannot be observed, and so they are latent variables. We assume that
-these latent variables are realizations from a Poisson distribution
-with mean $\lambda_{ir}$:
-\begin{equation}
- z_{irt} \sim \mbox{Poisson}(\lambda_{ir}).
-\label{eq.latentPoisson}
-\end{equation}
-In traditional SCR models, $z_{irt}$ are the observed data, {\it
-  i.e.}, the frequency of encounters of individual $i$ at trap $r$ on
-replicate survey $t$. However, when individual identity is not known,
-the observed data are the sample- and trap-specific totals,
-aggregated over all individuals:
-\[
-n_{rt} = \sum_{i=1}^{N} z_{irt}.
-\]
-Thus the data required by our model are a reduced-information
-summary of the latent encounter histories.
-
-
-Under the Poisson encounter model we have that
-\begin{equation}
-n_{rt} \sim \mbox{Poisson}( \Lambda_{r} )
-\label{eq:nagg}
-\end{equation}
-where
-\[
- \Lambda_{r} = \lambda_{0} \sum_{i} k_{ir}.
-\]
-Further, because $\Lambda_{r}$ does not depend on $t$, we can
-aggregate the replicated counts, defining
-$n_{r.} = \sum_{t} n_{rt}$ and then
-\[
- n_{r.} \sim \mbox{Poisson}( T \Lambda_{r} )
-\]
-As such, $T$ and $\lambda_{0}$ serve equivalent roles as affecting
-baseline encounter rate.
 This formulation of the model in terms of the aggregate count
 simplifies computations as the latent variables
 $z_{irt}$ do not need to be updated in the MCMC estimation
@@ -277,13 +264,6 @@ modifying
 the MCMC algorithm (see below) to include both types of data is
 trivial. This is because uniquely identifiable individuals produce
 observations of some of the $z_{irt}$ variables.
-
-We imagine that other observation models
-might be possible (see Discussion) although we focus here on the
-Poisson encounter model because it has considerable relevance to
-animal surveys, and has additional methodological context related to
-point process models which we address in the Discussion.
-
 
 
 
@@ -328,15 +308,14 @@ Under this formulation $N = \sum_{i=1}^{M} w_i$, and population
 density is simply $D = N/A({\cal S})$ where $A({\cal S})$ is the area of the
 point process state-space ${\cal S}$.
 
-We developed two distinct MCMC implementations for this model (\ref{suppA}). In the
+We developed two distinct MCMC implementations for this model. In the
 first, we devised an algorithm for the model conditional on the latent
 variables $z_{irt}$. This formulation is useful for problems in which
 one or more individual identities are available, in which case the
 $z_{irt}$ are observable for those individuals. The unobserved
 $z_{irt}$ are easily updated using their full-conditional
 distribution which is multinomial with sample size $n_{rt}$. The
-remaining parameters are updated using Metropolis-Hastings steps (see
-\ref{suppA}).  In the second formulation of the algorithm we applied
+remaining parameters are updated using Metropolis-Hastings steps.  In the second formulation of the algorithm we applied
 the Metropolis-Hastings algorithm to the model {\it unconditional} on
 the $z_{irt}$ variables. In that case, the marginal distribution for
 $n_{rt}$ is precisely Eq.~\ref{eq:nagg}.  This algorithm is slightly more
@@ -354,7 +333,7 @@ To apply our model to data collected in the field, we designed a point
 count study of the northern parula ({\it Parula americana}), a
 Neotropical-Nearctic migratory passerine. This species defends
 well-defined territories during the breeding season
-\citep{moldenhaer_regelski_1996}, and thus our modeling effort was focused
+\citep{moldenhaer_regelski:1996}, and thus our modeling effort was focused
 on estimating the number and location of territory centers. Points
 were located on a 50-m grid to ensure spatial
 correlation. This small grid spacing contrasts with the conventional
@@ -402,8 +381,8 @@ an informative prior for the scale parameter $\sigma \sim
 \mbox{Gamma}(13,10)$. We arrived at this prior using the methods
 described by \citet{royle_etal:2011mee} and published
 information on the warbler's home range size and detection probability
-\citep{moldenhaer_regelski_1996,simons_etal:2009}. More details on this
-derivation are found in \ref{suppA}. We briefly note here that this prior
+\citep{moldenhaer_regelski:1996,simons_etal:2009}. More details on this
+derivation are found in. We briefly note here that this prior
 includes the biologically-plausible range of values from $\sigma$
 suggested by the published literature.
 
@@ -411,7 +390,7 @@ The posterior distribution for
 $N$ was highly skewed with a long right tail resulting in a wide 95\%
 credible interval (Table \ref{t:nopaPosts}). Nonetheless, the interval
 for density, $D$, includes estimates reported from more intensive field
-studies \citep[][]{moldenhaer_regelski_1996}. This was true when
+studies \citep[][]{moldenhaer_regelski:1996}. This was true when
 considering
 both sets of priors, although posterior precision was higher under the
 informative set of priors. Specifically, the use of prior information
@@ -575,7 +554,7 @@ prohibitive.
 We note the existence of traditional approaches to combining data on
 marked and unmarked animals based on either the Lincoln-Peterson
 estimator or so-called ``mark-resight'' methods.
-\citep{bartmann_etal:1987, mintaMangel:89, mcclintockHoeting:09}. In their
+\citep{bartmann_etal:1987, minta_mangel:1989, mcclintock_hoeting:2009}. In their
 simplest form, mark-resight methods involve fitting standard
 closed-population mark-recapture models to the data on marked
 individuals, and the resultant estimate of detection probability
@@ -653,7 +632,7 @@ models. We note that the observation intensity function (i.e.,
 corresponding to the observation
 locations) is a compound Gaussian kernel similar to
 that of the Thomas process
-\citep[pp. 61-62]{thomas:1949, moller_waagepetersen:2003}.
+\citep[pp. 61-62]{thomas:1949, moller_waagepetersen:2004}.
 Also, the Poisson-Gamma Convolution models
 \citep{wolpert_ickstadt:1998} are structurally similar (see also \cite{higdon:1998}
 and \cite{best_etal:2000}).
