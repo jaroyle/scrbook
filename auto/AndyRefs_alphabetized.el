@@ -1,6 +1,12 @@
 (TeX-add-style-hook "AndyRefs_alphabetized"
  (lambda ()
     (LaTeX-add-bibitems
+     "efford_etal:2009"
+     "efford:2011"
+     "dormann_etal:2007"
+     "lichstein_etal:2002"
+     "lele_etal:2012"
+     "moreno_lele:2010"
      "nichols_etal:2000"
      "borchers_etal:1998"
      "langtimm_etal:2011"
@@ -133,7 +139,6 @@
      "Effects2011"
      "efford:2004"
      "efford_etal:2005"
-     "efford:2011"
      "efford:2011a"
      "efford_etal:2004"
      "efron:1986"
