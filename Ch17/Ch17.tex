@@ -1,0 +1,125 @@
+
+
+
+\chapter{Spatial Capture-Recapture with Distance Sampling Data}
+\markboth{Chapter 17}{}
+\label{chapt.scrds}
+
+\vspace{0.3cm}
+
+
+
+In SCR models, the locations of animal activity
+centers are unknown and must be inferred from the trap locations where
+individuals are captured. Intuitively, the more
+we know about the locations of activity centers, the more precise will
+be our density estimates, and thus we strive to increase the
+number of spatial recaptures. That is, we want to catch each
+individual at multiple points in space so that we can pinpoint
+its activity center. However, obtaining a large
+number of spatial recaptures can be difficult due to the associated costs
+of traps and the labor required to set and check them. This is true
+even of ``cheap'' methods like camera traps which can easily run $>$
+200\$ a pop.
+
+Distance-samplers, of course, know that a much easier way to record an
+animal's location in space is to go traverse a transect or stand at some
+point and directly record the coordinates of the animal at some
+instant in time\footnote{Generally only the distance between the
+  observer and the animal is used in the analysis, but the exact
+  coordinates are often recorded.}. \hl{Hmm, this make you wonder
+  about telemetry data too}. This is cheap and easy data, which
+partially explains the popularity of distance sampling.
+
+
+Given the ease
+with which one can record distance data, it is natural to wonder how
+it could be included in a SCR analysis. Before doing so, a better
+question is why bother with SCR when a distance sampling analysis would
+be straight-forward. Good point. In some cases, there probably is no
+need to use SCR if the sole quantity of interest is density, and the
+assumptions of distance sampling can be met. However, SCR let's us
+study more than just density. Think of space use. Think up a ship,
+think up a long trip, think up the Vipper, the Vipper of Biff. Oh the
+thinks you can think up if only you try (Seuss 1960s).
+
+Some regard movement as a nuisance that is
+best left untouched \citep{borchers:2010}. This is
+convenient, but movement is actually a part of the problem, not to
+mention a central focus of an enormous
+branch of ecology.
+
+Use of data on animal locations at some distance from the observer
+forces us to consider movement a little more explictily than we had
+previously. Currently, only two papers that we know of have attempted
+to estimate explicity movement parameters
+\citep{royle_young:2008,royle_etal:2009jae}. The underlying approach
+is simple. First, define $\bf u$ to be an individual's location in
+space at some instant in time. We now need a movement model that links
+the activity center $\bf s$ to $\bf u$ and finally a detection model that
+is a function of $\bf \| u - x\|$ instead of $\bf \|s - x\|$,
+\emph{i.e.}, a function of distance between the observer
+at point $\bf x$ and the animal at point $\bf u$---just as in distance
+sampling. A natural movement model is the bivariate normal, but we
+will consider other options in this chapter. In addition, we will
+consider pragmatic issues such as what to do if not all individuals
+are marked.
+
+
+
+
+
+
+
+\section{Everybody is marked}
+
+
+
+\begin{verbatim}
+
+model {
+sigHome ~ dunif(0, 5)
+sigObs ~ dunif(0, 5)
+tauHome <- 1/pow(sigHome,2)
+tauObs <- 1/pow(sigObs,2)
+psi ~ dunif(0, 1)
+for(i in 1:M) {
+  w[i] ~ dbern(psi)
+  sx[i] ~ dunif(0, 15)
+  sy[i] ~ dunif(0, 15)
+  for(r in 1:R) {
+    ux[i,r] ~ dnorm(sx[i], tauHome)
+    uu[i,r] ~ dnorm(sy[i], tauHome)
+    d2[i,r] <- pow(X[r,1]-ux[i,r], 2) + pow(X[r,2]-uy[i,r], 2)
+    p[i,r] <- exp(-d2[i,r]/(2*sigObs*sigObs)) * w[i]
+    y[i,r] ~ dbern(p[i,r])
+    }
+  }
+N <- sum(w[])
+}
+
+\end{verbatim}
+
+
+
+
+
+
+
+\section{Nobody is marked}
+
+
+
+
+
+\section{Partially-marked populations}
+
+
+
+
+
+\section{An Implicit SCRDS Model Without Distance Data}
+
+The idea here is to convolve two Gaussian kernels, one for the animal
+(movement) and one for the observer (detection | distance). This is
+just another two-parameter observation model I guess.
