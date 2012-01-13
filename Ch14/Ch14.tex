@@ -182,6 +182,12 @@ assertion.
 
 \section{Data Requirements and Survey Designs}
 
+
+
+
+State model is the same as other SCR models.
+
+
 One of the important benefits of Chandler-Royle model is that it
 can be applied to data collected using an enormous variety of survey
 methods. Whereas traditional SCR models require spatially-referenced
@@ -237,22 +243,6 @@ baseline encounter rate. This has been noted elsewhere
 \citep{efford_etal:2009}.
 
 
-We imagine that other observation models
-might be possible (see Discussion) although we focus here on the
-Poisson encounter model because it has considerable relevance to
-animal surveys, and has additional methodological context related to
-point process models which we address in the Discussion.
-
-
-
-
-\section{Encounter Histories as Latent Variables}
-
-
-
-
-State model is the same as other SCR models.
-
 
 This formulation of the model in terms of the aggregate count
 simplifies computations as the latent variables
@@ -268,59 +258,14 @@ observations of some of the $z_{irt}$ variables.
 
 
 
-\section{Estimation by MCMC}
-\label{s:mcmc}
+We imagine that other observation models
+might be possible (see Discussion) although we focus here on the
+Poisson encounter model because it has considerable relevance to
+animal surveys, and has additional methodological context related to
+point process models which we address in the Discussion.
 
-We adopt a Bayesian framework for inference allowing estimation of $N$
-while retaining the formulation of the model that is conditional on
-the latent activity centers $\bf s_i$.
-Specifically, we employ Markov chain Monte Carlo
-(MCMC) to simulate posterior distributions of the parameters. However,
-the fact that $N$ is unknown presents a
-technical challenge because the size of the parameter space can change
-with each MC iteration. To resolve this, we
-adopt the formulation of data augmentation in \citet{royle_etal:2007} who
-used a specific prior construction for $N$ in terms of individual level
-Bernoulli trials. In particular, we assume $N \sim \mbox{Unif}(0,M)$
-for some large integer $M$. We construct this prior by assuming
-$N|M,\phi \sim \mbox{Bin}(M,\phi)$ and $\phi \sim \mbox{DUnif}(0,1)$
-which implies, marginally, that $N$ has the requisite
-$\mbox{DUnif}(0,M)$ distribution. However
-the hierarchical formulation of the prior suggests an implementation
-in which we introduce a set of latent indicator variables $w_{i} \sim
-\mbox{Bern}(\phi)$ and, furthermore, the model implies
-that $z_{irt}$ are obtained
-from the specified distribution (Eq. \ref{eq.latentPoisson})
-if $w_{i} = 1$, or if
-$w_{i}=0$, %the model implies that
-$z_{irt} =0$ with probability 1. In
-effect, extending the model in this way induces a reparameterization
-for the latent counts %$z_{irt}$
-that is a zero-inflated version
-of the original conditional-on-$N$ model. Specifically, the model
-under
-data augmentation becomes
-\begin{eqnarray*}
- z_{irt}|w_{i} &\sim & \mbox{Poisson}(\lambda_{ir} w_i) \\
- w_{i} & \sim & \mbox{Bern}(\phi)
-\end{eqnarray*}
-Under this formulation $N = \sum_{i=1}^{M} w_i$, and population
-density is simply $D = N/A({\cal S})$ where $A({\cal S})$ is the area of the
-point process state-space ${\cal S}$.
 
-We developed two distinct MCMC implementations for this model. In the
-first, we devised an algorithm for the model conditional on the latent
-variables $z_{irt}$. This formulation is useful for problems in which
-one or more individual identities are available, in which case the
-$z_{irt}$ are observable for those individuals. The unobserved
-$z_{irt}$ are easily updated using their full-conditional
-distribution which is multinomial with sample size $n_{rt}$. The
-remaining parameters are updated using Metropolis-Hastings steps.  In the second formulation of the algorithm we applied
-the Metropolis-Hastings algorithm to the model {\it unconditional} on
-the $z_{irt}$ variables. In that case, the marginal distribution for
-$n_{rt}$ is precisely Eq.~\ref{eq:nagg}.  This algorithm is slightly more
-convenient because
-it avoids having to update the $z_{irt}$ variables of which there are many.
+
 
 
 
@@ -468,21 +413,67 @@ point process intensity using habitat covariates.
 
 
 
-\section{On (Im)precision}
+\section{Improving Precision with Prior Information}
+
+We are asking a lot of a little data. Because both the activity
+centers and the encounter histories are latent variables, there is
+inherently high uncertainty in the data, even if it is ``perfect''
+data simulated from the true model. The parula data superficially look
+quite nice for purposes, and although the model yields sensible
+results, posterior precision is quite low.
+
+So why not just collect distance data or something? If you can, great,
+we are not arguing against the use of other methods. However, this
+model provides an important foundation for modeling data where other
+methods do not apply. The potential generalizations are numerous as we
+will see later in this chapter and in the next chapter.
+
+
+\section{Design issues}
+
+\subsection{How Much Correlation Is Enough?}
+
+$\sigma$ shouldn't be too small or too large relative to trap spacing.
+
+Can we test for correlation using K-functions or something?
+
+\subsection{Linear Designs}
+
+Survey points are not always located on a grid with even spacing---in
+fact, it is rare to see a perfect 10$\times$10 grid of points in any
+study because of habitat patchiness or rugged terrain or what have
+you. Instead, points are often distributed haphazardly or using some form of
+probability sampling. Such designs can still produce data amenable to
+the models we consider in this chapter if individuals can be
+encountered at multiple points, and none of the considerations
+discussed above need to be modified. But what about linear designs?
+
+In bird studies, point counts are often placed on linear transects. For
+example, the Breeding Bird Survey involves surveying 50 points spaced
+by 0.5 miles. The mountain-top bird survey in the White Mountain
+National Forest involves surveying 42 transects, each with 20? points
+spaced by 250-m \citep{king_etal:2008}. For many species, the 0.5 mile
+spacing of the BBS will ensure that individuals are not detected at
+multiple points. However, in the moutain-top survey, it's easy to
+imagine that a Bicknell's Thrush (\emph{Catharus bicknelli}) could
+easily be heard from adjacent points. So can we apply our model to
+obtain density estimates with such simple counts?
+
+
+
+\subsection{Quadrat counts}
 
 
 
 
+\section{Other observation models}
 
-\section{How Much Correlation Is Enough?}
+Royle-Nichols model. What if we only have presence/absence data?
+
+Will it work with a Binomial rather than a Poisson encounter model? I
+don't think so
 
 
-
-\section{Mutants}
-
-\subsection{Other observation models}
-
-\subsection{Linear designs}
 
 
 
