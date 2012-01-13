@@ -7,7 +7,6 @@
      "chapt.poisson"
      "chapt.gof"
      "chapt.covariates"
-     "chapt.ipp"
      "chapt.open")
     (TeX-add-symbols
      "R"
@@ -38,6 +37,8 @@
      "Ch4/Chapter4"
      "Ch5/Ch5"
      "Ch6/Chapter6"
+     "Ch10/Ch10"
      "Ch11/Ch11"
-     "Ch14/Ch14")))
+     "Ch14/Ch14"
+     "Ch17/Ch17")))
 

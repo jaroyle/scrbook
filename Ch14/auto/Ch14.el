@@ -4,7 +4,6 @@
      "chapt.scr-unmarked"
      "eq.latentPoisson"
      "eq:nagg"
-     "s:mcmc"
      "fig:nopaDat"
      "t:nopaPosts"
      "fig:prior"
