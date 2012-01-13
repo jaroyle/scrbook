@@ -2,6 +2,12 @@
  (lambda ()
     (LaTeX-add-bibliographies
      "AndyRefs_alphabetized")
+    (TeX-add-symbols
+     "R"
+     "bugs"
+     "jags"
+     "secr"
+     "scrbook")
     (TeX-run-style-hooks
      "hyperref"
      "natbib"

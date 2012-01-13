@@ -272,18 +272,15 @@ point process models which we address in the Discussion.
 
 \section{Northern Parula Example}
 
-
-
-To apply our model to data collected in the field, we designed a point
+Here we analyze some data collected for the purpose of testing our
+model. We designed a point
 count study of the northern parula ({\it Parula americana}), a
-Neotropical-Nearctic migratory passerine. This species defends
+Neotropical-Nearctic migratory passerine that defends
 well-defined territories during the breeding season
-\citep{moldenhaer_regelski:1996}, and thus our modeling effort was focused
-on estimating the number and location of territory centers. Points
+\citep{moldenhaer_regelski:1996}. Our objective was to
+estimate territory density and the distribution of territory centers. Points
 were located on a 50-m grid to ensure spatial
-correlation. This small grid spacing contrasts with the conventional
-practice of spacing points by $>$ 200 m to obtain \emph{i.i.d.}
-counts. Figure~\ref{fig:nopaDat} depicts the spatially-correlated
+correlation. Figure~\ref{fig:nopaDat} depicts the spatially-correlated
 counts ($n_{r.}$) from the 105 point count locations
 surveyed three times each during June 2006
 at the Patuxent Wildlife Research Center in Laurel Maryland, USA.
@@ -292,8 +289,6 @@ single survey. At 38 points, no warblers were detected. All but one of
 the detections were of singing males, and this one observation was
 not included in the analysis.
 
-
-%\begin{comment}
 
 \begin{figure}
   \centering
@@ -304,57 +299,80 @@ not included in the analysis.
   \label{fig:nopaDat}
 \end{figure}
 
-%\end{comment}
 
 
 In our analysis of the parula data, we defined the point process
 state-space by buffering the grid of point
-count locations by 250 m and used $M=300$. We simulated posterior
+count locations by 250 m and used $M=300$.
+
+At this point in time there is no canned software to fit this model,
+and it is actually not straight-forward to use \bugs~because of the
+constraints in the model\footnote{Although it can be done using the
+  so-called ``ones-trick''}. However, \jags~has a neat distribution
+called the \verb+dsum+ distribution, which was designed for this type
+of situation where the observed data are a sum of random
+variables. Remember, if we have 3 detections at a point, we assume
+that these results as $\sum_i z_{ijk}$. Thus, we are summing up random
+variables. \jags~actually works rather well for this situation
+although it is quite slow. Another limitation of using \jags~is that
+we can't mix data from marked and unmarked individuals. That is,
+\verb+dsum+ requires that we sum over unobserved quantities, not a mix
+of observed and unobserved nodes. Thus, we can't use \jags~for the
+situations considered in the next chapter, and thus we wrote our own
+MCMC algorithm which overcomes these limitations and is somewhat
+faster. Nonetheless, here is the \jags~code to analyze the NOPA data.
+
+\begin{verbatim}
+model{
+sigma ~ dunif(0, 5)
+lam0 ~ dunif(0, 5)
+psi ~ dunif(0, 1)
+for(i in 1:M) {
+   # Indicator of occurrence
+   w[i] ~ dbern(psi)
+   # Animal activity centers
+   sx[i] ~ dunif(0, xSide)
+   sy[i] ~ dunif(0, ySide)
+   for(r in 1:nTraps) {
+       # distance from plot center
+       d[i, r] <- sqrt(pow(sx[i] - X[r, 1], 2) + pow(sy[i] - X[r, 2], 2))
+       # encounter rate
+       lam[i, r] <- lam0 * exp(-1*pow(d[i, r],2) / (2*pow(sigma,2))) * w[i]
+       for(t in 1:nReps) {
+           z[i, r, t] ~ dpois(lam[i, r])
+           }
+       }
+   }
+for(r in 1:nTraps) {
+   for(t in 1:nReps) {
+       y[r, t] ~ dsum(z[1,r,t],z[2,r,t], ... ,z[100,r,t]) # code abbreviated
+       }
+   }
+N <- sum(w[])
+}
+\end{verbatim}
+
+Note that this code will not run as shown because we abbreviated the
+arguments to \verb+dsum+. In practice, you need to provide all 100 of
+them, if $M=100$! This is kind of a drag, but you can easily create
+the text using \verb+paste+ in \R. Maybe Martyn Plummer will throw us
+a bone and allow for a vector as an argument. Anyhow, the entire
+analysis is shown on the ???XX help page in \scrbook.
+
+
+We simulated posterior
 distributions using three Markov chains,
 each consisting of 300000 iterations after discarding the initial 10000
 draws. Convergence was satisfactory, as indicated by an $\hat{R}$
 statistic of $<$ 1.02 \citep{gelman_rubin:1992}.
 
-One benefit of a Bayesian analysis is that it can accommodate prior
-information on the home range size and encounter rate parameters,
-which are readily available for many
-species. To illustrate, we analyzed the parula data using two sets of
-priors. In the first set, all priors were
-improper, customary non-informative priors (see Table \ref{t:nopaPosts}).
-Uniform priors were also used in the second set, with the exception of
-an informative prior for the scale parameter $\sigma \sim
-\mbox{Gamma}(13,10)$. We arrived at this prior using the methods
-described by \citet{royle_etal:2011mee} and published
-information on the warbler's home range size and detection probability
-\citep{moldenhaer_regelski:1996,simons_etal:2009}. More details on this
-derivation are found in. We briefly note here that this prior
-includes the biologically-plausible range of values from $\sigma$
-suggested by the published literature.
 
 The posterior distribution for
 $N$ was highly skewed with a long right tail resulting in a wide 95\%
 credible interval (Table \ref{t:nopaPosts}). Nonetheless, the interval
 for density, $D$, includes estimates reported from more intensive field
-studies \citep[][]{moldenhaer_regelski:1996}. This was true when
-considering
-both sets of priors, although posterior precision was higher under the
-informative set of priors. Specifically, the use of prior information
-reduced posterior density at high, biologically implausible,
-values of $\sigma$, and hence decreased the posterior mass for
-low values of $N$ (Fig.~\ref{fig:prior}).
-
-In addition to estimating density, our model can be used to produce
-density surface maps, which are often used in applied ecological
-research to direct management efforts and develop hypotheses regarding
-the factors influencing abundance.
-Density surface maps can be produced by discretized the
-state-space and tallying the number of activity centers occurring in
-each pixel during each MCMC iteration. Parula density was
-highest near the northeastern corner of the study plot, which may
-correspond to important habitat features such as suitable nest site
-locations (Fig.~\ref{fig:nopaDen}). We anticipate future model
-extensions to directly model the
-point process intensity using habitat covariates.
+studies \citep{moldenhaer_regelski:1996}. As with any SCR model,
+we can produce a density surface map, as shown in Fig.~\ref{fig:nopaDen}
 
 
 \begin{table}%[t]
@@ -418,15 +436,47 @@ point process intensity using habitat covariates.
 We are asking a lot of a little data. Because both the activity
 centers and the encounter histories are latent variables, there is
 inherently high uncertainty in the data, even if it is ``perfect''
-data simulated from the true model. The parula data superficially look
-quite nice for purposes, and although the model yields sensible
-results, posterior precision is quite low.
+data simulated from the true model. This explains the low posterior
+precision in the parula data.
 
-So why not just collect distance data or something? If you can, great,
-we are not arguing against the use of other methods. However, this
+So why not just collect distance data or something? If you can, great---
+we are not arguing against the use of other methods. But in many
+cases, other models are not applicable. For instance, our model could
+be applied to camera trapping data collected on species without
+natural marks, such as pumas or coyotes. In addition, this
 model provides an important foundation for modeling data where other
-methods do not apply. The potential generalizations are numerous as we
-will see later in this chapter and in the next chapter.
+methods do not apply, and the underlying state model is so damn cool
+because it corresponds to what we think is happening in the field.
+Furthermore, the potential generalizations are numerous as we
+will see later in this chapter and in the next chapter. In sum, the
+model can be applied where no other models can, and it provides the
+foundation for important extensions, but how can we improve precision?
+
+
+One benefit of a Bayesian analysis is that it can accommodate prior
+information on the home range size and encounter rate parameters,
+which are readily available for many
+species. To illustrate, we analyzed the parula data using two sets of
+priors. In the first set, all priors were
+improper, customary non-informative priors (see Table \ref{t:nopaPosts}).
+Uniform priors were also used in the second set, with the exception of
+an informative prior for the scale parameter $\sigma \sim
+\mbox{Gamma}(13,10)$. We arrived at this prior using the methods
+described by \citet{royle_etal:2011mee} and published
+information on the warbler's home range size and detection probability
+\citep{moldenhaer_regelski:1996,simons_etal:2009}. More details on this
+derivation are found in. We briefly note here that this prior
+includes the biologically-plausible range of values from $\sigma$
+suggested by the published literature.
+
+
+This was true when
+considering
+both sets of priors, although posterior precision was higher under the
+informative set of priors. Specifically, the use of prior information
+reduced posterior density at high, biologically implausible,
+values of $\sigma$, and hence decreased the posterior mass for
+low values of $N$ (Fig.~\ref{fig:prior}).
 
 
 \section{Design issues}
