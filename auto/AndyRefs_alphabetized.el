@@ -1,6 +1,7 @@
 (TeX-add-style-hook "AndyRefs_alphabetized"
  (lambda ()
     (LaTeX-add-bibitems
+     "king_etal:2008"
      "borchers:2010"
      "solymos_etal:2012"
      "agresti:2002"
@@ -277,7 +278,6 @@
      "kery_schmid:2006"
      "kery_spillman:2006"
      "key:1999"
-     "king_etal:2008"
      "king_etal:2009"
      "king_etal:XXXX"
      "koneff_etal:2008"

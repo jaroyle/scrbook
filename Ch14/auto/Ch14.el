@@ -1,14 +1,15 @@
 (TeX-add-style-hook "Ch14"
  (lambda ()
     (LaTeX-add-labels
-     "chapt.scr-unmarked"
+     "Chapt.scr-unmarked"
+     "Sect.existing-unmarked"
+     "Sect.corr-info"
      "eq.latentPoisson"
      "eq:nagg"
-     "s:mcmc"
      "fig:nopaDat"
      "t:nopaPosts"
      "fig:prior"
      "fig:nopaDen"
-     "ss:ext"
-     "ss:similar")))
+     "Sect.precision"
+     "Sect.alt-obsmods")))
 
