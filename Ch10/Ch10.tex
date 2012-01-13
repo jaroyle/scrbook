@@ -31,13 +31,15 @@ distance metric that tries to mimic ecological distance.
 We use a cost-weighted distance metric in the package \mbox{\tt
   gdistance} \index{R package!gdistance} which computes the distance between points by
 accumulating pixel-specific costs assigned by the user (but we
-consider estimating these in Sec. XYZ). The idea is due to XYZ XYZ REF
-XYZ. The basic idea is that distance bewtween $x_{i}$ and $x_{j}$ is
+consider estimating these in Sec. XYZ). The idea is widely used in
+landscape ecology for modeling connectivity, movement and gene flow
+\citep{adriaensen_etal:2003,mcrae_etal:2008}.
+The basic idea is that distance bewtween $x_{i}$ and $x_{j}$ is
 \[
  wd_{ij} =  w_{ij} ....\mbox{formula for this?}
 \]
 where .... and so on....XXX XYZ.
-To be consistent with the functioning of \mbox{\tt costdistance} the
+To be consistent with the functioning of \mbox{\tt costDistance} the
 incremental cost is assessed for {\it leaving} a pixel, not
 arriving. As a consequence, the terminal value is not counted. 
 In addition to \mbox{\tt gdistance} we use functions from a number of
@@ -91,23 +93,85 @@ plot(r)
 The raster, in image form, is shown in Fig. \ref{ecoldist.fig.raster}.
 
 \begin{figure}
-\centering
-\includegraphics[height=3.5in,width=3.5in]{Ch10/figs/raster}
+\begin{center}
+\includegraphics[height=3.25in,width=3.25in]{Ch10/figs/raster}
+\end{center}
 \caption{a 16 pt raster}
 \label{ecoldist.fig.raster}
 \end{figure}
 
-\section{Computing Cost-Distance}
+Then we use the functions \mbox{\tt transition}, \mbox{\tt
+  geoCorrection} (which doesn't really do anything but reformat the
+data somehow) and \mbox{\tt costDistance} to compute the distance
+matrix. They operate on this inverse-scale so we first take the
+inverse of the elements of our raster. Then we define a set of points,
+the center points of each raster, to compute the cost-distance between
+them all. The commands altogether are as follows:
+\begin{verbatim}
+r<-1/r
+## use max = doesn't count moving through boundary pixel
+tr1<-transition(r,transitionFunction=max,directions=8)
+tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
 
-Basic framework we use R packages xyz and functions xyz....
-read in shape file, overlay, compute a cost for each pixel, etc...
+pts<-cbind( sort(rep(1:4,4)),rep(4:1,4))
+costs1<-costDistance(tr1CorrC,pts)
+outD<-as.matrix(costs1)
+\end{verbatim}
+Now we can look at the result and see if it makes sense to us. Here we
+print the first 4 columns of this distance matrix and illustration a
+couple of examples of calculating the minimum cost-weighted distance
+between points:
+\small{
+\begin{verbatim}
+     1    2    3    4   
+1   0.0  1.0  3.0  6.0  
+2   1.0  0.0  2.0  5.0  
+3   3.0  2.0  0.0  3.0  
+4   6.0  5.0  3.0  0.0  
+5   1.0  2.0  4.0  7.0  
+6   1.4  2.0  4.0  7.0  
+7   3.8  2.8  3.0  5.7  
+8   7.2  6.2  4.2  4.0  
+9   6.0  7.0  9.0 12.0  
+10  7.4  8.0 10.0 13.0  
+11  9.9  9.8 10.0 12.7 
+12 13.7 12.7 12.2 12.0 
+13 15.0 16.0 18.0 21.0 
+14 17.4 18.0 20.0 23.0 
+15 20.9 20.8 21.0 23.7 
+16 25.5 24.7 24.2 24.0 
+\end{verbatim}
+}
+
+
+\section{Examples of Computing Cost-Distance}
+
+In this section we provide a series of examples that we think
+represent how cost-weighted distance models will be used in real
+problems. The basic framework for analysis is based on R packages XYZ
+and functions XYZ to do basic operations involving polygons and point
+files.
+
+In particular, we will typically have a polygon coverage either in the
+form of a GIS shapefile or a matrix of points or some other specific
+format, and we want to put that polygon on a map and use the polygon
+boundary in some way to generate pixel-specific costs. So we want to
+see if points or raster pixels are in the polygon, or not, or how far
+they are from the polygon boundary (cost might be related to distance)
+and similar operations. In the following examples, we confront how to
+do some of these operations in {\bf R}. 
+
 
 \subsection{Illustration: Example Good vs. Bad habitat}
 
-We made up a polygon which we might think of as representing a habitat
-corridor or park unit or something which has been preserved. It is
-surrounded by a suburban wasteland of McDonalds and Wal-Marts, much
-less hospital habitat for most things. See Fig. XYZ. 
+Here we create a polygon on a landscape that we might think of as
+representing a habitat corridor or park unit or some other block of
+relatively homogeneous good-quality habitat for some species. 
+It is surrounded by a suburban wasteland of McDonalds and Wal-Marts, much
+less hospital habitat for most things. See
+Fig. \ref{ecoldist.fig.corridor}.
+
+We made this polygon in the manner described shortly.........
 
 In practice, we have a landscape with a bunch of polygons delineating
 good or bad habitat or a forest preserve or corridors or
@@ -178,6 +242,14 @@ in.pts<-point.in.polygon(pts[,1],pts[,2],pg.coords[,1],pg.coords[,2])
 points(pts[in.pts==1,],pch=20,col="red")
 
 \end{verbatim}
+
+\begin{figure}
+\begin{center}
+\includegraphics[height=3.25in,width=3.25in]{Ch10/figs/corridor}
+\end{center}
+\caption{a habitat corridor or preserve}
+\label{ecoldist.fig.corridor}
+\end{figure}
 
 
 We focus on devising a SCR model for this corridor system and we

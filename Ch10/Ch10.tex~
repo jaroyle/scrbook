@@ -40,10 +40,14 @@ where .... and so on....XXX XYZ.
 To be consistent with the functioning of \mbox{\tt costdistance} the
 incremental cost is assessed for {\it leaving} a pixel, not
 arriving. As a consequence, the terminal value is not counted. 
+In addition to \mbox{\tt gdistance} we use functions from a number of
+other {\bf R} packages including \mbox{\tt rgeos}, \mbox{\tt
+  shapefiles} and \mbox{\tt raster}.
+
 As an example of the cost-weighted distance calculation consider the
 following landscape comprised of 9 pixels with unit spacing 
 identified as follows, along
-with their costs:
+with the pixel-specific cost:
 \begin{verbatim}
   pixel ID                 Cost
   1  2  3  4          100   1   1  1
@@ -60,9 +64,6 @@ sqrt(2) units, the shortest distance between pixels 13 and 14 is 100
 units, while the shortest cost-distance between 13 and 15 is 100. A
 tough one is: what is the shortest between 10 and 16? A guy at pixel
 10 can move diagonal and pay sqrt(2)*1 + 1 total.
-
-Do the calculation here:
-
 An alternative pixel labeling scheme arising as if you were applying
 the vec operation to the matrix ``as you look at it''. This produces
 labels that are a transpose of those given previously, so the id's are
@@ -74,19 +75,99 @@ as follows:
  4 8 12 16
 \end{verbatim}
 In this case we have to transpose or rotate something along the way. 
-Be careful. 
+Be careful. This matters in the way you stick the ``cost'' data into
+the elements of the raster. In the following example we fill the cost
+matrix using the default \mbox{\tt byrow=FALSE} standard in {\bf
+  R}, but here we use cost values of 1-16 so that we can produce an
+image of the resulting costs to visualize their ordering in the raster:
+\begin{verbatim}
+r<-raster(nrows=4,ncols=4)
+projection(r)<- "+proj=utm +zone=12 +datum=WGS84"
+extent(r)<-c(.5,4.5,.5,4.5)
+values(r)<-matrix(1:16,4,4,byrow=FALSE)
+par(mfrow=c(1,1))
+plot(r)
+\end{verbatim}
+The raster, in image form, is shown in Fig. \ref{ecoldist.fig.raster}.
 
-\section{Computing Cost-Distance}
+\begin{figure}
+\begin{center}
+\includegraphics[height=3.25in,width=3.25in]{Ch10/figs/raster}
+\end{center}
+\caption{a 16 pt raster}
+\label{ecoldist.fig.raster}
+\end{figure}
 
-Basic framework we use R packages xyz and functions xyz....
-read in shape file, overlay, compute a cost for each pixel, etc...
+Then we use the functions \mbox{\tt transition}, \mbox{\tt
+  geoCorrection} (which doesn't really do anything but reformat the
+data somehow) and \mbox{\tt costDistance} to compute the distance
+matrix. They operate on this inverse-scale so we first take the
+inverse of the elements of our raster. Then we define a set of points,
+the center points of each raster, to compute the cost-distance between
+them all. The commands altogether are as follows:
+\begin{verbatim}
+r<-1/r
+## use max = doesn't count moving through boundary pixel
+tr1<-transition(r,transitionFunction=max,directions=8)
+tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
+
+pts<-cbind( sort(rep(1:4,4)),rep(4:1,4))
+costs1<-costDistance(tr1CorrC,pts)
+outD<-as.matrix(costs1)
+\end{verbatim}
+Now we can look at the result and see if it makes sense to us. Here we
+print the first 4 columns of this distance matrix and illustration a
+couple of examples of calculating the minimum cost-weighted distance
+between points:
+\small{
+\begin{verbatim}
+     1    2    3    4   
+1   0.0  1.0  3.0  6.0  
+2   1.0  0.0  2.0  5.0  
+3   3.0  2.0  0.0  3.0  
+4   6.0  5.0  3.0  0.0  
+5   1.0  2.0  4.0  7.0  
+6   1.4  2.0  4.0  7.0  
+7   3.8  2.8  3.0  5.7  
+8   7.2  6.2  4.2  4.0  
+9   6.0  7.0  9.0 12.0  
+10  7.4  8.0 10.0 13.0  
+11  9.9  9.8 10.0 12.7 
+12 13.7 12.7 12.2 12.0 
+13 15.0 16.0 18.0 21.0 
+14 17.4 18.0 20.0 23.0 
+15 20.9 20.8 21.0 23.7 
+16 25.5 24.7 24.2 24.0 
+\end{verbatim}
+}
+
+
+\section{Examples of Computing Cost-Distance}
+
+In this section we provide a series of examples that we think
+represent how cost-weighted distance models will be used in real
+problems. The basic framework for analysis is based on R packages XYZ
+and functions XYZ to do basic operations involving polygons and point
+files.
+In particular, we will typically have a polygon coverage either in the
+form of a GIS shapefile or a matrix of points or some other specific
+format, and we want to put that polygon on a map and use the polygon
+boundary in some way to generate pixel-specific costs. So we want to
+see if points or raster pixels are in the polygon, or not, or how far
+they are from the polygon boundary (cost might be related to distance)
+and similar operations. In the following examples, we confront how to
+do some of these operations in {\bf R}. 
+
 
 \subsection{Illustration: Example Good vs. Bad habitat}
 
-We made up a polygon which we might think of as representing a habitat
-corridor or park unit or something which has been preserved. It is
-surrounded by a suburban wasteland of McDonalds and Wal-Marts, much
+Here we create a polygon on a landscape that we might think of as
+representing a habitat corridor or park unit or some other block of
+relatively homogeneous good-quality habitat for some species. 
+It is surrounded by a suburban wasteland of McDonalds and Wal-Marts, much
 less hospital habitat for most things. See Fig. XYZ. 
+
+We made this polygon in the manner described shortly.........
 
 In practice, we have a landscape with a bunch of polygons delineating
 good or bad habitat or a forest preserve or corridors or
@@ -97,20 +178,71 @@ You can do this in GIS but we do a version of this in R here. See
 chapter 5.XYZ for an example of reading in the shapefile and doing it.
 
 
-Here we create a function which allows the user to make a specific
+
+We provide 
+ a function \mbox{\tt make.seg} which allows the user to make a specific
 buffer given a trap region.  You can plot the region with a range or a
 specific set of points and then click over it using these commands:
 \begin{verbatim}
+make.seg<-function(npts){
+l2<-locator(npts)
+l2<-cbind(l2$x,l2$y)
+l2<-round(l2,2)
+tmp<-NULL
+for(i in 1:nrow(l2)){
+tmp<-paste(tmp,l2[i,1],l2[i,2])
+if(i<nrow(l2))
+tmp<-paste(tmp,",")
+}
+l2b<- paste("LINESTRING(",tmp,")")
+l2<- readWKT(l2b)
+return(l2)
+}
 
+
+plot(NULL,xlim=c(0,10),ylim=c(0,10))
+l1<-make.seg(9)
+plot(l1)
+l2<-make.seg(5)
+plot(l1)
+lines(l2)
 \end{verbatim}
-
-We provided one which we load as follows:
+We used this function to create a couple of line segments of class XXX
+from package xyz XXXXXX  which can be loaded as 
+follows\footnote{how to put this in the R package?}:
 \begin{verbatim}
 load("polygons.RData")
 \end{verbatim}
 This has 2 polygon files in it ......representing different segments
 of this corridor or river system. We use the commands XYZ to join and
 buffer the two segments and the resultt is that shown in fig. XYZ.
+
+\begin{verbatim}
+buffer<- 0.5
+l1<-l1.old
+l2<-l2.old
+par(mfrow=c(1,1))
+aa<-gUnion(l1,l2)
+plot(gBuffer(aa,width=buffer),xlim=c(0,10),ylim=c(0,10))
+pg<-gBuffer(aa,width=buffer)
+pg.coords<- pg@polygons[[1]]@Polygons[[1]]@coords
+
+xg<-seq(0,10,,30)
+yg<-seq(10,0,,30)
+
+delta<-mean(diff(xg))
+pts<- cbind(sort(rep(xg,30)),rep(yg,30))
+points(pts,pch=20)
+
+in.pts<-point.in.polygon(pts[,1],pts[,2],pg.coords[,1],pg.coords[,2])
+points(pts[in.pts==1,],pch=20,col="red")
+
+\end{verbatim}
+
+
+We focus on devising a SCR model for this corridor system and we
+imagine that animals will tend to severely avoid leaving the buffered
+habitat zone.
 
 \subsection{Distance Weighting}
 
@@ -119,7 +251,7 @@ distance from some feature such as a highway or a river.
 
 \subsection{Hard Boundary}
 
-\section{using ecological distance in SCR}
+\section{Ecological distance in SCR models}
 
 \section{Real example}
 
