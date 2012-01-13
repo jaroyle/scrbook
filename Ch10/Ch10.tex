@@ -40,59 +40,201 @@ where .... and so on....XXX XYZ.
 To be consistent with the functioning of \mbox{\tt costdistance} the
 incremental cost is assessed for {\it leaving} a pixel, not
 arriving. As a consequence, the terminal value is not counted. 
+In addition to \mbox{\tt gdistance} we use functions from a number of
+other {\bf R} packages including \mbox{\tt rgeos}, \mbox{\tt
+  shapefiles} and \mbox{\tt raster}.
+
 As an example of the cost-weighted distance calculation consider the
-following landscape comprised of 9 pixels identified as follows, along
-with their costs:
+following landscape comprised of 9 pixels with unit spacing 
+identified as follows, along
+with the pixel-specific cost:
 \begin{verbatim}
-  pixel ID           cost
-  1 2 3             100  1  1 
-  4 5 6             100 100 1
-  7 8 9             100 100 1
+  pixel ID                 Cost
+  1  2  3  4          100   1   1  1
+  5  6  7  8          100 100   1  1
+  9 10 11 12          100 100 100  1
+ 13 14 15 16          100 100   1  1 
 \end{verbatim}
-Then we assign low cost of 1 to ``good habitat'' pixels (or pixels we think of as
-``highly connected'' by virtue of being in good habitat) and,
-conversely, we 
-assign high cost (100) to ``bad habitat''. So the cost-weighted distance
-between pixels 2 and 3 in this example is just 1 unit, the distance
-between pixels 2 and 6 is sqrt(2) units, and the distance between
-pixels 4 and 5 is 100 units, while the cost-distance between 4 and 6 is 101.
-
-Do the calculation here:
-
-Alternatively we might label our pixels by transposing the id's so
-that pixels 1, 4 and 7 represent the first row:
+Then we assign low cost of 1 to ``good habitat'' pixels (or pixels we
+think of as ``highly connected'' by virtue of being in good habitat)
+and, conversely, we assign high cost (100) to ``bad habitat''. So the
+shortest cost-weighted distance between pixels 2 and 3 in this example
+is just 1 unit, the shortest cost-distance between pixels 2 and 7 is
+sqrt(2) units, the shortest distance between pixels 13 and 14 is 100
+units, while the shortest cost-distance between 13 and 15 is 100. A
+tough one is: what is the shortest between 10 and 16? A guy at pixel
+10 can move diagonal and pay sqrt(2)*1 + 1 total.
+An alternative pixel labeling scheme arising as if you were applying
+the vec operation to the matrix ``as you look at it''. This produces
+labels that are a transpose of those given previously, so the id's are
+as follows:
 \begin{verbatim}
- 1 4 7
- 2 5 8 
- 3 6 9
+ 1 5  9 13
+ 2 6 10 14
+ 3 7 11 15
+ 4 8 12 16
 \end{verbatim}
 In this case we have to transpose or rotate something along the way. 
-Be careful. 
+Be careful. This matters in the way you stick the ``cost'' data into
+the elements of the raster. In the following example we fill the cost
+matrix using the default \mbox{\tt byrow=FALSE} standard in {\bf
+  R}, but here we use cost values of 1-16 so that we can produce an
+image of the resulting costs to visualize their ordering in the raster:
+\begin{verbatim}
+r<-raster(nrows=4,ncols=4)
+projection(r)<- "+proj=utm +zone=12 +datum=WGS84"
+extent(r)<-c(.5,4.5,.5,4.5)
+values(r)<-matrix(1:16,4,4,byrow=FALSE)
+par(mfrow=c(1,1))
+plot(r)
+\end{verbatim}
+The raster, in image form, is shown in Fig. \ref{ecoldist.fig.raster}.
+
+\begin{figure}
+\centering
+\includegraphics[height=3.5in,width=3.5in]{Ch10/figs/raster}
+\caption{a 16 pt raster}
+\label{ecoldist.fig.raster}
+\end{figure}
+
+\section{Computing Cost-Distance}
+
+Basic framework we use R packages xyz and functions xyz....
+read in shape file, overlay, compute a cost for each pixel, etc...
 
 \subsection{Illustration: Example Good vs. Bad habitat}
 
 We made up a polygon which we might think of as representing a habitat
 corridor or park unit or something which has been preserved. It is
 surrounded by a suburban wasteland of McDonalds and Wal-Marts, much
-less hospital habitat for most things.
-Figure here. 
+less hospital habitat for most things. See Fig. XYZ. 
+
+In practice, we have a landscape with a bunch of polygons delineating
+good or bad habitat or a forest preserve or corridors or
+whatever. These exist maybe as shapefiles.
+We have to create a raster, overly the polygon and assign values
+depending on whether pixels are in good polygons or not.
+You can do this in GIS but we do a version of this in R here. See
+chapter 5.XYZ for an example of reading in the shapefile and doing it.
 
 
 
-\section{Distance Weighting}
+We provide 
+ a function \mbox{\tt make.seg} which allows the user to make a specific
+buffer given a trap region.  You can plot the region with a range or a
+specific set of points and then click over it using these commands:
+\begin{verbatim}
+make.seg<-function(npts){
+l2<-locator(npts)
+l2<-cbind(l2$x,l2$y)
+l2<-round(l2,2)
+tmp<-NULL
+for(i in 1:nrow(l2)){
+tmp<-paste(tmp,l2[i,1],l2[i,2])
+if(i<nrow(l2))
+tmp<-paste(tmp,",")
+}
+l2b<- paste("LINESTRING(",tmp,")")
+l2<- readWKT(l2b)
+return(l2)
+}
 
 
-\section{Hard Boundary}
+plot(NULL,xlim=c(0,10),ylim=c(0,10))
+l1<-make.seg(9)
+plot(l1)
+l2<-make.seg(5)
+plot(l1)
+lines(l2)
+\end{verbatim}
+We used this function to create a couple of line segments of class XXX
+from package xyz XXXXXX  which can be loaded as 
+follows\footnote{how to put this in the R package?}:
+\begin{verbatim}
+load("polygons.RData")
+\end{verbatim}
+This has 2 polygon files in it ......representing different segments
+of this corridor or river system. We use the commands XYZ to join and
+buffer the two segments and the resultt is that shown in fig. XYZ.
+
+\begin{verbatim}
+buffer<- 0.5
+l1<-l1.old
+l2<-l2.old
+par(mfrow=c(1,1))
+aa<-gUnion(l1,l2)
+plot(gBuffer(aa,width=buffer),xlim=c(0,10),ylim=c(0,10))
+pg<-gBuffer(aa,width=buffer)
+pg.coords<- pg@polygons[[1]]@Polygons[[1]]@coords
+
+xg<-seq(0,10,,30)
+yg<-seq(10,0,,30)
+
+delta<-mean(diff(xg))
+pts<- cbind(sort(rep(xg,30)),rep(yg,30))
+points(pts,pch=20)
+
+in.pts<-point.in.polygon(pts[,1],pts[,2],pg.coords[,1],pg.coords[,2])
+points(pts[in.pts==1,],pch=20,col="red")
+
+\end{verbatim}
 
 
+We focus on devising a SCR model for this corridor system and we
+imagine that animals will tend to severely avoid leaving the buffered
+habitat zone.
 
-\section{Simulation Study}
+\subsection{Distance Weighting}
 
-evaluate effect of ignoring eoclogical distance
+We consider a situation here in which we develop weights based on the
+distance from some feature such as a highway or a river. 
+
+\subsection{Hard Boundary}
+
+\section{Ecological distance in SCR models}
+
+\section{Real example}
 
 
 \section{Estimating Cost or Resistance Values}
 
+\section{Bayesian Analysis}
+
+Some of this stuff can be done easily enough in BUGS or we can code
+our own. e.g., we only need the distance matrix computed ahead of time
+and we can work on that with a discrete raster.  continuous space is
+less easy because BUGS doesn't have a function for computing
+ecological distance between any arbitrary points. 
+
+As for estimating the parameters of the ecological distance function
+-- this might at the present time be impossible in the BUGS
+variants. However, we can use the functions described above to
+implement our own MCMC algorithm following the developments of
+Chapt. \ref{chapt.mcmc}.
 
 
+\section{Summary and Outlook}
+
+This shit is hot. We are the man. There is no limit to what we can do.
+
+
+The effect of ignoring ecological distance e.g. if that is the true
+data generating model would be useful to investigate for some specific
+situations. obviously this will depend on the complexity of the
+landscape being considered and the actual manner in which animals use
+space, i.e., how they perceive distance. Since we can never know this,
+any kind of sim study would be inherently arbitrary and so we didn't
+pursue that here. [i guess i mean we never ever can observe actual
+costs at the pixel level or even get directinfo about that because we
+only observe the total distance traveled -- and that is only observed
+imperfectly -- so getting direct info about cost seems difficult and
+maybe not even possible. 
+If we had radio-colared guys we could estimate 1st order transition
+probabilities. i.e., Pr(goes to v(t+1) given at v(t)) and it seems
+like those transition probabilites are direct information about cost
+or propensity to go from v(t) to v(t+1).
+
+
+moving around in a buffer or on a stream network seems like a useful
+problem. what if we have such a network, then how screwed are we?
 
