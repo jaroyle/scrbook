@@ -844,13 +844,48 @@ We modified the function \mbox{\tt intlik3} to accept the integration
 grid as an argument and so we pass \mbox{\tt G} directly. The {\bf R} 
 script is in package \mbox{\tt scrbook}.
 
-
-
-XYZ-lookup-XYZ reported in
+We apply this modification to the wolverine camera trapping
+study. \citet{royle_etal:2011jwm} created 2, 4 and 8 km state-space
+grids so as to remove ``non-habitat'' (mostly ocean, bayes, and large
+lakes). We previously analyzed the model using {\bf JAGS} and {\bf WinBUGS} in
+Chapt. \ref{chapt.scr0}.  To set up the wolverine data and fit the
+model we execute the following commandes
+\begin{verbatim}
+wolvdata<-get_wolv_data.fn(nz=0)
+y<-wolvdata$ncaps
+K<-wolvdata$Kt
+traplocs<-wolvdata$traplocs
+G<-wolvdata$Sgrid2
+area<-4  # using 2 x 2 km grid cell, each has area 4 sq. km.
+frog<-nlm(intlik3b,c(-1.5,1.2,log(4)),hessian=TRUE,y=y,K=K,X=traplocs,G=G)
+\end{verbatim}
+Next we convert the parameter estimates to estimates of total
+population size for the prescribed state-space, density (per 1000
+$km^2$) and standard errors (obtained using a delta approximation):
+\begin{verbatim}
+Nhat<- 21+exp(frog$estimate[3])
+SE<-  exp(frog$estimate[3])*sqrt(solve(frog$hessian)[3,3])
+D<- (Nhat/(nrow(G)*area))*1000
+SE.D<- (SE/(nrow(G)*area))*1000
+\end{verbatim}
+We did this for each the 2 $km$, 4 $km$ and 8 $km$ state-space grids
+which produced the estimates summarized in Tab. \ref{mle.tab.wolv}.
+These estimates compare with XYZ-lookup-XYZ reported in
 \citet{royle_etal:2011jwm} based on a clipped state-space as described
 in section XYZ (XYZ chapter 4 XYZ).
 
-{\bf TO BE COMPLETED}
+\begin{table}
+\centering
+\caption{Wolverine MLES for 2 4 and 8 km grid}
+\begin{tabular}{cccccccc}
+grid &  alpha  &  theta &   logn0  & N   &  SE & D(1000) &  SE \\
+2  &  -2.995541& 1.265021 &4.110476 &81.97574& 16.30904 &8.310598 &1.653391\\
+4  &  -2.991268&1.344055  &4.157026 &84.88126& 16.76202 &8.570401& 1.692450\\
+8   & -3.051705& 1.080083 &4.058542 &78.88983& 15.31392 &7.851296& 1.524077\\
+\end{tabular}
+\label{mle.tab.wolv}
+\end{table}
+
 
 
 \subsection{
