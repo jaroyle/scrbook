@@ -53,9 +53,11 @@ The basic idea is that distance bewtween $x_{i}$ and $x_{j}$ is
  wd_{ij} =  w_{ij} ....\mbox{formula for this?}
 \]
 where .... and so on....XXX XYZ.
-To be consistent with the functioning of \mbox{\tt costDistance} the
-incremental cost is assessed for {\it leaving} a pixel, not
-arriving. As a consequence, the terminal value is not counted. 
+We assume here, to be consistent with our use 
+of \mbox{\tt costDistance}, the
+incremental cost of moving from one pixel to another is the
+distance-weighting of the {\it average} of the 2 pixel costs.
+%%%%%%%%%% As a consequence, the terminal value is not counted. 
 In addition to \mbox{\tt gdistance} we use functions from a number of
 other {\bf R} packages including \mbox{\tt rgeos}, \mbox{\tt
   shapefiles} and \mbox{\tt raster}.
@@ -76,6 +78,9 @@ think of as ``highly connected'' by virtue of being in good habitat)
 and, conversely, we assign high cost (100) to ``bad habitat''. So the
 shortest cost-weighted distance between pixels 2 and 3 in this example
 is just 1 unit, the shortest cost-distance between pixels 2 and 7 is
+%% Kimmy use this raster in the code below and then revise the stated
+%% cost-distances
+%% between the pixels
 sqrt(2) units, the shortest distance between pixels 13 and 14 is 100
 units, while the shortest cost-distance between 13 and 15 is 100. A
 tough one is: what is the shortest distance between 10 and 16? A guy at pixel
@@ -123,9 +128,10 @@ inverse of the raster. Then we define a set of points,
 the center points of each raster, to compute the cost-distance between
 them all. The commands altogether are as follows:
 \begin{verbatim}
-r<-1/r
+%%%%%r<-1/r  Actually we don't do this
 tr1<-transition(r,transitionFunction=max,directions=8)
 tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
+tr1CorrC<-1/tr1CorrC  # because the transitions are computed in conductance which is 1/cost
 pts<-cbind( sort(rep(1:4,4)),rep(4:1,4))
 costs1<-costDistance(tr1CorrC,pts)
 outD<-as.matrix(costs1)
@@ -136,25 +142,27 @@ couple of examples of calculating the minimum cost-weighted distance
 between points:
 \small{
 \begin{verbatim}
-     1    2    3    4   
-1   0.0  1.0  3.0  6.0  
-2   1.0  0.0  2.0  5.0  
-3   3.0  2.0  0.0  3.0  
-4   6.0  5.0  3.0  0.0  
-5   1.0  2.0  4.0  7.0  
-6   1.4  2.0  4.0  7.0  
-7   3.8  2.8  3.0  5.7  
-8   7.2  6.2  4.2  4.0  
-9   6.0  7.0  9.0 12.0  
-10  7.4  8.0 10.0 13.0  
-11  9.9  9.8 10.0 12.7 
-12 13.7 12.7 12.2 12.0 
-13 15.0 16.0 18.0 21.0 
-14 17.4 18.0 20.0 23.0 
-15 20.9 20.8 21.0 23.7 
-16 25.5 24.7 24.2 24.0 
+> outD[,1:4]
+      1    2    3    4
+1   0.0  1.5  4.0  7.5
+2   1.5  0.0  2.5  6.0
+3   4.0  2.5  0.0  3.5
+4   7.5  6.0  3.5  0.0
+5   3.0  4.5  7.0 10.5
+6   5.5  4.0  6.5 10.0
+7   9.0  7.5  5.0  8.5
+8  13.5 12.0  9.5  6.0
+9  10.0 11.5 14.0 17.5
+10 13.5 12.0 14.5 18.0
+11 18.0 16.5 14.0 17.5
+12 23.5 22.0 19.5 16.0
+13 21.0 22.5 25.0 28.5
+14 25.5 24.0 26.5 30.0
+15 31.0 29.5 27.0 30.5
+16 37.5 36.0 33.5 30.0
 \end{verbatim}
 }
+{\bf NEED TO REVISE BELOW}
 Moving down the first (left-most, as you look at it) column of the
 raster the cost-distance between pixel 1 and 2 is 1.0 which we know to
 be right because the cost of leaving pixel 1 is tabulated, and that is
