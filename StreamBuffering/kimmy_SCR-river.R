@@ -66,24 +66,35 @@ points(pts,pch=20,cex=.4)
 
 points(streampoints, pch=".", col="blue")
 
-rx<-1/rx
 
-## use max = doesn't count moving through boundary pixel
-tr1<-transition(rx,transitionFunction=max,directions=8)
+## wrong transitionFunction?
+###tr1<-transition(rx,transitionFunction=max,directions=8)
+###tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
+###costs1<-costDistance(tr1CorrC,pts)
+
+
+tr1<-transition(r,transitionFunction=function(x) 1/mean(x),directions=8)
 tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
+
+#doesn't actually do anything
+#tr1CorrC<-1/tr1CorrC
+
+
+
+sp<-rasterToPoints(r,spatial=TRUE)
+
 costs1<-costDistance(tr1CorrC,pts)
-
-sp<-rasterToPoints(rx,spatial=TRUE)
-
 outD<-as.matrix(costs1)
 
-points(matrix(pts[116,],ncol=2),col="red")
-points(matrix(pts[111,],ncol=2),col="blue")
+points(matrix(pts[226,],ncol=2),col="red")
+points(matrix(pts[216,],ncol=2),col="blue")
 
-outD[116,100:120]
+outD[226,210:230]
 
 plot(pts,pch=".")
 points(pts[in.pts==1,],pch=20,col="red")
+
+
 
 
 get.traplocs<-function(ntraps){
