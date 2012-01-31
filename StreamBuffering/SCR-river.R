@@ -92,9 +92,17 @@ points(pts,pch=20,cex=.4)
 
 r<-1/r
 
-## use max = doesn't count moving through boundary pixel
-tr1<-transition(r,transitionFunction=max,directions=8)
+## wrong transistionfunction
+#tr1<-transition(r,transitionFunction=max,directions=8)
+#tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
+
+#I think i did this right
+tr1<-transition(r,transitionFunction=function(x) 1/mean(x),directions=8)
 tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
+
+#not doing anything
+#tr1CorrC<-1/tr1CorrC
+
 costs1<-costDistance(tr1CorrC,pts)
 
 sp<-rasterToPoints(r,spatial=TRUE)
