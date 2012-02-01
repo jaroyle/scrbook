@@ -197,7 +197,6 @@ element-by-element inverse of the raster. Then we define a set of points,
 the center points of each raster, to compute the cost-distance between
 them all. The commands altogether are as follows:
 \begin{verbatim}
-%%%%%r<-1/r  Actually we don't do this
 tr1<-transition(r,transitionFunction=max,directions=8)
 tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
 tr1CorrC<-1/tr1CorrC  # because the transitions are computed in conductance which is 1/cost
@@ -243,6 +242,74 @@ shortest Euclidean distance, consider moving from pixel .....
 
 
 \section{Construction of the likelihood}
+\section{Likelihood analysis }
+
+The individual- and trap-specific observations have a binomial distribution conditional on the
+latent variable ${\bf s}_{i}$:
+\begin{equation}
+	y_{ij}| {\bf s}_{i} \sim \mbox{Bin}(K, p_{\theta}({\bf x}_{j},{\bf s}_{i}))
+\label{mle.eq.cond-on-s}
+\end{equation}
+where we have indicated the dependence of $p_{ij}$ on ${\bf s}$ and
+parameters $\theta$
+explicitly.
+For the random effect we have ${\bf s}_{i} \sim  \mbox{Unif}({\cal
+  S})$.
+The joint distribution of the data for individual $i$ is the product
+of $J$ such terms (i.e., contributions from each of $J$ traps).
+\[
+  [{\bf y}_{i} | {\bf s}_{i} , \theta] = 
+  \prod_{j=1}^{J} \mbox{Bin}(K, p_{\theta}({\bf x}_{j},{\bf s}_{i}) )
+\]
+We note that this assumes that encounter of individual $i$ in each
+trap is independent of encounter in every other trap. Conditional on
+${\bf s}_{i}$ this is reasonable in most applications in our view.
+ The so-called marginal likelihood is computed by removing
+${\bf s}_{i}$, by integration (hence also {\it integrated} likelihood), from the conditional-on-${\bf s}$
+likelihood and regarding the {\it marginal} distribution of the data
+as 
+the likelihood. That
+is, we compute:
+\[
+  [y|\theta] = 
+\int_{{\cal S}}  [ \theta | {\bf y}_{i} |{\bf s}_{i}] g({\bf s}_{i}) d{\bf s}_{i}
+\]
+In most SCR models, $g({\bf s}) = 1/||{\cal S}||$.
+The joint likelihood for all $N$ individuals, assuming independence of
+encounters among individuals, is the product of $N$ such terms:
+\[
+{\cal L}(\theta | {\bf y}_{1},{\bf y}_{2},\ldots, {\bf y}_{N}) =     \prod_{i=1}^{N}
+[{\bf y}_{i}|\theta]
+\]
+The key operation for computing the likelihood is solving a
+2-dimensional integration problem. There are some general purpose {\bf
+  R} packages that implement a number of 
+ multi-dimensional integration routines
+including \mbox{\tt adapt} \citep{genz_etal:2007} and \mbox{\tt R2cuba}
+\citep{hahn_etal:2011}.  In practice, we won't rely
+on these extraneous {\bf R} packages 
+but instead will use perhaps less
+efficient methods in which we replace the integral with a summation
+over an equal area mesh of points on the state-space ${\cal S}$ and explicitly
+evaluate the integrand at each point. We invoke the rectangular rule
+for integration here\footnote{e.g., 
+\url{http://en.wikipedia.org/wiki/Rectangle_method}
+} in which we
+evaluate the
+integrand on a regular grid of points of equal area and compute the
+average of
+the integrand over that grid of points. 
+Let $u=1,2,\ldots,nG$ index a grid of
+$nG$ points, ${\bf s}_{u}$,  where the area of grid cell $u$ is
+constant, say $A$.
+In this case, the integrand, i.e., the marginal pmf of 
+${\bf y}_{i}$, is approximated by  
+\begin{equation}
+         [{\bf y}_{i}|\theta] = \frac{1}{nG} \sum_{u=1}^{nG}  [ {\bf
+            y}_{i} |{\bf s}_u, \theta]
+\label{mle.eq.intlik}
+\end{equation}
+
 
 The likelihood is really just this.....
 let $yij$ be the number of encounters of individual $i$ in trap $j$ out of
