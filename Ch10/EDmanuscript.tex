@@ -82,34 +82,36 @@ capture-recapture models essentially admits a model misspecification
 (i.e. homogeneous encounter probability) by ignoring the explicit
 spatial information.
 
-Every application of SCR models to this point is based on encounter 
+Every application of SCR models so far has been  based on encounter 
 probability models in which distance between individual activity center 
-and trap location is parameterized by simple Euclidean distance.
+and trap location is defined by a function of  simple Euclidean distance.
 While these will often be sufficient for practical purposes,
-especially in small data sets, there will sometimes be interest in
+especially in small data sets, sometimes 
 developing more complex models of the detection process as it relates
-to space usage of individuals.
-However, animals may not judge distance in terms of euclidean distance
+to space usage of individuals will be useful.
+Animals may not judge distance in terms of Euclidean distance
 but, rather, according to quality of local habitat, landscape
-connectivity and other considerations that statisticians might not
+connectivity, perceived mortality risk, and other considerations that statisticians might not
 really understand. Moreover, because encounter probability and the
 distance metric upon which that is based represent outcomes of
-individual movements about their home range, it is natural that
-landscape ecologists might have explicit hypotheses about things that
-affect the distance metric.
+individual movements about their home range,
+ecologists might have explicit hypotheses about how 
+environmental variables 
+affect the distance metric, and it is therefore desireable to incorporate these
+hypotheses directly into SCR models so that they may be formally evaluated statistically.
 
 In this paper we develop models for encounter probability based on
 alternative distance metrics that account for ecological
 considerations -- which, in keeping with the conventions in the
 ecological literature, we will call ``ecological distance''. In
-particular, we adopt a cost-weighted distance metric which is an idea
-in widespread use in landscape ecology for modeling connectivity,
+particular, we adopt a cost-weighted distance metric (the least-cost path) 
+used widely in landscape ecology for modeling connectivity,
 movement and gene flow
 \citep{adriaensen_etal:2003,manel_etal:2003,mcrae_etal:2008}. In the
 context of SCR models we can use this as the basis for computing the
 distance between traps and individuals activity centers. In this way
-we can explicitly accommodate some landscape structure and ideas
-related to how animals use space in SCR models. We develop a
+we can explicitly accommodate landscape structure and 
+account for how animals use space in SCR models. We develop a
 likelihood-based inference framework for SCR model parameters using
 this new distance metric when the ecological distance function is
 known.  We show that the MLEs are approximately unbiased in moderate
@@ -130,7 +132,7 @@ suppose that $J$ traps at locations ${\bf x}_{j}$ are operated for $K$
 periods (e.g., nights) although our development of cost-distance
 models is directly applicable to other observation models without any
 further technical considerations. The binomial model is most directly
-relevant to devices such as ``hair snares'' \citep{gardner_etal:2010} or
+relevant to devices such as ``hair snares'' \citep{woods_etal:1999,gardner_etal:2010} or
 scent sticks \citep{kery_etal:2010} for which individuals can only be
 encountered a single time per observation occasion.
 
@@ -185,7 +187,7 @@ gdistance} \index{R package!gdistance} which computes the distance
 between points by accumulating pixel-specific costs assigned by the user 
 (but we consider estimating these in Sec. XYZ). The idea is widely used in
 landscape ecology for modeling connectivity, movement and gene flow
-\citep{adriaensen_etal:2003,mcrae_etal:2008}. As is customary for reasons of
+\citep{adriaensen_etal:2003}. As is customary for reasons of
 computational tractability we consider a discrete landscape defined by a 
 raster of some prescribed resolution. The distance between any two points 
 ${\bf x}$ and ${\bf x}'$ can be represented by a sequence of line segments 
@@ -211,10 +213,15 @@ covariate $z(x)$:
 Thus, if $\theta_{2} = 0$ then substituting $cost(x)$ into
 Eq. \ref{eq.costweighted} will produce the ordinary Euclidean distance
 between points. 
-In practical applications, i.e., in landscape ecology, variables that
+In practical applications, variables that
 influence the cost of moving across the landscape include things like
-distance to roads, elevation, ruggedness, human disturbance and
-related things (Tabitha can you say something smart-sounding here?).
+highways (e.g. Epps et al. 2005), elevation (e.g.Cushman et al. 2006), 
+ruggedness (e.g. Epps et al. 2007), snow cover (e.g.Schwartz et al. 2009), 
+distance to escape terrain (e.g.Shirk et al. 2010), or predator density 
+(CITE elk/wolf paper).  Together multiple environmental variables create 
+a resistance surface, which forms the linchpin of all connectivity 
+planning (Spear et al. 2010). 
+.
 
 Given the ``cost'' of each pixel, it is a simple matter to compute the
 cost-weighted distance between any two pixels, along {\it any} path,
@@ -279,15 +286,21 @@ The raster, in image form, is shown in Fig. \ref{ecoldist.fig.raster}.
 \label{ecoldist.fig.raster}
 \end{figure}
 
-Then we use the functions \mbox{\tt transition}, \mbox{\tt
-  geoCorrection} (which doesn't really do anything but reformat the
-data somehow) and \mbox{\tt costDistance} to compute the distance
-matrix. They operate on this inverse-scale so we first take the 
-element-by-element inverse of the raster. Then we define a set of points,
-the center points of each raster, to compute the cost-distance between
-them all. The commands altogether are as follows:
+Then we use the functions \mbox{\tt transition}, which calculates the cost of
+moving between neighboring pixels, \mbox{\tt
+  geoCorrection}  which modifies the costs of moving diagonally by the additional distance,
+   and \mbox{\tt costDistance} to compute the distance
+matrix. We define a set of points,
+the center points of each raster, to compute the pair-wise cost-distances between all raster pixels.
+ The commands altogether are as follows:
 {\bf Tabitha}: Can you say something here about why this is 1/mean(x)?
 \begin{verbatim}
+#The transition function specifies that we'd like to use the mean of 
+# 2 neighboring pixels as the weight and then takes the inverse to convert 
+# the costs into conductances, which algorithms within gdistance and 
+# igraph require. We use the argument directions= 8 to specify that 
+# all 8 touching pixels are neighbors.)
+
 tr1<-transition(r,transitionFunction=function(x) 1/mean(x),directions=8)
 tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
 pts<-cbind( sort(rep(1:4,4)),rep(4:1,4))
@@ -456,16 +469,19 @@ We define
 where $\beta = 1$ which we regard as known. With $\beta=0$ then the model reduces to
 one in which the cost of moving across each pixel is constant, and therefore Euclidean
 distance is operative.
- Of course this is a model and it is completely
-unreasonable to regard $\beta$ as known but this is standard practice in essentially all
-historical studies of landscape or genetic connectivity although sometimes crude methods
-of estimation in specific contexts are based on comparing distance matrices of genetic
-structure with those produced by simulation models so that either $\beta$ might be estimated
-crudely or covariates which improve fit can be selected. REFs????
-However this stuff has never been formalized in a likelihood context and especially
-not for SCR models. 
-Anyhow, we consider the known-$\beta$ situation first before dealing with estimating
-this parameter. 
+ Of course this is a model and 
+$\beta$ is rarely known, but conservation biologists design linkages that require this resistance value
+as input (Beier et al. 2008). 
+Typically planners pick a value based on expert opinion (Beier et al. 2007), although recently researchers
+have begun to define costs based on resource selection functions, animal movement (Tracy 200X, Dickson et al. 2005), or
+genetic distance data (e.g., Gerlack and Musolf 2000; Epps et al. 2007; Schwartz et al. 2009). The
+published methods require many assumptions and these estimates have not 
+ been formalized in a likelihood context 
+for SCR models. 
+
+Subsequently we provide a simulation evaluation of likelihood estimation of animal density using ecological
+distance constructed for a simulated landscape. We first consider the known-$\beta$ situation first 
+before then estimating the parameter $\beta$ that controls resistance. 
 
 
 \subsection{Simulation studies}
@@ -569,8 +585,8 @@ applicability of SCR models.
 All applications of SCR models have been based on models for the
 encounter probability that are functions of
 the standard Euclidean distance between
-individuals and traps. This has obvious limitations including that it is
-unaffected by landscape or habitat structure and it implies
+individuals and traps. The obvious limitations are that it is
+unaffected by landscape or habitat structure and implies
 stationary,  isotropic and symmetrical home ranges. These are standard
 criticisms of the basic SCR model as universally applied in practice. 
 In this paper,  we have developed for the first time a formal framework 
@@ -590,7 +606,7 @@ models and regarded those as invariant to
 the underlying landscape. Here we have shown that there is hope to
 estimate parameters, from capture-recapture data,
  that describe how animals use space and thereby
-allowing for irregular home range geometry that is influenced by
+allow for irregular home range geometry that is influenced by
 landscape structure.
 
 Not surprisingly, our simulation study demonstrated that the MLE of model
@@ -613,11 +629,11 @@ population.
 In our view, this bias is not really the most important reason to consider models of
 ecological distance. Rather, inference about the structure of
 ecological distance is fundamental to many problems in applied and
-theoretical ecology that have to do with modeling landscape
+theoretical ecology related to modeling landscape
 connectivity, corridor and reserve design, population viability
 analysis, gene flow, and other phenomena. 
 Our new model 
-allows investigators to to evaluate landscape
+allows investigators to  evaluate landscape
 factors that influence movement of individuals over the landscape and
 therefore SCR models based on ecological distance metrics might aid in
 corridor design and understanding other aspects of space usage and
