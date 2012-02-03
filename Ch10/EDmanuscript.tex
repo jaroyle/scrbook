@@ -249,21 +249,18 @@ the objective function defined by Eq. \ref{eq.costweighted}. That is,
   =  min_{{\bf l}_{1},\ldots,{\bf l}_{m}}  \sum_{i=1}^{m-1} cost({\bf l}_{i},{\bf l}_{i+1})||{\bf l}_{i} - {\bf l}_{i+1}||
 \label{eq.lcp}
 \end{equation}
-
-
-
-
-  This is
-done in some GIS packages and also in the {\bf R} package \mbox{\tt
-  costDistance} using the implementation of Dijkstra's algorithm
+Calculation of the least-cost path is done
+in some GIS packages and also in the {\bf R} package \mbox{\tt
+  costdistance} using the implementation of Dijkstra's algorithm
 \citep{dijkstra:1959} found in the \mbox{\tt igraph} package
 \citep{csardi:2010}.
 
-
+The key ecological aspect of least-cost path modeling is the
+development 
+of models for pixel-specific cost. 
 In this paper we consider modeling cost as a function of covariates
 defined on every pixel of the raster according to, for example using a
-single
-covariate $z(x)$:
+single covariate $z(x)$:
 \begin{equation}
  log(cost(x))=  \theta_{2} z(x)
 \label{eq.cost}
@@ -273,10 +270,10 @@ Eq. \ref{eq.costweighted} will produce the ordinary Euclidean distance
 between points.
 In practical applications, variables that
 influence the cost of moving across the landscape include things like
-highways (e.g. \citet{epps_etal:2005}), elevation
-(e.g.\citet{cushman_etal:2006}),
-ruggedness (e.g. \citet{epps_etal:2007}), snow cover (e.g.\citet{schwartz_etal:2009}),
-distance to escape terrain (e.g. \citet{shirk_etal:2010}), or predator density
+highways  \citep[e.g.,][]{epps_etal:2005}, elevation
+\citep{cushman_etal:2006},
+ruggedness \citep{epps_etal:2007}, snow cover \citep{schwartz_etal:2009},
+distance to escape terrain \citep{shirk_etal:2010}, or predator density
 (CITE elk/wolf paper).  Together multiple environmental variables create
 a resistance surface, which forms the linchpin of all connectivity
 planning \citep{spear_etal:2010}.  Often $\theta_{2}$ is fixed by the
@@ -294,23 +291,22 @@ methods require many assumptions and these estimates have not been
 integrated with capture-recapture methods, nor have parameters been
 formally estimated using capture-recapture data.
 
-\hl{rather that base our discussion on R packages, perhaps we could
-  just reference them as possible method to implement our ideas}
-
-Given the ``cost'' of each pixel, it is a simple matter to compute the
-cost-weighted distance between any two pixels, along {\it any} path,
-simply by accumulating the intermittent costs weighted by distances.
-To be consistent with our use of the {\bf R} package \mbox{\tt
-  costdistance} \citep{vanetten:2011}, the incremental cost of moving
-from one pixel to another is the distance-weighting of the {\it
-  average} of the 2 pixel costs (see below).  
-
-
 To formalize the use of cost-weighted distance in SCR models, we
 substitute Eq. \ref{eq.costweighted} in the expression for encounter
 probability (Eq. \ref{eq.encounter}) and maximize the resulting
 likelihood (see the next section), including for estimating the
 parameter $\theta_{2}$.
+
+Given the ``cost'' of each pixel, it is a simple matter to compute the
+cost-weighted distance between any two pixels, along {\it any} path,
+simply by accumulating the intermittent costs weighted by
+distances. This is done in many GIS and other software packages,
+including the {\bf R} package \mbox{\tt
+  costdistance} \citep{vanetten:2011}. To use that package (see
+below), we define the incremental cost of moving
+from one pixel to another is the distance-weighting of the {\it
+  average} of the 2 pixel costs.
+
 
 
 
@@ -347,9 +343,13 @@ values(r)<-matrix(costs1,4,4,byrow=FALSE)
 par(mfrow=c(1,1))
 plot(r,useRaster=F)
 \end{verbatim}
+Once the cost raster is created, the least-cost path distances are
+computed with just a couple {\bf R} commands, and those can be
+inserted directly into the likelihood construction for an ordinary
+spatial capture-recapture model (Appendix 1).
 
-\hl{I don't think most people like looking at R code as much as we
-  do. Could this be put in an appendix?}
+
+
 
 \begin{figure}
 \begin{center}
@@ -359,28 +359,6 @@ plot(r,useRaster=F)
 \label{ecoldist.fig.raster}
 \end{figure}
 
-We use the \mbox{\tt costDistance} library to compute the least-cost
-distances.  The helper functions \mbox{\tt transition}, which
-calculates the cost of moving between neighboring pixels, and
-\mbox{\tt geoCorrection} which modifies the costs of moving diagonally
-by the additional distance, produce output which feeds into the
-function \mbox{\tt costDistance} to compute the pair-wise distance
-matrix. For that, we define the center points of each raster.  The
-commands altogether are as follows:
-\begin{comment}
-# The transition function specifies that we'd like to use the mean of
-# 2 neighboring pixels as the weight and then takes the inverse to convert
-# the costs into conductances, which algorithms within gdistance and
-# igraph require. We use the argument directions= 8 to specify that
-# all 8 touching pixels are neighbors.)
-\end{comment}
-\begin{verbatim}
-tr1<-transition(r,transitionFunction=function(x) 1/mean(x),directions=8)
-tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
-pts<-cbind( sort(rep(1:4,4)),rep(4:1,4))
-costs1<-costDistance(tr1CorrC,pts)
-outD<-as.matrix(costs1)
-\end{verbatim}
 \begin{comment}
 Now we can look at the result and see if it makes sense to us. Here we
 print the first 4 columns of this distance matrix and illustration a
@@ -400,19 +378,28 @@ between points:
 \subsection{Non-stationarity of home range structure}
 
 When distance is defined by the cost-weighted distrance metric given
-by Eq. \ref{eq.costweighted} then individual space-usage varies
+by Eq. \ref{eq.lcp} then individual space-usage varies
 spatially in response to the landscape covariate(s) used in the
 distance metric. For example, using one of the covariates we use in
 our simulation study below (Fig. \ref{ecoldist.fig.raster100}, right
 panel) with a Gaussian pdf detection function but having distance
-metric defined by Eq. \ref{eq.costweighted}, produces home ranges such
-as those shown in Fig. \ref{fig.homeranges}.
+metric defined by Eq. \ref{eq.lcp}, produces home ranges such
+as those shown in Fig. \ref{fig.homeranges}. Later we simulate data
+under the model that produces these home ranges and fit spatial
+capture-recapture models to evaluate the efficacy of likelihood
+estimation under this model. 
 
 \begin{figure}
 \begin{center}
 \includegraphics[height=6in,width=3.75in]{figs/home_ranges}
 \end{center}
-\caption{6 typical home ranges}
+\caption{
+6 typical home ranges using the cost surface shown in
+  Fig. \ref{ecoldist.fig.raster100}. The black dot indicates the home
+  range center and the pixels around each home range center are shaded
+according to the probability of encounter, if a trap were located in
+that pixel. 
+}
 \label{fig.homeranges}
 \end{figure}
 
@@ -429,14 +416,16 @@ variables ${\bf s}$ are removed by integration \citep{borchers_efford:2008}.
 The individual- and trap-specific observations have a binomial
 distribution conditional on the latent variable ${\bf s}_{i}$:
 \begin{equation}
-	y_{ij}| {\bf s}_{i} \sim \mbox{Bin}(K, p_{\theta}({\bf x}_{j},{\bf s}_{i}))
+	y_{ij}| {\bf s}_{i} \sim \mbox{Bin}(K, p_{\theta}(d_{lcp}({\bf x}_{j},{\bf s}_{i};\theta_{2}))
 \label{mle.eq.cond-on-s}
 \end{equation}
-where we have indicated the dependence of $p_{ij}$ on ${\bf s}$ and
-the vector of parameters ${\bm \theta}$ explicitly. The parameters
-${\bm \theta}$ include whatever parameters are involved in the
-cost-weighted distance function, i.e., at least $\theta_{2}$ from
-Eq. \ref{eq.cost}.
+where we have indicated the dependence of $p_{ij}$ on the parameters
+${\bm \theta}$, and also $d_{lcp}$ which
+itself depends on $\theta_{2}$, and the latent variable ${\bf s}$.
+%The parameters
+%${\bm \theta}$ include whatever parameters are involved in the
+%cost-weighted distance function, i.e., at least $\theta_{2}$ from
+%Eq. \ref{eq.cost}.
 For the random effect we have ${\bf s}_{i} \sim  \mbox{Unif}({\cal
   S})$.
 The joint distribution of the data for individual $i$ is the product
@@ -772,6 +761,31 @@ estimated from the data.  The coolness of this would defy experience.
 
 % Figures
 
+
+\section*{Appendix 1: {\bf R} code for computing least-cost path
+  distance and likelihood analysis of the SCR model}
+
+The helper functions \mbox{\tt transition}, which
+calculates the cost of moving between neighboring pixels, and
+\mbox{\tt geoCorrection} which modifies the costs of moving diagonally
+by the additional distance, produce output which feeds into the
+function \mbox{\tt costDistance} to compute the pair-wise distance
+matrix. For that, we define the center points of each raster.  The
+commands altogether are as follows:
+\begin{comment}
+# The transition function specifies that we'd like to use the mean of
+# 2 neighboring pixels as the weight and then takes the inverse to convert
+# the costs into conductances, which algorithms within gdistance and
+# igraph require. We use the argument directions= 8 to specify that
+# all 8 touching pixels are neighbors.)
+\end{comment}
+\begin{verbatim}
+tr1<-transition(r,transitionFunction=function(x) 1/mean(x),directions=8)
+tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
+pts<-cbind( sort(rep(1:4,4)),rep(4:1,4))
+costs1<-costDistance(tr1CorrC,pts)
+outD<-as.matrix(costs1)
+\end{verbatim}
 
 
 
