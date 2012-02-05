@@ -261,8 +261,9 @@ the objective function defined by Eq. \ref{eq.costweighted}. That is,
 \end{equation}
 Given the ``cost'' of each pixel, it is a simple matter to compute the
 cost-weighted distance between any two pixels, along {\it any} path,
-simply by accumulating the intermittent costs weighted by
-distances. This is done in many GIS and other software packages,
+simply by accumulating the incremental  costs weighted by
+distances. Least-cost path distance can be calculated in
+ many geographic information systems and other software packages,
 including the {\bf R} package \mbox{\tt
   gdistance} \citep{vanetten:2011}.
 
@@ -270,16 +271,23 @@ including the {\bf R} package \mbox{\tt
 The key ecological aspect of least-cost path modeling is the
 development 
 of models for pixel-specific cost. 
-In this paper we consider modeling cost as a function of covariates
+In this paper we model cost as a function of covariates
 defined on every pixel of the raster according to, for example using a
 single covariate $z(x)$:
 \begin{equation}
- log(cost(x))=  \theta_{2} z(x)
+ log(cost({\bf x}))=  \theta_{2} z({\bf x})
 \label{eq.cost}
 \end{equation}
+This is interpreted as cost of moving {\it through} a pixel but, in practice, it is accumulated 
+incrementally as the most of moving from a pixel ${\bf x}$ to one of its neighbors, say ${\bf x}'$. As such, it is conventional
+to express this as an average cost 
+\[
+ log(cost({\bf x},{\bf x}'))=  \theta_{2} \frac{z({\bf x})+z({\bf x})}{2}
+\]
 Thus, if $\theta_{2} = 0$ then substituting $cost(x)$ into
-Eq. \ref{eq.costweighted} will produce the ordinary Euclidean distance
+Eq. \ref{eq.lcp} will produce the ordinary Euclidean distance
 between points.
+
 In practical applications, variables that
 influence the cost of moving across the landscape include things like
 highways  \citep[e.g.,][]{epps_etal:2005}, elevation
@@ -304,7 +312,7 @@ integrated with capture-recapture methods, nor have parameters been
 formally estimated using capture-recapture data.
 
 To formalize the use of cost-weighted distance in SCR models, we
-substitute Eq. \ref{eq.costweighted} in the expression for encounter
+substitute Eq. \ref{eq.lcp} in the expression for encounter
 probability (Eq. \ref{eq.encounter}) and maximize the resulting
 likelihood (see the next section), including for estimating the
 parameter $\theta_{2}$.
@@ -316,6 +324,7 @@ parameter $\theta_{2}$.
 As an example of the cost-weighted distance calculation consider the
 following landscape comprised of 16 pixels with unit spacing
 identified as follows, along with the pixel-specific cost:
+\begin{center}
 \begin{verbatim}
   pixel ID                 Cost
   1  5  9  13          100   1   1  1
@@ -323,12 +332,13 @@ identified as follows, along with the pixel-specific cost:
   3  7 11  15          100 100 100  1
   4  8 12  16          100 100   1  1
 \end{verbatim}
-Then we assign low cost of 1 to ``good habitat'' pixels (or pixels we
+\end{center}
+Then we assigned low cost of 1 to ``good habitat'' pixels (or pixels we
 think of as ``highly connected'' by virtue of being in good habitat)
 and, conversely, we assign high cost (100) to ``bad habitat''. So the
 shortest cost-weighted distance between pixels 5 and 9 in this example
 is just 1 unit, the shortest cost-distance between pixels 5 and 10 is
-sqrt(2) units = 1.414214, the shortest distance between pixels 4 and 8 is 100
+$\sqrt{2}(1+1)/2 = 1.414214$ units, the shortest distance between pixels 4 and 8 is 100
 units, while the shortest cost-distance between 4 and 12 is 150.5. A
 tough one is: what is the shortest distance between 7 and 16? An
 individual at pixel 7 can move diagonal and pay  $sqrt(2)*(100+1)/2 + 1 =72.41778$.
@@ -353,7 +363,7 @@ spatial capture-recapture model (Appendix 1). The {\bf R} package
 \citep{csardi:2010}.
 Using \mbox{\tt gdistance}, (Appendix 1),
 we define the incremental cost of moving
-from one pixel to another is the distance-weighting of the {\it
+from one pixel to another as the distance-weighted {\it
   average} of the 2 pixel costs.
 
 
@@ -482,15 +492,14 @@ approximated by
 \label{mle.eq.intlik}
 \end{equation}
 
-\hl{In this next paragraph, we discuss encounter history data, but we
-  haven't defined that term yet. We should define the data structure
-  in more detail perhaps}
 
 To deal with the fact that $N$ is unknown,
 there are two key issues that need to be addressed.
 First is that
-we don't observe the all-zero encounter history so we have to
-make sure we compute the probability for that ``all zero'' encounter history which
+we don't observe the ``all-zero'' encounter histories (i.e., $y_{ij} = 0$ for all $j$)
+corresponding to 
+uncaptured individuals, so we have to
+make sure we compute the probability for that all zero encounter history which
 we do operationally by tacking a row of zeros onto the encounter history matrix. In
 addition, we include the number of such all-zero encounter histories
 as an unknown parameter of the model. Call that unknown quantity $n_{0}$.
@@ -514,7 +523,7 @@ The {\bf R} code is given as a script in the Appendix and the {\bf R}
 package \mbox{\tt scr}
 is available on the website
 \url{https://sites.google.com/site/spatialcapturerecapture/}. The
-\mbox{\tt scr} also contains
+\mbox{\tt scr} package also contains
 functions for simulating data.
 
 
@@ -533,7 +542,7 @@ they are from the polygon boundary (cost might be related to distance)
 and similar operations. In the following examples, we confront how to
 do some of these operations in {\bf R}.
 \end{comment}
-We define a $20 \times 20$ pixel raster with extent $[0.5, 4.5] \times
+We define a $20 \times 20$ pixel covariate raster with extent $[0.5, 4.5] \times
 [0.5, 4.5]$.  We regard for the purposes of this example as a coarse
 landscape covariate, with pixels having some arbitrary scaling say, a
 $2 \times 2$ km resolution. Thus, the raster therefore defines a
@@ -542,15 +551,15 @@ established at the integer coordinates $(1,1), (1,2), \ldots,
 (4,4)$. We could think of this as a landscape within which we're
 studying a population of ocelots, lynx or some other cat.
 
-For our analyses, we suppose that each raster is characterized by a
-single covariate and we consider two specific cases. First is an
-increasing trend from the NW to the SE, where $z(x)$ is defined as
+For our analyses, cost is characterized by a
+single covariate raster and we consider two specific cases. First is an
+increasing trend from the NW to the SE (''systematic raster''), where $z(x)$ is defined as
 $z(x) = r(x) + c(x)$ where $r(x)$ and $c(x)$ are just the row and
 column, respectively, of the raster.  This might define something
 related to distance from an urban area or a gradient in habitat
 quality due to land use, or environmental conditions.  In the second
 case we make up a covariate by generating a field of spatially
-correlated noise to emulate a typical patchy habitat covariate. The
+correlated noise to emulate a typical patchy habitat covariate (''patchy raster''). The
 two covariates are shown in Fig. \ref{ecoldist.fig.raster100}. For
 both covariates we use a cost function in which
 \[
@@ -607,28 +616,32 @@ along with 16 trap locations. }
 \label{ecoldist.fig.raster100}
 \end{figure}
 
-The simulation results are presented in Table XYZ below. Brief
+The simulation results are presented in Table \ref{tab.results1} below. Brief
 discussion to follow. 
 For the systematic cost raster the average sample sizes of individuals
 captured were 
-\begin{verbatim}
-systematic 
- 38.69    78.17
- 51.095  103.18
- 65.81   132.39
+\begin{table}[ht]
+\centering
+\caption{
+Expected sample sizes of captured individuals under each configuration of 
+$N$ (population size for the prescribed state-space) and $K$ (number of replicate samples). 
+}
+\begin{tabular}{l|rrrr}
+ & \multicolumn{2}{c}{Systematic} & \multicolumn{2}{c}{Patchy}  \\
+    & N=100 &  N=200  &   N=100 &  N=200  \\ \hline
+K=3 &  38.69 &   78.17  &   37.30 &   74.93  \\
+K=5 &  51.10 &  103.18  &   51.89 &  103.71 \\
+K=10&  65.81 &  132.39  &   69.44 &  138.76 \\
+\end{tabular}
+\label{tab.samplesize}
+ \end{table}
 
-random cost raster
- 37.3     74.93
- 51.89   103.71
- 69.44   138.76
-\end{verbatim}
 
-
-\begin{table}[h]
+\begin{table}[ht]
 {\small
 \caption{Simulations results. 200 realizations. Various other things.}
 Systematic trend raster: \\
-\begin{tabular}{l|rrrrrrrrrr}
+\begin{tabular}{l|rrrrr|rrrrr}
          & \multicolumn{5}{c}{N=100   } & \multicolumn{5}{c}{N=200  }  \\
          &   mean &  SD  & 0.025 & 0.50 & 0.975  & mean  & SD   & 0.025 & 0.50  & 0.975 \\ \hline
 K=3      &        &      &       &      &        &       &      &       &       &       \\
@@ -642,10 +655,11 @@ lcp/est  &  98.94 &12.97 & 74.68 & 99.00& 123.88 & 198.80& 19.60& 166.87& 197.97
 K=10     &        &      &       &      &        &       &      &       &       &       \\
 euclid   &  69.24 & 4.83 & 59.37 & 69.47&  79.18 & 139.83&  7.62& 125.65& 139.65& 154.82\\
 lcp/known&  94.46 & 7.04 & 81.45 & 94.04& 108.83 & 190.47& 11.55& 170.49& 189.74& 213.19\\
-lcp/est  &  97.53 & 8.18 & 82.02 & 97.62& 113.16 & 195.19& 13.28& 171.63& 194.58& 217.96\\
-\end{tabular}
+lcp/est  &  97.53 & 8.18 & 82.02 & 97.62& 113.16 & 195.19& 13.28& 171.63& 194.58& 217.96\\ \hline
+\end{tabular} 
+\\
 patchy "random" raster \\
-\begin{tabular}{lrrrrrrrrrr}
+\begin{tabular}{l|rrrrrrrrrr}
          & \multicolumn{5}{c}{N=100  } & \multicolumn{5}{c}{N=200   }  \\
          &   mean &  SD  & 0.025 & 0.50  & 0.975  & mean  & SD   & 0.025 & 0.50  & 0.975 \\ \hline
 K=3      &        &      &       &       &        &       &      &       &       &       \\
@@ -659,9 +673,10 @@ lcp/est  & 104.44 & 15.79& 78.38 &101.47 & 139.55 & 200.91& 20.78& 164.42& 200.4
 K=10     &        &      &       &       &        &       &      &       &       &       \\
 euclid   &  78.01 & 5.26 & 68.00 & 77.96 & 87.81  & 156.27&  8.51& 142.17& 156.05& 174.55\\
 lcp/known&  99.84 & 7.09 & 86.86 & 99.84 & 114.11 & 198.64& 11.04& 181.43& 197.62& 220.45\\
-lcp/est  & 100.42 & 7.56 & 86.72 &100.34 & 115.47 & 198.45& 11.44& 180.06& 198.04& 219.52\\
+lcp/est  & 100.42 & 7.56 & 86.72 &100.34 & 115.47 & 198.45& 11.44& 180.06& 198.04& 219.52\\ \hline
 \end{tabular}
 }
+\label{tab.results1}
 \end{table}
 
 
@@ -726,8 +741,8 @@ connectivity, corridor and reserve design, population viability
 analysis, gene flow, and other phenomena.
 Our new model
 allows investigators to  evaluate landscape
-factors that influence movement of individuals over the landscape and
-therefore SCR models based on ecological distance metrics might aid in
+factors that influence movement of individuals over the landscape. 
+Therefore SCR models based on ecological distance metrics might aid in
 corridor design and understanding other aspects of space usage and
 movement in animal populations.
 
@@ -743,14 +758,18 @@ very large rasters, even likelihood analysis can be computationally
 challenging and methods for efficient calculation of the ecological distance
 given the raster covariate(s) and parameters might be needed.
 Some additional extensions of the model may be of general
-interest. Instead of
-having explicit covariates it might be possible to estimate the
+interest. 
+We have used least-cost paths here to represent ecological distance although
+other distance metrics could be used, including circuit resistance distances
+\citep{mcrae_beier:2007} which allows that animals can move through multiple paths 
+in the landscape.
+Instead of characterizing cost with 
+explicit covariates it might be possible to estimate the
 ``resistance surface'' as a latent field, much as \citep{wikle:2003}
  did in the developing of models of species spread based on a
  diffusion process. He defined the spatially-explicit rate of
 diffusion, $\delta(x)$, as a Gaussian spatial process and it was
-estimated from the data.  The coolness of this would defy experience.
-
+estimated from the data.  
 
 
 
