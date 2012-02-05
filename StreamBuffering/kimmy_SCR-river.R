@@ -1,65 +1,42 @@
 
 ###
-### Andy's SCR stuff starts here
+### Kimmy's SCR stuff starts here
 ####
 
 library("rgeos")
 library("shapefiles")
 library("gdistance")
+library("maptools")
+library("spatstat")
 
-make.seg<-function(npts){
-l2<-locator(npts)
-l2<-cbind(l2$x,l2$y)
-l2<-round(l2,2)
-tmp<-NULL
-for(i in 1:nrow(l2)){
-tmp<-paste(tmp,l2[i,1],l2[i,2])
-if(i<nrow(l2))
-tmp<-paste(tmp,",")
-}
-l2b<- paste("LINESTRING(",tmp,")")
-l2<- readWKT(l2b)
-return(l2)
-}
+setwd("C:\\Documents and Settings\\Kgazenski\\My Documents\\Andy\\streambuffering")
 
-if(1==2){
-plot(NULL,xlim=c(0,10),ylim=c(0,10))
-l1<-make.seg(9)
-plot(l1)
-l2<-make.seg(5)
-plot(l1)
-lines(l2)
-}
-if(1==2){
-plot(NULL,xlim=c(0,30),ylim=c(0,30))
-l1<-make.seg(9)
-plot(l1)
-l2<-make.seg(5)
-plot(l1)
-lines(l2)
-}
+streamnet<- readShapeLines("clip_pwrcstreamnet")
+plot(streamnet, col="blue")
 
-# do this to load my polygons
-load("polygons.RData")
+streambuf<- gBuffer(streamnet, width=0.002)
+plot(streambuf)
+
+
+pspstreamnet<- as.psp(streamnet)
+streampoints<- pointsOnLines(pspstreamnet)
+plot(streampoints)
+
+plot(streambuf)
+plot(streampoints, pch=".", col="blue", add=TRUE)
 
 
 
-
-buffer<- 0.5
-l1<-l1.old
-l2<-l2.old
-par(mfrow=c(1,1))
-aa<-gUnion(l1,l2)
-plot(gBuffer(aa,width=buffer),xlim=c(0,10),ylim=c(0,10))
-pg<-gBuffer(aa,width=buffer)
+pg<-gBuffer(streamnet, width=0.002)
 pg.coords<- pg@polygons[[1]]@Polygons[[1]]@coords
  # note: can you believe this shit?
 #pg.coords<-pg.coords*3
 
-xg<-seq(0,10,,30)
-yg<-seq(10,0,,30)
-#xg<-1:30
-#yg<-30:1
+
+
+xg<-seq(-76.858,-76.68,,30)
+yg<-seq(38.97,39.16,,30)
+
 
 delta<-mean(diff(xg))
 pts<- cbind(sort(rep(xg,30)),rep(yg,30))
@@ -76,46 +53,48 @@ cost[in.pts!=1]<-10000   # high cost
 library("raster")
  r<-raster(nrows=30,ncols=30)
  projection(r)<- "+proj=utm +zone=12 +datum=WGS84"
- extent(r)<-c(0-delta/2,10+delta/2,0-delta/2,10+delta/2)
+ extent(r)<-c(-76.858-delta/2,-76.68+delta/2,38.97-delta/2,39.16+delta/2)
  #extent(r)<-c(.5,30.5,.5,30.5)
 
- #values(r)<-rot(rot(rot(matrix(cost,30,30,byrow=TRUE))))
+
+#values(r)<-rot(rot(rot(matrix(cost,30,30,byrow=TRUE))))
 values(r)<-matrix(cost,30,30,byrow=FALSE)
 par(mfrow=c(1,1))
-plot(r)
+rx<-flip(r,direction="y")
+plot(rx)
 points(pts,pch=20,cex=.4)
 
-### OR DO THIS
-#values(r)<-matrix(cost,30,30)
-#rx<-flip(r,direction="y")
-#plot(rx)
+points(streampoints, pch=".", col="blue")
 
-r<-1/r
 
-## wrong transistionfunction
-#tr1<-transition(r,transitionFunction=max,directions=8)
-#tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
+## wrong transitionFunction?
+###tr1<-transition(rx,transitionFunction=max,directions=8)
+###tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
+###costs1<-costDistance(tr1CorrC,pts)
 
-#I think i did this right
+
 tr1<-transition(r,transitionFunction=function(x) 1/mean(x),directions=8)
 tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
 
-#not doing anything
+#doesn't actually do anything
 #tr1CorrC<-1/tr1CorrC
 
-costs1<-costDistance(tr1CorrC,pts)
+
 
 sp<-rasterToPoints(r,spatial=TRUE)
 
+costs1<-costDistance(tr1CorrC,pts)
 outD<-as.matrix(costs1)
 
-points(matrix(pts[116,],ncol=2),col="red")
-points(matrix(pts[111,],ncol=2),col="blue")
+points(matrix(pts[226,],ncol=2),col="red")
+points(matrix(pts[216,],ncol=2),col="blue")
 
-outD[116,100:120]
+outD[226,210:230]
 
 plot(pts,pch=".")
 points(pts[in.pts==1,],pch=20,col="red")
+
+
 
 
 get.traplocs<-function(ntraps){
@@ -133,6 +112,8 @@ locid<-c(locid,(1:length(kp))[kp])
 list(loc=loc,locid=locid)
 }
 
+
+#stopped here for now 
 
 
 if(!exists("traps")){
