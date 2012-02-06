@@ -48,14 +48,14 @@ covariate.trend<- (cost-20)/10
 ###  D<- dist(grid)  
 #
 sigma<-.25
-theta<- 1/(2*sigma*sigma)
+theta1<- 1/(2*sigma*sigma)
 gx<- seq(.5 + delta/2, 4.5-delta/2,,20)
 gy<- rev(gx)
 gx<-sort(rep(gx,20))
 gy<-rep(gy,20)
 grid2<-cbind(gx,gy)
 D<-e2dist(grid,grid2)
-probcap<-plogis(alpha0)*exp(-theta*D*D)
+probcap<-plogis(theta0)*exp(-theta1*D*D)
 spatial.plot(grid2,probcap[1,])
 
 cost<- exp(beta*covariate.trend)
@@ -64,7 +64,7 @@ tr1<-transition(r,transitionFunction=function(x) 1/mean(x),directions=8)
 tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
 costs1<-costDistance(tr1CorrC,grid,grid2)
 outD<-as.matrix(costs1)
-probcap<-plogis(alpha0)*exp(-theta*outD*outD)
+probcap<-plogis(theta0)*exp(-theta1*outD*outD)
 
 ###png("home_ranges.png",width=5,height=8, units="in", res=400)
 par(mfrow=c(3,2),mar=c(2,2,2,2))
@@ -111,14 +111,14 @@ c(mean(x),sqrt(var(x)),quantile(x,c(0.025,0.50,0.975)))
 ### R commands to carry-out the simulations. MUST SOURCE likelihood function first -- SEE BELOW
 ###
 
-nsims<-2
+nsims<-100
 
-simout.low.N100<-sim.fn(N=100,nsim=nsims,alpha0=-2,sigma=.5,K=5,covariate=covariate.trend)
-simout.low.N200<-sim.fn(N=200,nsim=nsims,alpha0= -2, sigma=.5,K=5,covariate=covariate.trend)
-simout.reallylow.N100<-sim.fn(N=100,nsim=nsims,alpha0=-2,sigma=.5,K=3,covariate=covariate.trend)
-simout.reallylow.N200<-sim.fn(N=200,nsim=nsims,alpha0= -2, sigma=.5,K=3,covariate=covariate.trend)
-simout.high.N100<-sim.fn(N=100,nsim=nsims,alpha0=-2,sigma=.5,K=10,covariate=covariate.trend)
-simout.high.N200<-sim.fn(N=200,nsim=nsims,alpha0= -2, sigma=.5,K=10,covariate=covariate.trend)
+simout.low.N100<-sim.fn(N=100,nsim=nsims,theta0=-2,sigma=.5,K=5,covariate=covariate.trend)
+simout.low.N200<-sim.fn(N=200,nsim=nsims,theta0= -2, sigma=.5,K=5,covariate=covariate.trend)
+simout.reallylow.N100<-sim.fn(N=100,nsim=nsims,theta0=-2,sigma=.5,K=3,covariate=covariate.trend)
+simout.reallylow.N200<-sim.fn(N=200,nsim=nsims,theta0= -2, sigma=.5,K=3,covariate=covariate.trend)
+simout.high.N100<-sim.fn(N=100,nsim=nsims,theta0=-2,sigma=.5,K=10,covariate=covariate.trend)
+simout.high.N200<-sim.fn(N=200,nsim=nsims,theta0= -2, sigma=.5,K=10,covariate=covariate.trend)
 
 ###
 ### R commands to summarize the simulation output
@@ -139,12 +139,12 @@ mat[6+i,6:10]<- smy.fn(exp(simout.high.N200[[i]][,3]) + simout.high.N200[[i]][,5
 ###
 ###
 
-simout.low.N100.k<-sim.fn(N=100,nsim=nsims,alpha0=-2,sigma=.5,K=5,covariate=covariate.patchy)
-simout.low.N200.k<-sim.fn(N=200,nsim=nsims,alpha0= -2, sigma=.5,K=5,covariate=covariate.patchy)
-simout.reallylow.N100.k<-sim.fn(N=100,nsim=nsims,alpha0=-2,sigma=.5,K=3,covariate=covariate.patchy)
-simout.reallylow.N200.k<-sim.fn(N=200,nsim=nsims,alpha0= -2, sigma=.5,K=3,covariate=covariate.patchy)
-simout.high.N100.k<-sim.fn(N=100,nsim=nsims,alpha0=-2,sigma=.5,K=10,covariate=covariate.patchy)
-simout.high.N200.k<-sim.fn(N=200,nsim=nsims,alpha0= -2, sigma=.5,K=10,covariate=covariate.patchy)
+simout.low.N100.k<-sim.fn(N=100,nsim=nsims,theta0=-2,sigma=.5,K=5,covariate=covariate.patchy)
+simout.low.N200.k<-sim.fn(N=200,nsim=nsims,theta0= -2, sigma=.5,K=5,covariate=covariate.patchy)
+simout.reallylow.N100.k<-sim.fn(N=100,nsim=nsims,theta0=-2,sigma=.5,K=3,covariate=covariate.patchy)
+simout.reallylow.N200.k<-sim.fn(N=200,nsim=nsims,theta0= -2, sigma=.5,K=3,covariate=covariate.patchy)
+simout.high.N100.k<-sim.fn(N=100,nsim=nsims,theta0=-2,sigma=.5,K=10,covariate=covariate.patchy)
+simout.high.N200.k<-sim.fn(N=200,nsim=nsims,theta0= -2, sigma=.5,K=10,covariate=covariate.patchy)
 
 ###
 ### R commands to summarize the simulation output
@@ -162,7 +162,7 @@ mat.k[6+i,6:10]<- smy.fn(exp(simout.high.N200.k[[i]][,3]) + simout.high.N200.k[[
 
 
 
-sim.fn<-function(N=200,nsim=100,alpha0= -2, sigma=.5, K=5,covariate){
+sim.fn<-function(N=200,nsim=100,theta0= -2, sigma=.5, K=5,covariate){
 cl<-match.call()
 set.seed(2013)
 simout2<-simout1<-simout3<-matrix(NA,nrow=nsim,ncol=5)
@@ -195,8 +195,8 @@ for(sim in 1:nsim){
 
 S<-cbind(runif(N,.5,4.5),runif(N,.5,4.5))
 D<-costDistance(tr1CorrC,S,traplocs)
-theta<- 1/(2*sigma*sigma)
-probcap<-plogis(alpha0)*exp(-theta*D*D)
+theta1<- 1/(2*sigma*sigma)
+probcap<-plogis(theta0)*exp(-theta1*D*D)
 # now generate the encounters of every individual in every trap
 Y<-matrix(NA,nrow=N,ncol=ntraps)
 for(i in 1:nrow(Y)){
@@ -206,13 +206,13 @@ Y<-Y[apply(Y,1,sum)>0,]
 
 # raster has to be defined for state-space and ssbuffer = 0 only
 n0<- N-nrow(Y)
-frog<-nlm(intlik3ed,c(alpha0,beta,log(n0)),hessian=TRUE,y=Y,K=K,X=traplocs,ssbuffer=0.5,distmet="euclid",covariate=covariate,beta=1)
+frog<-nlm(intlik3ed,c(theta0,beta,log(n0)),hessian=TRUE,y=Y,K=K,X=traplocs,ssbuffer=0.5,distmet="euclid",covariate=covariate,beta=1)
 simout1[sim,]<-c(frog$estimate,NA,nrow(Y))
 
-frog<-nlm(intlik3ed,c(alpha0,beta,log(n0)),hessian=TRUE,y=Y,K=K,X=traplocs,ssbuffer=0.5,distmet="ecol",covariate=covariate,beta=1)
+frog<-nlm(intlik3ed,c(theta0,beta,log(n0)),hessian=TRUE,y=Y,K=K,X=traplocs,ssbuffer=0.5,distmet="ecol",covariate=covariate,beta=1)
 simout2[sim,]<-c(frog$estimate,NA,nrow(Y))
 
-frog<-nlm(intlik3ed,c(alpha0,beta,log(n0),-.3),hessian=TRUE,y=Y,K=K,X=traplocs,ssbuffer=0.5,distmet="ecol",covariate=covariate,beta=NA)
+frog<-nlm(intlik3ed,c(theta0,beta,log(n0),-.3),hessian=TRUE,y=Y,K=K,X=traplocs,ssbuffer=0.5,distmet="ecol",covariate=covariate,beta=NA)
 simout3[sim,]<-c(frog$estimate,nrow(Y))
 }
 list(simout1=simout1,simout2=simout2,simout3=simout3,call=cl)
@@ -256,12 +256,12 @@ D<-costDistance(tr1CorrC,X,G)
 }
 
 if(is.null(start)) start<-c(0,0,0,0)
-alpha0<-start[1]
-alpha1<-start[2]
+theta0<-start[1]
+theta1<-start[2]
 n0<-exp(start[3])
 
 
-probcap<- (exp(alpha0)/(1+exp(alpha0)))*exp(-alpha1*D*D)
+probcap<- (exp(alpha0)/(1+exp(theta0)))*exp(-theta1*D*D)
 Pm<-matrix(NA,nrow=nrow(probcap),ncol=ncol(probcap))
 ymat<-y
 ymat<-rbind(y,rep(0,ncol(y)))
