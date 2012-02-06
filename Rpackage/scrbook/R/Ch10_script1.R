@@ -282,7 +282,7 @@ theta1<-start[2]
 n0<-exp(start[3])
 
 
-probcap<- (exp(alpha0)/(1+exp(theta0)))*exp(-theta1*D*D)
+probcap<- (exp(theta0)/(1+exp(theta0)))*exp(-theta1*D*D)
 Pm<-matrix(NA,nrow=nrow(probcap),ncol=ncol(probcap))
 ymat<-y
 ymat<-rbind(y,rep(0,ncol(y)))
