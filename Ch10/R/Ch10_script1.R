@@ -1,5 +1,7 @@
-
-
+### Source all of the utility functions at the end of this script before
+### running any of the code. 
+###
+###
 
 ### We require 3 R libraries
 library("shapefiles")
@@ -240,6 +242,9 @@ list(simout1=simout1,simout2=simout2,simout3=simout3,call=cl)
 
 }
 
+##
+##
+## UTILITY FUNCTIONS
 ## 
 ## PUT ALL OF THE OBJECTS BELOW INTO YOUR WORKSPACE
 ##
