@@ -1,14 +1,18 @@
 
 
-### Estimating pixel value related to a covariate
 
-
+### We require 3 R libraries
 library("shapefiles")
 library("gdistance")
 library("raster")
 
+###
+### following block of code creates a "patchy" looking covariate to use
+### in our cost function. It uses a standard method for generating a correlated
+### multivariate normal vector of length, in this case, 400 (one value for each
+### pixel). One can use any correlation function here but we chose a standard
+### exponential model with range parameter 0.5
 ###png("raster_krige.png",width=5,height=5, units="in", res=400)
-
 par(mfrow=c(1,1))
 set.seed(12)
 r<-raster(nrows=20,ncols=20)
@@ -35,7 +39,8 @@ cost<-r
 covariate.patchy<- z*sqrt(1.68) + .168   #approx. same scale as systematic covariate below
 
 ##
-# build systematic covariate
+## build systematic covariate
+## defined here as a trend from NW to SE
 ##
 cost<-matrix(NA,nrow=20,ncol=20)
 cost<-row(cost)+col(cost)
@@ -51,6 +56,10 @@ plot(r)
 ### sigma = a bivariate normal home range parameter -- use different values to
 ### see how this looks
 ### theta0 = intercept of detection prob. model
+### theta1 = coefficient on "distance" -- derived from "sigma"
+### theta2 = coefficient on covariate used in cost function
+###
+theta2<- 1
 theta0<- -2   
 sigma<-.25
 theta1<- 1/(2*sigma*sigma)
@@ -68,7 +77,7 @@ spatial.plot(grid2,probcap[1,])
 ###
 ### Set one of the cost functions -- either covariate.trend or covariate.patchy
 ###
-cost<- exp(beta*covariate.trend)
+cost<- exp(theta2*covariate.trend)
 values(r)<-matrix(cost,20,20,byrow=FALSE)
 tr1<-transition(r,transitionFunction=function(x) 1/mean(x),directions=8)
 tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
@@ -76,6 +85,10 @@ costs1<-costDistance(tr1CorrC,grid,grid2)
 outD<-as.matrix(costs1)
 probcap<-plogis(theta0)*exp(-theta1*outD*outD)
 
+###
+### The following block of code will plot the "space usage" by 6 individuals with
+### activity centers selected arbitrarily. You can plot this for any hypothetical
+### individual if you wish
 ###png("home_ranges.png",width=5,height=8, units="in", res=400)
 par(mfrow=c(3,2),mar=c(2,2,2,2))
 #spatial.plot(grid2,probcap[63,])
@@ -111,10 +124,7 @@ points(matrix(grid[376,],nrow=1),pch=20,cex=2)
 
 #####dev.off()
 
-smy.fn <-
-function(x){
-c(mean(x),sqrt(var(x)),quantile(x,c(0.025,0.50,0.975)))
-}
+
 
 ###
 ### R commands to carry-out the simulations. MUST SOURCE likelihood function first -- SEE BELOW
@@ -181,8 +191,8 @@ simout2<-simout1<-simout3<-matrix(NA,nrow=nsim,ncol=5)
 r<-raster(nrows=20,ncols=20)
 projection(r)<- "+proj=utm +zone=12 +datum=WGS84"
 extent(r)<-c(.5,4.5,.5,4.5)
-beta<-1
-cost<- exp(beta*covariate)
+theta2<-1
+cost<- exp(theta2*covariate)
 values(r)<-matrix(cost,20,20,byrow=FALSE)
 par(mfrow=c(1,1))
 plot(r)
@@ -217,13 +227,13 @@ Y<-Y[apply(Y,1,sum)>0,]
 
 # raster has to be defined for state-space and ssbuffer = 0 only
 n0<- N-nrow(Y)
-frog<-nlm(intlik3ed,c(theta0,beta,log(n0)),hessian=TRUE,y=Y,K=K,X=traplocs,ssbuffer=0.5,distmet="euclid",covariate=covariate,beta=1)
+frog<-nlm(intlik3ed,c(theta0,theta1,log(n0)),hessian=TRUE,y=Y,K=K,X=traplocs,ssbuffer=0.5,distmet="euclid",covariate=covariate,theta2=1)
 simout1[sim,]<-c(frog$estimate,NA,nrow(Y))
 
-frog<-nlm(intlik3ed,c(theta0,beta,log(n0)),hessian=TRUE,y=Y,K=K,X=traplocs,ssbuffer=0.5,distmet="ecol",covariate=covariate,beta=1)
+frog<-nlm(intlik3ed,c(theta0,theta1,log(n0)),hessian=TRUE,y=Y,K=K,X=traplocs,ssbuffer=0.5,distmet="ecol",covariate=covariate,theta2=1)
 simout2[sim,]<-c(frog$estimate,NA,nrow(Y))
 
-frog<-nlm(intlik3ed,c(theta0,beta,log(n0),-.3),hessian=TRUE,y=Y,K=K,X=traplocs,ssbuffer=0.5,distmet="ecol",covariate=covariate,beta=NA)
+frog<-nlm(intlik3ed,c(theta0,theta1,log(n0),-.3),hessian=TRUE,y=Y,K=K,X=traplocs,ssbuffer=0.5,distmet="ecol",covariate=covariate,theta2=NA)
 simout3[sim,]<-c(frog$estimate,nrow(Y))
 }
 list(simout1=simout1,simout2=simout2,simout3=simout3,call=cl)
@@ -234,7 +244,7 @@ list(simout1=simout1,simout2=simout2,simout3=simout3,call=cl)
 ## PUT ALL OF THE OBJECTS BELOW INTO YOUR WORKSPACE
 ##
 	
-intlik3ed<-function(start=NULL,y=y,K=NULL,delta=.1,X=traplocs,ssbuffer=2,distmet="ecol",covariate,beta=NA){
+intlik3ed<-function(start=NULL,y=y,K=NULL,delta=.1,X=traplocs,ssbuffer=2,distmet="ecol",covariate,theta2=NA){
 
 Xl<-min(X[,1]) -ssbuffer
 Xu<-max(X[,1])+ ssbuffer
@@ -253,13 +263,13 @@ nG<-nrow(G)
 if(distmet=="euclid")
 D<- e2dist(X,G)  
 if(distmet=="ecol"){
-if(is.na(beta))
-beta<-exp(start[4])
+if(is.na(theta2))
+theta2<-exp(start[4])
 
 r<-raster(nrows=20,ncols=20)
 projection(r)<- "+proj=utm +zone=12 +datum=WGS84"
 extent(r)<-c(.5,4.5,.5,4.5)
-cost<- exp(beta*covariate)
+cost<- exp(theta2*covariate)
 values(r)<-matrix(cost,20,20,byrow=FALSE)
 tr1<-transition(r,transitionFunction=function(x) 1/mean(x),directions=8)
 tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
@@ -375,7 +385,10 @@ e2dist <- function (x, y)
 
 
 
-
+smy.fn <-
+function(x){
+c(mean(x),sqrt(var(x)),quantile(x,c(0.025,0.50,0.975)))
+}
 
 
 
