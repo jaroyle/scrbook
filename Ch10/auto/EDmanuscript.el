@@ -14,7 +14,8 @@
      "mle.eq.intlik"
      "ecoldist.fig.raster100"
      "tab.samplesize"
-     "tab.results1")
+     "tab.results1"
+     "tab.results3")
     (TeX-run-style-hooks
      "setspace"
      "color"
