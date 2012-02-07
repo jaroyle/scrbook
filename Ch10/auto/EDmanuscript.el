@@ -4,15 +4,19 @@
      "../AndyRefs_alphabetized")
     (LaTeX-add-labels
      "eq.encounter"
+     "fig.homeranges"
      "eq.costweighted"
+     "eq.lcp"
      "eq.cost"
      "ecoldist.fig.raster"
-     "fig.homeranges"
      "sec.mle"
      "mle.eq.cond-on-s"
      "mle.eq.intlik"
-     "ecoldist.fig.raster100")
+     "ecoldist.fig.raster100"
+     "tab.samplesize"
+     "tab.results1")
     (TeX-run-style-hooks
+     "setspace"
      "color"
      "soul"
      "verbatim"
