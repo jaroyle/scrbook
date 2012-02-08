@@ -97,23 +97,15 @@ idea is estimating those from sparse individual encounter history data.
 Say that here.
 }
 
-\section{Spatial Capture-Recapture}
+\section{Distance Models}
 
-A number of distinct observation models have been proposed for
-spatial-capture situations, including Poisson, multinomial or binomial
-observation models. Here we focus on the binomial model in which we
-suppose that $J$ traps at locations ${\bf x}_{j}$ are operated for $K$
-periods (e.g., nights) although our development of cost-distance
-models is directly applicable to other observation models without any
-further technical considerations. The binomial model is most directly
-relevant to devices such as ``hair snares'' (Gardner et al. 2010) or
-scent sticks \citep{kery_etal:2010} for which individuals can only be
-encountered a single time per observation occasion.
 
-The observations are the individual- and trap specific counts $y_{ij}$
+In the standard SCR model we model encounter probability as a function
+of Euclidean distance. For example, using the binomial observation model
+as an example (Chapt. \ref{chapt.scr0}), let 
+$y_{ij}$ be individual- and trap specific counts $y_{ij}$
 which are binomial counts with sample size $K$ and probabilities
-$p_{ij}$. A standard encounter probability model (Borchers and Efford
-2008) is the Gaussian model in which
+$p_{ij}$. The Gaussian or ``half-normal'' model is 
 \[
 log(p_{ij})= \theta_{0} + \theta_{1} dist({\bf x}_{j} - {\bf s}_{i})^{2}
 \]
@@ -125,129 +117,189 @@ p_{ij} = \lambda_{0} exp(-  dist({\bf x}_{j} - {\bf s}_{i})^{2}
 where $\theta_{0} = log(\lambda_{0})$ and $\theta_{1} =
 -1/(2\sigma^2)$. 
 
-In all previous applications of SCR models the normal Euclidean
+
+In all previous applications of SCR models in this book, as well as in
+the literature, the normal Euclidean
 distance has been used, i.e., $ dist({\bf x}_{j} - {\bf s}_{i}) =
 ||{\bf x}_{j} - {\bf s}_{i}||$,
 and the parameters $\theta_0$ and $\theta_1$
 have been estimated using standard methods (likelihood or
-Bayesian). These methods regard ${\bf s}_{i}$ as realizations of a
-point process (i.e., latent variables) and remove them from the
-likelihood either under a model of ``uniformity'' in which ${\bf s}
-\sim \mbox{Uniform}({\cal S})$ where ${\cal S}$ is the state-space of the
-point process, or in which covariates might affect the spatial
-distribution of individuals (..... XYZ .....). Alternative detection
-models are commonly used, but they are all functions of Euclidean
-distance and so we do not them here. 
+Bayesian). 
+The main problem with this approach is that 
+the Euclidean distance metric is unaffected by habitat or landscape
+structure, and it implies that the space used by individuals is 
+stationary, and symmetric which may be unreasonable in most
+applications. By stationary here we mean in the formal sense of invariance
+to translation. That is, the properties of
+an individual home range centered at some point
+${\bf s}$ are exactly the same as any other point say ${\bf s}'$.
 
-The critical consideration that motivates our work is that this 
- Euclidean distance metric is unaffected by habitat or landscape
-structure..... and it implies that space usage of individuals is
-stationary, isotropic and symmetric which may be unreasonable in most
-applications. 
-Subsequently we provide an extension of this class of SCR models that
+As an example, if the 
+common detection model based on a bivariate normal probability
+distribution function is used, then the implied space usage by {\it
+  all} individuals, no matter their location in space or local habitat
+conditions, is symmetric with circular contours of usage intensity
+(density contours of the pdf).  
+
+\citet{royle_etal:2012ecol} extended this class of SCR models that
 accommodates alternative distance metrics that explicitly incorporate
 information about the landscape so that a unit of distance is variable
-depending on identified covariates. Thus, ``where'' an individual
-lives on the landscape, and the state of the surrounding landscape,
-will determine the character of its usage of space. In particular, we
-suggest distance metrics that imply irregular, asymmetric and
-non-stationary home ranges of individuals. 
+depending on identified covariates. 
+Thus, ``where'' an individual lives on the landscape, and
+the state of the surrounding landscape, will determine the character
+of its usage of space. In particular, we suggest distance metrics that
+imply irregular, asymmetric and non-stationary home ranges of
+individuals. An example of this is shown in Fig. \ref{fig.homeranges}
+which shows home ranges of 6 individuals under a specific model, which
+is described below.
 
-\section{Cost Distance}
 
-We use a cost-weighted distance metric in the package \mbox{\tt
-gdistance} \index{R package!gdistance} which computes the distance 
-between points by accumulating pixel-specific costs assigned by the user 
-(but we consider estimating these in Sec. XYZ). The idea is widely used in
-landscape ecology for modeling connectivity, movement and gene flow
-\citep{adriaensen_etal:2003,mcrae_etal:2008}. As is customary for reasons of
-computational tractability we consider a discrete landscape defined by a 
-raster of some prescribed resolution. The distance between any two points 
-${\bf x}$ and ${\bf x}'$ can be represented by a sequence of line segments 
-connecting a sequence of neighboring  pixels say 
-${\bf l}_{1},{\bf l}_{2},\ldots,{\bf l}_{m}$. Then the cost-weighted distance 
-between ${\bf x}$ and ${\bf x}'$ is
+\section{Cost-Weighted Distance}
+
+We adopt the use of a cost-weighted distance metric here which defines
+the distance between points by accumulating pixel-specific costs
+determined under a cost function defined by the user.  The idea of
+cost-weighted distance to characterize animal use of landscapes is
+widely used in landscape ecology for modeling connectivity, movement
+and gene flow \citep{beier_etal:2008}. As is customary for reasons of
+computational tractability we consider a discrete landscape defined by
+a raster of some prescribed resolution. The distance between any two
+points ${\bf x}$ and ${\bf x}'$ can be represented by a sequence of
+line segments connecting neighboring pixels say ${\bf l}_{1},{\bf
+  l}_{2},\ldots,{\bf l}_{m}$. Then the cost-weighted distance between
+${\bf x}$ and ${\bf x}'$ is
+
 \begin{equation}
  d({\bf x},{\bf x}')
   =  \sum_{i=1}^{m-1} cost({\bf l}_{i},{\bf l}_{i+1})||{\bf l}_{i} - {\bf l}_{i+1}||
 \label{eq.costweighted}
 \end{equation}
-where $cost({\bf l}_{i},{\bf l}_{i+1})$ is the user-defined cost function
-to move 
-from pixel ${\bf l}_{i}$ to neighboring pixel ${\bf l}_{i}$ in the sequence.
-In this paper we consider modeling cost as a function of covariates
-defined on every pixel of the raster according to, for example using a
-single
-covariate $z(x)$:
-\begin{equation}
- log(cost(x))=  \theta_{2} z(x) 
-\label{eq.cost}
-\end{equation}
-Thus, if $\theta_{2} = 0$ then substituting $cost(x)$ into
-Eq. \ref{eq.costweighted} will produce the ordinary Euclidean distance
-between points. 
-In practical applications, i.e., in landscape ecology, variables that
-influence the cost of moving across the landscape include things like
-distance to roads, elevation, ruggedness, human disturbance and
-related things (Tabitha can you say something smart-sounding here?).
 
+{\flushleft
+where } $cost({\bf l}_{i},{\bf l}_{i+1})$ is the user-defined cost function
+to move
+from pixel ${\bf l}_{i}$ to neighboring pixel ${\bf l}_{i}$ in the sequence.
 Given the ``cost'' of each pixel, it is a simple matter to compute the
 cost-weighted distance between any two pixels, along {\it any} path,
-simply by accumulating the intermittent costs weighted by distances. 
-To be consistent with our use of the {\bf R} package \mbox{\tt
-  costDistance} (REF HERE),
-the incremental cost of moving from one pixel to another is the
-distance-weighting of the {\it average} of the 2 pixel costs (see below).
-In the context of spatial capture-recapture models (and, more
-generally, landscape connectivity) we are concerned with the {\it
-  minimum} cost-weighted distance between any two points.  That is, we
-seek to find the 
+simply by accumulating the incremental  costs weighted by
+distances.
+In the context of
+spatial capture-recapture models (and, more generally, landscape
+connectivity) we are concerned with the {\it minimum} cost-weighted
+distance, or the {\it least-cost path}, between any two points which
+we will denote by $d_{lcp}$, which is
+the
 sequence ${\bf l}_{1},{\bf l}_{2},\ldots,{\bf l}_{m}$ that minimizes
-the objective function defined by Eq. \ref{eq.costweighted}.
-This is done in some GIS packages and also in the {\bf R} package
-\mbox{\tt costDistance} using the implementation of Dijkstra's algorithm (Dijkstra 1959)
-found in the \mbox{\tt igraph} package (REF HERE).
+the objective function defined by Eq. \ref{eq.costweighted}. That is,
 
-\begin{comment}
-%%%%%%%%%% As a consequence, the terminal value is not counted. 
-In addition to \mbox{\tt gdistance} we use functions from a number of
-other {\bf R} packages including \mbox{\tt rgeos}, \mbox{\tt
-  shapefiles} and \mbox{\tt raster}.
+\begin{equation}
+ d_{lcp}({\bf x},{\bf x}')
+  =  min_{{\bf l}_{1},\ldots,{\bf l}_{m}}  \sum_{i=1}^{m-1} cost({\bf l}_{i},{\bf l}_{i+1})||{\bf l}_{i} - {\bf l}_{i+1}||
+\label{eq.lcp}
+\end{equation}
 
-%% Kimmy: can you look up the algorithm that Gdistance uses?  
-The algorithm XYZ XYZ (REF XYZ) seeks to find the  sequence of pixels ${\bf l}_{1},
-\ldots, {\bf l}_{m}$ which minimizes the cost-weighted distance. 
-\end{comment}
+{\flushleft
+ Least-cost} path distance can be calculated in
+ many geographic information systems and other software packages,
+including the {\bf R} package \mbox{\tt
+  gdistance} \citep{vanetten:2011}.
+
+
+The key ecological aspect of least-cost path modeling is the
+development
+of models for pixel-specific cost.
+In this paper we model cost as a function of covariates
+defined on every pixel of the raster according to, for example using a
+single covariate $z(x)$:
+
+\begin{equation}
+ log(cost({\bf x}))=  \theta_{2} z({\bf x})
+\label{eq.cost}
+\end{equation}
+
+{\flushleft This} is interpreted as cost of moving {\it through} a
+pixel but, in practice, it is accumulated incrementally as the cost of
+moving from a pixel ${\bf x}$ to one of its neighbors, say ${\bf
+  x}'$. As such, it is conventional to express this as an average cost
+
+\[
+ log(cost({\bf x},{\bf x}'))=  \theta_{2} \frac{z({\bf x})+z({\bf x}')}{2}
+\]
+
+{\flushleft
+Thus,} if $\theta_{2} = 0$ then substituting $cost({\bf x},{\bf x}')
+=exp(0) = 1$ into
+Eq. \ref{eq.lcp} will produce the ordinary Euclidean distance
+between points.
+
+In practical applications, variables that influence the cost of moving
+across the landscape include things like highways
+\citep[e.g.,][]{epps_etal:2005}, elevation \citep{cushman_etal:2006},
+ruggedness \citep{epps_etal:2007}, snow cover
+\citep{schwartz_etal:2009}, distance to escape terrain
+\citep{shirk_etal:2010}, or range limitations
+\citep{mcrae_beier:2007}.  Together multiple environmental variables
+create a resistance surface, which forms the linchpin of all
+connectivity planning \citep{spear_etal:2010}.  Often $\theta_{2}$ is
+fixed by the investigator. Although $\theta_{2}$ is rarely known,
+conservation biologists design linkages that require this resistance
+value as input \citep[see][and articles cited
+therein]{beier_etal:2008}.  Typically planners pick a value based on
+expert opinion \citep{beier_etal:2008}, although recently researchers
+have begun to define costs based on resource selection functions,
+animal movement \citep{tracy:2006, fortin_etal:2005}, or genetic
+distance data (e.g., \citet{gerlach_musolf:2000};
+\citet{epps_etal:2007}; \citet{schwartz_etal:2009}. The published
+methods require many assumptions and these estimates have not been
+integrated with capture-recapture methods, nor have parameters been
+formally estimated using capture-recapture data.
+
+To formalize the use of cost-weighted distance in SCR models, we
+substitute Eq. \ref{eq.lcp} in the expression for encounter
+probability (Eq. \ref{eq.encounter}) and maximize the resulting
+likelihood which we address below.
+
+\subsection{Example of Computing Cost-weighted distance}
 
 As an example of the cost-weighted distance calculation consider the
-following landscape comprised of 16 pixels with unit spacing 
+following landscape comprised of 16 pixels with unit spacing
 identified as follows, along with the pixel-specific cost:
+\begin{center}
 \begin{verbatim}
   pixel ID                 Cost
   1  5  9  13          100   1   1  1
   2  6 10  14          100 100   1  1
   3  7 11  15          100 100 100  1
-  4  8 12  16          100 100   1  1 
+  4  8 12  16          100 100   1  1
 \end{verbatim}
-Then we assign low cost of 1 to ``good habitat'' pixels (or pixels we
-think of as ``highly connected'' by virtue of being in good habitat)
-and, conversely, we assign high cost (100) to ``bad habitat''. So the
-shortest cost-weighted distance between pixels 5 and 9 in this example
-is just 1 unit, the shortest cost-distance between pixels 5 and 10 is
-sqrt(2) units= 1.414214, the shortest distance between pixels 4 and 8 is 100
-units, while the shortest cost-distance between 4 and 12 is 150.5. A
-tough one is: what is the shortest distance between 7 and 16? A guy at pixel
-7 can move diagonal and pay  $sqrt(2)*(100+1)/2 + 1 =72.41778$.
+\end{center}
+This simple cost
+raster is shown in Fig. \ref{ecoldist.fig.raster}.
+We assigned low cost of 1 to ``good habitat'' pixels (or pixels
+we think of as ``highly connected'' by virtue of being in good
+habitat) and, conversely, we assign high cost (100) to ``bad
+habitat''. So the shortest cost-weighted distance between pixels 5 and
+9 in this example is just 1 unit, the shortest cost-distance between
+pixels 5 and 10 is $\sqrt{2}(1+1)/2 = 1.414214$ units, the shortest
+distance between pixels 4 and 8 is 100 units, while the shortest
+cost-distance between 4 and 12 is 150.5. A tough one is: what is the
+shortest distance between 7 and 16? An individual at pixel 7 can move
+diagonal and pay $sqrt(2)*(100+1)/2 + 1 =72.41778$.  
 
-\begin{comment}
-Be careful. This matters in the way you stick the ``cost'' data into
-the elements of the raster.
-In the following example we fill the cost
-matrix using the default \mbox{\tt byrow=FALSE} standard in {\bf
-  R}, but here we use cost values of 1-16 so that we can produce an
-image of the resulting costs to visualize their ordering in the raster:
-\end{comment}
 
+Once the cost raster is created, the
+least-cost path distances are computed with just a couple {\bf R}
+commands, and those can be inserted directly into the likelihood
+construction for an ordinary spatial capture-recapture model (Appendix
+1). The {\bf R} package \mbox{\tt gdistance} uses the implementation
+of Dijkstra's algorithm \citep{dijkstra:1959} found in the \mbox{\tt
+  igraph} package \citep{csardi:2010}.  Using \mbox{\tt gdistance},
+(Appendix 1), we define the incremental cost of moving from one pixel
+to another as the distance-weighted {\it average} of the 2 pixel
+costs.
+
+The {\bf R} commands for computing the least-cost distance between all pairs of pixels 
+are as follows:
 \begin{verbatim}
 r<-raster(nrows=4,ncols=4)
 projection(r)<- "+proj=utm +zone=12 +datum=WGS84"
@@ -257,7 +309,6 @@ values(r)<-matrix(costs1,4,4,byrow=FALSE)
 par(mfrow=c(1,1))
 plot(r)
 \end{verbatim}
-The raster, in image form, is shown in Fig. \ref{ecoldist.fig.raster}.
 
 \begin{figure}
 \begin{center}
@@ -268,13 +319,19 @@ The raster, in image form, is shown in Fig. \ref{ecoldist.fig.raster}.
 \end{figure}
 
 Then we use the functions \mbox{\tt transition}, \mbox{\tt
-  geoCorrection} (which doesn't really do anything but reformat the
-data somehow) and \mbox{\tt costDistance} to compute the distance
-matrix. They operate on this inverse-scale so we first take the 
-element-by-element inverse of the raster. Then we define a set of points,
+  geoCorrection} (which doesn't really do anything if the coordinate system
+  is UTM)
+ and \mbox{\tt costDistance} to compute the distance
+matrix. The transition function computes the cost of making a transition between
+any two pixels, and it operates on the inverse-scale (''conductance'') and so the
+\mbox{\tt transitionFunction} argument is given as $1/mean(x)$. 
+
+To compute the cost distance we prescribe a set of points to compute the matrix for or
+we can give two sets of points (from and to)......
+ANDY STOPPED HERE
+Then we define a set of points,
 the center points of each raster, to compute the cost-distance between
 them all. The commands altogether are as follows:
-{\bf Tabitha}: Can you say something here about why this is 1/mean(x)?
 \begin{verbatim}
 tr1<-transition(r,transitionFunction=function(x) 1/mean(x),directions=8)
 tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
@@ -286,10 +343,7 @@ Now we can look at the result and see if it makes sense to us. Here we
 print the first 4 columns of this distance matrix and illustration a
 couple of examples of calculating the minimum cost-weighted distance
 between points:
-
 \begin{verbatim}
-These seem to check out for the most part but look at [4,1] -- this isn't right!
-
 > outD[1:5,1:5]
          1         2        3        4         5
 1   0.0000 100.00000 200.0000 205.2426  50.50000
@@ -297,108 +351,127 @@ These seem to check out for the most part but look at [4,1] -- this isn't right!
 3 200.0000 100.00000   0.0000 100.0000 171.41778
 4 205.2426 200.00000 100.0000   0.0000 154.74264
 5  50.5000  71.41778 171.4178 154.7426   0.00000
-
 \end{verbatim}
+The interesting one is that between point 1 and 4. Note that Euclidean 
+distance, weighted by cost, is XYZ whereas the actual least-cost path has
+cost-weighted distance 50.5. Looking at the graph, the shortest path has
+an individual moving from X to Y to Z to blah blah.
 
 
 
 
 
-\begin{comment}
 
-
-\small{
+Now we can look at the result and see if it makes sense to us. Here we
+print the first 4 columns of this distance matrix and illustration a
+couple of examples of calculating the minimum cost-weighted distance
+between points:
 \begin{verbatim}
-> outD[,1:4]
-      1    2    3    4
-1   0.0  1.5  4.0  7.5
-2   1.5  0.0  2.5  6.0
-3   4.0  2.5  0.0  3.5
-4   7.5  6.0  3.5  0.0
-5   3.0  4.5  7.0 10.5
-6   5.5  4.0  6.5 10.0
-7   9.0  7.5  5.0  8.5
-8  13.5 12.0  9.5  6.0
-9  10.0 11.5 14.0 17.5
-10 13.5 12.0 14.5 18.0
-11 18.0 16.5 14.0 17.5
-12 23.5 22.0 19.5 16.0
-13 21.0 22.5 25.0 28.5
-14 25.5 24.0 26.5 30.0
-15 31.0 29.5 27.0 30.5
-16 37.5 36.0 33.5 30.0
+> outD[1:5,1:5]
+         1         2        3        4         5
+1   0.0000 100.00000 200.0000 205.2426  50.50000
+2 100.0000   0.00000 100.0000 200.0000  71.41778
+3 200.0000 100.00000   0.0000 100.0000 171.41778
+4 205.2426 200.00000 100.0000   0.0000 154.74264
+5  50.5000  71.41778 171.4178 154.7426   0.00000
 \end{verbatim}
-1%above is output with directions=4
-}
 
 
-\small{
-\begin{verbatim}
-> outD[,1:4]
-         1        2          3        4
-1   0.000000  1.500000  4.000000  7.500000
-2   1.500000  0.000000  2.500000  6.000000
-3   4.000000  2.500000  0.000000  3.500000
-4   7.500000  6.000000  3.500000  0.000000
-5   3.000000  4.500000  7.000000 10.500000
-6   4.949747  4.000000  6.363961  9.863961
-7   7.863961  6.363961  5.000000  7.778175
-8  11.778175 10.278175  7.778175  6.000000
-9  10.000000 11.500000 14.000000 17.500000
-10 12.949747 12.000000 14.363961 17.863961
-11 16.863961 15.363961 14.000000 16.778175
-12 21.298990 19.798990 17.778175 16.000000
-13 21.000000 22.500000 25.000000 28.500000
-14 24.949747 24.000000 26.363961 29.863961
-15 29.863961 28.363961 27.000000 29.778175
-16 35.298990 33.798990 31.778175 30.000000
-\end{verbatim}
-}
-%above is output with directions=8 
 
 
-I wanted an example here of a case where the least-cost path
-was not equal to the least euclidean distance path
 
-{\bf NEED TO REVISE BELOW}
-Moving down the first (left-most, as you look at it) column of the
-raster the cost-distance between pixel 1 and 2 is 1.0 which we know to
-be right because the cost of leaving pixel 1 is tabulated, and that is
-the value 1.0.  To get from pixel 1 to pixel 3 we have to leave both
-pixels 1 and 2, for a total cost of $1+2 = 3$ which is the result
-given above.  To see that the shortest cost-weighted distance is not always the
-shortest Euclidean distance, consider moving from pixel .....
 
-\end{comment}
+
+\section{Non-stationarity of home range structure}
+
+When distance is defined by the cost-weighted distance metric given
+by Eq. \ref{eq.lcp} then individual space-usage varies
+spatially in response to the landscape covariate(s) used in the
+distance metric. For example, using one of the covariates we use in
+our simulation study below (Fig. \ref{ecoldist.fig.raster100}, right
+panel) with a Gaussian pdf detection function but having distance
+metric defined by Eq. \ref{eq.lcp}, produces home ranges such
+as those shown in Fig. \ref{fig.homeranges}. Later we simulate data
+under the model that produces these home ranges and fit spatial
+capture-recapture models to evaluate the efficacy of likelihood
+estimation under this model.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 \section{Maximum likelihood estimation}
+\label{sec.mle}
 
 Here we develop a standard method of parameter estimation based on
 the marginal likelihood. That is, the likelihood in which the latent
-variables ${\bf s}$ are removed by integration (Borchers and
-Efford 2008). 
+variables ${\bf s}$ are removed by integration \citep{borchers_efford:2008}.
 
 The individual- and trap-specific observations have a binomial
 distribution conditional on the latent variable ${\bf s}_{i}$:
+
 \begin{equation}
-	y_{ij}| {\bf s}_{i} \sim \mbox{Bin}(K, p_{\theta}({\bf x}_{j},{\bf s}_{i}))
+	y_{ij}| {\bf s}_{i} \sim \mbox{Bin}(K, p_{\theta}(d_{lcp}({\bf x}_{j},{\bf s}_{i};\theta_{2}); \theta_{0}, \theta_{1})
 \label{mle.eq.cond-on-s}
 \end{equation}
-where we have indicated the dependence of $p_{ij}$ on ${\bf s}$ and
-the vector of parameters ${\bm \theta}$ explicitly. The parameters
-${\bm \theta}$ include whatever parameters are involved in the
-cost-weighted distance function, i.e., at least $\theta_{2}$ from 
-Eq. \ref{eq.cost}.
+
+{\flushleft where} we have indicated the dependence of $p_{ij}$ on the parameters
+${\bm \theta}$, and also $d_{lcp}$ which
+itself depends on $\theta_{2}$, and the latent variable ${\bf s}$.
+%The parameters
+%${\bm \theta}$ include whatever parameters are involved in the
+%cost-weighted distance function, i.e., at least $\theta_{2}$ from
+%Eq. \ref{eq.cost}.
 For the random effect we have ${\bf s}_{i} \sim  \mbox{Unif}({\cal
   S})$.
 The joint distribution of the data for individual $i$ is the product
 of $J$ binomial terms (i.e., contributions from each of $J$ traps):
+
 \[
-  [{\bf y}_{i} | {\bf s}_{i} , \theta] = 
+  [{\bf y}_{i} | {\bf s}_{i} , \theta] =
   \prod_{j=1}^{J} \mbox{Bin}(K, p_{\theta}({\bf x}_{j},{\bf s}_{i}) )
 \]
-This assumes that encounter of individual $i$ in each
+
+{\flushleft This} assumes that encounter of individual $i$ in each
 trap is independent of encounter in every other trap. Conditional on
 ${\bf s}_{i}$ this is reasonable in most applications in our view.
  The so-called marginal likelihood is computed by removing
@@ -406,14 +479,17 @@ ${\bf s}_{i}$, by integration,  from the conditional-on-${\bf s}$
 likelihood and regarding the {\it marginal} distribution of the data
 as the likelihood. That
 is, we compute:
+
 \[
-  [y|{\bm \theta}] = 
+  [y|{\bm \theta}] =
 \int_{{\cal S}}  [ {\bf y}_{i} |{\bf s}_{i},{\bm \theta}] g({\bf s}_{i}) d{\bf s}_{i}
 \]
-where, under the uniformity assumption, we have
+
+{\flushleft where}, under the uniformity assumption, we have
 $g({\bf s}) = 1/||{\cal S}||$.
 The joint likelihood for all $N$ individuals, assuming independence of
 encounters among individuals, is the product of $N$ such terms:
+
 \[
 {\cal L}({\bm \theta} | {\bf y}_{1},{\bf y}_{2},\ldots, {\bf y}_{N}) = \prod_{i=1}^{N}
 [{\bf y}_{i}|{\bm \theta}]
@@ -422,8 +498,9 @@ encounters among individuals, is the product of $N$ such terms:
 The key operation for computing the likelihood is solving the
 2-dimensional integration problem to remove ${\bf s}$. There are some
 general purpose {\bf R} packages that implement a number of
-multi-dimensional integration routines including \mbox{\tt adapt}
-\citep{genz_etal:2007} and \mbox{\tt R2cuba} \citep{hahn_etal:2011}.
+multi-dimensional integration routines including 
+%\mbox{\tt adapt} \citep{genz_etal:2007} and  %% Not on CRAN anymore
+\mbox{\tt R2Cuba} \citep{hahn_etal:2011}.
 We won't rely on these extraneous {\bf R} packages but instead will
 use perhaps less efficient methods in which we replace the integral
 with a summation over an equal area mesh of points on the state-space
@@ -434,39 +511,54 @@ then averaged.  Let $u=1,2,\ldots,nG$ index a grid of $nG$ points,
 ${\bf s}_{u}$, where the area of grid cell $u$ is constant.  In this
 case, the integrand, i.e., the marginal pmf of ${\bf y}_{i}$, is
 approximated by
+
 \begin{equation}
          [{\bf y}_{i}|\theta] = \frac{1}{nG} \sum_{u=1}^{nG}  [ {\bf
             y}_{i} |{\bf s}_u, \theta]
 \label{mle.eq.intlik}
 \end{equation}
 
-To deal with the fact that $N$ is unknown, 
-there are two key issues that need to be addressed.
-First is that 
-we don't observe the all-zero encounter history so we have to
-make sure we compute the probability for that ``all zero'' encounter history which
-we do operationally by tacking a row of zeros onto the encounter history matrix. In
-addition, we include the number of such all-zero encounter histories
-as an unknown parameter of the model. Call that unknown quantity $n_{0}$.
-In addition, we have to be sure to include a combinatorial term to
+To deal with the fact that $N$ is unknown, there are two key issues
+that need to be addressed.  First is that we don't observe the
+``all-zero'' encounter histories (i.e., $y_{ij} = 0$ for all $j$)
+corresponding to uncaptured individuals, so we have to make sure we
+compute the probability for that all zero encounter history which we
+do operationally by tacking a row of zeros onto the encounter history
+matrix. We include the number of such all-zero encounter histories as
+an unknown parameter of the model, which we label $n_{0}$.  In
+addition, we have to be sure to include a combinatorial term to
 account for the fact that of the $n$ observed individuals there are
-${N \choose n}$
- ways to realize a sample of size $n$. The combinatorial term
-involves the unknown $n_{0}$ and thus it must be included in the likelihood.
+${N \choose n}$ ways to realize a sample of size $n$. The
+combinatorial term involves the unknown $n_{0}$ and thus it must be
+included in the likelihood.
 
 To compute the integral requires that the bounds of integration are
 specified, which is equivalent to prescribing the state-space of the
-underlying point process, i.e., ${\cal S}$. Therefore density is
+underlying point process, i.e., ${\cal S}$. Given ${\cal S}$, density
+is
 computed as $D({\cal S}) = N/||{\cal S}||$. In our simulation study
 below we report $N$ as the two are equivalent summaries of the data
-set once the state-space is fixed. 
+set once the state-space is fixed.
 
-We wrote an R function to evaluate the likelihood which we optimize
-using the R function \mbox{\tt nlm}.
-The R code is given as a script in the Appendix and the R package scr
-is available on the website XYZ along with functions for simulating
-data.
+We wrote an {\bf R} function to evaluate the likelihood which we optimize
+using the {\bf R} function \mbox{\tt nlm}.
+The {\bf R} code is given as a script in the Appendix where we also
+provide functions for simulating data and carrying-out a simulation study.
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+ANDY STOPPED HERE
 
 \section{Examples of Computing Cost-Distance}
 
