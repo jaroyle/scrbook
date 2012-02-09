@@ -946,14 +946,18 @@ Metropolis-Hastings algorithm. With the exception of $\psi$ which has
 a convenient analytic solution -- it is a beta distribution which we
 can easily sample directly. In truth, we could also sample $\mu_{p}$
 and $\sigma_{p}^{2}$ directly with certain choices of prior
-distributions. For example, if $\mu_{p} \sim \mbox{Normal}(0, 1000)$
+distributions. For example, if $\mu_{p} \sim \mbox{Norm}(0, 1000)$
 then the full conditional for $\mu_{p}$ is also normal (see
 sec. \ref{mcmc.sec.gibbs}), etc..
 We implement an MCMC algorithm for this model in the following block
 of {\bf R} code.  
+\begin{comment}
+Rahel: Yes you can have the script and modify to be consistent with
+your stuff. I will send shortly.
 %Andy, I think we should edit code so it's comparable to the rest in this chapter (eg loglik instead of lik.curr etc. 
 %Should I do this in here or do you have an R script file for this code that's goint in the scrbook package? Then, I'd probably better
 % edit the .R file and paste it in here so they match.
+\end{comment}
 \begin{verbatim}
 
 ## obtain the bear data by executing the previous data grabbing
@@ -1037,36 +1041,38 @@ although they too can be updated directly from their full-conditional.
 
 Conceptually, but also in terms of MCMC coding, it is only a small step from the non-spatial model Mh to a fully spatial capture-recapture model. Next, we'll walk you through the steps of building your own MCMC sampler for the basic SCR model (i.e. without any individual, site or time specific covariates) with both a Poisson and a binomial encounter process.
 As usual, we will have to go through two general steps before we write the MCMC algorithm:
-
-(1)Identify your model with all its components (including
+\begin{itemize}
+\item[  (1)] Identify your model with all its components (including
     priors)
-
-(2) Recognize and express the full conditional distributions for
+\item[  (2)] Recognize and express the full conditional distributions for
     all parameters
-
+\end{itemize}
 It is worthwhile to go through all of step 1 for an SCR model, but you
 have probably seen enough of step 2 in our previous examples to get
 the essence of how to express a full conditional
 distribution. Therefore, we will exemplify step 2 for some parameters
 and tie these examples directly to the respective R code.
 
-
 {\bf Step 1 -- Identify your model}
 
-Recall the components of the basic SCR model with a Poisson encounter process from Chapt. \ref{XX}:
-We assume that individuals $i$, or rather, their activity centers $s_i$, are uniformly distributed across our state space $S$,
+Recall the components of the basic SCR model with a Poisson encounter process from Chapt. \ref{chapt.poisson-mn}:
+We assume that individuals $i$, or rather, their activity centers
+${\bf s}_i$, are uniformly distributed across the state space ${\cal S}$,
 \[
-s_i  \sim U(S)
+{\bf s}_i  \sim \mbox{Unif}({\cal S})
 \]
 and that the number of times individual $i$ encounters trap $j$, $y_{ij}$, is a random Poisson variable with mean $\lambda_{ij}$,
 \[
-y_{ij} \sim Poisson(\lambda_{ij})
+y_{ij} \sim \mbox{Poisson}(\lambda_{ij})
 \]
-The tie between individual location, movement and trap encounter rates is made by the assumption that $\lambda_{ij}$, is a decreasing function of the distance between $s_i$ and $j$, $D_{ij}$, of the half-normal form
+The link between individual location, movement and trap encounter
+rates is made by the assumption that $\lambda_{ij}$, is a decreasing
+function of the distance between ${\bf s}_i$ and the location of $j$,
+${\bf x}_{j}$, say $D_{ij} = ||{\bf s}_{i} - {\bf x}_{j}||$, of the half-normal form
 \[
 \lambda_{ij} =  \lambda_0 * exp(-D_{ij}^2/2\sigma^2),
 \]
-where $\lambda_0$ is the baseline trap encounter rate at $Dij=0$ and $\sigma$ controls the shape of the half-normal function.
+where $\lambda_0$ is the baseline trap encounter rate at $D_{ij}=0$ and $\sigma$ controls the shape of the half-normal function.
 
 In order to estimate the number of $s_i$ in $S$, $N$, we use data augmentation (Sect. \ref{3.XYZ}) and create $M-n$ all-0 encounter histories, where $n$ is the number of individuals we observed and $M$ is an arbitrary number that is larger than $N$. We estimate $N$ by summing over the auxiliary data augmentation variables, $z_i$, which is 1 if the individual is part of the population and 0 if not, and assume that $z_i$ is a random Bernoulli variable,
 \[
