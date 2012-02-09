@@ -1070,54 +1070,54 @@ rates is made by the assumption that $\lambda_{ij}$, is a decreasing
 function of the distance between ${\bf s}_i$ and the location of $j$,
 ${\bf x}_{j}$, say $D_{ij} = ||{\bf s}_{i} - {\bf x}_{j}||$, of the half-normal form
 \[
-\lambda_{ij} =  \lambda_0 * exp(-D_{ij}^2/2\sigma^2),
+\lambda_{ij} =  \lambda_0  \exp(-D_{ij}^2/2\sigma^2),
 \]
 where $\lambda_0$ is the baseline trap encounter rate at $D_{ij}=0$ and $\sigma$ controls the shape of the half-normal function.
 
-In order to estimate the number of $s_i$ in $S$, $N$, we use data augmentation (Sect. \ref{3.XYZ}) and create $M-n$ all-0 encounter histories, where $n$ is the number of individuals we observed and $M$ is an arbitrary number that is larger than $N$. We estimate $N$ by summing over the auxiliary data augmentation variables, $z_i$, which is 1 if the individual is part of the population and 0 if not, and assume that $z_i$ is a random Bernoulli variable,
+In order to estimate the number of ${\bf s}_i$ in ${\cal S}$, or any
+subset of ${\cal S}$, $N$, we use data augmentation (sec. \ref{closed.sec.da}) and create $M-n$ all-0 encounter histories, where $n$ is the number of individuals we observed and $M$ is an arbitrary number that is larger than $N$. We estimate $N$ by summing over the auxiliary data augmentation variables, $z_i$, which is 1 if the individual is part of the population and 0 if not, and assume that $z_i$ is a random Bernoulli variable,
 \[
 z_{i} \sim \mbox{Bern}(\psi)
 \]
-
 
 To link the two model components, we modify our trap encounter model to
 \[
 \lambda_{ij} = \lambda_0 * exp(-D_{ij}^2/2\sigma^2) * z_{i}.
 \]
 The model has the following structural parameters, for which we need to specify priors:
-
-$\psi$: the $Uniform (0,1)$ is required as part of the data augmentation procedure and in general is a natural choice of an uninformative prior for a probability; note that this is equivalent to a $Beta(1,1)$ prior, which will come in handy later.
-
-$s_{i}$: since $s_{i}$ is a pair of coordinates it is two-dimensional and we use a uniform prior limited by the extent of our state-space over both dimensions.
-
-$\sigma$: we can conceive several priors for $\sigma$ but let's assume an improper prior, one that is Uniform over $(-Inf, Inf)$. We will see why this is convenient when we construct the full conditionals for $\sigma$.
-
-$\lambda_{0}$: analogous, we will use a $Uniform (-Inf, Inf)$ improper prior for $\lambda_{0}$.
-
+\begin{itemize}
+\item[ $\psi$:] the $\mbox{Unif}(0,1)$ is required as part of the data augmentation procedure and in general is a natural choice of an uninformative prior for a probability; note that this is equivalent to a $\mbox{Beta}(1,1)$ prior, which will come in handy later.
+\item[ ${\bf s}_{i}$:] since ${\bf s}_{i}$ is a pair of coordinates it is two-dimensional and we use a uniform prior limited by the extent of our state-space over both dimensions.
+\item[ $\sigma$:] we can conceive several priors for $\sigma$ but let's assume an improper prior, one that is Uniform over $(-\infty, \infty)$. We will see why this is convenient when we construct the full conditionals for $\sigma$.
+\item[ $\lambda_{0}$:] analogous, we will use a $\mbox{Unif}(-\infty, \infty)$ improper prior for $\lambda_{0}$.
+\end{itemize}
 The parameter that is the objective of our modeling, $N$, is a derived parameter that we can simply obtain by summing all $z_i$:
 \[
-N=\sum(z)
+N = \sum_{i=1}^{M} z_{i}
 \]
 
-
-{\bf Step 2 -- Construct the full conditionals}
+{\bf Step 2 -- Construct the full conditionals:}
 Having completed step 1, let's look at the full conditional distributions for some of these parameters.
 We find that with improper priors, full conditionals are proportional only to the likelihood of the observations; for example, take the movement parameter $\sigma$:
 \[
-[\sigma|s, \lambda_{0}, z, y] \propto [y| s, \lambda_{0}, z, \sigma] * [\sigma]
+[\sigma|{\bf s}, \lambda_{0}, {\bf z}, {\bf y}] \propto \left\{ \prod_{i} [y_{i}| {\bf
+    s}_{i}, \lambda_{0}, z_{i}, \sigma] \right\} * [\sigma]
 \]
 Since the improper prior implies that $[\sigma] \propto 1$, we can reduce this further to
 \[
-[\sigma|s, \lambda_{0}, z, y] \propto [y| s, \lambda_{0}, z, \sigma]
+[\sigma|{\bf s}, \lambda_{0}, {\bf z}, {\bf y}] \propto \left\{
+  \prod_{i} [y_{i}| {\bf s}_{i}, \lambda_{0}, z_{i}, \sigma] \right\}
 \]
-The R code to update $\sigma$ is shown in Panel 4. Notice that we automatically reject negative candidate values, since $\sigma$ cannot be $<0$.  
+The {\bf R} code to update $\sigma$ is shown in Panel
+\ref{mcmc.panel.updatesigma}.
+ Notice that we automatically reject negative candidate values, since $\sigma$ cannot be $<0$.  
 
+\begin{panel}[htp]
+\centering
+\rule[0.15in]{\textwidth}{.03in}
+%\begin{minipage}{2.5in}
 {\small
 \begin{verbatim}
-Panel 4: R code to update sigma within an MCMC algorithm for
-an SCR model when using an improper prior
-
-
 sig.cand <- rnorm(1, sigma, 0.1)	#draw candidate value
  if(sig.cand>0){   #automatically reject sig.cand that are <0
      lam.cand <- lam0*exp(-(D*D)/(2*sig.cand*sig.cand))
@@ -1129,9 +1129,18 @@ sig.cand <- rnorm(1, sigma, 0.1)	#draw candidate value
          sigma<-sig.cand
       }
   }
-
 \end{verbatim}
 }
+%\end{minipage}
+\rule[-0.15in]{\textwidth}{.03in}
+\caption{
+{\bf R} code to update sigma within an MCMC algorithm for
+an SCR model when using an improper prior
+}
+\label{mcmc.panel.updatesigma}
+\end{panel}
+
+
 These steps are analogous for  $\lambda_{0}$ and $s_i$ and we will use MH steps for
 all of these parameters. Similar to the random intercepts in our
 Poisson GLMM, we update each $s_i$ individually. Note that to be fully
