@@ -27,36 +27,47 @@ samplers for SCR models in {\bf R}. You will find that quite a few topics that c
 in this chapter have already been covered in previous chapters, particularly the introduction
 into Byesian analysis in Chapt. \ref{chapt.glms}. To keep you from having to leaf back and forth
 we will in some places briefly review aspects of Bayesian analysis, but we try to focus on the more 
-technical issues of building MCMC samplers. 
+technical issues of building MCMC samplers relevant to SCR models. 
 
 
 
 \subsection{Why build your own MCMC algorithm?}
 
-The standard program we have used so far to run MCMC analyses is
-WinBUGS \citep{gilks_etal:1994}. The wonderful thing about WinBUGS is
-that it will automatically use the most appropriate and efficient form
+The standard programs we have used so far to run MCMC analyses are
+{\bf WinBUGS} \citep{gilks_etal:1994} and {\bf JAGS}
+\citep{plummer:2003}. The wonderful thing about these {\bf BUGS}
+engines
+is that they automatically use  appropriate and, most of the time,
+efficient forms
 of MCMC sampling for the model specified by the user.
 
 The fact that we have such a Swiss Army knife type of MCMC machine
 begs the question: Why would anyone want to build their own MCMC
 algorithm? For one, there are a limited number of distributions and
-functions implemented in WinBUGS. While OpenBUGS provides more
+functions implemented in {\bf BUGS}. While {\bf OpenBUGS} provides more
 options, some more complex models may be impossible to build within
 these programs. A very simple example from spatial capture-recapture
-that can give you a headache in WinBUGS is when your state-space is an
+that can give you a headache in {\bf WinBUGS} is when your state-space is an
 irregular-shaped polygon, rather than an ideal rectangle that can be
 characterized by four pairs of coordinates. It is easy to restrict
-activity centers to any arbitrary polygon in R using an ESRI shapefile
+activity centers to any arbitrary polygon in {\bf R} using an ESRI shapefile
 (and we will show you an example in a little bit), but you cannot use
-a shape file in a BUGS model.
+a shape file in a {\bf BUGS} model.  Similarly, models of space usage
+that take into account ecological distance
+(Chapt. \ref{chapt.ecoldist} cannot be implemented in the {\bf BUGS}
+engines.  Moreover, there are classes of 
+SCR models that we have not been able to implement effectively using
+likelihood methods, and are inefficient to run in the {\bf BUGS}
+engines. An example are those models covered in Chapts. 
+\ref{chapt.scr-unmarked} and \ref{chapt.partialID}. 
 
 Sometimes implementing an MCMC algorithm in R may be faster than in
-WinBUGS - especially if you want to run simulation studies where you
+{\bf WinBUGS} - especially if you want to run simulation studies where you
 have hundreds or more simulated data sets, several years' worth of
 data or other large models, this can be a big advantage.
 
-Finally, building your own MCMC algorithm is a great exercise to understand how MCMC sampling works. So while using the BUGS language requires you to understand the structure of your model, building an MCMC algorithm requires you to think about the relationship between your data, priors and posteriors, and how these can be efficiently analyzed and characterized. Not to mention that, if you are an R junkie, it can actually be fun.
+Finally, building your own MCMC algorithm is a great exercise to
+understand how MCMC sampling works. So while using the {\bf BUGS} language requires you to understand the structure of your model, building an MCMC algorithm requires you to think about the relationship between your data, priors and posteriors, and how these can be efficiently analyzed and characterized. Not to mention that, if you are an R junkie, it can actually be fun.
 However, if you don't think you will ever sit down and write your own
 MCMC sampler, consider skipping this chapter - apart from coding it
 will not cover anything SCR-related that is not covered by other, more
@@ -65,7 +76,7 @@ model-oriented chapters as well.
 
 \section{MCMC and posterior distributions}
 
-As mentioned in Chapter 2, MCMC is a class of simulation methods for
+MCMC is a class of simulation methods for
 drawing (correlated) random numbers from a target distribution, which
 in Bayesian inference is the posterior distribution.
 As a reminder, the posterior distribution is a probability
@@ -89,32 +100,34 @@ where $\theta$ is the parameter of interest, $y$ is the observed data,
 $p(\theta|y)$ is the posterior, $p(y|\theta)$ the likelihood of the
 data conditional on $\theta$, $p(\theta)$ the prior probability of
 $\theta$, and, finally, $p(y)$ is the marginal probability of the
-data, which can also be written as
+data, defined as 
 \[
 p(y) = \int p(y|\theta) * p(\theta) d\theta
 \]
 
 This marginal probability is a normalizing constant that ensures that
-the posterior integrates to 1. This
-integral is often hard or impossible to evaluate, unless you are
-dealing with a really simple model.  For example, consider that you
-have a Normal model, with a set of n observations, $y$ that come from a
-Normal distribution:
+the posterior integrates to 1. Often, the
+integral is  hard or impossible to evaluate, unless you are
+dealing with a really simple model.  For example, consider 
+a Normal model, with a set of $n$ observations, $y_{i};
+i=1,2,\ldots,n$: 
 \[
- y \sim \mbox{Normal}(\mu, \sigma),
+ y_{i} \sim \mbox{Normal}(\mu, \sigma),
 \]
 where $\sigma$ is known and our objective is to obtain an estimate of
 $\mu$ using Bayesian statistics. To fully specify the model in a Bayesian
 framework, we first have to define a prior distribution for $\mu$. Recall
-from Chapter 2 that for certain data models, certain priors lead to
-conjugacy – i.e. if you choose the right prior for your parameter,
+from Chapt. \ref{chapt.glms} 
+that for certain data models, certain priors lead to
+conjugacy – i.e. if you choose a certain prior for your parameter,
 your posterior distribution will be of a known parametric form. The
 conjugate prior for the mean of a normal model is also a Normal
 distribution:
 \[
 \mu \sim \mbox{Normal}(\mu_0, \sigma_{0}^{2})
 \]
-If $\mu_{0}$ and $\sigma_{0}^{2}$ are fixed, the posterior for $\mu$ has the following form (for the algebraic proof, see XXX):
+If $\mu_{0}$ and $\sigma_{0}^{2}$ are fixed, the posterior for $\mu$
+has the following form (for the algebraic proof, see XXX RED BOOK? XXXX):
 \begin{equation}
 \mu|y \sim \mbox{Normal}(\mu_{n}, \sigma_{n}^{2})
 \label{mcmc.eq.mu-posterior}
@@ -132,8 +145,8 @@ posterior distribution, such as the mean $\hat{\mu}$ and its variance; we
 do not need to apply MCMC, since we can recognize the posterior as a
 parametric distribution, including the normalizing constant $p(y)$.
 But generally we will be interested in more complex models with
-several, say n, parameters. In this case, computing $p(y)$ from
-Eq. \ref{mcmc.eq.bayes} requires n-dimensional integration, which is
+several, say $n$, parameters. In this case, computing $p(y)$ from
+Eq. \ref{mcmc.eq.bayes} requires $n$-dimensional integration, which is
 can be difficult or impossible. Thus, the posterior distribution in
 generally only known up to a constant of proportionality:
 \[
@@ -153,10 +166,10 @@ In a nutshell, MCMC lets us generate sequential draws of $\theta$ (the
 parameter(s) of interest) from distributions approximating the unknown
 posterior over $T$ iterations. The distribution of the draw at $t$ depends
 on the value drawn at $t$-1; hence, the draws from a Markov
-chain. \footnote{In case you are not familiar with Markov chains, for
+chain\footnote{In case you are not familiar with Markov chains, for
   $T$ random samples $\theta^ {(1)}$, ... $\theta^{(T)}$ from a Markov chain
   the distribution of $\theta^{(t)}$ depends only on the immediately preceding
-  value, $\theta^{(t-1)}$.} As $T$ goes to infinity, the Markov chain
+  value, $\theta^{(t-1)}$.}. As $T$ goes to infinity, the Markov chain
 converges to the desired distribution – in our case the posterior
 distribution for $\theta|y$. Thus, once the Markov chain has reached
 its stationary distribution, the generated samples can be used to
