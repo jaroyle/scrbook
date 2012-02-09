@@ -2,10 +2,10 @@
 \alias{beardata}
 \docType{data}
 \title{
-%%   ~~ data name/kind ... ~~
+The bear data
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of the dataset. ~~
+The data on bears
 }
 \usage{data(beardata)}
 \format{
