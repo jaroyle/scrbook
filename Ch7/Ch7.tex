@@ -213,31 +213,32 @@ conjugate prior for $\sigma^2$ is an Inverse-Gamma distribution with shape and s
 \]
 With fixed $a$ and $b$, the posterior $p(\sigma|\mu,y)$ is also an Inverse Gamma distribution, namely:
 \begin{equation}
-\sigma|\mu,y \sim Inv Gamma (a_n, b_n),
+\sigma|\mu,y \sim InvGamma (a_n, b_n),
 \label{eq. 3}
 \end{equation}
- where  $a_n = n/2   + a$ and $b_n = 1/2 \sum (y-\mu)^2 + b$
-However, what if we know neither $mu$ nor $sig$, which is probably the
-more common case? The joint posterior distribution of $mu$ and $sig$
+ where  $a_n = n/2   + a$ and $b_n = (1/2) \sum (y-\mu)^2 + b$.
+However, what if we know neither $\mu$ nor $\sigma$, which is probably the
+more common case? The joint posterior distribution of $\mu$ and $\sigma$
 now has the general structure
 \[
-p(\mu, \sigma|y) = \frac{p(y|\mu)* p(\mu) *p(\sigma)}{ \int p(y|\mu)* p(\mu) *p(\sigma) d\mu d\sigma }
+p(\mu, \sigma|y) = \frac{p(y|\mu) p(\mu) p(\sigma)}{ \int p(y|\mu) p(\mu) p(\sigma) d\mu d\sigma }
 \]
-Or
+or
 \[
-p(\mu, \sigma|y) \propto p(y|\mu)* p(\mu) *p(\sigma)
+p(\mu, \sigma|y) \propto p(y|\mu) p(\mu) p(\sigma)
 \]
+\begin{comment} Rahel : use of p() here might violate some convention of the
+book -- I dunno. Lets think about it \end{comment}
 This cannot easily be reduced to a distribution we recognize. However,
 we can condition $\mu$ on $\sigma$ (i.e., we treat $\sigma$ as fixed) and remove
 all terms from the joint posterior distribution that do not involve $\mu$
 to construct the full conditional distribution,
 \[
-p(\mu|\sigma,y)  \propto p(y|\mu)* p(\mu)
+p(\mu|\sigma,y)  \propto p(y|\mu) p(\mu)
 \]
 
-
 The full conditional of $\mu$ again takes the form of the Normal
-distribution shown in Eq. \ref{mcmc.eq.mu-posterior}; similarly, $p(sig|mu,y)$ takes
+distribution shown in Eq. \ref{mcmc.eq.mu-posterior}; similarly, $p(\sigma|\mu,y)$ takes
 the form of the Inverse Gamma distribution shown in
 Eq. \ref{eq. 3}  – both distribution we can easily sample
 from. And this is precisely what we do when using Gibbs sampling – we
@@ -260,15 +261,15 @@ somewhere. We will get back to these technical details a little
 later.)
 {\flushleft {\bf Step 1:} Draw $\theta^{(1)}$ from the conditional distribution p($\theta_{1}^{(1)}|\theta_{2}^{(0)}$,\ldots, $\theta_{d}^{(0)}$). }
 Here, $\theta_1$ is $\mu$, which we draw from the Normal distribution in Eq. \ref{mcmc.eq.mu-posterior}  using $\sigma^{(0)}$ as value for $\sigma$.
-{\flushleft Step 2: Draw $\theta_{2}^{(1)}$ from the conditional distribution p($\theta_{2}^{(1)}|\theta_{1}^{(1)}$, $\theta_{3}^{(0)}$,\ldots, $\theta_{d}^{(0)}$). }
+{\flushleft {\bf Step 2:} Draw $\theta_{2}^{(1)}$ from the conditional distribution p($\theta_{2}^{(1)}|\theta_{1}^{(1)}$, $\theta_{3}^{(0)}$,\ldots, $\theta_{d}^{(0)}$). }
 Here, $\theta_2$ is $\sigma$, which we draw from the Inverse Gamma
 distribution of Eq. \ref{eq. 3}, using $\mu^{(1)}$ as value for $\mu$.
 
-{\flushleft {\bf Step d:} Draw $\theta_{d}^{(1)}$ from the conditional distribution p($\theta_{d}^{(1)}|\theta_{1}^{(1)}$,\ldots, $\theta_{d-1}^{(1)}$). }
+{\flushleft {\bf Step 3:} Draw $\theta_{d}^{(1)}$ from the conditional distribution p($\theta_{d}^{(1)}|\theta_{1}^{(1)}$,\ldots, $\theta_{d-1}^{(1)}$). }
 
 In our example we have no additional parameters, so we only need step 0 through to 2.
 Repeat Steps 1 to d for $T$ = a large number of samples.
-In terms of R coding, this means we have to write Gibbs updaters for
+In terms of {\bf R} coding, this means we have to write Gibbs updaters for
 $\mu$ and $\sigma$ and embed them into a loop over $T$ iterations. The final
 code in the form of an {\bf R} function is shown 
 in Panel \ref{mcmc.panel.gibbs1}.
@@ -309,7 +310,7 @@ return(out)
 %\end{minipage}
 \rule[-0.15in]{\textwidth}{.03in}
 \caption{
-Panel 1: R-code for a Gibbs sampler for a Normal model with unknown mu
+R-code for a Gibbs sampler for a Normal model with unknown mu
 and sig and conjugate (Normal and Inverse Gamma, respectively) priors
 for both parameters.
 }
@@ -346,9 +347,15 @@ par(mfrow=c(1,2))
 hist(out[,1]); hist (out[,2])
 \end{verbatim}
 
+\begin{comment}
+Rahel: for some analyses you might want to use a specified random
+number seed so that the reader can obtain exactly these results (or
+that Figures look exactly the same if they are reanalyzed for
+revisions. 
+\end{comment}
 Finally, recall an important characteristic of Markov chains, namely,
 that the chain has to have converged (reached its stationary
-distribution) for samples to come from the posterior distribution. In
+distribution) in order to regard samples as coming from the posterior distribution. In
 practice, that means you have to throw out some of the initial samples
 – called the burn-in. We will talk about this in more when we talk
 about convergence diagnostics. For now, you can use the
@@ -367,10 +374,10 @@ remaining samples are your estimates of mu and sig:
 > summary(mod[501:10000,])
        mu                      sig
  Min.   : 4.936      Min.   : 0.4569
- 1st Qu.: 4.984     1st Qu.: 0.4889
- Median : 4.994   Median : 0.4961
- Mean   : 4.994    Mean   : 0.4964
- 3rd Qu.: 5.005    3rd Qu.: 0.5037
+ 1st Qu.: 4.984      1st Qu.: 0.4889
+ Median : 4.994      Median : 0.4961
+ Mean   : 4.994      Mean   : 0.4964
+ 3rd Qu.: 5.005      3rd Qu.: 0.5037
  Max.   : 5.062      Max.   : 0.5356
 \end{verbatim}
 
@@ -386,7 +393,14 @@ remaining samples are your estimates of mu and sig:
 \begin{center}
 \includegraphics[width=2.5in]{Ch7/figs/plotsofPD}
 \end{center}
-\caption{Plots of the posterior distributions of $\mu$ (a) and $\sigma$ (b)
+\caption{
+\begin{comment} Rahel: there is no (a) (b) etc.. in the figure.
+might want to remake figure and label (a) (b) or else say ``upper
+left''
+and so on
+\end{comment}
+Plots of the posterior distributions of $\mu$ (panel a) and
+  $\sigma$ (b)
   from a Normal model and time series plots of $\mu$ (c) and $\sigma$ (d).}
 \label{plotsofPD.fig}
 \end{figure}
@@ -400,7 +414,7 @@ conditional distribution as a parametric distribution, or simply do
 not want to worry about these issues)? The most general solution is to
 use the Metropolis-Hastings (MH) algorithm, which also goes back to
 the work by \citet{metropolis_ulam:1953}. You saw the basics of this
-algorithm in Chapter 2. In a nutshell, because we do not recognize the
+algorithm in Chapt. \ref{chapt.glms}. In a nutshell, because we do not recognize the
 posterior $p(\theta|y)$ as a parametric distribution, the MH algorithm
 generates samples from a known proposal distribution, say $h(\theta)$,
 that depends on $\theta$ at $t-1$. The $t^{th}$ sample is accepted with probability. 
@@ -438,11 +452,12 @@ the user (see below for further explanation).
 {\bf Parameters with bounded support}: Many models contain parameters that
 have  bounded support. E.g., variance parameters live on $[0,\infty]$,
 parameters that represent probabilities live on $[0,1]$, etc..
- In that case it is sometimes convenient to use a random
+For such cases, it is sometimes convenient to use a random
 walk proposal distribution that can generate any real number (e.g., a
-normal random walk proposal). In that case,
+normal random walk proposal). Then, 
 we can just reject parameters that are
-outside of the parameter space (XXXX REF FOR THIS XXXX).
+outside of the parameter space (XXXX REF FOR THIS MAYBE ROBERT AND
+CASELLA BOOK ???? XXXX).
 
 It is worth
 knowing that there are alternatives to the random walk MH algorithm. For
@@ -463,23 +478,22 @@ and
 \]
 The following steps are required to set up a random walk MH algorithm:
 
-{\flushleft Step 0: Choose initial values, $\theta^{(0)}$.}
+{\flushleft {\bf Step 0}: Choose initial values, $\theta^{(0)}$.}
 
-{\flushleft Step 1: Generate a proposed value of $\theta$ at $t$ from $h(\theta^{(t)}|\theta^{(t-1)})$. }
-We often use a Normal proposal distribution, so we draw $\theta^{(1)}$ from $Normal(\theta^{(0)}, \delta)$, where $\delta$ is the variance of the Normal proposal distribution, the tuning parameter that we have to set.
+{\flushleft {\bf Step 1}: Generate a proposed value of $\theta$ at $t$ from $h(\theta^{(t)}|\theta^{(t-1)})$. }
+We often use a Normal proposal distribution, so we draw $\theta^{(1)}$ from $\mbox{Normal}(\theta^{(0)}, \delta)$, where $\delta$ is the variance of the Normal proposal distribution, the tuning parameter that we have to set.
 
-{\flushleft Step 2: Calculate the ratio of posterior densities for the proposed and the original value for $\theta$: }
+{\flushleft {\bf Step 2}: Calculate the ratio of posterior densities for the proposed and the original value for $\theta$: }
 \[
 r = \frac{p(\theta^{(t)}|y)}  {p(\theta^{(t-1)}|y)}
 \]
 In our example,
 \[
-r = \frac{\mbox{Bernoulli}(y|\theta^{(t)}) * Normal(\theta^{(t)}|\mu, \sigma)} {Bernoulli(y|\theta^{(t-1)}) * Normal(\theta^{(t-1)}|\mu, \sigma)}
+r = \frac{\mbox{Bern}(y|\theta^{(t)}) * \mbox{Normal}(\theta^{(t)}|\mu, \sigma)} {\mbox{Bern}(y|\theta^{(t-1)}) * \mbox{Normal}(\theta^{(t-1)}|\mu, \sigma)}
 \]
-Step 3: Set
-
+{\bf Step 3}: Set
 \begin{eqnarray*}
-\theta^{(t)}  &= &   \theta^{(t)} \mbox{with probability min(r,1)}\\
+\theta^{(t)}  &= &   \theta^{(t)} \mbox{ with probability min(r,1)}\\
 	 & = & 	\theta^{(t-1)} \mbox{ otherwise }
 \end{eqnarray*}
 
@@ -491,10 +505,13 @@ $\mbox{Unif}(0,1)$ and accept $\theta^{(t)}$ if
 $u<r$.
 Repeat for $t = 1,2,\ldots$ a large number of samples.
 The {\bf R} code for this MH sampler is provided in Panel 2 XXXX.
+
+\begin{panel}[htp]
+\centering
+\rule[0.15in]{\textwidth}{.03in}
+%\begin{minipage}{2.5in}
 {\small
 \begin{verbatim}
-Panel 2: R code to run a Metropolis sampler on a simple Logit-Normal model.
-
 Logreg.MH<-function(y=y, mu0=mu0, sig0=sig0, niter=niter) {
 
 out<-c()
@@ -519,6 +536,15 @@ return(out)
 }
 \end{verbatim}
 }
+%\end{minipage}
+\rule[-0.15in]{\textwidth}{.03in}
+\caption{
+{\bf R} code to run a Metropolis sampler on a simple Logit-Normal model.
+}
+\label{mcmc.panel.logitnormal}
+\end{panel}
+
+
 
 The reason we sum the logs of the likelihood and the prior, rather than multiplying the original values, is simply computational. The product of small probabilities can be numbers very close to 0, which computers do not handle well. Thus we add the logarithms, sum, and exponentiate to achieve the desired result. Similarly, in case you have forgotten some elementary math, $x/y = exp(log(x)-log(y))$, with the latter being favored for computational reasons.
 
