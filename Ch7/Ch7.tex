@@ -189,6 +189,7 @@ techniques that are applicable in some situations.
 
 
 \subsection{Gibbs sampling}
+\label{mcmc.sec.gibbs}
 
 Gibbs sampling was named after the physicist J.W. Gibbs by
 \citet{geman_geman:1984}, who applied the algorithm to a Gibbs
@@ -800,10 +801,39 @@ return(out)
 
 \subsection{Rejection sampling and slice sampling }
 
-While MH and Gibbs sampling are probably the most widely applied algorithms for posterior approximation, there are other options that work under certain circumstances and may be more efficient when applicable. WinBUGS applies these algorithms and we want you to be aware that there is more out there to approximate posterior distributions than Gibbs and MH.
-One alternative algorithm is rejection sampling. Rejection sampling is not an MCMC method, since each draw is independent of the others. The method can be used when the posterior $p(\theta|y)$ is not a known parametric distribution but can be expressed in closed form. Then, we can use a so-called envelope function, say, $g(\theta)$, that we can easily sample from, with the restriction that $p(\theta|y) < M * g(\theta)$. We then sample a candidate value for $\theta$ from $g(\theta)$, calculate $r = p(\theta|y)/M*g(\theta)$ and keep the sample with the probability $r$. $M$ is a constant that has to be picked so that $r$ lies between 0 and 1, for example by evaluating both $p(\theta|y)$ and $g(\theta)$ at $n$ points and looking at their ratios. Rejection sampling only works well if $g(\theta)$ is similar to $p(\theta|y)$, and packages like WinBUGS use adaptive rejection sampling \citep{gilks_wild:1992}, where a complex algorithm is used to fit an adequate and efficient $g(\theta)$ based on the first few draws. Though efficient in some situations, rejection sampling does not work well with high-dimensional problems, since it becomes increasingly hard to define a reasonable envelope function. For an example of rejection sampling in the context of SCR models, see Chapter 9 XXXX.
-Another alternative is slice sampling \citep{neal:2003}. In slice sampling, we sample uniformly from the area under the plot of $p(\theta|y)$. Considering a single univariate theta. Let's define an auxiliary variable, $U \sim  Uniform(0, p(\theta|y))$. Then, $\theta$ can be sampled from the vertical slice of $p(\theta|y)$ at $U$ (Figure 4):
-
+While MH and Gibbs sampling are probably the most widely applied
+algorithms for posterior approximation, there are other options that
+work under certain circumstances and may be more efficient when
+applicable. {\bf WinBUGS} applies these algorithms and we want you to be
+aware that there is more out there to approximate posterior
+distributions than Gibbs and MH.  One alternative algorithm is
+rejection sampling. Rejection sampling is not an MCMC method, since
+each draw is independent of the others. The method can be used when
+the posterior $p(\theta|y)$ is not a known parametric distribution but
+can be expressed in closed form. Then, we can use a so-called envelope
+function, say, $g(\theta)$, that we can easily sample from, with the
+restriction that $p(\theta|y) < M * g(\theta)$. We then sample a
+candidate value for $\theta$ from $g(\theta)$, calculate $r =
+p(\theta|y)/M*g(\theta)$ and keep the sample with the probability
+$r$. $M$ is a constant that has to be picked so that $r$ lies between
+0 and 1, for example by evaluating both $p(\theta|y)$ and $g(\theta)$
+at $n$ points and looking at their ratios. Rejection sampling only
+works well if $g(\theta)$ is similar to $p(\theta|y)$, and packages
+like {\bf WinBUGS} use adaptive rejection sampling \citep{gilks_wild:1992},
+where a complex algorithm is used to fit an adequate and efficient
+$g(\theta)$ based on the first few draws. 
+Though efficient in some
+situations, rejection sampling does not work well with
+high-dimensional problems, since it becomes increasingly hard to
+define a reasonable envelope function. For an example of rejection
+sampling in the context of SCR models, see
+Chapt. \ref{chapt.state-space}, where we use it to simulation
+non-stationary point processes.  Another alternative is slice sampling
+\citep{neal:2003}. In slice sampling, we sample uniformly from the
+area under the plot of $p(\theta|y)$. Considering a single univariate
+theta. Let's define an auxiliary variable, $U \sim \mbox{Unif}(0,
+p(\theta|y))$. Then, $\theta$ can be sampled from the vertical slice
+of $p(\theta|y)$ at $U$ (Fig. \ref{mcmc.fig.slicesample}):
 \[
 \theta|U \sim \mbox{Unif}(B),
 \]
@@ -815,38 +845,50 @@ where $B = \{\theta: p(\theta|y) \geq U\}$
 \includegraphics[height=2in]{Ch7/figs/slicesampling}
 \end{center}
 \caption{Slice sampling. For...}
-\label{slicesample.fig}
+\label{mcmc.fig.slicesample}
 \end{figure}
 
 \footnote{there are supposed to be equations in the caption of figure
-4 but it kept causing errors}
+4 but it kept causing errors. Rahel: Let me see the equations you want
+in there....}
 
-Slice sampling can be applied in many situations; however, implementing an efficient slice sampling procedure can be complicated. We refer the interested reader to chapter 7 of \citet{robert_casella:2010} for a simple example.
-Both rejection sampling and slice sampling can be applied on one-dimensional conditional distributions within a Gibbs sampling setup.
+Slice sampling can be applied in many situations; however,
+implementing an efficient slice sampling procedure can be
+complicated. We refer the interested reader to 
+\citet[][Chapt. 7]{robert_casella:2010} for a simple example.  Both rejection
+sampling and slice sampling can be applied on one-dimensional
+conditional distributions within a Gibbs sampling setup.
 
 \section{MCMC for closed capture-recapture Model Mh}
+\begin{comment}
 \subsection{Building your own MCMC algorithm}
+% subsection needed here? maybe not?
+\end{comment}
 
-By now you have seen MCMC samplers for some simple GL(M)M's. Now, to ease you into more complex models, we construct our own MCMC algorithm using a Metropolis-within-Gibbs sampler for the non-spatial Model with individual heterogeneity in capture probability $M_{h}$, developed in Chapt. \ref{chapt.closed}. 
+By now you have seen MCMC samplers for some simple GL(M)M's. Now, to
+ease you into more complex models, we construct our own MCMC algorithm
+using a Metropolis-within-Gibbs sampler for the non-spatial Model with
+individual heterogeneity in capture probability $M_{h}$, developed in
+Chapt. \ref{chapt.closed}.
 
-To recapitulate: Under the non-spatial model, each of the $n$ observed individuals is either detected (1) or not (0) during each of $K$ sampling occasions. We estimate $N$ using data augmentation and have a Bernoulli model for the
-zero-inflation variables $z_{i}$. The binomial observation model
-is expressed conditional on the latent variables
-$z_{i}$. Further, we
-prescribe a distribution for the capture probability $p_{i}$. Here we assume
+To recapitulate: Under the non-spatial model, each of the $n$ observed
+individuals is either detected (1) or not (0) during each of $K$
+sampling occasions. We estimate $N$ using data augmentation and have a
+Bernoulli model for the zero-inflation variables $z_{i}$. The binomial
+observation model is expressed conditional on the latent variables
+$z_{i}$. Further, we prescribe a distribution for the capture
+probability $p_{i}$. Here we assume
 \[
 \mathrm{logit}(p_{i}) \sim \mbox{Normal}(\mu,\sigma^2)
 \]
 
-
-As usual, we will have to go through two general steps before we write the MCMC algorithm:
-
-(1)Identify your model with all its components (including
+As usual, we have to go through two general steps before we write the MCMC algorithm:
+\begin{itemize}
+\item[  (1)] Identify your model with all its components (including
     priors)
-
-(2) Recognize and express the full conditional distributions for
+\item[  (2)] Recognize and express the full conditional distributions for
     all parameters
-    
+\end{itemize}
 Our model components are as follows: $[y_{i}| p_{i},z_{i}]$,
 $[p_{i}|\mu_{p},\sigma_{p}]$, and $[z_{i}|\psi]$
 for {\it each} $i=1,2,\ldots,M$ and then prior distributions
@@ -883,13 +925,13 @@ z_{i} | \cdot \propto [y_{i}|z_{i}*p_{i}] \mbox{Bern}(z_{i}|\psi)
 
 {\bf (3)} For $\mu_{p}$:
 \[
-[\mu_{p} | \cdot ] \sim \prod_{i} [p_{i}| \cdot] *\mbox{const}
+[\mu_{p} | \cdot ] \sim \left\{ \prod_{i} [p_{i}| \cdot] \right\} *\mbox{const}
 \]
 
 
 {\bf (4)} For $\sigma_{p}$:
 \[
-[ \sigma_{p}|\cdot ] \sim\prod_{i}[p_{i}| \cdot ]*\mbox{const}
+[ \sigma_{p}|\cdot ] \sim \left\{ \prod_{i}[p_{i}| \cdot ] \right\} *\mbox{const}
 \]
 
 {\bf (5)} For $\psi$:
@@ -905,7 +947,8 @@ a convenient analytic solution -- it is a beta distribution which we
 can easily sample directly. In truth, we could also sample $\mu_{p}$
 and $\sigma_{p}^{2}$ directly with certain choices of prior
 distributions. For example, if $\mu_{p} \sim \mbox{Normal}(0, 1000)$
-then the full conditional for $\mu_{p}$ is also normal, etc..
+then the full conditional for $\mu_{p}$ is also normal (see
+sec. \ref{mcmc.sec.gibbs}), etc..
 We implement an MCMC algorithm for this model in the following block
 of {\bf R} code.  
 %Andy, I think we should edit code so it's comparable to the rest in this chapter (eg loglik instead of lik.curr etc. 
