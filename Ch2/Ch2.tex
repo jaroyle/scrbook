@@ -8,10 +8,7 @@ Bayesian Analysis of GL(M)Ms Using R/WinBUGS
 
 %%%% STUFF TO DO
 %%% 1. Prior lack of invariance to transformation stuff: Reference and Figure
-%%% 2. Full conditional example from ch. 6 copy notation
-%%% 3. Check out algorithm environment
 %%% 4. reference for sampling from f() with bounded support
-%%% 5. need refs on choosing prior disributions
 %%% 6. Check Bayesian p-value definition
 %%% 7. FIX parameter notation! I have beta0 beta1 , alpha beta, and a,
 %%%     b in the same chapter!   Use alpha beta probably?
@@ -910,18 +907,39 @@ regression
 \[
 \mbox{logit}(p_{i}) = \alpha + \beta x_{i}
 \]
-Would be $[\alpha] = \mbox{const}$ which is the same as saying $a \sim
-Unif(\infty,\infty)$, the customary improper uniform prior.
-However, we might also use a prior on the parameter $p0
-= logit^{-1}(a)$, which is $Pr(y=1)$ for the value $x=0$. Since $p0$ is a
-probability a natural choice is $p0 \sim Unif(0,1)$. These two priors can
-affect results (see Chapt. 3.XYZ), yet they are both sensible
+would be a very diffuse normal prior,
+$[\alpha] = \mbox{Norm}(0,\mbox{Large})$ or even
+ $\alpha \sim
+\mbox{Unif}(-\mbox{Large},\mbox{Large})$.
+However, we might also use a prior on the parameter $p_0
+= logit^{-1}(\alpha)$, which is $\Pr(y=1)$ for the value $x=0$. 
+Since $p_0$ is a
+probability a natural choice is $p_0 \sim \mbox{Unif}(0,1)$. 
+These priors are very different in their implications. For example, if
+we choose the normal prior for $\alpha$ with variance
+$\mbox{Large} = 5^2$ and look at the implied prior for $p_{0}$
+we have the result shown in Fig. \ref{glms.fig.impliedprior}
+which looks nothing like a Uniform(0,1) prior.
+\begin{figure}
+\begin{center}
+\includegraphics[height=3.3in]{Ch2/figs/implied_prior}
+\end{center}
+\caption{Implied prior for $p_{0} = exp(\alpha)/(1+exp(\alpha))$ 
+if $\alpha \sim \mbox{Normal}(0, 5^2)$.}
+\label{glms.fig.impliedprior}
+\end{figure}
+These two priors can
+affect results (see Chapt. \ref{chapt.closed} sec. XXXXX), yet they are both 
+sensible
 non-informative priors. Choice of priors and parameterization is
 very much problem-specific and often largely subjective. Moreover, it
 also affects the behavior of MCMC algorithms and therefore the analyst
 needs to pay some attention to this issue and possibly try different
 things out.
-XXX REFS on prior distributions XXXXXX
+Most standard Bayesian analysis books address issues related to specification and
+affect of prior distribution choice in some depth. Some good references include 
+\citet{kass_wasserman:1996}, \citet{gelman:2006} and \citet{link_barker:2009}.
+
 
 \subsection{Convergence and so-forth}
 
@@ -936,7 +954,8 @@ your Markov chains look ``grassy'' -- see Fig.  \ref{glms.fig.grassy}
 below.  
 Another way to check
 convergence is to update the parameters some more and see if the
-posterior changes. Yet another option, and one generally implemented in WinBUGS, is to run several Markov chains and to start them off at different initial values that are overdispersed relative to the posterior distribution. Such initial values help to explore different areas of the parameter space simultaneously; if after a while all chains oscillate around the same average value, chances are good that they indeed converged to the posterior distribution. \footnote{Running several parallel chains is computationally expensive. But extra computational demands are not the only and by no means the major concern some people voice when it comes to running several parallel MCMC chains to assess convergence. Again, consider the fact that we do not know anything about the true form of the posterior distribution we are trying to approximate. How do we, then, know how to pick overdispersed initial values? We don’t – all we can do is pick overdispersed values relative to our expectations of what the posterior should look like. To use a quote from the home page of Charlie Geyer, a Bayesian statistician from the University of Minnesota, ``If you don't know any good starting points [...], then restarting the sampler at many bad starting points is [...] part of the problem, not part of the solution.'' (http://users.stat.umn.edu/~charlie/mcmc/diag.html). His suggestion is that your only chance to discover a potential problem with your MCMC sampler is to run it for a very long time. But again, there is no way of knowing how long is long enough.
+posterior changes. Yet another option, and one generally implemented in 
+{\bf WinBUGS}, is to run several Markov chains and to start them off at different initial values that are overdispersed relative to the posterior distribution. Such initial values help to explore different areas of the parameter space simultaneously; if after a while all chains oscillate around the same average value, chances are good that they indeed converged to the posterior distribution. \footnote{Running several parallel chains is computationally expensive. But extra computational demands are not the only and by no means the major concern some people voice when it comes to running several parallel MCMC chains to assess convergence. Again, consider the fact that we do not know anything about the true form of the posterior distribution we are trying to approximate. How do we, then, know how to pick overdispersed initial values? We don’t – all we can do is pick overdispersed values relative to our expectations of what the posterior should look like. To use a quote from the home page of Charlie Geyer, a Bayesian statistician from the University of Minnesota, ``If you don't know any good starting points [...], then restarting the sampler at many bad starting points is [...] part of the problem, not part of the solution.'' (http://users.stat.umn.edu/~charlie/mcmc/diag.html). His suggestion is that your only chance to discover a potential problem with your MCMC sampler is to run it for a very long time. But again, there is no way of knowing how long is long enough.
 It is up to you to decide, which school of thoughts appeals more to you – one long versus several parallel Markov chains. Irrespectively, part of developing an MCMC sampler should be to make sure (within reasonable limits) that you are not missing regions of high posterior density because of the way you specify your starting values. Once you have explored the behavior of your chain under a – reasonable – range of starting values, you may feel comfortable enough to run only one long chain.} Gelman and Rubin came up with the so-called``R-hat'' statistic ($\hat{R}$) or Brooks-Gelman-Rubin statistic
  that essentially compares within-chain and between-chain variance to check for convergence of multiple chains (\citep{gelman_etal:1996}). $\hat{R}$ should be close to 1 if the Markov
 chains have converged and sufficient posterior samples have been
@@ -946,8 +965,8 @@ $\hat{R}$. E.g., if the posterior is a discrete mixture of distributions
 then you can be misled into thinking that your Markov chains
 have not converged when in fact the chains are just jumping back and
 forth in the posterior state-space. 
-So, for example, model
-selection methods (section XYZ) sometimes suggests non-convergence.
+%So, for example, model
+%selection methods (section XYZ) sometimes suggests non-convergence.
 Another situation is when one of the parameters is on the boundary of
 the parameter space which might appear to be very poor mixing, but all
 within some extreme region of the parameter space.\footnote{it would
@@ -989,8 +1008,9 @@ remain calm when things don't work out perfectly. MCMC is an
 art, and a science.
 
 
-{\bf Is the posterior sample large enough?}  The subsequent samples generated from a Markov chain are not iid samples from the posterior distribution, due to the correlation amongst samples introduced by the Markov process and the sample size has to be adjusted to account for the autocorrelation in subsequent samples (see Chapt. 8 in \citet{robert_casella:2010} for more details). This adjusted sample size is referred to as the effective sample size. Checking the degree of autocorrelation in your Markov chains and estimating the effective sample size your chain has generated should be part of evaluating your model output. WinBUGS will automatically return the effective sample size for all monitored parameters. If you find that your supposedly long Markov chain has only generated a very short effective sample, you should consider a longer run. What exactly constitutes a reasonable effective sample size is hard to say. A more palpable measure of whether you've run your chain for enough iterations is the time-series or Monte Carlo error – the 'noise' introduced into your samples by the stochastic MCMC process. The MC error is printed by default in
-summaries of BUGS output. You want that to be smallish relative to the
+{\bf Is the posterior sample large enough?}  The subsequent samples generated from a Markov chain are not iid samples from the posterior distribution, due to the correlation amongst samples introduced by the Markov process and the sample size has to be adjusted to account for the autocorrelation in subsequent samples (see Chapt. 8 in \citet{robert_casella:2010} for more details). This adjusted sample size is referred to as the effective sample size. Checking the degree of autocorrelation in your Markov chains and estimating the effective sample size your chain has generated should be part of evaluating your model output. {\bf WinBUGS} 
+will automatically return the effective sample size for all monitored parameters. If you find that your supposedly long Markov chain has only generated a very short effective sample, you should consider a longer run. What exactly constitutes a reasonable effective sample size is hard to say. A more palpable measure of whether you've run your chain for enough iterations is the time-series or Monte Carlo error – the 'noise' introduced into your samples by the stochastic MCMC process. The MC error is printed by default in
+summaries of {\bf BUGS} output. You want that to be smallish relative to the
 magnitude of the parameter and this might depend on the purpose of the
 analysis. For a preliminary analysis you might settle for a few
 percent whereas for a final analysis then certainly less than 1\% is
@@ -999,11 +1019,13 @@ your MCMC
 algorithm as long as it takes. A consequence of the MC error is that even for the exact same model, results will always be different. Thus, as a good rule
 of thumb you should never report
 MCMC results to more than 2 decimal places.
+\begin{comment}
+% another attempt to address this issue ineffectively 
 Note that MC error in summaries of the
 posterior is not the same as having an ``approximate'' solution in a
 standard likelihood analysis or similar.  The approximate SE in
 likelihood inference is actually wrong in its actual value.... XYZ.
-
+\end{comment}
 
 \subsection{Bayesian confidence intervals}
 
@@ -1041,13 +1063,16 @@ although we will do that a few times for fun.  More often, we
 will rely on the freely available software package {\bf WinBUGS} or
 {\bf JAGS}
 for doing this.  We will always execute these {\bf BUGS} engines from
-within {\bf R} using the \mbox{\tt R2WinBUGS} (REF XYZ XYZ) or
-\mbox{\tt rjags} pacages. {\bf WinBUGS} and {\bf JAGS} are  MCMC black boxes
-that takes a pseudo-code description (i.e., written in the {\bf BUGS}
+within {\bf R} using the \mbox{\tt R2WinBUGS} \citep{sturtz_etal:2005}
+or 
+\mbox{\tt rjags} \citep{plummer:2009} pacages. 
+{\bf WinBUGS} and {\bf JAGS} are  MCMC black boxes
+that takes a pseudo-code description (i.e., the {\bf BUGS}
 language) of all of the relevant stochastic
 and deterministic elements of a model and generates an MCMC algorithm
 for that model. But you never get to see the algorithm. Instead,
-{\bf WinBUGS}/{\bf JAGS} will run the algorithm and just return the Markov chain output
+{\bf WinBUGS}/{\bf JAGS} will run the 
+algorithm and  return the Markov chain output
 - the posterior samples of model parameters.
 
 The great thing about using the {\bf BUGS} language is that it forces
@@ -1071,21 +1096,21 @@ example, we're going to accelerate pretty fast.
 
 We provide a brief introductory example of a normal regression model
 using a small simulated data set. The following commands are executed
-from within your R workspace, the command line being indicated by
-\mbox{\tt ``>''}. First, simulate a covariate $x$ and observations $y$ having
+from within your {\bf R} workspace.
+First, simulate a covariate $x$ and observations $y$ having
 prescribed intercept, slope and variance:
 \begin{verbatim}
-> x<-rnorm(10)
-> mu<- -3.2+ 1.5*x
-> y<-rnorm(10,mu,sd=4)
+ x<-rnorm(10)
+ mu<- -3.2+ 1.5*x
+ y<-rnorm(10,mu,sd=4)
 \end{verbatim}
 The {\bf BUGS} model specification for a normal regression model is
 written within {\bf R} as a character string input to the command
 \mbox{\tt cat()} and
 then dumped to a text file named \mbox{\tt normal.txt}:
 \begin{verbatim}
-> cat("
-model {
+cat("
+ model {
    for (i in 1:10){
       y[i]~dnorm(mu[i],tau)        # the "likelihood"
       mu[i]<- beta0 + beta1*x[i]   # the linear predictor
@@ -1102,18 +1127,20 @@ can write the model specifications directly within a text file and
 save it in your current working directory, but we do not usually take
 that approach in this book.
 
-{\bf Remarks:} {\bf 1.} {\bf WinBUGS} parameterizes the normal in
+{\bf Remarks:} {\bf 1.} The {\bf BUGS} dialects parameterize the normal 
+distribution in
 terms of the mean and inverse-variance, called the precision. Thus,
 \mbox{\tt dnorm(0,.01)} implies a variance of 100;
 {\bf 2.} We typically use diffuse normal priors for mean parameters, $\beta_0$ and $\beta_1$ in this case, but sometimes we might use uniform priors with suitable bounds -B and +B.
 {\bf 3.} We typically use a $\mbox{Unif}(0,B)$ prior on standard
 deviation parameters
-(Gelman XXX 2006 XXXX). But sometimes we might use a gamma prior on the precision parameter $\tau$.
-{\bf 4.} In a {\bf WinBUGS} model file, every variable referenced in
+\citep{gelman:2006}.
+But sometimes we might use a gamma prior on the precision parameter $\tau$.
+{\bf 4.} In a {\bf BUGS} model file, every variable referenced in
 the model description has to be
 either data, which will be input (see below), a random variable which
 must have a probability distribution associated with it using the
-``\verb#~#'', or it has to be a derived parameter connected to variables and
+tilde character (aka ``twiddle'') ``\verb#~#'', or it has to be a derived parameter connected to variables and
 data using ``\mbox{\tt <-}''.
 
 
@@ -1154,8 +1181,8 @@ current {\bf R} working directory.
 
 {\bf Remarks:} A common question is ``how should my data be
 formatted?'' That depends on how you describe the model in the {\bf
-  BUGS} language, how your data are input into {\bf R} and
-subsequently formatted.  There is no unique way to describe any
+  BUGS} language, and how your data are input into {\bf R}.
+ There is no unique way to describe any
 particular model and so you have some flexibility. We talk about data
 format further in the context of capture-recapture models and SCR
 models in Chapt. \ref{chapt.scr0} and elsewhere.  In general,
@@ -1178,8 +1205,8 @@ settings used for MCMC, consult a basic reference such as
 You should execute all of the commands given above and then look at
 the resulting output. Kill the {\bf WinBUGS} GUI and the data will be
 read back into {\bf R} (or specify \mbox{\tt debug=FALSE}).  We don't
-want to give instructions on how to navigate and use the GUI - see XYZ
-REF (XYZ) for that.
+want to give instructions on how to navigate and use the GUI - see XYZ XXX
+XXX REF (XYZ) for that.
 The object \mbox{\tt out} prints important
 summaries by default (this is slightly edited):
 
@@ -1212,7 +1239,7 @@ indicates convergence; (2) DIC is the
  which
 some people use in a manner similar to AIC although it is recognized
 to have some problems in hierarchical models \citep{millar:2009}. We
-evaluate this in the context of SCR models in Chapt. XYZ XYZ.
+evaluate this in the context of SCR models in Chapt. \ref{chapt.gof}.
 
 \subsection{Inference about functions of model parameters}
 \label{glms.sec.xopt}
@@ -1235,8 +1262,9 @@ df/dx = \beta_1 +
 2*\beta_2 x = 0
 \]
 yields that $x_{opt} = -\beta_1/(2*\beta_2)$.  We can just
-take our posterior draws for $beta_1$ and $beta_2$ and obtain a
-posterior sample of $x_{opt}$ by this simple calculation. As an exercise, take
+take our posterior draws for $\beta_1$ and $\beta_2$ and obtain a
+posterior sample of $x_{opt}$ by this simple calculation applied to
+the posterior output. As an exercise, take
 the normal model above and simulate a quadratic response and then
 describe the posterior distribution of $x_{opt}$.
 
@@ -1254,7 +1282,8 @@ they pass certain statistical tests. Some models are intrinsically
 better than others because they make more biological sense or foster
 understanding or achieve some objective that some  bootstrap
 or other goodness-of-fit test can't decide for you. That said, it
-gives you some confidence if your model seems adequate and we try to
+gives you some confidence if your model seems adequate in a purely statistical
+sense and we try to
 provide some fit assessment in most real applications of SCR models
 We provide a very brief overview of concepts here, but provide more
 detailed coverage in chapter \ref{chapt.gof}.
@@ -1265,6 +1294,7 @@ for specific context related to Bayesian
 model checking and selection.
 
 \subsection{Goodness-of-fit}
+\label{glms.sec.gof}
 
 Goodness-of-fit testing is an important element of any analysis
 because  our model represents a general set of hypotheses
@@ -1287,8 +1317,8 @@ according to some formal statistical test of fit.  Yet
 the tension is there to obtain fitting models, and this comes naturally at
 the expense of models that can be easily interpreted and studied and
 effectively used.
-Moreover, conducting goodness-of-fit tests is
-not always so easy to do. Moreover, it is never really easy (or
+Unfortunately, conducting a goodness-of-fit test is
+not always so easy to do. And, moreover, it is never really easy (or
 especially convenient) to decide if your goodness-of-fit test is worth
 anything. It might have 0 power!
 Despite this,
@@ -1325,23 +1355,27 @@ Bayesian p-value is simply the posterior probability $\Pr(\mbox{Fit} >
  to the observed data. In practice
 we judge ``close to 0.50'' as being ``not too close to 0 or 1'' and,
 as always, closeness is somewhat subjective. We're happy with anything
-$>.1$ and $<.9$ but might settle for $>.05$ and $<0.95$. In summary,
-the Bayesian p-value seems like a bootstrap idea, is easy to compute,
-and widely used as a result.
-
+$>.1$ and $<.9$ but might settle for $>.05$ and $<0.95$. 
 Another useful fit statistic is the Freeman-Tukey
 statistic\footnote{Ref for this?}, in which
 \[
-D({\bf y},\theta) = \sum_{i} ( \sqrt(y_{i}) - \sqrt(e_{i}) )^2
+D({\bf y},\theta) = \sum_{i} ( \sqrt{y_{i}} - \sqrt{e_{i}} )^2
 \]
 \citep{brooks_etal:2000}, where $y_{i}$ is the observed value of
 observation $i$ and $e_{i}$ its expected value. In contrast to a
-chi-square discrepancy, the Freeman-Tukey statistic removes the need
+Chi-square discrepancy, the Freeman-Tukey statistic removes the need
 to pool cells with small expected values.
+In summary,
+the Bayesian p-value is easy to compute,
+and widely used as a result.
 
 
 \subsection{Model Selection }
 
+In ecology, scientific hypotheses are often manifest as different models or parameters
+ of a model, and so
+evaluating the importance of different models is fundamental 
+to many ecological studies.
 For model selection we typically use three different methods: First
 is, let's say, common sense. If a parameter has posterior mass
 concentrated away from 0 then it seems like it should be regarded as
@@ -1369,7 +1403,7 @@ important.
 
 This idea seems to be due to \citet{kuo_mallick:1998}\footnote{ Is
   this also what people call Zellner's G-priors?} and see
-\citet[][ch. XXXX]{royle_dorazio:2008} for an example in the context
+\citet[][Chapt. 3]{royle_dorazio:2008} for an example in the context
 of logistic regression. This approach seems to even work sometimes
 with fairly complex hierarchical models of a certain form. E.g.,
 \citet{royle:2008} applied it to a random effects model to evaluate
@@ -1384,8 +1418,8 @@ extreme values of $\beta$ are likely. Consequently, when the current value of
 $\beta$ is
 far away from the mass of the posterior when $w=1$, then the Markov
 chain may only jump from $w=0$ to $w=1$ infrequently.  One seemingly
-reasonable solution to this problem (Aitken XYZ FIND THIS
-XXXXX\footnote{see Royle 2008 paper for reference}) is to fit the full
+reasonable solution to this problem \citep{aitkin:1991}
+is to fit the full
 model to obtain posterior distributions for all parameters, and then
 use those as prior distributions in a ``model selection'' run of the
 MCMC algorithm.  This seems preferable to more-or-less arbitrary restriction of
@@ -1453,9 +1487,15 @@ is the property of {\it compound additivity}. If $y_1$ and $y_2$ are
 Poisson random variables with means $\lambda_1$ and $\lambda_2$,
 then their sum $N=y_1+y_2$ is Poisson with mean $\lambda_1+\lambda_2$. Thus,
 if the observations can be viewed as an aggregate of counts over some
-finer unit of measurement, then the mean aggregates in a corresponding
-manner.
-Secondly, the Poisson distribution has a direct relationship to the multinomial.
+finer unit of measurement, then the Poisson mean aggregates in a corresponding
+manner. This comes in hand in some ecological applications
+where we have counts, $y_{i}$, made on sample units with different but known areas $A_{i}$. 
+Then, we might assume 
+the counts have a Poisson distribution with mean $A_{i}\lambda$. On the log-scale we see that 
+$log(A_{i})$ enters as an additive constant -- usually referred to as the ``offset'' in GLM
+lingo. 
+A second useful property of the Poisson distribution is its
+direct relationship to the multinomial.
 If $y_1$ and $y_2$ are $iid$ Poisson then,
 conditional on their sum $N = y_1 + y_2$, their joint distribution is multinomial
  with sample size $N$ and cell probabilities
@@ -1644,16 +1684,18 @@ model {
 \end{verbatim}
 }
 The Bayesian p-value is the proportion of times $fitnew > fit$ which,
-for this data set, is 0, which was 1.0 in this case (calculation
-omitted). This suggests that the basic Poisson model does not fit
-well.
+for this data set, is 0. This suggests that the basic Poisson model does 
+not fit well.
 
 \subsection{ Constructing your own MCMC algorithm}
 
 At this point it might be helpful to suffer through an example
 building a custom MCMC algorithm. Here, we develop an MCMC algorithm
 for
-the Poisson regression model, using a Metropolis-within-Gibbs sampling framework. Building MCMC algorithms is covered in more detail in Chapt. \ref{chapt.mcmc} where you can also find step-by-step instructions for Metropolis-within-Gibbs samplers, should the following section move through all this stuff too quickly.  
+the Poisson regression model, using a Metropolis-within-Gibbs sampling framework. 
+Building MCMC algorithms is covered in more detail in Chapt. \ref{chapt.mcmc} where 
+you can also find step-by-step instructions for Metropolis-within-Gibbs samplers, 
+should the following section move through all this stuff too quickly.  
 
 We will assume that the two parameters have diffuse
 normal priors, say $[\alpha] = \mbox{Norm}(0,100)$ and
@@ -1684,18 +1726,14 @@ importantly, it is a constant as far as the operative parameters
 ($\alpha$ or $\beta$,
 respectively) are concerned. Therefore,
 the MH acceptance probability will be the ratio of the
-ful-conditional evaluated at a candidate draw to that evaluated at the
-current draw, and so the denominator required to change $\propto$ to $=$
+full-conditional evaluated at a candidate draw to that evaluated at the
+current value, and so the denominator required to change $\propto$ to $=$
 winds up canceling from the MH acceptance probability.
 Here we will
 use the so-called random walk candidate generator, which is a Normal proposal distribution, so that, for example,
  $\alpha^{*} \sim \mbox{Normal}(\alpha^{t},\delta)$ where $\delta$ is
  the standard-deviation of the proposal distribution, which is just a
- tuning parameter that is set by the user and adjusted to achieve efficient mixing of chains (see Section XX in Chapt. \ref{chapt.mcmc}) \footnote{
-It would help
-lots of people out to see a non-symmetric proposal distribution, and
-the extra step needed to account for it. RS: We can include this in the MCMC chapter
-}.
+ tuning parameter that is set by the user and adjusted to achieve efficient mixing of chains (see Section XX in Chapt. \ref{chapt.mcmc}).
 We remark also that calculations are often done on the log-scale to
 preserve numerical integrity of things when quantities evaluate to
 small or large numbers, so keep in mind, for example,
@@ -1704,7 +1742,7 @@ $a*b = exp(log(a) + log(b))$.
 Gibbs'' algorithm for a Poisson regression turns out to be  remarkably simple:
 {\small
 \begin{verbatim}
-set.seed(2013)
+set.seed(2013)  # so we all get the same result
 
 out<-matrix(NA,nrow=1000,ncol=2)   # matrix to store the output
 alpha<- -1                         # starting values
@@ -1745,12 +1783,13 @@ plot(out[,1],ylim=c(-1.5,3.3),type="l",lwd=2,ylab="parameter value",
 lines(out[,2],lwd=2,col="red")
 \end{verbatim}
 }
-{\bf XXX Andy I removed the bad tuning example and the respective exercise here and added it in Ch7 XXXX}
+
 The first 300 iterations of the MCMC history of each parameter
 are shown in Fig. \ref{glms.fig.poissonmcmc2}. These chains are
 not very appealing but a couple of things are evident: 
 We see
-that the burn-in takes about 250 iterations and that after that chains seem to mix reasonably well, although this is not so clear given the scale of the y-axis.
+that the burn-in takes about 250 iterations and that after that chains seem to mix 
+reasonably well, although this is not so clear given the scale of the y-axis.
 We generated 10,000 posterior samples,
 discarding the first 500 as burn-in, and the result is shown in
 Fig. \ref{glms.fig.grassy}, this time seperate panels for each
@@ -1764,7 +1803,9 @@ look like this.
 \begin{center}
 \includegraphics[height=3in,width=4in]{Ch2/figs/poissonmcmc2}
 \end{center}
-\caption{Same as previous fig but with $\delta = 0.05$.}
+\caption{First 300 MCMC iterations for the Poisson GLM model parameters using
+a Metropolis-Hastings tuning parameter of
+ $\delta = 0.05$.}
 \label{glms.fig.poissonmcmc2}
 \end{figure}
 
@@ -1802,7 +1843,6 @@ are usually referred to as generalized
 linear mixed models (GLMMs). We provide a brief introduction by way of
 example, extending our Poisson regression model to include a random effect.
 
-ANDY STOPPED HERE
 
 {\bf The Log-Normal mixture:} The classical situation involves a GLM
 with a normally distributed random effect that is additive on the
@@ -1898,9 +1938,6 @@ that the posterior standard deviations of the regression parameters
 are much higher, a result of the excess variation. Wwe would also
 notice much less precise predictions of hypothetical new
 observations.
-
-
-ANDY STOPPED HERE.
 
 
 
@@ -2089,7 +2126,8 @@ surface is shown in Fig. \ref{glms.fig.bandrecovery}.
 parameter $p$ and computed the Bayesian p-value (double use of ``p''
 here is confusing, but I guess that happens sometimes!)
 using a fit statistic based on the Freeman-Tukey
-statistic (see Section XXX above). The result indicates that the
+statistic (see Sec. \ref{glms.sec.gof}
+above). The result indicates that the
 linear response surface model does not provide an adequate fit of the
 data. The reader should contemplate whether this invalidates the basic
 interpretation of the result.
@@ -2141,7 +2179,7 @@ great learning paradigm that you can grow with.
 
 While we have emphasized Bayesian analysis in this chapter, and make
 primary use of it through the book, we
-we will provide an introduction to likelihood analysis in chapter
+we will provide an introduction to likelihood analysis in Chapt.
 \ref{chapt.mle} and use those  methods also from time to time.
  Before getting to that, however, it will be useful to
 talk about more basic, conventional closed population
