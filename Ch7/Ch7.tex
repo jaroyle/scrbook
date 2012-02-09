@@ -394,16 +394,16 @@ remaining samples are your estimates of mu and sig:
 \includegraphics[width=2.5in]{Ch7/figs/plotsofPD}
 \end{center}
 \caption{
-\begin{comment} Rahel: there is no (a) (b) etc.. in the figure.
-might want to remake figure and label (a) (b) or else say ``upper
-left''
-and so on
-\end{comment}
 Plots of the posterior distributions of $\mu$ (panel a) and
   $\sigma$ (b)
   from a Normal model and time series plots of $\mu$ (c) and $\sigma$ (d).}
 \label{plotsofPD.fig}
 \end{figure}
+\begin{comment} 
+Rahel: there is no (a) (b) etc.. in the figure.
+might want to remake figure and label (a) (b) or else say ``upper
+left'' and so on
+\end{comment}
 
 \subsection{ Metropolis-Hastings sampling   }
 
@@ -548,10 +548,43 @@ return(out)
 
 The reason we sum the logs of the likelihood and the prior, rather than multiplying the original values, is simply computational. The product of small probabilities can be numbers very close to 0, which computers do not handle well. Thus we add the logarithms, sum, and exponentiate to achieve the desired result. Similarly, in case you have forgotten some elementary math, $x/y = exp(log(x)-log(y))$, with the latter being favored for computational reasons.
 
-Comparing MH sampling to Gibbs sampling, where all draws from the conditional distribution are used, in the MH algorithm we discard a portion of the candidate values, which inherently makes in less efficient than Gibbs sampling – the price you pay for its increased generality.
-In Step 1 of the MH sampler we had to choose a variance, $\delta$, for the Normal proposal distribution. Choice of the parameters that define our candidate distribution is also referred to as 'tuning', and it is important since adequate tuning will make your algorithm more efficient. 
-$\delta$ should be chosen (a) large enough so that each step of drawing a new proposal value for $\theta$ can cover a reasonable distance in the parameter space, as otherwise, mixing of the Markov chain is inefficient and chains will tend to have strong autocorrelation; and (b) small enough so that proposal values are not rejected too often, as otherwise the random walk will 'get stuck' at specific values for too long.  As a rule of thumb, your candidate value should be accepted in about 40\% of all cases. Acceptance rates of 20 -- 80\% are probably ok, but anything below or above may well render your algorithm inefficient (this does not mean that it will give you wrong results – only that you will need more iterations to converge to the posterior distribution). In practice, tuning will require some 'trial-and-error' and some common sense. Or, one can use an adaptive phase, where the tuning parameter is automatically adjusted until it reaches a user-defined acceptance rate, at which point the adaptive phase ends and the actual Markov chain begins. This is computationally a little more advanced. \citet{link_barker:2009} discuss this in more detail. It is important the samples drawn during the adaptive phase are discarded.
-To illustrate the effects of tuning, we ran the Metropolis-within-Gibbs algorithm in Panel 2 XX with $\delta=0.01$, $\delta=0.2$ and $\delta=1$. The first 150 iterations for $\theta$ are shown in Fig. \ref{mcmc.fig.tuning}. We see that for a very small $\delta$ (the dashed line) the burn-in is extremely slow - after 150 iterations the chain isn't even half way there, while for the other two values of $\delta$ (solid and dotted)the burn-in phase seems to be over after only about 10 iterations. While $\delta=0.2$ leads to reasonably good mixing, the chain clearly gets stuck on certain values with $\delta=1$.
+Comparing MH sampling to Gibbs sampling, where all draws from the
+conditional distribution are used, in the MH algorithm we discard a
+portion of the candidate values, which inherently makes in less
+efficient than Gibbs sampling – the price you pay for its increased
+generality.  In Step 1 of the MH sampler we had to choose a variance,
+$\delta$, for the Normal proposal distribution. Choice of the
+parameters that define our candidate distribution is also referred to
+as 'tuning', and it is important since adequate tuning will make your
+algorithm more efficient.  $\delta$ should be chosen (a) large enough
+so that each step of drawing a new proposal value for $\theta$ can
+cover a reasonable distance in the parameter space, as otherwise,
+mixing of the Markov chain is inefficient and chains will tend to have
+strong autocorrelation; and (b) small enough so that proposal values
+are not rejected too often, as otherwise the random walk will 'get
+stuck' at specific values for too long.  As a rule of thumb, your
+candidate value should be accepted in about 40\% of all
+cases. Acceptance rates of 20 -- 80\% are probably ok, but anything
+below or above may well render your algorithm inefficient (this does
+not mean that it will give you wrong results – only that you will need
+more iterations to converge to the posterior distribution). In
+practice, tuning will require some 'trial-and-error', some common
+sense and, with enough experience, some intuition. Or, one can use an adaptive phase, where the tuning parameter
+is automatically adjusted until it reaches a user-defined acceptance
+rate, at which point the adaptive phase ends and the actual Markov
+chain begins. This is computationally a little more
+advanced. \citet{link_barker:2009} discuss this in more detail. It is
+important the samples drawn during the adaptive phase are discarded.
+To illustrate the effects of tuning, we ran the
+Metropolis-within-Gibbs algorithm in Panel \ref{mcmc.panel.logitnormal} with $\delta=0.01$,
+$\delta=0.2$ and $\delta=1$. The first 150 iterations for $\theta$ are
+shown in Fig. \ref{mcmc.fig.tuning}. We see that for a very small
+$\delta$ (the dashed line) the burn-in is extremely slow - after 150
+iterations the chain isn't even half way there, while for the other
+two values of $\delta$ (solid and dotted)the burn-in phase seems to be
+over after only about 10 iterations. While $\delta=0.2$ leads to
+reasonably good mixing, the chain clearly gets stuck on certain values
+with $\delta=1$.
 %'tuning' is a new figure I made... don't know about the size specifications, just copied those from another picture. Do you set them at 
 %the actual size of the figure or the size you want it to be??
  \begin{figure}
@@ -572,94 +605,130 @@ One weakness of the MH sampler is that formulating the joint posterior when eval
 
 \section{ GLMMs – Poisson regression with a random effect }
 
-Let's assume a model that gets us closer to the problem we ultimately want to deal with – a GLMM. Here, we assume we have Poisson counts, $y$, from $i$ plots in $j$ different study sites, and we believe that the counts are influenced by some plot-specific covariate, $x$, but that there is also a random site effect. So our model is:
+Let's assume a model that gets us closer to the problem we ultimately
+want to deal with - a GLMM. Here, we assume we have Poisson counts,
+$y_{ij}$, from $i=1,2,\ldots,n$ plots \begin{comment} Rahel: I put
+  ``n'' here because you had ``n'' used above. But I wonder if we
+  should have a convention for ``number of sites'' and use that
+  throughout the book?  I think we use j=1,..,J for traps .... I can't
+  remember what I used in Ch. 2. but maybe i'm overthinking
+  this. lets talk later. \end{comment} in $j$ different study sites, and we believe that the counts are influenced by some plot-specific covariate, $x$, but that there is also a random site effect. So our model is:
 \[
-y_{ij} \sim Poisson (\lambda_{ij})
+y_{ij} \sim \mbox{Poisson}(\lambda_{ij})
 \]
 \[
-\lambda_{ij} = exp (a_j + bx_i)
+\lambda_{ij} = \exp (a_j + bx_i)
 \]
+XXX INDEXING OF x should be ij here??? XXXXXX
 Let's use Normal priors on $a$ and $b$,  \[
-a_j \sim Normal (\mu_a, \sigma_a)
+a_j \sim \mbox{Normal} (\mu_a, \sigma_a)
 \]
 and
 \[
-b \sim Normal (\mu_b, \sigma_b)
+b \sim \mbox{Normal} (\mu_b, \sigma_b)
 \].
 
 Since we want to estimate the random effect in this model, we do not
 specify $\mu_a$ and $\sigma_a$, but instead, estimate them as well, so we have
 to specify hyperpriors for these parameters:
 \begin{eqnarray*}
-\mu_a  &\sim &  Normal(\mu_0, \sigma_0)  \\
-\sigma_{a} & \sim & InvGamma(a_0, b_0)
+\mu_a  &\sim &  \mbox{Norm}(\mu_0, \sigma_0)  \\
+\sigma_{a} & \sim & \mbox{InvGamma}(a_0, b_0)
 \end{eqnarray*}
-%In this entire section below I am unsure of the indexing of a, y and x. I know what I'm trying to say but I'm not sure I'm saying it correctly... could someone please check? So what I am trying to say, for example in the expression for a1 (a at j=1), is that you need all the yi's at j=1, and all the x at j=1.
-With the model fully specified, we can compile the full conditionals, breaking the multi-dimensional parameter space into one-dimensional components:
-
+% In this entire section below I am unsure of the indexing of a, y and
+% x. I know what I'm trying to say but I'm not sure I'm saying it
+% correctly... could someone please check? So what I am trying to say,
+% for example in the expression for a1 (a at j=1), is that you need
+% all the yi's at j=1, and all the x at j=1.
+With the model fully specified, we can compile the full conditionals,
+breaking the multi-dimensional parameter space into one-dimensional
+components:
 %%this works but it doesn't look paritcularly pretty
-\begin{equation*}
-\begin{split}
-p(a_1|a_2,a_3,\ldots,a_j,b,y)& \propto   p(y_{i1}|a_1,b) * p(a_1) \\
-	 & \propto    Poisson(y_{i1}| exp(a_1 + bx_i))\\
-     & \quad * Normal(a_1|\mu_a, \sigma_a)
-\end{split}
-\end{equation*}
-
-\begin{verbatim}
+\begin{comment} 
+Rahel: check these eqns out , I set it using eqnarray 
+\end{comment}
 \begin{eqnarray*}
-p(a_2|a_1,a_3,\ldots,a_j,b,y) & \propto&  p(y_{i2}|a_2,b) * p(a_2) \\
-	 & \propto  & Poisson(y_{i2}|exp(a_2 + bx_i)) * Normal(a_2|\mu_a, \sigma_a)
-\end{eqnarray}
-and so on for all elements of a.
-\begin{eqnarray*}
-p(b|a,y) &\propto & p(y|a,b) * p(b) \\
-	 &\propto& Poisson(y|exp(a + bx)) *Normal(b|\mu_b, \sigma_b)
+p(a_1|a_2,a_3,\ldots,a_j,b,{\bf y}) & \propto &   p({\bf y}_{1}|a_1,b) * p(a_1) \\
+	 & \propto  &   \mbox{Poisson}({\bf y}_{1}| \exp(a_1 + bx_i)) * \mbox{Norm}(a_1|\mu_a, \sigma_a)
 \end{eqnarray*}
-\end{verbatim}
-%couldn't get this to work either
+where ${\bf y}_{1} = (y_{11},y_{21}, \ldots, y_{n1})$ is the vector of
+observed counts for site $j=1$ and, in general, ${\bf y}_{j}$ is the
+vector of all counts for site $j$. The other full conditionals for
+each $a_{j}$ are constructed similarly:
+\begin{comment} 
+Rahel: I think the indexing is out of order. you
+  should have ``groups'' be the first index, i.e., ``i'' in this case,
+  and ``replicates'' being the 2nd index, what you have as ``j''
+\end{comment}
+\begin{eqnarray*}
+p(a_2|a_1,a_3,\ldots,a_j,b,{\bf y}) & \propto&  p({\bf y}_{2}|a_2,b) * p(a_2) \\
+	 & \propto  & \mbox{Poisson}({\bf y}_{2}| \exp(a_2 + bx_i)) * \mbox{Norm}(a_2|\mu_a, \sigma_a)
+\end{eqnarray*}
+and so on for all elements of ${\bf a}$. The full-conditional for $b$ is:
+\begin{eqnarray*}
+p(b|a,y) &\propto & p({\bf y}|a,b) * p(b) \\
+	 &\propto& \mbox{Poisson}({\bf y}|exp(a + b{\bf x})) *\mbox{Norm}(b|\mu_b, \sigma_b)
+\end{eqnarray*}
 
-Finally, we need to update the hyperparameters for a:
+Finally, we need to update the hyperparameters for the random effects
+vector ${\bf a}$:
 \[
-p(\mu_a|a) \propto p(a|\mu_a, \sigma_a) *p(\mu_a)
+p(\mu_a|{\bf a}) \propto p({\bf a}|\mu_a, \sigma_a) *p(\mu_a)
 \]
 \[
 p(\sigma_a|a) \propto p(a|\mu_a, \sigma_a) *p(\sigma_a)
 \]
-Since we assumed $a$ to come from a Normal distribution, the choice of priors for $\mu_a$ (Normal) and $\sigma_a$ (Inverse Gamma) leads to the same conjucagy we observed in our initial Normal model, so that both hyperparameters can be updated using Gibbs sampling.
+Since we assumed $a$ to come from a Normal distribution, the choice of priors for $\mu_a$ (Normal) and $\sigma_a$ (Inverse-Gamma) leads to the same conjugacy we observed in our initial Normal model, so that both hyperparameters can be updated using Gibbs sampling.
 
 Now let's build the updating steps for these full conditionals. Again, for the MH steps that update $a$ and $b$ we use Normal proposal distributions with standard deviations $\delta_{a}$ and $\delta_{b}$.
 
-First, we set the initial values $a^{(0)}$ and $b^{(0)}$. Then, starting with $a_1$, we draw $a_1^{(1)}$ from $Normal (a_1^{(0)}, \delta_{a})$, calculate the conditional posterior density of $a_1^{(0)}$ and $a_1^{(1)}$  and compare their ratios,
+First, we set the initial values $a^{(0)}$ and $b^{(0)}$. Then, starting with $a_1$, we draw $a_1^{(1)}$ from $\mbox{Norm}(a_1^{(0)}, \delta_{a})$, calculate the conditional posterior density of $a_1^{(0)}$ and $a_1^{(1)}$  and compare their ratios,
 \[
-r = \frac{Poisson(y_{i1}|exp(a_1^{(1)} + bx_i)) * Normal(a_1^{(1)}|\mu_a, \sigma_a)} {Poisson(y_{i1}|exp(a_1^{(0)} + bx_i)) * Normal(a_1^{(0)}|\mu_a, \sigma_a)}
+r = \frac{\mbox{Poisson}({\bf y}_{1}|exp(a_1^{(1)} + b x_i)) *
+  \mbox{Norm}(a_1^{(1)}|\mu_a, \sigma_a)} {\mbox{Poisson}({\bf y}_{1}|exp(a_1^{(0)} + bx_i)) * \mbox{Norm}(a_1^{(0)}|\mu_a, \sigma_a)}
 \]
 and accept $a_1^{(1)}$ with probability $min(r,1)$. We repeat this for all a's.
 
-For $b$, we draw $b_1^{(1)}$ from $Normal (b^{(0)}, \delta_{b})$, compare the posterior densities of $b^{(0)}$ and $b^{(1)}$,
+For $b$, we draw $b_1^{(1)}$ from $\mbox{Norm} (b^{(0)}, \delta_{b})$, compare the posterior densities of $b^{(0)}$ and $b^{(1)}$,
 \[
-r = \frac{Poisson(y|exp(a + b_1^{(1)}x)) *Normal(b_1^{(1)}|\mu_b, \sigma_b)} { Poisson(y|exp(a + b_1^{(0)}x)) *Normal(b_1^{(0)}|\mu_b, \sigma_b)},
+r = \frac{\mbox{Poisson}({\bf y}|exp(a + b_1^{(1)}{\bf x}))
+  *\mbox{Norm}(b_1^{(1)}|\mu_b, \sigma_b)} { \mbox{Poisson}({\bf
+    y}|exp(a + b_1^{(0)}{\bf x})) *\mbox{Norm}(b_1^{(0)}|\mu_b, \sigma_b)},
 \]
 and accept $b_1^{(1)}$  with probability $min(r,1)$.
 
 For $\mu_a$ and $\sigma_a$, we sample directly from the full conditional distributions (Eq. \ref{XX}  and Eq. \ref{XX}):
 \[
-\mu_a^{(1)} \sim Normal (\mu_n, \sigma_n)
+\mu_a^{(1)} \sim \mbox{Norm} (\mu_n, \sigma_n)
 \]
 where 
 \[\mu_n =  \frac{\sigma_a^{(0)}}  {\sigma_a^{(0)}   +n_a  *  \sigma_0} *  \mu_0 +  \frac{n_a * \sigma_0} {\sigma_a^{(0)}   +n_a* \sigma_0} *\bar{a}^{(1)}
 \]
 and 
-
 \[
 \sigma_n= \frac{\sigma_a^{(0)}  * \sigma_0 } {\sigma_a^{(0)}  + n* \sigma_0}
 \]
-Here, $\bar{a}$ is the current mean of the vector $\bf{a}$, which we updated before, and $n_a$ is the length of $\bf{a}$. For $\sigma_a$ we use $\sigma_a^{(1)}\sim Inv Gamma (a_n, b_n)$,
+Here, $\bar{a}$ is the current mean of the vector $\bf{a}$, which we
+updated before, and $n_a$ is the length of $\bf{a}$. 
+For $\sigma_a$ we use $\sigma_a^{(1)}\sim InvGamma (a_n, b_n)$,
 where  $a_n = n_a/2   + a_0$, and $b_n = 0.5 ( \displaystyle\sum\limits_{j=1}^{n_a} a_j^{(1)}-\mu_a^{(1)})^2+ b_0$.
+\begin{comment} Rahel: in preceeding setntence you are using ``a'' for
+  parameters of the prior distribution of ``sigma'' (and also ``b'' is
+  a prior parameter) -- but ``a'' and ``b'' have been previously
+  defined as regression parameter.
+Recommend changing all ``a'' and ``b'' in the original model to
+$\alpha$ and $\beta$ (I realize a pain in the ass
+\end{comment}
+
+
 
 We repeat these steps over $T$ iterations of the MCMC algorithm.
 In this example we may not want to save each individual $a$, but are only interested in their mean and standard deviation. Since these two parameters will change as soon as the value for one element in $\bf{a}$ changes, their acceptance rates will always be close to 1 and are not representative of how well your algorithm performs. To monitor the acceptance rates of parameters you do not want to save, you simply need to add a few lines of code into your updater to see how often the individual parameters are accepted. The full code for the MCMC algorithm of our Poisson GLMM in Panel 3 (XXX) shows one way how to monitor acceptance of individual $a$'s.
 
+\begin{comment}
+ Rahel: The panel below might be too big for a panel. Can you just
+ have it in the text in verbatim?
+\end{comment}
 {\small
 \begin{verbatim}
 Panel 3: R code for the Metropolis-within-Gibbs sampler for
