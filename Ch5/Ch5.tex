@@ -281,7 +281,6 @@ y_{ij} \sim  Poisson(z_{i} K  \lambda_{ij})
 which evaluates to a point mass at $y=0$ if $z=0$. 
 
 
-
 \subsection{Simulating Data}
 
 Simulating a sample SCR data set under the Poisson model requires only
@@ -367,7 +366,7 @@ arriving there.
 
 \subsection{Exercise}
 
-Use the Bernoulli model simulator from chapter 4 (\mbox{\tt
+Use the Bernoulli model simulator from Chapt. \ref{chapt.scr0} (\mbox{\tt
   simSCR0.fn}) to simulate a Bernoulli data set and then fit the
 Poisson model. Compare the results of fitting the correct
 data-generating model with those of fitting the misspecified Poisson
@@ -375,7 +374,7 @@ model.
 
 
 
-
+\begin{comment}
 \section{Likelihood analysis of the Poisson model}
 
 Counts are Poisson with a random effect so this is stupidly easy to
@@ -397,10 +396,7 @@ sum_{j} y(i,j) =  Poisson( sum_{j} lambda(i,j)) right?
 
 Zero-inflate the result
 \end{verbatim}
-
-
-
-
+\end{comment}
 
 
 
@@ -491,9 +487,6 @@ y[i,j] = number of times individual i captured in stand j.
 
 
 
-
-
-
 \section{Independent Multinomial Observations}
 
 Several types of encounter devices yield multinomial observations in
@@ -545,15 +538,15 @@ construct the multinomial cell probabilities for each individual, as a
 function of {\it where} that individual lives, through its center of
 activity ${\bf s}$. Thus we suppose that
 \[
- {\bf y}_{ik} \sim \mbox{Multinom}(1, {\bm \pi}_{i} )
+ {\bf y}_{ik} \sim \mbox{Multinom}(1, {\bm \pi}({\bf s}_{i}) )
 \]
-where ${\bm \pi}_{i}$ is a vector of length $J+1$, which, by
+where ${\bm \pi}({\bf s}_{i})$ is a vector of length $J+1$, which, by
 convention here, we define $\pi_{i,J+1}$, the last cell, or the ``zero
 cell'', to correspond to the event ``not captured''.  Now we have to
 construct these cell probabilities in some meaningful way that depends
 on each individuals' ${\bf s}$, which we do shortly.
 
-A closely related distribution is a {\it categorical} distribution.
+A statistically equivalent distribution is the {\it categorical} distribution.
 If ${\bf y}$ is a multinomial trial with probabilities
 ${\bm \pi}$ than the {\it position} of the non-zero
 elemment of ${\bf y}$ is a categorical random variable with probabilities
@@ -573,6 +566,9 @@ or labeled is completely irrelevant, although it is convenient to use
 the integers $1:(J+1)$).
 Therefore, $y_{i1} = 2$, $y_{i2} = 7$, $y_{i3} = 4$ and so on.
 
+For simulating and fitting data in {\bf BUGS} we will typically use
+the categorical representation of the model because it is somewhat
+more convenient.
 
 \subsection{Multinomial Relationship to Poisson}
 
@@ -631,7 +627,6 @@ So lets not worry about the distribution of the total count
 but instead estimated this excess parameter p (this is what Royle et al.
 and Gardner et al. tried to do).  In this case the multinomial gets
 another cell probability , the J+1 cell, 
-
 \[
  \pi\_{ij} =  \frac{ p exp( - beta d^2 ) }  { \sum\_{j} exp(-beta d^2)}
 \]
@@ -657,12 +652,53 @@ individuals.  So not having to model encounter rate seems like a good
 benefit of the Bernoulli model -- which is why we said what we did above.
 
 
-\section{Simulating data and fitting in WinBUGS}
+\subsection{Simulating data and fitting in WinBUGS}
+
+simulating categorical or multinomial observations
 
 copy R stuff from Sarah Converse analysis which is precisely this model.
 
 show behvioral response too... that is a cool model..... good for
 bird mist netting for sure. ...
+
+
+We're going to show the nugget of a simulation function which is
+used in the function \mbox{\tt sim.mnSCR} found in the {\bf R} package
+\mbox{\tt scrbook}.  The first lines of the following {\bf R} code
+make use of some things that should be defined but we omit them here:
+{\small
+\begin{verbatim}
+S<-cbind(runif(N,Xl,Xu),runif(N,Yl,Yu))
+# how far is each individual from each trap?
+D<- e2dist(S,traplocs)
+
+# paramter values
+sigma<- 0.5
+alpha0<- -1
+theta<- 1/(2*sigma*sigma)
+
+Ycat<-matrix(NA,nrow=N,ncol=K)
+for(i in 1:N){
+for(k in 1:K){
+lp<- alpha0 - theta*D[i,]*D[i,]
+cp<- exp(c(lp,0))
+cp<- cp/sum(cp)
+Ycat[i,k]<- sample(1:(ntraps+1),1,prob=cp)
+}
+}
+\end{verbatim}
+}
+\mbox{\tt sim.mnSCR} will also simulate data that includes a
+behavioral response, which will be the typical situation in
+small-mammal trapping problems, which we first developed this code to
+deal with \citep[see][for details]{converse_etal:2012}.
+
+
+
+
+
+
+
 
 
 \section{ Mist-netting example}
