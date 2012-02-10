@@ -1141,12 +1141,13 @@ an SCR model when using an improper prior
 \end{panel}
 
 
-These steps are analogous for  $\lambda_{0}$ and $s_i$ and we will use MH steps for
+These steps are analogous for  $\lambda_{0}$ and ${\bf s}_i$ and we will 
+use MH steps for
 all of these parameters. Similar to the random intercepts in our
-Poisson GLMM, we update each $s_i$ individually. Note that to be fully
-correct, the full conditional for $s_i$ contains both the likelihood and
+Poisson GLMM, we update each ${\bf s}_i$ individually. Note that to be fully
+correct, the full conditional for ${\bf s}_i$ contains both the likelihood and
 prior component, since we did not specify an improper, but a Uniform
-prior on $s_i$. However, with a Uniform distribution the probability
+prior on ${\bf s}_i$. However, with a Uniform distribution the probability
 density of any value is 1/(upper limit - lower limit) =
 constant. Thus, the prior components are identical for both the
 current and the candidate value and can be ignored (formally, when you
@@ -1156,15 +1157,20 @@ cancel each other out).
 
 We still have to update $z_i$. The full conditional for $z_i$ is
 \[
-[z_i|y, \sigma, \lambda_0, s] \propto [y|z,\sigma, \lambda_0, s] * [z_i]
+[z_i|y_{i}, \sigma, \lambda_0, s] \propto [y_{i}|z_{i},\sigma, \lambda_0, 
+{\bf s}_{i}] * [z_i]
 \]
 and since $z_i \sim Bernoulli(\psi)$,
-the term has to be taken into account when updating $z_i$. The R code for updating $z_i$ is shown in Panel 5.
+the term has to be taken into account when updating $z_i$. The 
+{\bf R} code for updating $z_i$ is shown in Panel \ref{mcmc.panel.updatez}.
 
+
+\begin{panel}[htp]
+\centering
+\rule[0.15in]{\textwidth}{.03in}
+%\begin{minipage}{2.5in}
 {\small
 \begin{verbatim}
-Panel 5: R code to update z…
-
         zUps <- 0		#set counter to monitor acceptance rate
         for(i in 1:M) {
             if(seen[i])	#no need to update seen individuals, since their z =1
@@ -1182,43 +1188,67 @@ Panel 5: R code to update z…
         }
 \end{verbatim}
 }
+%\end{minipage}
+\rule[-0.15in]{\textwidth}{.03in}
+\caption{
+{\bf R} code to update z................
+}
+\label{mcmc.panel.updatez}
+\end{panel}
+
 
 $\psi$
-itself is a hyperparameter of the model, with an uninformative prior distribution of $Unif(0,1)$ or $Beta(1,1)$, so that
+ is a hyperparameter of the model, with an uninformative prior 
+ distribution of $\mbox{Unif}(0,1)$ or $\mbox{Beta}(1,1)$, so that
 \[
-\psi|z \propto [z|\psi] * Beta(1,1)
+\psi|{\bf z} \propto \left\{ \prod_{i} [z_{i}|\psi] \right\} \mbox{Beta}(1,1)
 \]
-The Beta distribution is the conjugate prior to the Binomial and Bernoulli distributions (remember that $z \sim Bernoulli(\psi))$. The general form of a full conditional of a Beta-Binomial model with $yi \sim Bernoulli (p) $ and $p \sim Beta(a,b) $ is
+The beta distribution is the conjugate prior to the binomial and 
+Bernoulli distributions (remember that $z \sim \mbox{Bern}(\psi))$. 
+The general form of a full conditional of a Beta-Binomial model 
+with $y_{i} \sim \mbox{Bern} (p) $ and $p \sim \mbox{Beta}(a,b)$ is
 \[
-p(p|y) \propto Beta(a + \sum y_i, b + n-\sum y_i)
+p(p|y) \propto \mbox{Beta}(a + \sum y_i, b + n-\sum y_i)
 \]
-In our case, this means we update psi as follows:
+\begin{comment} Rahel: above is why i don't like p for distribution! \end{comment}
+In our case, this means we update $\psi$ as follows:
 \begin{verbatim}
 si<-rbeta(1, 1+sum(z), 1 + M-sum(z))
 \end{verbatim}
-
+\begin{comment} Rahel what is M here  ? \end{comment}
 These are all the building blocks you need to write the MCMC algorithm
 for the spatial null model with a Poisson encounter process.  You can
-find the full R code (SCR0pois.R) in the R package scrbook XXXXXX.
+find the full {\bf R} code (\mbox{\tt SCR0pois.R}) in the {\bf R} package 
+\mbox{\tt scrbook}.
 
 \subsection{SCR model with binomial encounter process}
 The equivalent SCR model with a binomial encounter process is very similar. Here, each individual $i$ can only be detected once at any given trap $j$ during a sampling occasion $k$.
 Thus
 \[
-y_{ij} \sim Binomial (p_{ij}, K)
+y_{ij} \sim \mbox{Bin} (p_{ij}, K)
 \]
 Where $p_{ij}$ is some function of distance between ${\bf s}_{i}$ and trap location ${\bf x}_{j}$. Here we use:
 \[
 p_{ij}=1-exp(-\lambda_{ij})
 \]
-Recall from Chapter 2 that this is the complementary log-log (cloglog) link function, which constrains $p_{ij}$ to fall between 0 and 1.
-For our MCMC algorithm that means that, instead of using a Poisson likelihood, $Poisson(y|\sigma,\lambda_0,s,z)$, we use a Binomial likelihood, $Binomial(y,K|\sigma,\lambda_0,s,z)$, in all the conditional distributions. As an example, Panel 6 shows the updating step for $\lambda_0$ under a binomial encounter model. The full MCMC code for the binomial SCR (SCR0binom.R) can be found in the R package scrbook XXXXXX.
+Recall from Chapter 2 that this is the complementary log-log (cloglog) link function, which constrains $p_{ij}$ 
+to fall between 0 and 1.
+For our MCMC algorithm that means that, instead of using a Poisson 
+likelihood, $\mbox{Poisson}(y|\sigma,\lambda_0,{\bf s},z)$, we use a 
+Binomial likelihood, $\mbox{Bin}(y| \sigma,\lambda_0,{\bf s},z; K)$, 
+in all the conditional distributions. As an example, Panel
+\ref{mcmc.panel.updatelam0} shows 
+the updating step for $\lambda_0$ under a binomial encounter model. 
+The full MCMC code for the binomial SCR (\mbox{\tt SCR0binom.R}) 
+can be found in the {\bf R} package \mbox{\tt scrbook}.
 
+
+\begin{panel}[htp]
+\centering
+\rule[0.15in]{\textwidth}{.03in}
+%\begin{minipage}{2.5in}
 {\small
 \begin{verbatim}
-Panel 6: MCMC updater for lam0 in a SCR model with Binomial encounter
-process and cloglog link function on detection. Here, pmat =
-1-exp(-lam).
 
         lam0.cand <- rnorm(1, lam0, 0.1)
         if(lam0.cand >0){   #automatically reject lam0.cand that are <0
@@ -1234,54 +1264,108 @@ process and cloglog link function on detection. Here, pmat =
         }
 \end{verbatim}
 }
+%\end{minipage}
+\rule[-0.15in]{\textwidth}{.03in}
+\caption{
+MCMC updater for lam0 in a SCR model with Binomial encounter
+process and cloglog link function on detection. Here, pmat =
+1-exp(-lam).
+}
+\label{mcmc.panel.updatelam0}
+\end{panel}
 
-Another possibility is to model variation in the individual and site specific detection probability,  $p_{ij}$, directly, without any transformation, such that
+
+Another possibility is to model variation in the individual and site 
+specific detection probability,  $p_{ij}$, directly, without any 
+transformation, such that
+\begin{comment} Rahel the $\leftarrow$ isn't right here but I couldn't
+make this work \end{comment}
 \[
-p_{ij}<-p_0 * exp(-D_{ij}^2/(2\sigma^2))
+p_{ij} \leftarrow p_0 * exp(-D_{ij}^2/(2\sigma^2))
 \]
-and $p_0 = \{0,1\}$.
-This formulation is analogous to how detection probability is modeled in distance sampling under a half-normal detection function; however, in distance sampling $p_0$ -- detection of an individual on the transect line -- is assumed to be 1 \citep{buckland_etal:2001}. Under this formulation the updater for $\lambda_0$ (equivalent to $p_0$ in Eq XX) becomes:
+and $p_0 \in [0,1]$.
+This formulation is analogous to how detection probability is modeled 
+in distance sampling under a half-normal detection function; however, 
+in distance sampling $p_0$ -- detection of an individual on the transect 
+line -- is assumed to be 1 \citep{buckland_etal:2001}. Under this 
+formulation the updater for $\lambda_0$ (equivalent to $p_0$ in Eq XX) 
+becomes:
 %I think I should rename it p0 in the code; this is a little confusing
 \begin{verbatim}
-        lam0.cand <- rnorm(1, lam0, 0.1)
-        if(lam0.cand >0 & lam0.cand < 1 ){   #automatically reject lam0.cand that are not {0,1}
-            lam.cand <- lam0.cand*exp(-(D*D)/(2*sigma*sigma))
-            ll<- sum(dbinom(y, K, lam *z, log=TRUE)) #no transformation needed
-            llcand <- sum(dbinom(y, K, lam.cand *z, log=TRUE))
-            if(runif(1) < exp( llcand  - ll) ){
-                ll<-llcand
-                lam<-lam.cand
-                lam0<- lam0.cand
-            }
-        }
+  lam0.cand <- rnorm(1, lam0, 0.1)
+  if(lam0.cand >0 & lam0.cand < 1 ){   
+      #automatically rejects lam0.cand that are not {0,1}
+       lam.cand <- lam0.cand*exp(-(D*D)/(2*sigma*sigma))
+       ll<- sum(dbinom(y, K, lam *z, log=TRUE)) #no transformation needed
+       llcand <- sum(dbinom(y, K, lam.cand *z, log=TRUE))
+       if(runif(1) < exp( llcand  - ll) ){
+          ll<-llcand
+            lam<-lam.cand
+            lam0<- lam0.cand
+         }
+     }
 \end{verbatim}
 
 
 \subsection{Looking at model output}
-Now that you have an MCMC algorithm to analyze spatial capture-recapture data with, let's run an actual analysis so we can look at the output. As an example, we will use the Fort Drum bear data set we already analyzed in Chapt. \ref{chapt.closed} with traditional non-spatial models (and that you will see again in Chapt. \ref{XX}). You can use the same script provided back in Chapt. \ref{chapt.closed} to read in the trap location (trapmat) and detection data and build the augmented $M x K$ array of individual encounter histories (Xaug). In addition to these data, we need to specify the outermost coordinates of the state-space. Since bears are wide ranging animals we add a 20--km buffer to the maximum and minimum coordinates of the trap array:
+Now that you have an MCMC algorithm to analyze spatial capture-recapture 
+data with, let's run an actual analysis so we can look at the output. As 
+an example, we will use the Fort Drum 
+bear data set we already analyzed in Chapt. \ref{chapt.closed} with 
+traditional non-spatial models (and that you will see again in Chapt. 
+\ref{XX}). You can load the Fort Drum data
+(\mbox{\tt data(''beardata'') }), extract the 
+trap locations (\mbox{\tt trapmat}) and 
+detection data and build the augmented $M \times J$ array of individual 
+encounter histories.
+ In addition to these data, we need to specify 
+the outermost coordinates of the state-space. Since bears are wide 
+ranging animals we add a 20--km buffer to the maximum and minimum 
+coordinates of the trap array:
 
 \begin{verbatim}
 xl<- min(trapmat[,2])- 20  
 yl<- min(trapmat[,3])- 20 
-xu<-max(trapmat[,2])+ 20
-yu<-max(trapmat[,3])+ 20
+xu<- max(trapmat[,2])+ 20
+yu<- max(trapmat[,3])+ 20
 \end{verbatim}
 
-Finally, source the MCMC code for the binomial encounter model algorithm with the cloglog link and run 5000 iterations. This should take approximately 25 minutes.
-
+Finally, source the MCMC code for the binomial encounter model algorithm 
+with the cloglog link and run 5000 iterations. This should take 
+approximately 25 minutes.
+\begin{comment} Rahel: this is nice. you might make Scr.0 an R func! 
+\end{comment}
 \begin{verbatim}
-> source('SCR0binom.txt')
-> mod0<-SCR.0(y=Xaug, X=trapmat[,2:3], M=M, xl=xl, xu=xu, yl=yl, yu=yu, K=8, niter=5000)
+ source('SCR0binom.txt')
+ mod0<-SCR.0(y=Xaug, X=trapmat[,2:3], M=M, xl=xl, xu=xu, yl=yl, 
+                   yu=yu, K=8, niter=5000)
 \end{verbatim}
 
-Before, we used simple R commands to look at model results. However, there is a specific R package to summarize MCMC simulation output and perform some convergence diagnostics -- package coda \citep{plummer_etal:2006}. Download and install coda, then convert your model output to an mcmc object
+Before, we used simple {\bf R} commands to look at model results. 
+However, there is a specific {\bf R} package to summarize MCMC 
+simulation output and perform some convergence diagnostics -- package 
+coda \citep{plummer_etal:2006}. Download and install coda, then 
+convert your model output to an mcmc object
 \begin{verbatim}
-> chain<-mcmc(mod0)
-\end{verbatim} which can be used by coda to produce MCMC specific output.
+  chain<-mcmc(mod0)
+\end{verbatim} 
+which can be used by coda to produce MCMC specific output.
 
 \subsubsection{Markov chain time series plots}
-Start by looking at time series plots of your Markov chains using \verb#plot(chain)#. This command produces a time series plot and marginal posterior density plots for each monitored parameter, similar to what we did before using the \verb#hist()# and \verb#plot()# commands (Fig. 5). Time series plots will tell you several things:
-First, recall from Sect. ?ref{XXX} that the way the chains move through the parameter space gives you an idea of whether your MH steps are well tuned. If chains were constant over many iterations you would need to decrease the tuning parameter of the (Normal) proposal distribution. If a chain moves along some gradient to a stationary state very slowly, you may want to increase the tuning parameter so that the parameter space is explored more efficiently.
+
+Start by looking at time series plots of your Markov chains using 
+\verb#plot(chain)#. This command produces a time series plot and
+ marginal posterior density plots for each monitored parameter, 
+ similar to what we did before using the \verb#hist()# and \verb#plot()# 
+ commands (Fig. \ref{mcmc.fig.timeseries}). Time series plots will tell 
+ you several things:
+First, recall from Sect. XXXXXX that the way the chains move 
+through the parameter space gives you an idea of whether your MH 
+steps are well tuned. If chains were constant over many iterations 
+you would need to decrease the tuning parameter of the (Normal) 
+proposal distribution. If a chain moves along some gradient to a 
+stationary state very slowly, you may want to increase the tuning 
+parameter so that the parameter space is explored more efficiently.
 
 
 \begin{figure}
@@ -1289,14 +1373,17 @@ First, recall from Sect. ?ref{XXX} that the way the chains move through the para
 \includegraphics[height=2.5in]{Ch7/figs/timeseries}
 \end{center}
 \caption{Time series and posterior density plots for $\sigma$ and $\lambda_0$.}
-\label{timeseries.fig}
+\label{mcmc.fig.timeseries}
 \end{figure}
 
 
 Second, you will be able to see if your chains converged and how many initial simulations you have to discard as burn-in. In the case of the chains shown in Fig. \ref{timeseries.fig}, we would probably consider the first 750 - 1000 iterations as burn-in, as afterwards the chains seem to be fairly stationary.
 
 \subsection{Posterior density plots}
-The \verb#plot()# command also produces posterior density plots and it is worthwhile to look at those carefully. For parameters with priors that have bounds (e.g. Uniform over some interval), you will be able to see if your choice of the prior is truncating the posterior distribution. In the context of SCR models, this will mostly involve our choice of $M$, the size of the augmented data set. If the posterior of $N$ has a lot of mass concentrated close to $M$ (or equivalently the posterior of $\psi$ has a lot of mass concentrated close to 1), as in the example in Fig. \ref{timeseries2.fig}, we have to re-run the analysis with a larger $M$.  A flat posterior plot shows you that the parameter essentially cannot be identified. There may not be enough information in your data to estimate model parameters and you may have to consider a simpler model. Finally, posterior density plots will show you if the posterior distribution is symmetrical or skewed -- if the distribution has a heavy tail, using the mean as a point estimate of your parameter of interest may be biased and you may want to opt for the median or mode instead.
+The \verb#plot()# command also produces posterior density plots and it is worthwhile to look at those carefully. For parameters with priors that have bounds (e.g. Uniform over some interval), you will be able to see if your choice of the prior is truncating the posterior distribution. In the context of SCR models, this will mostly involve our choice of $M$, the size of the augmented data set. If the posterior of $N$ has a lot of mass concentrated close to $M$ (or equivalently the posterior of $\psi$ has a lot of mass concentrated close to 1), as in the example in Fig. \ref{timeseries2.fig}, we have to re-run the analysis with a larger $M$.  A diffuse
+posterior plot suggests
+that the parameter may not be well-identified. 
+There may not be enough information in your data to estimate model parameters and you may have to consider a simpler model. Finally, posterior density plots will show you if the posterior distribution is symmetrical or skewed -- if the distribution has a heavy tail, using the mean as a point estimate of your parameter of interest may be biased and you may want to opt for the median or mode instead.
 
 \begin{figure}
 \begin{center}
@@ -1307,7 +1394,15 @@ The \verb#plot()# command also produces posterior density plots and it is worthw
 \end{figure}
 
 \subsection{Serial autocorrelation and effective sample size}
-Checking the degree of autocorrelation in your Markov chains and estimating the effective sample size your chain has generated should be part of evaluating your model output. If you use WinBUGS through the R2WinBUGS package, the \verb#print()# command will automatically return the effective sample size for all monitored parameters. In the coda package there are several functions you can use to do so. \verb#effectiveSize()# will directly give you an estimate of the effective sample size for you parameters:
+
+Checking the degree of autocorrelation in your Markov chains and 
+estimating the effective sample size your chain has generated should 
+be part of evaluating your model output. If you use {\bf WinBUGS}
+ through the \mbox{\tt R2WinBUGS} package, the \verb#print()# command 
+ will automatically return the effective sample size for all monitored 
+ parameters. In the coda package there are several functions you can use 
+ to do so. \verb#effectiveSize()# will directly give you an estimate 
+ of the effective sample size for you parameters:
 \begin{verbatim}
 > effectiveSize(chain)
     sigma      lam0       psi         N
@@ -1324,15 +1419,31 @@ Lag 5  0.9915567 0.8038168 0.9111951 0.9113525
 Lag 10 0.9836016 0.6714021 0.8462108 0.8509803
 Lag 50 0.8985337 0.1983780 0.6138516 0.6233994
 \end{verbatim}
-In the present case we see that autocorrelation is especially high for the parameter $\sigma$ and our effective sample size for this parameter is 4! \footnote{Anyone have any idea how the autocorrelation in sigma could be reduced?} This means we would have to run the model for much longer to obtain a reasonable effective sample size. Unfortunately, with many SCR models we observe high degrees of serial autocorrelation. For now, let's continue using this small set of samples to continue looking at the output.
+In the present case we see that autocorrelation is especially high for the 
+parameter $\sigma$ and our effective sample size for this parameter is 
+4! \footnote{Anyone have any idea how the autocorrelation in sigma could 
+be reduced? XXXXXXXXXX YES: Mess with the MH tuning parameter......XXXXXXXX} 
+This means we would have to run the model for much longer to 
+obtain a reasonable effective sample size. Unfortunately, with many SCR models we observe high degrees of serial autocorrelation. For now, let's continue using this small set of samples to continue looking at the output.
 
 
 \subsection{Summary results}
-Now that we checked that our chains apparently have converged and pretending that we have generated enough samples from the posterior distribution, we can look at the actual parameter estimates. The \verb#summary()# function will return two sets of results: the mean parameter estimates, with their standard deviation, the naïve standard error -- i.e. your regular standard error calculated for $T$ (= number of iterations) samples without accounting for serial autocorrelation -- and the Time-series SE (in WinBUGS and earlier in this book referred to as MC error), which accounts for autocorrelation. Remember our rule of thumb that this error decreases with increasing chain length and should be 1\% or less of the parameter estimate.In WinBUGS the MC error is only given in the log output within BUGS itself.
+Now that we checked that our chains apparently have converged and pretending 
+that we have generated enough samples from the posterior distribution, we 
+can look at the actual parameter estimates. The \verb#summary()# function 
+will return two sets of results: the mean parameter estimates, with their standard deviation, the naïve standard error -- i.e. your regular standard error calculated for $T$ (= number of iterations) 
+samples without 
+accounting for serial autocorrelation -- and the 
+Time-series SE (in {\bf WinBUGS} 
+and earlier in this book referred to as MC error), which accounts for 
+autocorrelation. Remember our rule of thumb that this error 
+decreases with increasing chain length and should be 1\% or less of the 
+parameter estimate. In {\bf WinBUGS} the MC error is only given in the log 
+output within {\bf BUGS} itself.
 You should adjust the \verb#summary()# call by removing the burn-in from
 calculating parameter summary statistics. To do so, use the \verb#window()#
 command, which lets you specify at which iteration to start
-'counting'. In contrast to WinBUGS, which requires you to set the
+'counting'. In contrast to {\bf WinBUGS}, which requires you to set the
 burn-in length before you run the model, this command gives us full
 flexibility to make decisions about the burn-in after we have seen the
 trajectories of our Markov chains. For our example,
@@ -1363,8 +1474,17 @@ psi     0.45110   0.54838   0.6052   0.6639   0.8192
 N     366.00000 440.00000 485.0000 530.0000 654.0000
 \end{verbatim}
 
-Looking at the MC errors, we see that in spite of the high autocorrelation, the MC error for $\sigma$ is below the 1\% threshold, whereas for all other parameters, MC errors are still above, another indication that for a thorough analysis we should run a longer chain.
-Our algorithm gives us a posterior distribution of $N$, but we are usually interested in the density, $D$. Density itself is not a parameter of our model, but we can derive a posterior distribution for $D$ by dividing each value of $N$ ($N$ at each iteration) by the area of the state-space (here 3032.719 km$^2$) and we can use summary statistics of the resulting distribution to characterize $D$:
+Looking at the MC errors (column labeled \mbox{\tt Time-series SE}), 
+we see that in spite of the high autocorrelation, the MC error for 
+$\sigma$ is below the 1\% threshold, whereas for all other parameters, 
+MC errors are still above, another indication that for a thorough 
+analysis we should run a longer chain.
+Our algorithm gives us a posterior distribution of $N$, but we are usually 
+interested in the density, $D$. Density itself is not a parameter of our 
+model, but we can derive a posterior distribution for $D$ by dividing 
+each value of $N$ ($N$ at each iteration) by the area of the state-space
+ (here 3032.719 km$^2$) and we can use summary statistics of the 
+ resulting distribution to characterize $D$:
 \begin{verbatim}
 > summary(window(chain[,4]/ 3032.719, start=1001))
 Iterations = 1001:5000
@@ -1393,9 +1513,11 @@ While inspecting the time series plot gives you a first idea of how well you tun
      sigma       lam0        psi          N
 0.44108822 0.77675535 0.00000000 0.01940388
 \end{verbatim}
- Recall that rejection rates should lie between 0.2 and 0.8, so our tuning seems to have been appropriate here. $\psi$ is never rejected since we update it with Gibbs sampling, where all candidate values are kept. And since $N$ is the sum of all $z_i$, all it takes for $N$ to change from one iteration to the next are small changes in the z-vector, so the rejection rate of $N$ is always low.
-If you have run several parallel chains, you can combine them into a single mcmc object using the \verb#mcmc.list()# command on the individual chains (note that each chain has to be converted to an mcmc object before combining them with \verb#mcmc.list()#). You can then easily obtain the Gelman-Rubin diagnostic \citep{gelman_etal:2004}, in WinBUGS called R-hat, using \verb#gelman.diag()#, which will indicate if all chains have converged to the same stationary distribution.
-For details on these and other functions, see the coda manual, which can be found (together with the package) on the CRAN mirror.
+ Recall (section XXXXXX?) that rejection rates should lie between 0.2 and 0.8, so our tuning seems to have been appropriate here. $\psi$ is never rejected since we update it with Gibbs sampling, where all candidate values are kept. And since $N$ is the sum of all $z_i$, all it takes for $N$ to change from one iteration to the next are small changes in the z-vector, so the rejection rate of $N$ is always low.
+If you have run several parallel chains, you can combine them into a single mcmc object using the \verb#mcmc.list()# command on the individual chains (note that each chain has to be converted to an mcmc object before combining them with \verb#mcmc.list()#). You can then easily obtain the Gelman-Rubin diagnostic \citep{gelman_etal:2004}, in {\bf WinBUGS} called R-hat, using \verb#gelman.diag()#, which 
+will indicate if all chains have converged to the same stationary distribution.
+For details on these and other functions, see the \mbox{\tt coda} manual, 
+which can be found (together with the package) on the CRAN mirror.
 
 \section{Manipulating the state-space}
 So far, we have constrained the location of the activity centers to fall within the outermost coordinates of our rectangular state space by posing upper and lower bounds for $x$ and $y$. But what if $S$ has an irregular shape -- maybe there is a large water body we would like to remove from $S$, because we know our terrestrial study species does not occur there. Or the study takes place in a clearly defined area such as an island. As mentioned before, this situation is difficult to handle in WinBUGS. In some simple cases we can adjust the state space by setting $s_{xi}$ to be some function of $s_{yi}$ or vice versa. In this manner, we can cut off corners of the rectangle to approximate the actual state space. In R, we are much more flexible, as we can use the actual state-space polygon to constrain out $s_i$. \footnote{ Have to check if we can use panther stuff for the book; otherwise, use raccoon example.}To illustrate that, let's look at a camera trapping study of Florida panthers (\emph{Puma concolor coryi}) conducted in the Picayune Strand Restoration Project (PSRP) area, southwest Florida (Fig. \ref{pantercamera.fig}), by XXX, and financed by XXX. In the 1960ies the PSRP area was slated for housing development, but then bought back by the State of Florida and is currently being restored to its original hydrology and vegetation. In an effort to estimate the density of the local Florida panther population, 98 camera traps were operated in the area for 21 months between 2005 and 2007. Florida panthers are wide-ranging animals and in order to account for their wide movements, the state-space was defined as the trapping grid buffered by 15 km around its outermost coordinates. However, the resulting rectangle contained some ocean in its southwestern corner (Fig. \ref{pantercamera.fig}).
