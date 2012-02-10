@@ -1,6 +1,7 @@
 (TeX-add-style-hook "AndyRefs_alphabetized"
  (lambda ()
     (LaTeX-add-bibitems
+     "royle_etal:2012ecol"
      "diggle:2003"
      "king_etal:2008"
      "alpizar_pollock:1996"
@@ -163,7 +164,7 @@
      "farnsworth_etal:2002"
      "fienberg_etal:1999"
      "Fink2010a"
-     "Fiske"
+     "fiske_chandler:2011"
      "fortin_etal:2005"
      "foster_harmsen:2012"
      "frost_etal:1999"
@@ -281,7 +282,6 @@
      "kendall:1999"
      "kendall_etal:1997"
      "kendall_nichols:2002"
-     "kendall_nichols:1997"
      "kery:2011"
      "kery:2002"
      "kery:2010"
