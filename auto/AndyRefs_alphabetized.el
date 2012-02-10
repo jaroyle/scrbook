@@ -248,7 +248,6 @@
      "hurlbert:1984"
      "ibrahim_etal:2005"
      "illian_eta:2007a"
-     "illian:2008"
      "illian_etal:2008"
      "illian:2010"
      "ivan:2012"
