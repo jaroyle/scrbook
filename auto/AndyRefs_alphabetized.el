@@ -164,7 +164,7 @@
      "farnsworth_etal:2002"
      "fienberg_etal:1999"
      "Fink2010a"
-     "Fiske"
+     "fiske_chandler:2011"
      "fortin_etal:2005"
      "foster_harmsen:2012"
      "frost_etal:1999"

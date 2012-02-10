@@ -1,7 +1,7 @@
 (TeX-add-style-hook "Ch14"
  (lambda ()
     (LaTeX-add-labels
-     "Chapt.scr-unmarked"
+     "chapt.scr-unmarked"
      "Sect.existing-unmarked"
      "Sect.corr-info"
      "eq.latentPoisson"
