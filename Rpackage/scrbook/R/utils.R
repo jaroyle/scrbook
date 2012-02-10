@@ -61,14 +61,3 @@ function (z, col, x, y = NULL, size = NULL, digits = 2, labels = c("breaks",
         ifelse(size[1]>0, 0, 1), xpd = TRUE) 
 }
 
-
-
-spatial.plot <-
-function(x,y,add=TRUE,cx=1){
- nc<-as.numeric(cut(y,20))
-if(!add) plot(x,pch=" ")
- points(x,pch=20,col=terrain.colors(20)[nc],cex=cx)
-image.scale(y,col=terrain.colors(20))
-
-}
-
