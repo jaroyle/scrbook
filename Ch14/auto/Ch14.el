@@ -3,7 +3,7 @@
     (LaTeX-add-labels
      "chapt.scr-unmarked"
      "Sect.existing-unmarked"
-     "Sect.corr-info"
+     "sect.corr-info"
      "eq.latentPoisson"
      "eq:nagg"
      "fig:nopaDat"

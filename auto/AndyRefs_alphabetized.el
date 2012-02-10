@@ -282,7 +282,6 @@
      "kendall:1999"
      "kendall_etal:1997"
      "kendall_nichols:2002"
-     "kendall_nichols:1997"
      "kery:2011"
      "kery:2002"
      "kery:2010"
