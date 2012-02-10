@@ -3,6 +3,7 @@
     (LaTeX-add-bibitems
      "diggle:2003"
      "king_etal:2008"
+     "alpizar_pollock:1996"
      "schofield_barker:2008"
      "wright_etal:2009"
      "king_brooks:2001"
@@ -52,7 +53,6 @@
      "borchers_efford:2008"
      "borchers_etal:1998"
      "borchers:2010"
-     "borchers_etal:XXXX"
      "boulanger_mclellan:2001"
      "boulinier_etal:2001"
      "boulinier_etal:1998"
