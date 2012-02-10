@@ -1,6 +1,7 @@
 (TeX-add-style-hook "AndyRefs_alphabetized"
  (lambda ()
     (LaTeX-add-bibitems
+     "royle_etal:2012ecol"
      "diggle:2003"
      "king_etal:2008"
      "alpizar_pollock:1996"
