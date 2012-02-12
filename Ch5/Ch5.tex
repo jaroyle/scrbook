@@ -504,7 +504,7 @@ other hand individuals behave independently of one another, or so it
 might be reasonable to assume, so whether a trap captures some other
 individual doesn't have bearning on whether it captures another.  This
 last assumption is violated in an extreme case in classical ``single
-catch'' traps which we address in Section \ref{pmn.sec.singlecatch}
+catch'' traps which we address in section \ref{pmn.sec.singlecatch}
 below. In general we could imagine non-independence being important in
 any multi-catch situation but to the best of our knowledge a general
 model that encompasses complete dependence (single catch) and complete
@@ -637,7 +637,7 @@ and the last cell
 
 
 What i like about this particular multiomial model is that whether or not
-an individual is encounter in trap j is just a Bernoulli trial with
+an individual is encounter in trap $j$ is just a Bernoulli trial with
 probability
 \[ 
 (p/stuff)*exp(-beta*d^2)
@@ -645,22 +645,14 @@ probability
 and if we just label (p/stuff) = p0 then this is precisely our
 Bernoulli model with a half-normal detection model.  Thus we ``condition
 on $y_{ij}$ and we dont have to fess up to a model for this encounter
-rate which is a lot of time just reflecting behavioral stuff with the
-species under study and we wind up with a basic default Bernoulli model
+rate, which is most of the time just reflecting behavioral stuff of the
+species under, study and we wind up with a basic default Bernoulli model
 which doesn't require any assumptions about the encounter rate of 
 individuals.  So not having to model encounter rate seems like a good
 benefit of the Bernoulli model -- which is why we said what we did above.
 
 
 \subsection{Simulating data and fitting in WinBUGS}
-
-simulating categorical or multinomial observations
-
-copy R stuff from Sarah Converse analysis which is precisely this model.
-
-show behvioral response too... that is a cool model..... good for
-bird mist netting for sure. ...
-
 
 We're going to show the nugget of a simulation function which is
 used in the function \mbox{\tt sim.mnSCR} found in the {\bf R} package
@@ -677,6 +669,7 @@ sigma<- 0.5
 alpha0<- -1
 theta<- 1/(2*sigma*sigma)
 
+# make an empty data matrix and fill it up
 Ycat<-matrix(NA,nrow=N,ncol=K)
 for(i in 1:N){
 for(k in 1:K){
@@ -688,20 +681,114 @@ Ycat[i,k]<- sample(1:(ntraps+1),1,prob=cp)
 }
 \end{verbatim}
 }
+The resulting data matrix in this case has the maximal dimension $N$
+and so, for analysis, to mimic a real situation, we would have to discard the uncaptured
+individuals. 
 \mbox{\tt sim.mnSCR} will also simulate data that includes a
 behavioral response, which will be the typical situation in
 small-mammal trapping problems, which we first developed this code to
-deal with \citep[see][for details]{converse_etal:2012}.
+deal with \citep[see][for details]{converse_royle:2012}.
+
+Here we use our function \mbox{\tt sim.mnSCR} to simulate a data set
+with $K=7$ periods, etc.. We'll run the model using {\bf JAGS} which we
+have found is much more effective for this class of models.
+We get the data set-up for analysis by augmenting the size of the data
+set to $M=200$. In addition we choose starting values for ${\bf s}$ and the
+data augmentation variables $z$.  For ${\bf s}$ here we cheat a little bit
+and use the true values for the obseved individuals and then augment
+the matrix ${\bf S}$ with $M-n$ randomly selected activity centers.
+
+{\small 
+\begin{verbatim}
+set.seed(2013)
+parms<-list(N=100,alpha0= -.40, alpha1= 0,sigma=0.5)
+data<-sim.mnSCR(parms,K=7,ssbuff=2)
+nind<-nrow(data$Ycat)
 
 
+M<-200
+Ycat<-rbind(data$Ycat,matrix(nrow(data$X)+1,nrow=(M-nind),ncol=data$K))
+Sst<-rbind(data$S,cbind(runif(M-nind,data$xlim[1],data$xlim[2]),
+                        runif(M-nind,data$ylim[1],data$ylim[2])))
+zst<-c(rep(1,160),rep(0,40))
+\end{verbatim}
+}
+
+The model specification is not much more complicated than the binomial
+or Poisson models given previously. A few points: we construct the 
+multinomial cell probabilities ..... and then define the last
+one to be the complement of $1:J$.. In the last lines of code here we
+specify $N.tot$ as a derived parameter and density, D:
+{\small
+\begin{verbatim}
+cat("
+model {
+#PRIORS
+psi ~ dunif(0,1)
+alpha0 ~ dnorm(0,10)
+sigma ~dunif(0,10)
+theta<- 1/(2*sigma*sigma)
+
+for(i in 1:M){
+  z[i] ~ dbern(psi)
+  S[i,1] ~ dunif(xlim[1],xlim[2])
+  S[i,2] ~ dunif(ylim[1],ylim[2])
+  for(j in 1:ntraps){
+    #distance from capture to the center of the home range
+    d[i,j] <- pow(pow(S[i,1]-X[j,1],2) + pow(S[i,2]-X[j,2],2),1)
+  }
+  for(k in 1:K){
+    for(j in 1:ntraps){
+      lp[i,k,j] <- exp(alpha0 - theta*d[i,j])*z[i]            
+      cp[i,k,j] <- lp[i,k,j]/(1+sum(lp[i,k,]))
+    }
+    cp[i,k,ntraps+1] <- 1-sum(cp[i,k,1:ntraps])  # last cell = not captured
+    Ycat[i,k] ~ dcat(cp[i,k,])
+  }  
+}   
+
+N.tot <- sum(z[1:M]) 
+A <- ((xlim[2]-xlim[1])*trap.space)*((ylim[2]-ylim[1])*trap.space)
+D <- N.tot/A
+}
+",file="model.txt")
+\end{verbatim}
+}
 
 
+Finally we need to package everything up (inits, parameters, data) and send
+it off to {\bf JAGS} to build a MCMC simulator for us:
+
+{\small
+\begin{verbatim}
+inits <- function(){list (z=zst,sigma=runif(1,.5,1) ,S=Sst) }              
+parameters <- c("psi","alpha0","theta","sigma","N.tot","D")
+data <- list (X=data$X,K=data$K,
+trap.space=1,Ycat=Ycat,M=M,ntraps=nrow(data$X),ylim=data$ylim,xlim=data$xlim)         
+library("rjags")
+out.1 <- jags.model("model.txt", data, inits, n.chains=3, n.adapt=500)
+out2 <- coda.samples(out.1,parameters,n.iter=1000)
+\end{verbatim}
+}
 
 
+Summary of analysis for the simulated data set here.....  
 
 
 
 \section{ Mist-netting example}
+
+Here we do an analysis of a real data set using the multinomial model.
+This data set is XYZ comes from Jim Sarracco and IBP??
+
+
+
+
+
+
+
+
+
 
 
 
