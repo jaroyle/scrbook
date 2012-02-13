@@ -93,16 +93,16 @@ analysis. Unfortunately, in many if not most practical applications,
 it is nearly impossible to directly compute the posterior. Recall
 Bayes’ theorem:
 \begin{equation}
-p(\theta|y) = p(y|\theta) * p(\theta) / p(y),
+[\theta|y] = [y|\theta] * [\theta] / [y],
 \label{mcmc.eq.bayes}
 \end{equation}
 where $\theta$ is the parameter of interest, $y$ is the observed data,
-$p(\theta|y)$ is the posterior, $p(y|\theta)$ the likelihood of the
-data conditional on $\theta$, $p(\theta)$ the prior probability of
-$\theta$, and, finally, $p(y)$ is the marginal probability of the
+$[\theta|y]$ is the posterior, $[y|\theta]$ the likelihood of the
+data conditional on $\theta$, $[\theta]$ the prior probability of
+$\theta$, and, finally, $[y]$ is the marginal probability of the
 data, defined as 
 \[
-p(y) = \int p(y|\theta) * p(\theta) d\theta
+[y] = \int [y|\theta] * [\theta] d\theta
 \]
 
 This marginal probability is a normalizing constant that ensures that
@@ -143,14 +143,14 @@ And
 We can directly obtain estimates of interest from this Normal
 posterior distribution, such as the mean $\hat{\mu}$ and its variance; we
 do not need to apply MCMC, since we can recognize the posterior as a
-parametric distribution, including the normalizing constant $p(y)$.
+parametric distribution, including the normalizing constant $[y]$.
 But generally we will be interested in more complex models with
-several, say $n$, parameters. In this case, computing $p(y)$ from
+several, say $n$, parameters. In this case, computing $[y]$ from
 Eq. \ref{mcmc.eq.bayes} requires $n$-dimensional integration, which is
 can be difficult or impossible. Thus, the posterior distribution in
 generally only known up to a constant of proportionality:
 \[
-p(\theta|y) \propto p(y|\theta) * p(\theta)
+[\theta|y] \propto [y|\theta] * [\theta]
 \]
 The power of MCMC is that it allows us to approximate the posterior
 using simulation without evaluating the high dimensional integrals and
@@ -173,7 +173,7 @@ chain\footnote{In case you are not familiar with Markov chains, for
 converges to the desired distribution – in our case the posterior
 distribution for $\theta|y$. Thus, once the Markov chain has reached
 its stationary distribution, the generated samples can be used to
-characterize the posterior distribution, $p(\theta|y)$, and point
+characterize the posterior distribution, $[\theta|y]$, and point
 estimates of $\theta$, its standard error and confidence bounds, can
 be obtained directly from this approximation of the posterior. 
 
@@ -343,7 +343,7 @@ against samples of $\sigma$ (Fig. \ref{postdist.fig}):
 plot(out[,1], out[,2])
 \end{verbatim}
 The marginal distribution of each parameter is approximated by just
-examining the samples of this particular parameter – you can visualize
+examining the samples of this particular parameter. You can visualize
 it by plotting a histogram of the samples (Fig. \ref{plotsofPD.fig} a and b):
 \begin{verbatim}
 par(mfrow=c(1,2))
@@ -372,7 +372,7 @@ reaches its stationary distribution very quickly – the chains look
 phase visually (but we will see examples further on where the burn-in
 is clearer) and you may just discard the first 500 draws to be sure
 you only use samples from the posterior distribution. The mean of the
-remaining samples are your estimates of mu and sig:
+remaining samples are your estimates of $\mu$ and $\sigma$:
 \begin{verbatim}
 > summary(mod[501:10000,])
        mu                      sig
@@ -411,7 +411,7 @@ left'' and so on
 \subsection{ Metropolis-Hastings sampling   }
 
 Although it is applicable to a wide range of problems, the limitations
-of Gibbs sampling are immediately obvious – what if we do not want to
+of Gibbs sampling are immediately obvious: what if we do not want to
 use conjugate priors (or what if we cannot recognize the full
 conditional distribution as a parametric distribution, or simply do
 not want to worry about these issues)? The most general solution is to
@@ -471,7 +471,7 @@ higher posterior probability density. The interested reader should
 look up these algorithms in \citet{robert_casella:2004} or
 \citet{robert_casella:2010}.
 
-Building a MH sampler can be broken down into several steps. We are going to demonstrate these steps using a different but still simple and common model – the logit-normal or logistic regression model. For simplicity, assume that
+Building a MH sampler can be broken down into several steps. We are going to demonstrate these steps using a different but still simple and common model: the logit-normal or logistic regression model. For simplicity, assume that
 \[
 y \sim \mbox{Bern}(\exp(\theta)/(1+ exp(\theta)))
 \]
@@ -554,7 +554,7 @@ The reason we sum the logs of the likelihood and the prior, rather than multiply
 Comparing MH sampling to Gibbs sampling, where all draws from the
 conditional distribution are used, in the MH algorithm we discard a
 portion of the candidate values, which inherently makes in less
-efficient than Gibbs sampling – the price you pay for its increased
+efficient than Gibbs sampling -- the price you pay for its increased
 generality.  In Step 1 of the MH sampler we had to choose a variance,
 $\delta$, for the Normal proposal distribution. Choice of the
 parameters that define our candidate distribution is also referred to
@@ -620,11 +620,11 @@ $y_{ij}$, from $i=1,2,\ldots,n$ plots \begin{comment} Rahel: I put
 y_{ij} \sim \mbox{Poisson}(\lambda_{ij})
 \]
 \[
-\lambda_{ij} = \exp (\alpha_j + \beta x_i)
+\lambda_{ij} = \exp (\alpha_i + \beta x_{ij})
 \]
 XXX INDEXING OF x should be ij here??? XXXXXX
 Let's use Normal priors on $\alpha$ and $\beta$,  \[
-\alpha_j \sim \mbox{Normal} (\mu_{\alpha}, \sigma_{\alpha})
+\alpha_i \sim \mbox{Normal} (\mu_{\alpha}, \sigma_{\alpha})
 \]
 and
 \[
@@ -632,7 +632,7 @@ and
 \].
 
 Since we want to estimate the random effect in this model, we do not
-specify $\mu_a$ and $\sigma_a$, but instead, estimate them as well, so we have
+specify $\mu_{\alpha}$ and $\sigma_{\alpha}$, but instead, estimate them as well, so we have
 to specify hyperpriors for these parameters:
 \begin{eqnarray*}
 \mu_{\alpha}  &\sim &  \mbox{Norm}(\mu_0, \sigma_0)  \\
@@ -651,21 +651,22 @@ components:
 Rahel: check these eqns out , I set it using eqnarray 
 \end{comment}
 \begin{eqnarray*}
-[\alpha_1|\alpha_2,\alpha_3,\ldots,\alpha_j,\beta,{\bf y}] & \propto &   [{\bf y}_{1}|\alpha_1,\beta] * [\alpha_1] \\
-	 & \propto  &   \mbox{Poisson}({\bf y}_{1}| \exp(\alpha_1 + \beta x_i)) * \mbox{Norm}(\alpha_1|\mu_{\alpha} , \sigma_{\alpha})
+[\alpha_1|\alpha_2,\alpha_3,\ldots,\alpha_i,\beta,{\bf y}_{1}] & \propto &   [{\bf y}_{1}|\alpha_1,\beta] * [\alpha_1] \\
+	 & \propto  &   \mbox{Poisson}({\bf y}_{1}| \exp(\alpha_1 + \beta {\bf x}_1)) * \mbox{Norm}(\alpha_1|\mu_{\alpha} , \sigma_{\alpha})
 \end{eqnarray*}
-where ${\bf y}_{1} = (y_{11},y_{21}, \ldots, y_{n1})$ is the vector of
-observed counts for site $j=1$ and, in general, ${\bf y}_{j}$ is the
-vector of all counts for site $j$. The other full conditionals for
-each $\alpha_{j}$ are constructed similarly:
+where ${\bf y}_{1} = (y_{11},y_{12}, \ldots, y_{1n})$ is the vector of
+observed counts for site $i=1$ and, in general, ${\bf y}_{i}$ is the
+vector of all counts for site $i$. The other full conditionals for
+each $\alpha_{i}$ are constructed similarly:
 \begin{comment} 
 Rahel: I think the indexing is out of order. you
   should have ``groups'' be the first index, i.e., ``i'' in this case,
   and ``replicates'' being the 2nd index, what you have as ``j''
+  I corrected the indexing
 \end{comment}
 \begin{eqnarray*}
-[\alpha_2|\alpha_1,\alpha_3,\ldots,\alpha_j,\beta,{\bf y}] & \propto&  [{\bf y}_{2}|\alpha_2,\beta] * [\alpha_2] \\
-	 & \propto  & \mbox{Poisson}({\bf y}_{2}| \exp(\alpha_2 + \beta x_i)) * \mbox{Norm}(\alpha_2|\mu_{\alpha}, \sigma_{\alpha})
+[\alpha_2|\alpha_1,\alpha_3,\ldots,\alpha_i,\beta,{\bf y}_{2}] & \propto&  [{\bf y}_{2}|\alpha_2,\beta] * [\alpha_2] \\
+	 & \propto  & \mbox{Poisson}({\bf y}_{2}| \exp(\alpha_2 + \beta {\bf x}_2)) * \mbox{Norm}(\alpha_2|\mu_{\alpha}, \sigma_{\alpha})
 \end{eqnarray*}
 and so on for all elements of ${\bf \alpha}$. The full-conditional for $\beta$ is:
 \begin{eqnarray*}
@@ -685,42 +686,43 @@ Since we assumed $\alpha$ to come from a Normal distribution, the choice of prio
 
 Now let's build the updating steps for these full conditionals. Again, for the MH steps that update $\alpha$ and $\beta$ we use Normal proposal distributions with standard deviations $\delta_{a}$ and $\delta_{b}$.
 
-First, we set the initial values $\alpha^{(0)}$ and $\beta^{(0)}$. Then, starting with $\alpha_1$, we draw $a_1^{(1)}$ from $\mbox{Norm}(\alpha_1^{(0)}, \delta_{a})$, calculate the conditional posterior density of $\alpha_1^{(0)}$ and $\alpha_1^{(1)}$  and compare their ratios,
+First, we set the initial values $\alpha^{(0)}$ and $\beta^{(0)}$. Then, starting with $\alpha_1$, we draw $\alpha_1^{(1)}$ from $\mbox{Norm}(\alpha_1^{(0)}, \delta_{a})$, calculate the conditional posterior density of $\alpha_1^{(0)}$ and $\alpha_1^{(1)}$  and compare their ratios,
 \[
-r = \frac{\mbox{Poisson}({\bf y}_{1}|exp(\alpha_1^{(1)} + \beta x_i)) *
-  \mbox{Norm}(\alpha_1^{(1)}|\mu_{\alpha}, \sigma_{\alpha})} {\mbox{Poisson}({\bf y}_{1}|exp(\alpha_1^{(0)} + \beta x_i)) * \mbox{Norm}(\alpha_1^{(0)}|\mu_{\alpha}, \sigma_{\alpha})}
+r = \frac{\mbox{Poisson}({\bf y}_{1}|exp(\alpha_1^{(1)} + \beta {\bf x}_1)) *
+  \mbox{Norm}(\alpha_1^{(1)}|\mu_{\alpha}, \sigma_{\alpha})} {\mbox{Poisson}({\bf y}_{1}|exp(\alpha_1^{(0)} + \beta {\bf x}_1)) * \mbox{Norm}(\alpha_1^{(0)}|\mu_{\alpha}, \sigma_{\alpha})}
 \]
-and accept $a_1^{(1)}$ with probability $min(r,1)$. We repeat this for all a's.
+and accept $\alpha_1^{(1)}$ with probability $min(r,1)$. We repeat this for all $\alpha$.
 
-For $b$, we draw $b_1^{(1)}$ from $\mbox{Norm} (b^{(0)}, \delta_{b})$, compare the posterior densities of $b^{(0)}$ and $b^{(1)}$,
+For $\beta$, we draw $\beta_1^{(1)}$ from $\mbox{Norm} (\beta^{(0)}, \delta_{b})$, compare the posterior densities of $\beta^{(0)}$ and $\beta^{(1)}$,
 \[
-r = \frac{\mbox{Poisson}({\bf y}|exp(a + b_1^{(1)}{\bf x}))
-  *\mbox{Norm}(b_1^{(1)}|\mu_b, \sigma_b)} { \mbox{Poisson}({\bf
-    y}|exp(a + b_1^{(0)}{\bf x})) *\mbox{Norm}(b_1^{(0)}|\mu_b, \sigma_b)},
+r = \frac{\mbox{Poisson}({\bf y}|exp(\alpha + \beta_1^{(1)}{\bf x}))
+  *\mbox{Norm}(\beta_1^{(1)}|\mu_{\beta}, \sigma_{\beta})} { \mbox{Poisson}({\bf
+    y}|exp(a + \beta_1^{(0)}{\bf x})) *\mbox{Norm}(\beta_1^{(0)}|\mu_{\beta}, \sigma_{\beta})},
 \]
-and accept $b_1^{(1)}$  with probability $min(r,1)$.
+and accept $\beta_1^{(1)}$  with probability $min(r,1)$.
 
-For $\mu_a$ and $\sigma_a$, we sample directly from the full conditional distributions (Eq. \ref{mcmc.eq.mu-posterior}  and Eq. \ref{eq. 3}):
+For $\mu_{\alpha}$ and $\sigma_{\alpha}$, we sample directly from the full conditional distributions (Eq. \ref{mcmc.eq.mu-posterior}  and Eq. \ref{eq. 3}):
 \[
-\mu_a^{(1)} \sim \mbox{Norm} (\mu_n, \sigma_n)
+\mu_{\alpha}^{(1)} \sim \mbox{Norm} (\mu_n, \sigma_n)
 \]
 where 
-\[\mu_n =  \frac{\sigma_a^{(0)}}  {\sigma_a^{(0)}   +n_a  *  \sigma_0} *  \mu_0 +  \frac{n_a * \sigma_0} {\sigma_a^{(0)}   +n_a* \sigma_0} *\bar{a}^{(1)}
+\[\mu_n =  \frac{\sigma_{\alpha}^{(0)}}  {\sigma_{\alpha}^{(0)}   +n_{\alpha}  *  \sigma_0} *  \mu_0 +  \frac{n_{\alpha} * \sigma_0} {\sigma_{\alpha}^{(0)}   +n_{\alpha}* \sigma_0} *\bar{\alpha}^{(1)}
 \]
 and 
 \[
-\sigma_n= \frac{\sigma_a^{(0)}  * \sigma_0 } {\sigma_a^{(0)}  + n* \sigma_0}
+\sigma_n= \frac{\sigma_{\alpha}^{(0)}  * \sigma_0 } {\sigma_{\alpha}^{(0)}  + n* \sigma_0}
 \]
-Here, $\bar{a}$ is the current mean of the vector $\bf{a}$, which we
-updated before, and $n_a$ is the length of $\bf{a}$. 
-For $\sigma_a$ we use $\sigma_a^{(1)}\sim InvGamma (a_n, b_n)$,
-where  $a_n = n_a/2   + a_0$, and $b_n = 0.5 ( \displaystyle\sum\limits_{j=1}^{n_a} a_j^{(1)}-\mu_a^{(1)})^2+ b_0$.
+Here, $\bar{\alpha}$ is the current mean of the vector $\bf{\alpha}$, which we
+updated before, and $n_{\alpha}$ is the length of $\bf{\alpha}$. 
+For $\sigma_{\alpha}$ we use $\sigma_{\alpha}^{(1)}\sim InvGamma (a_n, b_n)$,
+where  $a_n = n_a/2   + a_0$, and $b_n = 0.5 ( \displaystyle\sum\limits_{i=1}^{n_{\alpha}} \alpha_i^{(1)}-\mu_{\alpha}^{(1)})^2+ b_0$.
 \begin{comment} Rahel: in preceeding setntence you are using ``a'' for
   parameters of the prior distribution of ``sigma'' (and also ``b'' is
   a prior parameter) -- but ``a'' and ``b'' have been previously
   defined as regression parameter.
 Recommend changing all ``a'' and ``b'' in the original model to
 $\alpha$ and $\beta$ (I realize a pain in the ass
+done
 \end{comment}
 
 
