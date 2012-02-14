@@ -127,7 +127,7 @@ distribution:
 \mu \sim \mbox{Normal}(\mu_0, \sigma_{0}^{2})
 \]
 If $\mu_{0}$ and $\sigma_{0}^{2}$ are fixed, the posterior for $\mu$
-has the following form (for some of the algebra behind this, see Chapt. 2 in \citep{gelman_etal:2004}):
+has the following form (for some of the algebra behind this, see Chapt. 2 in \citet{gelman_etal:2004}):
 \begin{equation}
 \mu|y \sim \mbox{Normal}(\mu_{n}, \sigma_{n}^{2})
 \label{mcmc.eq.mu-posterior}
@@ -322,10 +322,8 @@ for both parameters.
 \label{mcmc.panel.gibbs1}
 \end{panel}
 
-This is it! You can go ahead and simulate some data, $y \sim \mbox{Normal}(5, 0.5)$ and then use the code \mbox{\tt NormGibbs.R} in the {\bf
-  R} package \mbox{\tt scrbook}
-to and run your first
-Gibbs sampler. 
+This is it! You can go ahead and simulate some data, $y \sim \mbox{Normal}(5, 0.5)$ and then use the function \mbox{\tt NormGibbs.R} in the {\bf
+  R} package \mbox{\tt scrbook} to run your first Gibbs sampler. 
 
 \begin{verbatim}
 set.seed(13)
@@ -352,7 +350,7 @@ plot(out[,1], out[,2])
 \end{verbatim}
 The marginal distribution of each parameter is approximated by just
 examining the samples of this particular parameter. You can visualize
-it by plotting a histogram of the samples (Fig. \ref{plotsofPD.fig} a and b):
+it by plotting a histogram of the samples (Fig. \ref{plotsofPD.fig} upper left and right):
 \begin{verbatim}
 par(mfrow=c(1,2))
 hist(out[,1]); hist (out[,2])
@@ -366,10 +364,10 @@ practice, that means you have to throw out some of the initial samples
 about convergence diagnostics. For now, you can use the
 \verb#plot(out[,1])# or \verb#plot(out[,2])# command to make a time
 series plot of the samples of each parameter and visually assess how
-many of the initial samples you should discard. Fig. \ref{plotsofPD.fig} c and d shows
+many of the initial samples you should discard. Fig. \ref{plotsofPD.fig} bottom left and right shows
 plots for the estimates of $\mu$ and $\sigma$ from our simulated data set;
 you see that in this simple example the Markov chain apparently
-reaches its stationary distribution very quickly – the chains look
+reaches its stationary distribution very quickly -- the chains look
 'grassy' seemingly from the start. It is hard to discern a burn-in
 phase visually (but we will see examples further on where the burn-in
 is clearer) and you may just discard the first 500 draws to be sure
@@ -471,7 +469,7 @@ look up these algorithms in \citet{robert_casella:2004} or
 
 Building a MH sampler can be broken down into several steps. We are going to demonstrate these steps using a different but still simple and common model: the logit-normal or logistic regression model. For simplicity, assume that
 \[
-y \sim \mbox{Bern}(\frac{\exp(\theta)}{1+ exp(\theta)})
+y \sim \mbox{Bern} \left(\frac{\exp(\theta)}{1+ exp(\theta)}\right)
 \]
 and
 \[
@@ -611,6 +609,7 @@ Other than graphically, you can easily check acceptance rates for the parameters
 
 One weakness of the MH sampler is that formulating the joint posterior when evaluating whether to accept or reject the candidate values for $\theta$ becomes increasingly complex or inefficient as the number of parameters in a model increases. As you already saw in Chapter 2, in these cases you can simply combine MH sampling and Gibbs sampling. You can use Gibbs sampling to break down your high-dimensional parameter space into easy-to-handle one-dimensional conditional distributions and use MH sampling for these conditional distributions. Better yet, if you have some conjugacy in your model, you can use the more efficient Gibbs sampling for these parameters and one-dimensional MH for all the others. You have already seen the basics of how to build both types of algorithms, so we can jump straight into an example here and build a Metropolis-within-Gibbs algorithm.
 
+XXXX Maybe we make this a subsubsection... since it's still part of the 'Types of MCMC samplers' section...
 \section{ GLMMs: Poisson regression with a random effect }
 
 Let's assume a model that gets us closer to the problem we ultimately
@@ -620,7 +619,7 @@ $y_{ij}$, from $i=1,2,\ldots,n$ plots \begin{comment} Rahel: I put
   should have a convention for ``number of sites'' and use that
   throughout the book?  I think we use j=1,..,J for traps .... I can't
   remember what I used in Ch. 2. but maybe i'm overthinking
-  this. lets talk later. \end{comment} in $j$ different study sites, and we believe that the counts are influenced by some plot-specific covariate, $x$, but that there is also a random site effect. So our model is:
+  this. lets talk later. \end{comment} in $j$ different study sites, and we believe that the counts are influenced by some plot-specific covariate, ${\bf x}$, but that there is also a random site effect. So our model is:
 \[
 y_{ij} \sim \mbox{Poisson}(\lambda_{ij})
 \]
@@ -636,38 +635,29 @@ and
 \beta \sim \mbox{Normal} (\mu_{\beta}, \sigma_{\beta})
 \].
 
-Since we want to estimate the random effect in this model, we do not
+Since we want to estimate the random effect on $\alpha$ in this model, we do not
 specify $\mu_{\alpha}$ and $\sigma_{\alpha}$, but instead, estimate them as well, so we have
 to specify hyperpriors for these parameters:
 \begin{eqnarray*}
 \mu_{\alpha}  &\sim &  \mbox{Norm}(\mu_0, \sigma_0)  \\
 \sigma_{\alpha} & \sim & \mbox{InvGamma}(a_0, b_0)
 \end{eqnarray*}
-% In this entire section below I am unsure of the indexing of a, y and
-% x. I know what I'm trying to say but I'm not sure I'm saying it
-% correctly... could someone please check? So what I am trying to say,
-% for example in the expression for a1 (a at j=1), is that you need
-% all the yi's at j=1, and all the x at j=1.
-With the model fully specified, we can compile the full conditionals,
+Note that for simplicity we assume that $\beta$ is constant across the $j$ study sites, and for analysis we would set $\mu_{\beta}$ and $\sigma_{\beta}$.
+With the model completely specified, we can compile the full conditionals,
 breaking the multi-dimensional parameter space into one-dimensional
 components:
-%%this works but it doesn't look paritcularly pretty
-\begin{comment} 
-Rahel: check these eqns out , I set it using eqnarray 
-\end{comment}
+
 \begin{eqnarray*}
 [\alpha_1|\alpha_2,\alpha_3,\ldots,\alpha_i,\beta,{\bf y}_{1}] & \propto &   [{\bf y}_{1}|\alpha_1,\beta] * [\alpha_1] \\
 	 & \propto  &   \mbox{Poisson}({\bf y}_{1}| \exp(\alpha_1 + \beta {\bf x}_1)) * \mbox{Norm}(\alpha_1|\mu_{\alpha} , \sigma_{\alpha})
 \end{eqnarray*}
 where ${\bf y}_{1} = (y_{11},y_{12}, \ldots, y_{1n})$ is the vector of
 observed counts for site $i=1$ and, in general, ${\bf y}_{i}$ is the
-vector of all counts for site $i$. The other full conditionals for
+vector of all counts for site $i$; analogous,${\bf x}_{i}$ is the
+vector of all observations of the covariate for site $i$. The other full conditionals for
 each $\alpha_{i}$ are constructed similarly:
 \begin{comment} 
-Rahel: I think the indexing is out of order. you
-  should have ``groups'' be the first index, i.e., ``i'' in this case,
-  and ``replicates'' being the 2nd index, what you have as ``j''
-  I corrected the indexing
+Does it look right now?
 \end{comment}
 \begin{eqnarray*}
 [\alpha_2|\alpha_1,\alpha_3,\ldots,\alpha_i,\beta,{\bf y}_{2}] & \propto&  [{\bf y}_{2}|\alpha_2,\beta] * [\alpha_2] \\
@@ -675,7 +665,7 @@ Rahel: I think the indexing is out of order. you
 \end{eqnarray*}
 and so on for all elements of ${\bf \alpha}$. The full-conditional for $\beta$ is:
 \begin{eqnarray*}
-[\beta|\alpha,y] &\propto & [{\bf y}|\alpha,\beta] * [\beta] \\
+[\beta|\alpha,{\bf y}] &\propto & [{\bf y}|\alpha,\beta] * [\beta] \\
 	 &\propto& \mbox{Poisson}({\bf y}|exp(\alpha + \beta {\bf x})) *\mbox{Norm}(\beta|\mu_{\beta}, \sigma_{\beta})
 \end{eqnarray*}
 
@@ -689,47 +679,38 @@ vector ${\bf \alpha}$:
 \]
 Since we assumed $\alpha$ to come from a Normal distribution, the choice of priors for $\mu_{\alpha}$ (Normal) and $\sigma_{\alpha}$ (Inverse-Gamma) leads to the same conjugacy we observed in our initial Normal model, so that both hyperparameters can be updated using Gibbs sampling.
 
-Now let's build the updating steps for these full conditionals. Again, for the MH steps that update $\alpha$ and $\beta$ we use Normal proposal distributions with standard deviations $\delta_{a}$ and $\delta_{b}$.
+Now let's build the updating steps for these full conditionals. Again, for the MH steps that update $\alpha$ and $\beta$ we use Normal proposal distributions with standard deviations $\delta_{\alpha}$ and $\delta_{\beta}$.
 
-First, we set the initial values $\alpha^{(0)}$ and $\beta^{(0)}$. Then, starting with $\alpha_1$, we draw $\alpha_1^{(1)}$ from $\mbox{Norm}(\alpha_1^{(0)}, \delta_{a})$, calculate the conditional posterior density of $\alpha_1^{(0)}$ and $\alpha_1^{(1)}$  and compare their ratios,
+First, we set the initial values $\alpha^{(0)}$ and $\beta^{(0)}$. Then, starting with $\alpha_1$, we draw $\alpha_1^{(1)}$ from $\mbox{Norm}(\alpha_1^{(0)}, \delta_{\alpha})$, calculate the conditional posterior density of $\alpha_1^{(0)}$ and $\alpha_1^{(1)}$  and compare their ratios,
 \[
 r = \frac{\mbox{Poisson}({\bf y}_{1}|exp(\alpha_1^{(1)} + \beta {\bf x}_1)) *
   \mbox{Norm}(\alpha_1^{(1)}|\mu_{\alpha}, \sigma_{\alpha})} {\mbox{Poisson}({\bf y}_{1}|exp(\alpha_1^{(0)} + \beta {\bf x}_1)) * \mbox{Norm}(\alpha_1^{(0)}|\mu_{\alpha}, \sigma_{\alpha})}
 \]
 and accept $\alpha_1^{(1)}$ with probability $min(r,1)$. We repeat this for all $\alpha$.
 
-For $\beta$, we draw $\beta_1^{(1)}$ from $\mbox{Norm} (\beta^{(0)}, \delta_{b})$, compare the posterior densities of $\beta^{(0)}$ and $\beta^{(1)}$,
+For $\beta$, we draw $\beta^{(1)}$ from $\mbox{Norm} (\beta^{(0)}, \delta_{\beta})$, compare the posterior densities of $\beta^{(0)}$ and $\beta^{(1)}$,
 \[
 r = \frac{\mbox{Poisson}({\bf y}|exp(\alpha + \beta_1^{(1)}{\bf x}))
-  *\mbox{Norm}(\beta_1^{(1)}|\mu_{\beta}, \sigma_{\beta})} { \mbox{Poisson}({\bf
-    y}|exp(a + \beta_1^{(0)}{\bf x})) *\mbox{Norm}(\beta_1^{(0)}|\mu_{\beta}, \sigma_{\beta})},
+  *\mbox{Norm}(\beta^{(1)}|\mu_{\beta}, \sigma_{\beta})} { \mbox{Poisson}({\bf
+    y}|exp(a + \beta^{(0)}{\bf x})) *\mbox{Norm}(\beta^{(0)}|\mu_{\beta}, \sigma_{\beta})},
 \]
-and accept $\beta_1^{(1)}$  with probability $min(r,1)$.
+and accept $\beta^{(1)}$  with probability $min(r,1)$.
 
 For $\mu_{\alpha}$ and $\sigma_{\alpha}$, we sample directly from the full conditional distributions (Eq. \ref{mcmc.eq.mu-posterior}  and Eq. \ref{eq. 3}):
 \[
 \mu_{\alpha}^{(1)} \sim \mbox{Norm} (\mu_n, \sigma_n)
 \]
 where 
-\[\mu_n =  \frac{\sigma_{\alpha}^{(0)}}  {\sigma_{\alpha}^{(0)}   +n_{\alpha}  *  \sigma_0} *  \mu_0 +  \frac{n_{\alpha} * \sigma_0} {\sigma_{\alpha}^{(0)}   +n_{\alpha}* \sigma_0} *\bar{\alpha}^{(1)}
+\[\mu_n =  \frac{\sigma_{\alpha}^{(0)}}  {\sigma_{\alpha}^{(0)}   +n_{\alpha}    \sigma_0} *  \mu_0 +  \frac{n_{\alpha}  \sigma_0} {\sigma_{\alpha}^{(0)}   +n_{\alpha} \sigma_0} *\bar{\alpha}^{(1)}
 \]
 and 
 \[
-\sigma_n= \frac{\sigma_{\alpha}^{(0)}  * \sigma_0 } {\sigma_{\alpha}^{(0)}  + n* \sigma_0}
+\sigma_n= \frac{\sigma_{\alpha}^{(0)}   \sigma_0 } {\sigma_{\alpha}^{(0)}  + n \sigma_0}
 \]
 Here, $\bar{\alpha}$ is the current mean of the vector $\bf{\alpha}$, which we
 updated before, and $n_{\alpha}$ is the length of $\bf{\alpha}$. 
 For $\sigma_{\alpha}$ we use $\sigma_{\alpha}^{(1)}\sim InvGamma (a_n, b_n)$,
-where  $a_n = n_a/2   + a_0$, and $b_n = 0.5 ( \displaystyle\sum\limits_{i=1}^{n_{\alpha}} \alpha_i^{(1)}-\mu_{\alpha}^{(1)})^2+ b_0$.
-\begin{comment} Rahel: in preceeding setntence you are using ``a'' for
-  parameters of the prior distribution of ``sigma'' (and also ``b'' is
-  a prior parameter) -- but ``a'' and ``b'' have been previously
-  defined as regression parameter.
-Recommend changing all ``a'' and ``b'' in the original model to
-$\alpha$ and $\beta$ (I realize a pain in the ass
-done
-\end{comment}
-
+where  $a_n = n_a/2   + a_0$, and $b_n = 0.5  \displaystyle\sum\limits_{i=1}^{n_{\alpha}} (\alpha_i^{(1)}-\mu_{\alpha}^{(1)})^2+ b_0$.
 
 
 We repeat these steps over $T$ iterations of the MCMC algorithm.
