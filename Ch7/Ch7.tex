@@ -376,14 +376,14 @@ is clearer) and you may just discard the first 500 draws to be sure
 you only use samples from the posterior distribution. The mean of the
 remaining samples are your estimates of $\mu$ and $\sigma$:
 \begin{verbatim}
-> summary(mod[501:10000,])
-       mu                      sig
- Min.   : 4.936      Min.   : 0.4569
- 1st Qu.: 4.984      1st Qu.: 0.4889
- Median : 4.994      Median : 0.4961
- Mean   : 4.994      Mean   : 0.4964
- 3rd Qu.: 5.005      3rd Qu.: 0.5037
- Max.   : 5.062      Max.   : 0.5356
+summary(mod[501:10000,])
+       mu             sig        
+ Min.   :4.935   Min.   :0.4652  
+ 1st Qu.:4.988   1st Qu.:0.4930  
+ Median :4.998   Median :0.5006  
+ Mean   :4.998   Mean   :0.5008  
+ 3rd Qu.:5.009   3rd Qu.:0.5084  
+ Max.   :5.062   Max.   :0.5486  
 \end{verbatim}
 
 \begin{figure}
@@ -399,16 +399,12 @@ remaining samples are your estimates of $\mu$ and $\sigma$:
 \includegraphics[width=2.5in]{Ch7/figs/plotsofPD}
 \end{center}
 \caption{
-Plots of the posterior distributions of $\mu$ (panel a) and
-  $\sigma$ (b)
-  from a Normal model and time series plots of $\mu$ (c) and $\sigma$ (d).}
+Plots of the posterior distributions of $\mu$ (upper left) and
+  $\sigma$ (upper right)
+  from a Normal model and time series plots of $\mu$ (lower left) and $\sigma$ (lower right).}
 \label{plotsofPD.fig}
 \end{figure}
-\begin{comment} 
-Rahel: there is no (a) (b) etc.. in the figure.
-might want to remake figure and label (a) (b) or else say ``upper
-left'' and so on
-\end{comment}
+
 
 \subsection{ Metropolis-Hastings sampling   }
 
@@ -425,8 +421,8 @@ generates samples from a known proposal distribution, say $h(\theta)$,
 that depends on $\theta$ at $t-1$. The $t^{th}$ sample is accepted with probability. 
 
 \[
-r = \frac{ [\theta^{(t-1)}] h(\theta^{(t)}|\theta^{(t-1)})}
-    {[\theta^{(t)}] h(\theta^{(t-1)}|\theta^{(t)}) }
+r = \frac{ [\theta^{(t-1)}|y] h(\theta^{(t)}|\theta^{(t-1)})}
+    {[\theta^{(t)}|y] h(\theta^{(t-1)}|\theta^{(t)}) }
 \]
 
 Proposal distributions can be absolutely
@@ -475,7 +471,7 @@ look up these algorithms in \citet{robert_casella:2004} or
 
 Building a MH sampler can be broken down into several steps. We are going to demonstrate these steps using a different but still simple and common model: the logit-normal or logistic regression model. For simplicity, assume that
 \[
-y \sim \mbox{Bern}(\exp(\theta)/(1+ exp(\theta)))
+y \sim \mbox{Bern}(\frac{\exp(\theta)}{1+ exp(\theta)})
 \]
 and
 \[
@@ -496,6 +492,13 @@ In our example,
 \[
 r = \frac{\mbox{Bern}(y|\theta^{(t)}) * \mbox{Normal}(\theta^{(t)}|\mu, \sigma)} {\mbox{Bern}(y|\theta^{(t-1)}) * \mbox{Normal}(\theta^{(t-1)}|\mu, \sigma)}
 \]
+
+XXXX Andy, is this notation ok, or should it be 
+\[
+r = \frac{\mbox{Bern}(y;\theta^{(t)}) * \mbox{Normal}(\theta^{(t)};\mu, \sigma)} {\mbox{Bern}(y;\theta^{(t-1)}) * \mbox{Normal}(\theta^{(t-1)};\mu, \sigma)}
+\]
+XXXXXX
+
 {\bf Step 3}: Set
 \begin{eqnarray*}
 \theta^{(t)}  &= &   \theta^{(t)} \mbox{ with probability min(r,1)}\\
@@ -517,14 +520,14 @@ The {\bf R} code for this MH sampler is provided in Panel 2 XXXX.
 %\begin{minipage}{2.5in}
 {\small
 \begin{verbatim}
-Logreg.MH<-function(y=y, mu0=mu0, sig0=sig0, niter=niter) {
+Logreg.MH<-function(y=y, mu0=mu0, sig0=sig0, delta=delta, niter=niter) {
 
 out<-c()
 
 theta<-runif(1, -3,3) #initial value
 
 for (iter in 1:niter){
-theta.cand<-rnorm(1, theta, 0.2)
+theta.cand<-rnorm(1, theta, delta)
 
 loglike<-sum(dbinom(y, 1, exp(theta)/(1+exp(theta)), log=TRUE))
 logprior <- dnorm(theta,mu0 ,sig0, log=TRUE)
