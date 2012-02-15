@@ -1,5 +1,5 @@
-pdflatex previewCh1 -include-directory=../ -output-directory=../
-bibtex ../previewCh1 -include-directory=../
-pdflatex previewCh1.tex -include-directory=../
-open previewCh1.pdf
-rm ../previewCh1.aux ../previewCh1.bbl ../previewCh1.blg ../previewCh1.log ../previewCh1.out ../previewCh1.pdf
+pdflatex previewCh1split -include-directory=../ -output-directory=../
+bibtex ../previewCh1split -include-directory=../
+pdflatex previewCh1split.tex -include-directory=../
+open previewCh1split.pdf
+rm ../previewCh1split.aux ../previewCh1split.bbl ../previewCh1split.blg ../previewCh1split.log ../previewCh1split.out ../previewCh1split.pdf
