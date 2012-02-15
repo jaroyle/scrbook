@@ -9,12 +9,13 @@ Fake buffered river corridor for ecological distance stuff
 }
 \usage{data(fakecorridor)}
 \format{
-R binary 
+R data format
 }
 \details{
-produces two files called "l1.old" and "l2.old"
+  produces two files called "l1" and "l2" which are both of type
+  "SpatialLines" from the package "sp"
 
-needs library "sp"  --
+  Requires library "sp"  --
 }
 \source{
 %%  ~~ reference to a publication or URL from which the data were obtained ~~
