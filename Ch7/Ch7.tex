@@ -1329,7 +1329,7 @@ trap locations (\mbox{\tt trapmat}) and
 detection data (\mbox{\tt bearArray}) and build the augmented $M \times J$ array of individual 
 encounter histories:
 \begin{verbatim}
-M=500
+M=700
 bearmat<-apply(bearArray, 1:2, sum) #summarizes captures across occasions
 Xaug<-matrix(0, nrow=M, ncol=dim(trapmat)[1])
 Xaug[1:dim(bearmat)[1],]<-bearmat  #create augmented data set
@@ -1350,7 +1350,7 @@ yu<- max(trapmat[,2])+ 20
 Finally, source the MCMC code for the binomial encounter model algorithm 
 with the cloglog link and run 5000 iterations. This should take 
 approximately 25 minutes.
-
+%need to look at tuning... not happy
 \begin{verbatim}
  mod0<-SCR0binom.cl(y=Xaug, X=trapmat, M=M, xl=xl, xu=xu, yl=yl, 
                    yu=yu, K=8, delta=c(0.1, 0.05, 2), niter=5000)
@@ -1374,7 +1374,7 @@ Start by looking at time series plots of your Markov chains using
  similar to what we did before using the \verb#hist()# and \verb#plot()# 
  commands (Fig. \ref{mcmc.fig.timeseries}). Time series plots will tell 
  you several things:
-First, recall from Sect. XXXXXX that the way the chains move 
+First, recall from Sect. \ref{Metropolis-Hastings sampling} that the way the chains move 
 through the parameter space gives you an idea of whether your MH 
 steps are well tuned. If chains were constant over many iterations 
 you would need to decrease the tuning parameter of the (Normal) 
@@ -1392,7 +1392,7 @@ parameter so that the parameter space is explored more efficiently.
 \end{figure}
 
 
-Second, you will be able to see if your chains converged and how many initial simulations you have to discard as burn-in. In the case of the chains shown in Fig. \ref{timeseries.fig}, we would probably consider the first 750 -- 1000 iterations as burn-in, as afterwards the chains seem to be fairly stationary.
+Second, you will be able to see if your chains converged and how many initial simulations you have to discard as burn-in. In the case of the chains shown in Fig. \ref{mcmc.fig.timeseries}, we would probably consider the first 750 -- 1000 iterations as burn-in, as afterwards the chains seem to be fairly stationary.
 
 \subsection{Posterior density plots}
 The \verb#plot()# command also produces posterior density plots and it is worthwhile to look at those carefully. For parameters with priors that have bounds (e.g. Uniform over some interval), you will be able to see if your choice of the prior is truncating the posterior distribution. In the context of SCR models, this will mostly involve our choice of $M$, the size of the augmented data set. If the posterior of $N$ has a lot of mass concentrated close to $M$ (or equivalently the posterior of $\psi$ has a lot of mass concentrated close to 1), as in the example in Fig. \ref{timeseries2.fig}, we have to re-run the analysis with a larger $M$.  A diffuse
@@ -1446,7 +1446,7 @@ obtain a reasonable effective sample size. Unfortunately, with many SCR models w
 Now that we checked that our chains apparently have converged and pretending 
 that we have generated enough samples from the posterior distribution, we 
 can look at the actual parameter estimates. The \verb#summary()# function 
-will return two sets of results: the mean parameter estimates, with their standard deviation, the naïve standard error -- i.e. your regular standard error calculated for $T$ (= number of iterations) 
+will return two sets of results: the mean parameter estimates, with their standard deviation, the na\'{i}ve standard error -- i.e. your regular standard error calculated for $T$ (= number of iterations) 
 samples without 
 accounting for serial autocorrelation -- and the 
 Time-series SE (in {\bf WinBUGS} 
@@ -1494,6 +1494,7 @@ we see that in spite of the high autocorrelation, the MC error for
 $\sigma$ is below the 1\% threshold, whereas for all other parameters, 
 MC errors are still above, another indication that for a thorough 
 analysis we should run a longer chain.
+
 Our algorithm gives us a posterior distribution of $N$, but we are usually 
 interested in the density, $D$. Density itself is not a parameter of our 
 model, but we can derive a posterior distribution for $D$ by dividing 
@@ -1528,11 +1529,12 @@ While inspecting the time series plot gives you a first idea of how well you tun
      sigma       lam0        psi          N
 0.44108822 0.77675535 0.00000000 0.01940388
 \end{verbatim}
- Recall (section XXXXXX?) that rejection rates should lie between 0.2 and 0.8, so our tuning seems to have been appropriate here. $\psi$ is never rejected since we update it with Gibbs sampling, where all candidate values are kept. And since $N$ is the sum of all $z_i$, all it takes for $N$ to change from one iteration to the next are small changes in the z-vector, so the rejection rate of $N$ is always low.
+ Recall (\ref{Metropolis-Hastings sampling}) that rejection rates should lie between 0.2 and 0.8, so our tuning seems to have been appropriate here. $\psi$ is never rejected since we update it with Gibbs sampling, where all candidate values are kept. And since $N$ is the sum of all $z_i$, all it takes for $N$ to change from one iteration to the next are small changes in the z-vector, so the rejection rate of $N$ is always low.
 If you have run several parallel chains, you can combine them into a single mcmc object using the \verb#mcmc.list()# command on the individual chains (note that each chain has to be converted to an mcmc object before combining them with \verb#mcmc.list()#). You can then easily obtain the Gelman-Rubin diagnostic \citep{gelman_etal:2004}, in {\bf WinBUGS} called R-hat, using \verb#gelman.diag()#, which 
 will indicate if all chains have converged to the same stationary distribution.
 For details on these and other functions, see the \mbox{\tt coda} manual, 
 which can be found (together with the package) on the CRAN mirror.
+%%maybe add in Geweke statistic here...
 
 \section{Manipulating the state-space}
 
@@ -1553,7 +1555,7 @@ use the actual state-space polygon to constrain out ${\bf s}_i$.
 otherwise, use raccoon example.} To illustrate that, let's look at a camera 
 trapping study of Florida panthers (\emph{Puma concolor coryi}) conducted 
 in the Picayune Strand Restoration Project (PSRP) area, southwest Florida 
-(Fig. \ref{pantercamera.fig}), by XXX, and financed by XXX. In the 1960ies 
+(Fig. \ref{mcmc.fig.pantercamera}), by XXX, and financed by XXX. In the 1960ies 
 the PSRP area was slated for housing development, but then bought back by 
 the State of Florida and is currently being restored to its original 
 hydrology and vegetation. In an effort to estimate the density of the 
@@ -1575,7 +1577,7 @@ from some external source, a polygon shapefile buffering your outermost
 trapping grid coordinates can easily be written in {\bf R}.
 
 If \mbox{\tt xmin}, \mbox{\tt xmax}, \mbox{\tt ymin} and 
-\mbox{\tt ymax}, mark the most extreme
+\mbox{\tt ymax} mark the most extreme
 $x$ and $y$ coordinates of your 
 trapping grid and $b$ is the distance you want to buffer with, load the 
 package \mbox{\tt shapefiles} \citep{stabler:2006} and issue the following
@@ -1647,13 +1649,14 @@ coordinates. To make sure that our initial values for {\bf s} also fall
 within the polygon of ${\cal S}$, we use the function \verb#runifpoint()# 
 from the package \mbox{\tt spatstat} \citep{baddeley_turner:2005}, 
 which generates random uniform points within a specified polygon. You'll 
-find this modified MCMC algorithm (\mbox{\tt SCR0poisSSp}) in the {\bf R} 
+find this modified MCMC algorithm (\mbox{\tt SCR0poisSSp()}) in the {\bf R} 
 package \mbox{\tt scrbook}.
+
 Finally, observe that we are converting candidate coordinates of ${\cal S}$ 
 back to meters to match the UTM polygon. In all previous examples, 
 for both the trap locations and the activity centers we have used UTM 
 coordinates divided by 1000 to estimate $\sigma$ on a km scale. This is 
-adequate for wide ranging individuals like bears. In other cases you 
+adequate for wide ranging species like bears. In other cases you 
 may center all coordinates on 0. No matter what kind of transformation you 
 use on your coordinates , make sure to always convert candidate values for 
 ${\cal S}$ back to the original scale (UTM) before running the 
@@ -1672,7 +1675,7 @@ just went through in this chapter (and quite a bit more). Looking through
 your model, {\bf WinBUGS} determines which parameters it can use standard 
 Gibbs sampling for (i.e. for conjugate full conditional distributions). 
 Then, it determines, in the following hierarchy, whether to use adaptive 
-rejection sampling, slice sampling or -- in the 'worst' case -- 
+rejection sampling, slice sampling or -- in the `worst' case -- 
 Metropolis-Hastings sampling for the other full conditionals 
 \citep{spiegelhalter_etal:2003}. If it uses MH sampling, it will 
 automatically tune the updater so that it works efficiently.
