@@ -14,6 +14,8 @@ R data format
 \details{
   produces two files called "l1" and "l2" which are both of type
   "SpatialLines" from the package "sp"
+  
+  Also has file "traps" which are 5 trap locations
 
   Requires library "sp"  --
 }
@@ -28,8 +30,6 @@ library("sp")
 library("rgeos")
 library("scrbook")
 data("fakecorridor")
-l1<-l1.old
-l2<-l2.old
 buffer<- 0.5
 par(mfrow=c(1,1))
 aa<-gUnion(l1,l2)
@@ -43,6 +43,7 @@ yg<-seq(10,0,,30)
 delta<-mean(diff(xg))
 pts<- cbind(sort(rep(xg,30)),rep(yg,30))
 points(pts,pch=20)
+points(traps$locs,pch=20,cex=2,col="red")
 
 in.pts<-point.in.polygon(pts[,1],pts[,2],pg.coords[,1],pg.coords[,2])
 points(pts[in.pts==1,],pch=20,col="red")
