@@ -1,39 +1,44 @@
-\name{Norm.Gibbs}
-\alias{Norm.Gibbs}
+\name{SCR0pois}
+\alias{SCR0pois}
 \title{
-Gibbs sampler for a Normal model 
+MCMC algorithm for basic spatial capture-recapture model
 }
 \description{
-Run a Gibbs sampler for a Normal model, y ~ Norm(mu, sigma2) with unknown mean and variance, using conjugate priors
+Runs the MCMC algorithm described in Ch7. section 7.5 for spatial capture-recapture model with Poisson encounter process
 }
 \usage{
-Norm.Gibbs(y, mu_0, sigma2_0, a,b,niter)
+SCR0pois(y,X,M, xl,xu,yl,yu,delta, niter)
 }
 \arguments{
   \item{y}{
-	A vector containing data
+	Matrix containing observation data, dimensions: M x J
 }
-  \item{mu_0}{
-    Mean of the Normal prior for mu
+  \item{X}{
+    2-dimensional matrix with X and Y coordinates for all Jtraps
 }
-  \item{sigma2_0}{
-    Variance of the Normal prior for mu
+  \item{M}{
+    size of the augmented data set
 }
-  \item{a}{
-    Shape parameter of the Inverse Gamma prior for sigma2
+  \item{xl, xu, yl, yu}{
+    outer coordinates of the state-space 
 }
-  \item{mu_0}{
-    Scale parameter of the Inverse Gamma prior for sigma2
+  \item{delta}{
+    vector containing tuning parameters for sigma (1), lam0 (2) and S (3)
 }
   \item{niter}{
-    Number of iterations to run the Gibbs sampler for
+    Number of iterations to run the algorithm for
 }
 }
 \value{
-  A matrix with one row per iteration and two columns, for mu and sigma. Note that the output returns sqrt(sigma2) = SD.
+  A matrix with one row per iteration and four columns, for sigma, lam0, psi and N. 
 }
 \details{
-  Starting values for mu and sigma are set at 1
+  Starting values are chosen at random within the function:
+S<-cbind(runif(M, xl, xu), runif(M,yl,yu))
+sigma<-runif(1,0.5,5)
+lam0<-runif(1,0.1,1)
+psi<-runif(1,0.2,0.8)
+z<-rbinom(M,1,psi)
 }
 \author{
 Rahel Sollmann

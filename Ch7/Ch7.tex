@@ -1249,8 +1249,8 @@ likelihood, $\mbox{Poisson}(y|\sigma,\lambda_0,{\bf s},z)$, we use a
 Binomial likelihood, $\mbox{Bin}(y| \sigma,\lambda_0,{\bf s},z; K)$, 
 in all the conditional distributions. As an example, Panel
 \ref{mcmc.panel.updatelam0} shows 
-the updating step for $\lambda_0$ under a binomial encounter model. 
-The full MCMC code for the binomial SCR (\mbox{\tt SCR0binom.R}) 
+the updating step for $\lambda_0$ under a Binomial encounter model. 
+The full MCMC code for the Binomial SCR with a clog-log link (\mbox{\tt SCR0binom.cl()}) 
 can be found in the {\bf R} package \mbox{\tt scrbook}.
 
 
@@ -1265,7 +1265,7 @@ can be found in the {\bf R} package \mbox{\tt scrbook}.
         if(lam0.cand >0){   #automatically reject lam0.cand that are <0
             lam.cand <- lam0.cand*exp(-(D*D)/(2*sigma*sigma))
             p.cand <- 1-exp(-lam.cand)
-            ll<- sum(dbinom(y, K, pmat *z, log=TRUE))
+            ll<- sum(dbinom(y, K, pmat *z, log=TRUE))  # pmat = 1-exp(-lam)
             llcand <- sum(dbinom(y, K, p.cand *z, log=TRUE))
             if(runif(1) < exp( llcand  - ll) ){
                 ll<-llcand
@@ -1299,20 +1299,19 @@ This formulation is analogous to how detection probability is modeled
 in distance sampling under a half-normal detection function; however, 
 in distance sampling $p_0$ -- detection of an individual on the transect 
 line -- is assumed to be 1 \citep{buckland_etal:2001}. Under this 
-formulation the updater for $\lambda_0$ (equivalent to $p_0$ in Eq XX) 
-becomes:
-%I think I should rename it p0 in the code; this is a little confusing
+formulation the updater for $p_0$ becomes:
+
 \begin{verbatim}
-  lam0.cand <- rnorm(1, lam0, 0.1)
-  if(lam0.cand >0 & lam0.cand < 1 ){   
+  p0.cand <- rnorm(1, p0, 0.1)
+  if(p0.cand >0 & p0.cand < 1 ){   
       #automatically rejects lam0.cand that are not {0,1}
-       lam.cand <- lam0.cand*exp(-(D*D)/(2*sigma*sigma))
-       ll<- sum(dbinom(y, K, lam *z, log=TRUE)) #no transformation needed
-       llcand <- sum(dbinom(y, K, lam.cand *z, log=TRUE))
+       p.cand <- p0.cand*exp(-(D*D)/(2*sigma*sigma))
+       ll<- sum(dbinom(y, K, pmat *z, log=TRUE)) #no transformation needed
+       llcand <- sum(dbinom(y, K, p.cand *z, log=TRUE))
        if(runif(1) < exp( llcand  - ll) ){
           ll<-llcand
-            lam<-lam.cand
-            lam0<- lam0.cand
+            pmat<-p.cand
+            p0<- p0.cand
          }
      }
 \end{verbatim}
