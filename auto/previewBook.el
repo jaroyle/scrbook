@@ -3,8 +3,6 @@
     (LaTeX-add-bibliographies
      "AndyRefs_alphabetized")
     (LaTeX-add-labels
-     "chapt.intro"
-     "chapt.poisson"
      "chapt.gof"
      "chapt.covariates"
      "chapt.open")
@@ -32,13 +30,17 @@
      "latex2e"
      "bk10"
      "book"
+     "Ch1/Ch1"
+     "Ch1b/Ch1b"
      "Ch2/Ch2"
      "Ch3/Ch3"
      "Ch4/Chapter4"
      "Ch5/Ch5"
-     "Ch6/Chapter6"
+     "Ch6/Ch6"
+     "Ch7/Ch7"
      "Ch10/Ch10"
      "Ch11/Ch11"
      "Ch14/Ch14"
+     "Ch15/Ch15"
      "Ch17/Ch17")))
 
