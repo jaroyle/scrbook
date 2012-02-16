@@ -1265,11 +1265,7 @@ can be found in the {\bf R} package \mbox{\tt scrbook}.
         if(lam0.cand >0){   #automatically reject lam0.cand that are <0
             lam.cand <- lam0.cand*exp(-(D*D)/(2*sigma*sigma))
             p.cand <- 1-exp(-lam.cand)
-<<<<<<< HEAD
             ll<- sum(dbinom(y, K, pmat *z, log=TRUE))  
-=======
-            ll<- sum(dbinom(y, K, pmat *z, log=TRUE))  # pmat = 1-exp(-lam)
->>>>>>> bee3f60a1d05e29e48b3940cf8627dd57c62779d
             llcand <- sum(dbinom(y, K, p.cand *z, log=TRUE))
             if(runif(1) < exp( llcand  - ll) ){
                 ll<-llcand
@@ -1327,32 +1323,37 @@ data with, let's run an actual analysis so we can look at the output. As
 an example, we will use the Fort Drum 
 bear data set we first introduced in Chapt. \ref{chapt.intro} and already analyzed in Chapt. \ref{chapt.closed} with 
 traditional non-spatial models (and that you will see again in Chapt. 
-\ref{XX}). You can load the Fort Drum data
-(\mbox{\tt data(''beardata'') }), extract the 
+\ref{BETH'S CHAPTER}). You can load the Fort Drum data
+(\mbox{\tt data(beardata) }), extract the 
 trap locations (\mbox{\tt trapmat}) and 
-detection data and build the augmented $M \times J$ array of individual 
-encounter histories.
+detection data (\mbox{\tt bearArray}) and build the augmented $M \times J$ array of individual 
+encounter histories:
+\begin{verbatim}
+M=500
+bearmat<-apply(bearArray, 1:2, sum) #summarizes captures across occasions
+Xaug<-matrix(0, nrow=M, ncol=dim(trapmat)[1])
+Xaug[1:dim(bearmat)[1],]<-bearmat  #create augmented data set
+\end{verbatim}
+
  In addition to these data, we need to specify 
 the outermost coordinates of the state-space. Since bears are wide 
 ranging animals we add a 20--km buffer to the maximum and minimum 
 coordinates of the trap array:
 
 \begin{verbatim}
-xl<- min(trapmat[,2])- 20  
-yl<- min(trapmat[,3])- 20 
-xu<- max(trapmat[,2])+ 20
-yu<- max(trapmat[,3])+ 20
+xl<- min(trapmat[,1])- 20  
+yl<- min(trapmat[,2])- 20 
+xu<- max(trapmat[,1])+ 20
+yu<- max(trapmat[,2])+ 20
 \end{verbatim}
 
 Finally, source the MCMC code for the binomial encounter model algorithm 
 with the cloglog link and run 5000 iterations. This should take 
 approximately 25 minutes.
-\begin{comment} Rahel: this is nice. you might make Scr.0 an R func! 
-\end{comment}
+
 \begin{verbatim}
- source('SCR0binom.txt')
- mod0<-SCR.0(y=Xaug, X=trapmat[,2:3], M=M, xl=xl, xu=xu, yl=yl, 
-                   yu=yu, K=8, niter=5000)
+ mod0<-SCR0binom.cl(y=Xaug, X=trapmat, M=M, xl=xl, xu=xu, yl=yl, 
+                   yu=yu, K=8, delta=c(0.1, 0.05, 2), niter=5000)
 \end{verbatim}
 
 Before, we used simple {\bf R} commands to look at model results. 
