@@ -322,7 +322,7 @@ for both parameters.
 \label{mcmc.panel.gibbs1}
 \end{panel}
 
-This is it! You can go ahead and simulate some data, $y \sim \mbox{Normal}(5, 0.5)$ and then use the function \mbox{\tt NormGibbs.R} in the {\bf
+This is it! You can go ahead and simulate some data, $y \sim \mbox{Normal}(5, 0.5)$ and then use the function \mbox{\tt NormGibbs()} in the {\bf
   R} package \mbox{\tt scrbook} to run your first Gibbs sampler. 
 
 \begin{verbatim}
@@ -491,11 +491,6 @@ In our example,
 r = \frac{\mbox{Bern}(y|\theta^{(t)}) * \mbox{Normal}(\theta^{(t)}|\mu, \sigma)} {\mbox{Bern}(y|\theta^{(t-1)}) * \mbox{Normal}(\theta^{(t-1)}|\mu, \sigma)}
 \]
 
-XXXX Andy, is this notation ok, or should it be 
-\[
-r = \frac{\mbox{Bern}(y;\theta^{(t)}) * \mbox{Normal}(\theta^{(t)};\mu, \sigma)} {\mbox{Bern}(y;\theta^{(t-1)}) * \mbox{Normal}(\theta^{(t-1)};\mu, \sigma)}
-\]
-XXXXXX
 
 {\bf Step 3}: Set
 \begin{eqnarray*}
@@ -510,7 +505,7 @@ We can do that by drawing a random number $u$ from a
 $\mbox{Unif}(0,1)$ and accept $\theta^{(t)}$ if
 $u<r$.
 Repeat for $t = 1,2,\ldots$ a large number of samples.
-The {\bf R} code for this MH sampler is provided in Panel 2 XXXX.
+The {\bf R} code for this MH sampler is provided in Panel \ref{mcmc.panel.logitnormal}.
 
 \begin{panel}[htp]
 \centering
@@ -609,24 +604,25 @@ Other than graphically, you can easily check acceptance rates for the parameters
 
 One weakness of the MH sampler is that formulating the joint posterior when evaluating whether to accept or reject the candidate values for $\theta$ becomes increasingly complex or inefficient as the number of parameters in a model increases. As you already saw in Chapter 2, in these cases you can simply combine MH sampling and Gibbs sampling. You can use Gibbs sampling to break down your high-dimensional parameter space into easy-to-handle one-dimensional conditional distributions and use MH sampling for these conditional distributions. Better yet, if you have some conjugacy in your model, you can use the more efficient Gibbs sampling for these parameters and one-dimensional MH for all the others. You have already seen the basics of how to build both types of algorithms, so we can jump straight into an example here and build a Metropolis-within-Gibbs algorithm.
 
-XXXX Maybe we make this a subsubsection... since it's still part of the 'Types of MCMC samplers' section...
+XXXX Maybe we make this an unnumbered subsubsection... since it's still part of the 'Types of MCMC samplers' section...
 \subsubsection*{ GLMMs: Poisson regression with a random effect }
 
 Let's assume a model that gets us closer to the problem we ultimately
 want to deal with - a GLMM. Here, we assume we have Poisson counts,
-$y_{ij}$, from $i=1,2,\ldots,n$ plots \begin{comment} Rahel: I put
+$y_{ij}$, from $j=1,2,\ldots,n$ plots in $i$ different study sites, and we believe that the counts are influenced by some plot-specific covariate, ${\bf x}$, but that there is also a random site effect. So our model is:
+\begin{comment} Rahel: I put
   ``n'' here because you had ``n'' used above. But I wonder if we
   should have a convention for ``number of sites'' and use that
   throughout the book?  I think we use j=1,..,J for traps .... I can't
   remember what I used in Ch. 2. but maybe i'm overthinking
-  this. lets talk later. \end{comment} in $j$ different study sites, and we believe that the counts are influenced by some plot-specific covariate, ${\bf x}$, but that there is also a random site effect. So our model is:
+  this. lets talk later. \end{comment} 
+  
 \[
 y_{ij} \sim \mbox{Poisson}(\lambda_{ij})
 \]
 \[
 \lambda_{ij} = \exp (\alpha_i + \beta x_{ij})
 \]
-XXX INDEXING OF x should be ij here??? XXXXXX
 Let's use Normal priors on $\alpha$ and $\beta$,  \[
 \alpha_i \sim \mbox{Normal} (\mu_{\alpha}, \sigma_{\alpha})
 \]
@@ -642,7 +638,7 @@ to specify hyperpriors for these parameters:
 \mu_{\alpha}  &\sim &  \mbox{Norm}(\mu_0, \sigma_0)  \\
 \sigma_{\alpha} & \sim & \mbox{InvGamma}(a_0, b_0)
 \end{eqnarray*}
-Note that for simplicity we assume that $\beta$ is constant across the $j$ study sites, and for analysis we would set $\mu_{\beta}$ and $\sigma_{\beta}$.
+Note that for simplicity we assume that $\beta$ is constant across the $i$ study sites, and for analysis we would set $\mu_{\beta}$ and $\sigma_{\beta}$.
 With the model completely specified, we can compile the full conditionals,
 breaking the multi-dimensional parameter space into one-dimensional
 components:
@@ -677,22 +673,22 @@ vector ${\bf \alpha}$:
 \[
 [\sigma_{\alpha}|{\bf\alpha}] \propto [\alpha|\mu_{\alpha}, \sigma_{\alpha}] *[\sigma_{\alpha}]
 \]
-Since we assumed $\alpha$ to come from a Normal distribution, the choice of priors for $\mu_{\alpha}$ (Normal) and $\sigma_{\alpha}$ (Inverse-Gamma) leads to the same conjugacy we observed in our initial Normal model, so that both hyperparameters can be updated using Gibbs sampling.
+Since we assumed ${\bf \alpha}$ to come from a Normal distribution, the choice of priors for $\mu_{\alpha}$ (Normal) and $\sigma_{\alpha}$ (Inverse-Gamma) leads to the same conjugacy we observed in our initial Normal model, so that both hyperparameters can be updated using Gibbs sampling.
 
-Now let's build the updating steps for these full conditionals. Again, for the MH steps that update $\alpha$ and $\beta$ we use Normal proposal distributions with standard deviations $\delta_{\alpha}$ and $\delta_{\beta}$.
+Now let's build the updating steps for these full conditionals. Again, for the MH steps that update ${\bf \alpha}$ and $\beta$ we use Normal proposal distributions with standard deviations $\delta_{\alpha}$ and $\delta_{\beta}$.
 
-First, we set the initial values $\alpha^{(0)}$ and $\beta^{(0)}$. Then, starting with $\alpha_1$, we draw $\alpha_1^{(1)}$ from $\mbox{Norm}(\alpha_1^{(0)}, \delta_{\alpha})$, calculate the conditional posterior density of $\alpha_1^{(0)}$ and $\alpha_1^{(1)}$  and compare their ratios,
+First, we set the initial values ${\bf \alpha}^{(0)}$ and $\beta^{(0)}$. Then, starting with $\alpha_1$, we draw $\alpha_1^{(1)}$ from $\mbox{Norm}(\alpha_1^{(0)}, \delta_{\alpha})$, calculate the conditional posterior density of $\alpha_1^{(0)}$ and $\alpha_1^{(1)}$  and compare their ratios,
 \[
 r = \frac{\mbox{Poisson}({\bf y}_{1}|exp(\alpha_1^{(1)} + \beta {\bf x}_1)) *
   \mbox{Norm}(\alpha_1^{(1)}|\mu_{\alpha}, \sigma_{\alpha})} {\mbox{Poisson}({\bf y}_{1}|exp(\alpha_1^{(0)} + \beta {\bf x}_1)) * \mbox{Norm}(\alpha_1^{(0)}|\mu_{\alpha}, \sigma_{\alpha})}
 \]
-and accept $\alpha_1^{(1)}$ with probability $min(r,1)$. We repeat this for all $\alpha$.
+and accept $\alpha_1^{(1)}$ with probability $min(r,1)$. We repeat this for all ${bf \alpha}$.
 
 For $\beta$, we draw $\beta^{(1)}$ from $\mbox{Norm} (\beta^{(0)}, \delta_{\beta})$, compare the posterior densities of $\beta^{(0)}$ and $\beta^{(1)}$,
 \[
-r = \frac{\mbox{Poisson}({\bf y}|exp(\alpha + \beta_1^{(1)}{\bf x}))
+r = \frac{\mbox{Poisson}({\bf y}|exp({\bf \alpha} + \beta_1^{(1)}{\bf x}))
   *\mbox{Norm}(\beta^{(1)}|\mu_{\beta}, \sigma_{\beta})} { \mbox{Poisson}({\bf
-    y}|exp(a + \beta^{(0)}{\bf x})) *\mbox{Norm}(\beta^{(0)}|\mu_{\beta}, \sigma_{\beta})},
+    y}|exp({\bf \alpha} + \beta^{(0)}{\bf x})) *\mbox{Norm}(\beta^{(0)}|\mu_{\beta}, \sigma_{\beta})},
 \]
 and accept $\beta^{(1)}$  with probability $min(r,1)$.
 
@@ -707,8 +703,8 @@ and
 \[
 \sigma_n= \frac{\sigma_{\alpha}^{(0)}   \sigma_0 } {\sigma_{\alpha}^{(0)}  + n \sigma_0}
 \]
-Here, $\bar{\alpha}$ is the current mean of the vector $\bf{\alpha}$, which we
-updated before, and $n_{\alpha}$ is the length of $\bf{\alpha}$. 
+Here, $\bar{\alpha}$ is the current mean of the vector ${\bf\alpha}$, which we
+updated before, and $n_{\alpha}$ is the length of ${\bf\alpha}$. 
 For $\sigma_{\alpha}$ we use $\sigma_{\alpha}^{(1)}\sim InvGamma (a_n, b_n)$,
 where  $a_n = n_a/2   + a_0$, and $b_n = 0.5  \displaystyle\sum\limits_{i=1}^{n_{\alpha}} (\alpha_i^{(1)}-\mu_{\alpha}^{(1)})^2+ b_0$.
 
@@ -717,75 +713,86 @@ We repeat these steps over $T$ iterations of the MCMC algorithm.
 In this example we may not want to save each individual $\alpha$, but are only interested in their mean and standard deviation. Since these two parameters will change as soon as the value for one element in $\bf{\alpha}$ changes, their acceptance rates will always be close to 1 and are not representative of how well your algorithm performs. To monitor the acceptance rates of parameters you do not want to save, you simply need to add a few lines of code into your updater to see how often the individual parameters are accepted. The full code for the MCMC algorithm of our Poisson GLMM below shows one way how to monitor acceptance of individual $\alpha$'s.
 
 \begin{comment}
- Actually should I remove part of the code from the text -- maybe just show the updating of alpha -- and put the full code into the R package?
+ Andy: should I remove part of the code from the text -- maybe just show the updating of alpha -- and put the full code into the R package?
 \end{comment}
 {\small
 \begin{verbatim}
-Panel 3: R code for the Metropolis-within-Gibbs sampler for
-a Poisson regression with random intercepts.
 
-Pois.reg<-function(y=y,site=site,mu0=mu0,sig0=sig0,a0=a0,b0=b0,
-          mub=mub, sigb=sigb, niter=niter){
+
+Pmod<-Pois.reg(y,site,mu0, sig0, a0, b0, mu_beta, sig_beta,delta_alpha, delta_beta, 5000)
+
+plot(mcmc(Pmod))
+rejectionRate(mcmc(Pmod))
+summary(window(mcmc(Pmod), start=1001))
+
+Pois.reg<-function(y=y,site=site,mu0=mu0,sig0=sig0,a0=a0,b0=b0, mu_beta=mu_beta, sig_beta=sig_beta, 
+delta_alpha=delta_alpha, delta_beta=delta_beta, niter=niter){
 
 lev<-length(unique(site))     #number of sites
-a<-runif(lev,-5,5)		#initial values a
-b<-runif(1,0,5)			#initial value b
-mua<-mean(a)
-siga<-sd(a)
+alpha<-runif(lev,-5,5)		#initial values alpha
+beta<-runif(1,0,5)			#initial value beta
+mu_alpha<-mean(alpha)
+sig_alpha<-sd(alpha)
 
-out<-matrix(nrow=niter, ncol=3)
-colnames(out)<-c('mua','siga','b')
+out<-matrix(nrow=niter, ncol=3)	
+colnames(out)<-c('mu_alpha','sig_alpha','beta')
 
 for (iter in 1:niter) {
 
-#update a
-aUps<-0			  #initiate counter for acceptance rate of a
-for (j in 1:lev) { 	  #loop over sites
-a.cand<-rnorm(1, a[j], 0.1)	#update intercepts a one at a time
-loglike<- sum(dpois (y[site==j], exp(a[j] + b*x[site==j]), log=TRUE))
-logprior<- dnorm(a[j], mua,siga, log=TRUE)
-loglike.cand<- sum(dpois (y[site==j], exp(a.cand + b *x[site==j]), log=TRUE))
-logprior.cand<- dnorm(a.cand,  mua,siga, log=TRUE)
-if (runif(1)< exp((loglike.cand+logprior.cand) –(loglike+logprior))) {
-a[j]<-a.cand
-aUps<-aUps+1
+##########update alpha
+#initiate counter for acceptance rate of alpha
+alphaUps<-0
+
+#loop over sites, update intercepts alpha one at a time; only data at site i contributes information			
+
+for (i in 1:lev) { 		
+alpha.cand<-rnorm(1, alpha[i], delta_alpha)	
+loglike<- sum(dpois (y[site==i], exp(alpha[i] + beta*x[site==i]), log=TRUE))  
+logprior<- dnorm(alpha[i], mu_alpha,sig_alpha, log=TRUE)
+loglike.cand<- sum(dpois (y[site==i], exp(alpha.cand + beta *x[site==i]), log=TRUE))
+logprior.cand<- dnorm(alpha.cand,  mu_alpha,sig_alpha, log=TRUE)
+if (runif(1)< exp((loglike.cand+logprior.cand) -(loglike+logprior))) {
+alpha[i]<-alpha.cand
+alphaUps<-alphaUps+1
 }
 }
 
-#this lets you check the acceptance rate of a at every 100th iteration
-if(iter %% 100 == 0) {  
+if(iter %% 100 == 0) {  #this lets you check the acceptance rate of alpha at every 100th iteration
             cat("   Acceptance rates\n")
-            cat("     a =", aUps/lev, "\n")
+            cat("     alpha =", alphaUps/lev, "\n")
 }
 
-#update b
-b.cand<-rnorm(1, b, 0.1)
-avec<-rep(a, times=c(rep(10,10)))
-loglike<- sum(dpois (y, exp(avec + b*x), log=TRUE))
-logprior<- dnorm(b, mub,sigb, log=TRUE)
-loglike.cand<- sum(dpois (y, exp(avec + b.cand *x), log=TRUE))
-logprior.cand<- dunif(b.cand, mub,sigb, log=TRUE)
-if (runif(1)< exp((loglike.cand+logprior.cand) – (loglike+logprior) )) {
-b<-b.cand
+###########update beta
+beta.cand<-rnorm(1, beta, delta_beta)
+avec<-rep(alpha, times=c(rep(10,10)))
+loglike<- sum(dpois (y, exp(avec + beta*x), log=TRUE))  
+logprior<- dnorm(beta, mu_beta,sig_beta, log=TRUE)
+loglike.cand<- sum(dpois (y, exp(avec + beta.cand *x), log=TRUE))  
+logprior.cand<- dunif(beta.cand, mu_beta,sig_beta, log=TRUE)
+if (runif(1)< exp((loglike.cand+logprior.cand) - (loglike+logprior) )) {
+beta<-beta.cand
 }
 
-#update mua using Gibbs sampling
-abar<-mean(a)
-mun<- (siga/(siga+lev*sig0))*mu0 + (lev*sig0/(siga+lev* sig0))*abar
-sign <- (siga*sig0)/ (siga+lev*sig0)
-mua<-rnorm(1,mun, sqrt(sign))
+###########update mu_alpha using Gibbs sampling
+abar<-mean(alpha)
+mun<- (sig_alpha/(sig_alpha+lev*sig0))*mu0 + (lev*sig0/(sig_alpha+lev* sig0))*abar 
+sign <- (sig_alpha*sig0)/ (sig_alpha+lev*sig0)
+mu_alpha<-rnorm(1,mun, sqrt(sign))
 
-#update siga using Gibbs sampling
-a0n<-lev/2 + a0
-b0n<- 0.5 * (sum((a-mua)^2)) +b0
-siga<-1/rgamma(1,shape=a0n, rate=b0n)
+#update sig_alpha using Gibbs sampling
+an<-lev/2 + a0
+bn<- 0.5 * (sum((alpha-mu_alpha)^2)) +b0
+sig_alpha<-1/rgamma(1,shape=an, rate=bn)
 
-out[iter,]<-c(mua, sqrt(siga), b)
+out[iter,]<-c(mu_alpha, sqrt(sig_alpha), beta)
 
 }
 
 return(out)
+
 }
+
+
 \end{verbatim}
 }
 
@@ -818,7 +825,9 @@ high-dimensional problems, since it becomes increasingly hard to
 define a reasonable envelope function. For an example of rejection
 sampling in the context of SCR models, see
 Chapt. \ref{chapt.state-space}, where we use it to simulation
-non-stationary point processes.  Another alternative is slice sampling
+non-stationary point processes.  
+
+Another alternative is slice sampling
 \citep{neal:2003}. In slice sampling, we sample uniformly from the
 area under the plot of $[\theta|y]$. Considering a single univariate
 theta. Let's define an auxiliary variable, $U \sim \mbox{Unif}(0,
@@ -918,7 +927,7 @@ The full conditionals for all the unknowns are as follows:
                  &  &  [p_{i}|\mu_p,\sigma_{p}] \mbox{ if $z_{i}=0$ }
 \end{eqnarray*}
 
-XXX Andy, is the z_i = 1 on the left side supposed to be in there? You have the if z=1 and z=0 on the right hand side XXXXX
+XXX Andy, is the $z_i = 1$ on the left side supposed to be in there? You have the if $z=1$ and $z=0$ on the right hand side XXXXX
 
 {\bf (2)} for $z_{i}$:
 \[
@@ -1041,7 +1050,7 @@ although they too can be updated directly from their full-conditional.
 
 \section{MCMC algorithm for the basic spatial capture-recapture model}
 
-Conceptually, but also in terms of MCMC coding, it is only a small step from the non-spatial model Mh to a fully spatial capture-recapture model. Next, we'll walk you through the steps of building your own MCMC sampler for the basic SCR model (i.e. without any individual, site or time specific covariates) with both a Poisson and a binomial encounter process.
+Conceptually, but also in terms of MCMC coding, it is only a small step from the non-spatial model Mh to a fully spatial capture-recapture model. Next, we'll walk you through the steps of building your own MCMC sampler for the basic SCR model (i.e. without any individual, site or time specific covariates) with both a Poisson and a Binomial encounter process.
 As usual, we will have to go through two general steps before we write the MCMC algorithm:
 \begin{itemize}
 \item[  (1)] Identify your model with all its components (including
@@ -1076,8 +1085,8 @@ ${\bf x}_{j}$, say $D_{ij} = ||{\bf s}_{i} - {\bf x}_{j}||$, of the half-normal 
 \]
 where $\lambda_0$ is the baseline trap encounter rate at $D_{ij}=0$ and $\sigma$ controls the shape of the half-normal function.
 
-In order to estimate the number of ${\bf s}_i$ in ${\cal S}$, or any
-subset of ${\cal S}$, $N$, we use data augmentation (sec. \ref{closed.sec.da}) and create $M-n$ all-0 encounter histories, where $n$ is the number of individuals we observed and $M$ is an arbitrary number that is larger than $N$. We estimate $N$ by summing over the auxiliary data augmentation variables, $z_i$, which is 1 if the individual is part of the population and 0 if not, and assume that $z_i$ is a random Bernoulli variable,
+In order to estimate the number of ${\bf s}_i$ in ${\cal S}$ (or any
+subset of ${\cal S}$), $N$, we use data augmentation (sec. \ref{closed.sec.da}) and create $M-n$ all-0 encounter histories, where $n$ is the number of individuals we observed and $M$ is a somewhat arbitrary number that is larger than $N$. We estimate $N$ by summing over the auxiliary data augmentation variables, $z_i$, which is 1 if the individual is part of the population and 0 if not, and assume that $z_i$ is a random Bernoulli variable,
 \[
 z_{i} \sim \mbox{Bern}(\psi)
 \]
@@ -1159,7 +1168,7 @@ cancel each other out).
 
 We still have to update $z_i$. The full conditional for $z_i$ is
 \[
-[z_i|y_{i}, \sigma, \lambda_0, s] \propto [y_{i}|z_{i},\sigma, \lambda_0, 
+[z_i|y_{i}, \sigma, \lambda_0, {\bf s}_{i}] \propto [y_{i}|z_{i},\sigma, \lambda_0, 
 {\bf s}_{i}] * [z_i]
 \]
 and since $z_i \sim Bernoulli(\psi)$,
@@ -1193,7 +1202,7 @@ the term has to be taken into account when updating $z_i$. The
 %\end{minipage}
 \rule[-0.15in]{\textwidth}{.03in}
 \caption{
-{\bf R} code to update z................
+{\bf R} code to update the auxiliary data augmentation variable ${\bf z}$
 }
 \label{mcmc.panel.updatez}
 \end{panel}
@@ -1205,22 +1214,22 @@ $\psi$
 \[
 [psi|{\bf z}] \propto \left\{ \prod_{i} [z_{i}|\psi] \right\} \mbox{Beta}(1,1)
 \]
-The beta distribution is the conjugate prior to the binomial and 
+The beta distribution is the conjugate prior to the Binomial and 
 Bernoulli distributions (remember that $z \sim \mbox{Bern}(\psi))$. 
 The general form of a full conditional of a Beta-Binomial model 
-with $y_{i} \sim \mbox{Bern} (p) $ and $p \sim \mbox{Beta}(a,b)$ is
+with $x_{i} \sim \mbox{Bern} (p) $ and $p \sim \mbox{Beta}(a,b)$ is
 \[
-[p|y] \propto \mbox{Beta}(a + \sum y_i, b + n-\sum y_i)
+[p|{\bf x}] \propto \mbox{Beta}(a + \sum_i x_i, b + n-\sum_i x_i)
 \]
 \begin{comment} Rahel: above is why i don't like p for distribution! Agree. Taken care of\end{comment}
 In our case, this means we update $\psi$ as follows:
 \begin{verbatim}
-si<-rbeta(1, 1+sum(z), 1 + M-sum(z))
+psi<-rbeta(1, 1+sum(z), 1 + M-sum(z))
 \end{verbatim}
 \begin{comment} Rahel what is M here  ? \end{comment}
 These are all the building blocks you need to write the MCMC algorithm
 for the spatial null model with a Poisson encounter process.  You can
-find the full {\bf R} code (\mbox{\tt SCR0pois.R}) in the {\bf R} package 
+find the full {\bf R} code by calling the function (\mbox{\tt SCR0pois()}) in the {\bf R} package 
 \mbox{\tt scrbook}.
 
 \subsection{SCR model with binomial encounter process}
