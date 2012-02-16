@@ -28,7 +28,7 @@ likelihood \citep{borchers_efford:2008} or Bayesian analysis by MCMC
 While the models are a relatively recent innovation, their use is
 already becoming widespread \citep{efford_etal:2009,
   gardner_etal:2010jwm, gardner_etal:2010ecol,kery_etal:2010, 
-  gopalaswamy_etal:2012, foster_harmsen:2012} because they resolve
+  borchers:2011,gopalaswamy_etal:2012, foster_harmsen:2012} because they resolve
 critical problems with using ordinary non-spatial capture-recapture
 methods such as ill-defined area sampled, and heterogeneity in
 encounter probability due to the juxtaposition of individuals with
@@ -85,16 +85,15 @@ the MLEs are approximately unbiased in moderate sample sizes, as
 expected, but also that the misspecified model based on Euclidean
 distance can produce substantial bias in estimates of $N$ and hence
 density.  Further, we extend the model to allow for likelihood
-estimation of parameters of the cost function, so that direct
-inference about movement and connectivity can be made from
-capture-recapture data without subjective prescription of resistance
+estimation of parameters of the cost function.
+
+Using this methodological extension of SCR models, it is possible to
+make formal statistical inferences 
+about movement and connectivity from 
+capture-recapture studies that generate sparse individual encounter
+history data without subjective prescription of resistance
 or cost surfaces.
 
-{\bf
-Connection to RSPFs or something esteimated from telemetry data. Big
-idea is estimating those from sparse individual encounter history data.
-Say that here.
-}
 
 \section{Distance Models}
 
@@ -104,7 +103,8 @@ of Euclidean distance. For example, using the binomial observation model
 as an example (Chapt. \ref{chapt.scr0}), let 
 $y_{ij}$ be individual- and trap specific counts $y_{ij}$
 which are binomial counts with sample size $K$ and probabilities
-$p_{ij}$. The Gaussian or ``half-normal'' model is 
+$p_{ij}$. The Gaussian or ``half-normal'' model is \footnote{Note the
+  parameter labeling is not consistent with the rest of the book}
 \[
 log(p_{ij})= \theta_{0} + \theta_{1} dist({\bf x}_{j} - {\bf s}_{i})^{2}
 \]
@@ -141,7 +141,7 @@ accommodates alternative distance metrics that explicitly incorporate
 information about the landscape so that a unit of distance is variable
 depending on identified covariates.  Thus, ``where'' an individual
 lives on the landscape, and the state of the surrounding landscape,
-will determine the character of its usage of space. In particular, we
+will determine the character of its usage of space. In particular, they
 suggest distance metrics that imply irregular, asymmetric and
 non-stationary home ranges of individuals. An example of this is shown
 in Fig. \ref{fig.homeranges} which shows home ranges of 6 individuals
@@ -201,29 +201,21 @@ including the {\bf R} package \mbox{\tt
 The key ecological aspect of least-cost path modeling is the
 development
 of models for pixel-specific cost.
-In this paper we model cost as a function of covariates
-defined on every pixel of the raster according to, for example using a
-single covariate $z(x)$:
-
+In this paper we model cost as a function of one or more covariates
+defined on every pixel of the raster according. For example, using a
+single covariate $z(x)$ we define the cost of moving from some pixel
+${\bf x}$ to neighboring pixel ${\bf x}'$ as
 \begin{equation}
- log(cost({\bf x}))=  \theta_{2} z({\bf x})
-\label{eq.cost}
-\end{equation}
-
-{\flushleft This} is interpreted as cost of moving {\it through} a
-pixel but, in practice, it is accumulated incrementally as the cost of
-moving from a pixel ${\bf x}$ to one of its neighbors, say ${\bf
-  x}'$. As such, it is conventional to express this as an average cost
-
-\[
  log(cost({\bf x},{\bf x}'))=  \theta_{2} \frac{z({\bf x})+z({\bf x}')}{2}
-\]
-
-{\flushleft
-Thus,} if $\theta_{2} = 0$ then substituting $cost({\bf x},{\bf x}')
+\label{ecoldist.eq.cost}
+\end{equation}
+Thus, if $\theta_{2} = 0$ then substituting $cost({\bf x},{\bf x}')
 =exp(0) = 1$ into
 Eq. \ref{eq.lcp} will produce the ordinary Euclidean distance
-between points.
+between points. Here we assume the covariate $z$ is positive-valued
+and constrain $\theta_{2}\ge 0$ so as to avoid
+negative costs. While not necessarily problematic from a mathematical
+standpoint, negative costs are unrealistic biologically. 
 
 In practical applications, variables that influence the cost of moving
 across the landscape include things like highways
@@ -337,9 +329,10 @@ outD<-as.matrix(costs1)
 \end{verbatim}
 }
 Now we can look at the result and see if it makes sense to us. Here we
-print the first 4 columns of this distance matrix and illustration a
+print the first 5 columns of this distance matrix and illustration a
 couple of examples of calculating the minimum cost-weighted distance
 between points:
+\begin{center}
 {\small
 \begin{verbatim}
 > outD[1:5,1:5]
@@ -351,13 +344,14 @@ between points:
 5  50.5000  71.41778 171.4178 154.7426   0.00000
 \end{verbatim}
 } 
+\end{center}
 The interesting one is that between point 1 and 4. Note that simply
 taking the shortest Euclidean distance, weighted by cost, produces a
 cost-weighted distance of $100 \times 1$ to move from pixel 1 to pixel
 2, and similarlly from 2 to 3 and 3 to 4, producing a total
 cost-weighted distance of $300$. However, the actual {\it least-cost
-  path} has cost-weighted distance $205.2426$. Looking at the graph,
-the shortest path has an individual moving from pixel 1 to 5, then 5
+  path} has cost-weighted distance $205.2426$. 
+The shortest path has an individual moving from pixel 1 to 5, then 5
 to 10, 10 to 15, 15 to 12, 12 to 8 and 8 to 4 which should add up to
 $205.2426$.
 
@@ -450,34 +444,23 @@ ${N \choose n}$ ways to realize a sample of size $n$. The
 combinatorial term involves the unknown $n_{0}$ and thus it must be
 included in the likelihood.
 
-
 We wrote an {\bf R} function to evaluate the likelihood which we optimize
 using the {\bf R} function \mbox{\tt nlm}.
-The {\bf R} code is given as a script in the Appendix where we also
-provide functions for simulating data and carrying-out a simulation study.
+The likelihood is given in the {\tt scrbook} package as the function
+\mbox{\tt intlik3ed}. The help file 
+provides an example of its usage and for simulating data.
 
-
-Cost has to be a raster..... show creating a cost raster right here
-
-
-Here is a modification of our integrated likelihood routine........
+To use this function the cost covariate $z(x)$ has to be of class 
+\mbox{\tt RasterLayer} which requires packages \mbox{\tt sp} and
+\mbox{\tt raster} to manipulate. 
+The following is a stylized and more concise verstion of the actual
+function, and we apply this in the following section.
 
 {\small
 \begin{verbatim}
 intlik3ed<-function(start=NULL,y=y,K=NULL,X=traplocs,
 distmet="ecol",covariate,theta2=NA){
 
-if(is.null(K)) return("need sample size")
-if(class(covariate)!="RasterLayer") {
- cat("make a raster out of this",fill=TRUE)
- return(NULL)
-
-}
-# do a check here that trap locations exist in same space as raster. 
-# forthcoming
-
-# build integration grid. This derives from the covariate raster
-# i.e., potential values of s are the mid-point of each raster pixel
 nc<-covariate@ncols
 nr<-covariate@nrows
 Xl<-covariate@extent@xmin
@@ -496,27 +479,20 @@ nG<-nrow(G)
 
 if(distmet=="euclid")
 D<- e2dist(X,G)  
-
 if(distmet=="ecol"){
 if(is.na(theta2))
 theta2<-exp(start[4])
-
 cost<- exp(theta2*covariate)
 tr1<-transition(cost,transitionFunction=function(x) 1/mean(x),directions=8)
 tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
 D<-costDistance(tr1CorrC,X,G)
 }
 
-if(is.null(start)) start<-c(0,0,0,0)
-theta0<-start[1]
-theta1<-start[2]
-n0<-exp(start[3])
-
+theta0<-start[1]; theta1<-start[2]; n0<-exp(start[3])
 
 probcap<- (exp(theta0)/(1+exp(theta0)))*exp(-theta1*D*D)
 Pm<-matrix(NA,nrow=nrow(probcap),ncol=ncol(probcap))
-ymat<-y
-ymat<-rbind(y,rep(0,ncol(y)))
+ymat<-y ; ymat<-rbind(y,rep(0,ncol(y)))
 lik.marg<-rep(NA,nrow(ymat))
 for(i in 1:nrow(ymat)){
 Pm[1:length(Pm)]<- (dbinom(rep(ymat[i,],nG),rep(K,nG),probcap[1:length(Pm)],log=TRUE))
@@ -547,7 +523,7 @@ have not yet developed our own implementation.
 
 
 
-\section{Examples of SCR models based on ecological distance}
+\section{Example: SCR model based on ecological distance}
 
 In this section we provide examples that we think are typical of how
 cost-weighted distance models can be used in real capture-recapture
@@ -626,40 +602,12 @@ that pixel.
 \end{figure}
 
 
-\subsection{Simulation study}
+\subsection{Simulation and Analysis}
 
-We devised a limited simulation study to evaluate three things: (1)
-the general statistical performance of the density estimator under
-this new model; (2) the effect of mis-specifying the model with a
-normal Euclidean distance metric and (3) the statistical performance
-of estimating the relative cost parameter.
+We begin by simulating some data... we have to load the scrbook
+library and grab some covariates...............
 
-We used population sizes of 100 and 200 individuals with activity
-centers randomly distributed on the $20 \times 20$ landscape, and subjected them
-to encounter by 16 traps arranged in a $4\times 4$ grid according to
-the Euclidean distance metric. We fit 3 different models; (i) the
-misspecified euclidean distance model; (ii) the true data-generating
-model with the relative cost raster {\it known} and (iii) the true
-data-generating model but estimating the relative cost parameter by
-maximum likelihood.  We used the ``systematic'' and ``patchy''
-covariates defined previously.
-
-We simulated encounter data for the $N$ individuals using the Gaussian
-encounter model with least-cost path distance metric:
-
-\[
-log(p_{ij})= \theta_{0} + \theta_{1} d_{lcp}({\bf x}_{j},{\bf
-  s}_{i}; \theta_{2})^{2}
-\]
-
-{\flushleft We } used here $\theta_{0} = -2$ and $\theta_{1} = 2$, the latter value
-corresponding to $\sigma = 0.5$ of a stationary bivariate normal home
-range model.  We varied the number of replicate samples $K=3,5,10$
-(e.g., nights in a camera trapping study) to produce varying sample
-sizes.  Because any simulation study is inherently arbitrary, we have
-provided {\bf R} scripts for carrying out simulations in Appendix 2 so
-that the interested reader can experiment with their own situations.
-
+{\small 
 \begin{verbatim}
 library("scrbook")
 out<-make.EDcovariates()
@@ -707,9 +655,90 @@ frog1<-nlm(intlik3ed,c(theta0,theta1,log(n0)),hessian=TRUE,y=Y,K=K,X=traplocs,
 frog2<-nlm(intlik3ed,c(theta0,theta1,log(n0),-.3),hessian=TRUE,y=Y,K=K,X=traplocs,
                distmet="ecol",covariate=covariate,theta2=NA)
 \end{verbatim}
-
+}
 
 Comment on the difference.......
+
+
+\subsection{Simulation study}
+
+We devised a limited simulation study to evaluate three things: (1)
+the general statistical performance of the density estimator under
+this new model; (2) the effect of mis-specifying the model with a
+normal Euclidean distance metric and (3) the statistical performance
+of estimating the relative cost parameter.
+
+We used population sizes of 100 and 200 individuals with activity
+centers randomly distributed on the $20 \times 20$ landscape, and subjected them
+to encounter by 16 traps arranged in a $4\times 4$ grid according to
+the Euclidean distance metric. We fit 3 different models; (i) the
+misspecified euclidean distance model; (ii) the true data-generating
+model with the relative cost raster {\it known} and (iii) the true
+data-generating model but estimating the relative cost parameter by
+maximum likelihood.  We used the ``systematic'' and ``patchy''
+covariates defined previously.
+
+We simulated encounter data for the $N$ individuals using the Gaussian
+encounter model with least-cost path distance metric:
+
+\[
+log(p_{ij})= \theta_{0} + \theta_{1} d_{lcp}({\bf x}_{j},{\bf
+  s}_{i}; \theta_{2})^{2}
+\]
+
+{\flushleft We } used here $\theta_{0} = -2$ and $\theta_{1} = 2$, the latter value
+corresponding to $\sigma = 0.5$ of a stationary bivariate normal home
+range model.  We varied the number of replicate samples $K=3,5,10$
+(e.g., nights in a camera trapping study) to produce varying sample
+sizes.  Because any simulation study is inherently arbitrary, we have
+provided {\bf R} scripts for carrying out simulations in Appendix 2 so
+that the interested reader can experiment with their own situations.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 \subsection{Simulation Results}
@@ -857,15 +886,18 @@ lines(l2)
 \end{verbatim}
 }
 
-We used this function to create a couple of line segments of class XXX
-from package xyz XXXXXX  which can be loaded as 
-follows\footnote{how to put this in the R package?}:
+We used this function to create a couple of line segments of class
+\mbox{\tt SpatialLines} from the {\bf R} package \mbox{\tt sp}, which
+can be loaded from \mbox{\tt scrbook} as  follows
 \begin{verbatim}
 data("fakecorridor")
 \end{verbatim}
-This has 2 polygon files in it ......representing different segments
-of this corridor or river system. We use the commands XYZ to join and
-buffer the two segments and the resultt is that shown in fig. XYZ.
+This has 2 line files in it (\mbox{\tt l1} and \mbox{\tt l2}) and a
+trap locations file (\mbox{\tt traps}). 
+We use some functions from the {\bf R} packages \mbox{\tt sp} and
+\mbox{\tt rgeos} to join and 
+buffer (by 0.5 units) the two segments. The commands are as follows
+and the result is shown in Fig. \ref{ecoldist.fig.corridor}.
 
 {\small
 \begin{verbatim}
@@ -882,11 +914,11 @@ plot(gBuffer(aa,width=buffer),xlim=c(0,10),ylim=c(0,10))
 pg<-gBuffer(aa,width=buffer)
 pg.coords<- pg@polygons[[1]]@Polygons[[1]]@coords
 
-xg<-seq(0,10,,30)
-yg<-seq(10,0,,30)
+xg<-seq(0,10,,40)
+yg<-seq(10,0,,40)
 
 delta<-mean(diff(xg))
-pts<- cbind(sort(rep(xg,30)),rep(yg,30))
+pts<- cbind(sort(rep(xg,40)),rep(yg,40))
 points(pts,pch=20)
 
 in.pts<-point.in.polygon(pts[,1],pts[,2],pg.coords[,1],pg.coords[,2])
@@ -906,13 +938,91 @@ points(pts[in.pts==1,],pch=20,col="red")
 
 We focus on devising a SCR model for this corridor system and we
 imagine that animals will tend to severely avoid leaving the buffered
-habitat zone.
+habitat zone. Therefore, we assign $\mbox{\tt cost}=1$ if a pixel is within the
+buffer,
+and $\mbox{\tt cost} = 10000$ if a pixel is outside of a
+buffer. Therefore the cost to move to a neighboring pixel outside of
+the buffered area is $5000.5$ compared to the cost of 1 to move to a
+neighboring pixel inside the buffer. 
 
-So we will assign a high cost .....  
+In this example, we're not going to estimate parameters of the cost
+function. Therefore, in that case, we can compute the ecological
+distance matrix one time and modify our likelihood code to accept the
+distance matrix as input. We give that likelihood in the library
+\mbox{\tt scrbook} as the function \mbox{\tt intlik3edv2}.
+We note also that it provides a vector of 0's and 1's that
+define any potential state-space restrictions. In the analysis of this
+simulated data set, we define the state-space to be the buffered
+corridor system. The help file for \mbox{\tt intlik3edv2} contains the
+script that follows.
 
-If we're not estimating any parameters of the cost function we can
-compute the ecoclogical distance matrix one time and just construct
-the likelihood from that..... without recomputing it.... 
+In this case we simulate N=200 guys in the corridor system and so we
+restrict out state-space accordingly for purposes of fitting the
+model. However we encourage the reader to refit the model without the
+state-space restriction (for fitting the model only) and then
+contemplate the result.  The code for doing all of this is as follows
+
+{\small 
+\begin{verbatim}
+cost<-rep(NA,nrow(pts))
+cost[in.pts==1]<-1      # low cost to move among pixels but not 0
+cost[in.pts!=1]<-10000  # high cost 
+
+library("raster")
+r<-raster(nrows=40,ncols=40)
+projection(r)<- "+proj=utm +zone=12 +datum=WGS84"
+extent(r)<-c(0-delta/2,10+delta/2,0-delta/2,10+delta/2)
+values(r)<-matrix(cost,40,40,byrow=FALSE)
+par(mfrow=c(1,1))
+plot(r)
+points(pts,pch=20,cex=.4)
+
+library("gdistance")
+tr1<-transition(r,transitionFunction=function(x) 1/mean(x),directions=8)
+tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
+costs1<-costDistance(tr1CorrC,pts)
+outD<-as.matrix(costs1)
+plot(pts,pch=".")
+points(pts[in.pts==1,],pch=20,col="red")
+
+library(``scrbook'')
+traplocs<-traps$loc
+trap.id<-traps$locid
+ntraps<-nrow(traplocs)
+
+set.seed(2013)
+N<-200
+S.possible<- (1:nrow(pts))[in.pts==1]
+S.id<-sample(S.possible,N,replace=TRUE)
+S<- pts[S.id,]
+
+D<- outD[S.id,trap.id]
+eD<- e2dist(S,traplocs)
+Dtraps<-outD[trap.id,]
+
+alpha0<- -1.5
+sigma<- 1.5
+beta<- 1/(2*sigma*sigma)
+K<-10
+
+probcap<-plogis(alpha0)*exp(-beta*D*D)
+Y<-matrix(NA,nrow=N,ncol=ntraps)
+for(i in 1:nrow(Y)){
+ Y[i,]<-rbinom(ntraps,K,probcap[i,])
+}
+Y<-Y[apply(Y,1,sum)>0,]
+
+frog1<-nlm(intlik3edv2,c(-2.5,2,log(4)),hessian=TRUE,y=Y,K=K,X=traplocs,
+            S=pts,D=Dtraps,inpoly=in.pts)
+frog2<-nlm(intlik3edv2,c(-2.5,2,log(4)),hessian=TRUE,y=Y,K=K,X=traplocs,
+            S=pts,D=Deuclid,inpoly=in.pts)
+\end{verbatim}
+}
+
+In the example that we ran abovve we compared the result for using
+distance-within-the-corridor to normal Euclidean distance and the
+results do not differ too much in this single instance. 
+
 
 
 \section{A stream network}
@@ -936,7 +1046,7 @@ practice. However, it is not a relevant criticism of the basic
 conceptual formulation of SCR models, because, as we have
 demonstrated, one can modify the Euclidean distance metric to
 accommodate more realistic space usage considerations.  Following
-\citet{royle_etal:2012},
+\citet{royle_etal:2012ecol},
 we demonstrated how to use 
 minimum cost-weighted distance (i.e., ``least-cost
 path'') between points, and where ``cost'' is characterized by one or
