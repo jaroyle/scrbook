@@ -565,3 +565,379 @@ cat("
 \\end{table}
 ")
 sink()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### Source all of the utility functions at the end of this script before
+### running any of the code.
+###
+###
+
+### We require 3 R libraries
+library("shapefiles")
+library("gdistance")
+library("raster")
+
+###
+### following block of code creates a "patchy" looking covariate to use
+### in our cost function. It uses a standard method for generating a correlated
+### multivariate normal vector of length, in this case, 400 (one value for each
+### pixel). One can use any correlation function here but we chose a standard
+### exponential model with range parameter 0.5
+###png("raster_krige.png",width=5,height=5, units="in", res=400)
+par(mfrow=c(1,1))
+set.seed(12)
+r<-raster(nrows=20,ncols=20)
+projection(r)<- "+proj=utm +zone=12 +datum=WGS84"
+extent(r)<-c(.5,4.5,.5,4.5)
+delta<- (4.5-.5)/20
+gx<- seq(.5 + delta/2, 4.5-delta/2,,20)
+gy<- rev(gx)
+gx<-sort(rep(gx,20))
+gy<-rep(gy,20)
+grid<-cbind(gx,gy)
+Dmat<-as.matrix(dist(grid))
+V<-exp(-Dmat/.5)
+z<-t(chol(V))%*%rnorm(400)
+z<- (z-mean(z))/sqrt(var(as.vector(z)))
+#values(r)<-rot(rot(rot(matrix(z,20,20,byrow=TRUE))))
+#values(r)<-(matrix(z,20,20,byrow=FALSE))
+values(r)<-matrix(z,20,20,byrow=FALSE)
+spatial.plot(grid,z,FALSE)
+par(mfrow=c(2,1))
+plot(r)
+####dev.off()
+covariate.patchy<- z*sqrt(1.68) + .168   #approx. same scale as systematic covariate below
+values(r)<-matrix(covariate.patchy,20,20,byrow=FALSE)
+covariate.patchy<- r
+class(covariate.patchy)
+
+##
+## build systematic covariate
+## defined here as a trend from NW to SE
+##
+cost<-matrix(NA,nrow=20,ncol=20)
+cost<-row(cost)+col(cost)
+covariate.trend<- (cost-20)/10
+values(r)<-matrix(covariate.trend,20,20,byrow=FALSE)
+covariate.trend<-r
+class(covariate.trend)
+
+
+
+
+###
+### generate Pr(encounter) for all pixels, for hypothetical traps in every other pixel
+###
+### sigma = a bivariate normal home range parameter -- use different values to
+### see how this looks
+### theta0 = intercept of detection prob. model
+### theta1 = coefficient on "distance" -- derived from "sigma"
+### theta2 = coefficient on covariate used in cost function
+###
+theta2<- 1
+theta0<- -2
+sigma<-.25
+theta1<- 1/(2*sigma*sigma)
+gx<- seq(.5 + delta/2, 4.5-delta/2,,20)
+gy<- rev(gx)
+gx<-sort(rep(gx,20))
+gy<-rep(gy,20)
+grid2<-cbind(gx,gy)
+D<-e2dist(grid,grid2)
+## Here is the stationary and isotropic detection model:
+probcap<-plogis(theta0)*exp(-theta1*D*D)
+## spatial.plot is a utility function (end of this script)
+spatial.plot(grid2,probcap[1,],FALSE)
+
+
+
+###
+### R commands to carry-out the simulations. MUST SOURCE likelihood function first -- SEE BELOW
+### This takes 1-2 days to run for nsims=100
+###
+###
+
+nsims<-2
+
+###
+###
+### Using the "patchy" cost function execute these commands
+###
+###
+
+simout.low.N100.k<-sim.fn(N=100,nsim=nsims,theta0=-2,sigma=.5,K=5,covariate=covariate.patchy)
+simout.low.N200.k<-sim.fn(N=200,nsim=nsims,theta0= -2, sigma=.5,K=5,covariate=covariate.patchy)
+simout.reallylow.N100.k<-sim.fn(N=100,nsim=nsims,theta0=-2,sigma=.5,K=3,covariate=covariate.patchy)
+simout.reallylow.N200.k<-sim.fn(N=200,nsim=nsims,theta0= -2, sigma=.5,K=3,covariate=covariate.patchy)
+simout.high.N100.k<-sim.fn(N=100,nsim=nsims,theta0=-2,sigma=.5,K=10,covariate=covariate.patchy)
+simout.high.N200.k<-sim.fn(N=200,nsim=nsims,theta0= -2, sigma=.5,K=10,covariate=covariate.patchy)
+
+
+
+#
+# to do a single run you have to define a few things and then execute the code within the "sim.fn" below
+#
+covariate<-covariate.patchy
+N<-200
+theta0<- -2
+sigma<- .5
+K<- 5
+
+sim.fn<-function(N=200,nsim=100,theta0= -2, sigma=.5, K=5,covariate){
+# input covariate as a RasterLayer
+#
+cl<-match.call()
+set.seed(2013)
+simout<-matrix(NA,nrow=nsim,ncol=6)
+theta1<- 1/(2*sigma*sigma)
+
+r<-raster(nrows=20,ncols=20)
+projection(r)<- "+proj=utm +zone=12 +datum=WGS84"
+extent(r)<-c(.5,4.5,.5,4.5)
+theta2<-1
+theta3<- -.5
+cost<- exp(theta2*covariate)
+#values(r)<-matrix(cost,20,20,byrow=FALSE)
+#par(mfrow=c(1,1))
+#plot(r)
+r<-cost
+
+lam<-exp(theta3*covariate)
+Gprobs<-values(lam)/sum(values(lam))
+
+nc<-covariate@ncols
+nr<-covariate@nrows
+Xl<-covariate@extent@xmin
+Xu<-covariate@extent@xmax
+Yl<-covariate@extent@ymin
+Yu<-covariate@extent@ymax
+### ASSUMES SQUARE RASTER -- NEED TO GENERALIZE THIS
+delta<- (Xu-Xl)/nc
+xg<-seq(Xl+delta/2,Xu-delta/2,delta)
+yg<-seq(Yl+delta/2,Yu-delta/2,delta)
+npix.x<-length(xg)
+npix.y<-length(yg)
+area<- (Xu-Xl)*(Yu-Yl)/((npix.x)*(npix.y))
+G<-cbind(rep(xg,npix.y),sort(rep(yg,npix.x)))
+
+## use max = doesn't count moving through boundary pixel
+tr1<-transition(r,transitionFunction=function(x) 1/mean(x),directions=8)
+tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
+
+xg<-seq(1,4,1)
+yg<-4:1
+pts<-cbind( sort(rep(xg,4)),rep(yg,4))
+#costs1<-costDistance(tr1CorrC,pts)
+#D<-as.matrix(costs1)
+
+traplocs<-pts
+#points(traplocs,pch=20,col="red")
+ntraps<-nrow(traplocs)
+
+
+for(sim in 1:nsim){
+
+S<- G[sample(1:nrow(G),N,replace=TRUE,prob=Gprobs),]
+D<-costDistance(tr1CorrC,S,traplocs)
+probcap<-plogis(theta0)*exp(-theta1*D*D)
+# now generate the encounters of every individual in every trap
+Y<-matrix(NA,nrow=N,ncol=ntraps)
+for(i in 1:nrow(Y)){
+ Y[i,]<-rbinom(ntraps,K,probcap[i,])
+}
+Y<-Y[apply(Y,1,sum)>0,]
+
+# raster has to be defined for state-space and ssbuffer = 0 only
+n0<- N-nrow(Y)
+
+frog<-nlm(intlik3ed,c(theta0,theta1,log(n0),-.3,-.3),hessian=TRUE,y=Y,K=K,X=traplocs,distmet="ecol",covariate=covariate)
+simout[sim,]<-c(frog$estimate,nrow(Y))
+}
+list(simout=simout,call=cl)
+
+}
+
+##
+##
+## UTILITY FUNCTIONS
+##
+## PUT ALL OF THE OBJECTS BELOW INTO YOUR WORKSPACE
+##
+
+intlik3ed<-function(start=NULL,y=y,K=NULL,delta=.2,X=traplocs,distmet="ecol",covariate){
+if(is.null(K)) return("need sample size")
+if(class(covariate)!="RasterLayer") {
+ cat("make a raster out of this",fill=TRUE)
+ return(NULL)
+
+}
+# do a check here that trap locations exist in same space as raster.
+# forthcoming
+
+# build integration grid. This derives from the covariate raster
+# i.e., potential values of s are the mid-point of each raster pixel
+nc<-covariate@ncols
+nr<-covariate@nrows
+Xl<-covariate@extent@xmin
+Xu<-covariate@extent@xmax
+Yl<-covariate@extent@ymin
+Yu<-covariate@extent@ymax
+SSarea<- (Xu-Xl)*(Yu-Yl)
+### ASSUMES SQUARE RASTER -- NEED TO GENERALIZE THIS
+delta<- (Xu-Xl)/nc
+xg<-seq(Xl+delta/2,Xu-delta/2,delta)
+yg<-seq(Yl+delta/2,Yu-delta/2,delta)
+npix.x<-length(xg)
+npix.y<-length(yg)
+area<- (Xu-Xl)*(Yu-Yl)/((npix.x)*(npix.y))
+G<-cbind(rep(xg,npix.y),sort(rep(yg,npix.x)))
+nG<-nrow(G)
+
+if(distmet=="euclid")
+D<- e2dist(X,G)
+
+if(distmet=="ecol"){
+theta2<-exp(start[4])
+
+cost<- exp(theta2*covariate)
+tr1<-transition(cost,transitionFunction=function(x) 1/mean(x),directions=8)
+tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
+D<-costDistance(tr1CorrC,X,G)
+}
+
+#if(is.null(start)) start<-c(0,0,0,0,0)
+theta0<-start[1]
+theta1<-start[2]
+n0<-exp(start[3])
+
+lam<-exp(start[5]*covariate)
+vlam<-values(lam)
+Gprobs<-vlam/sum(vlam)
+
+probcap<- (exp(theta0)/(1+exp(theta0)))*exp(-theta1*D*D)
+Pm<-matrix(NA,nrow=nrow(probcap),ncol=ncol(probcap))
+ymat<-y
+ymat<-rbind(y,rep(0,ncol(y)))
+lik.marg<-rep(NA,nrow(ymat))
+for(i in 1:nrow(ymat)){
+Pm[1:length(Pm)]<- (dbinom(rep(ymat[i,],nG),rep(K,nG),probcap[1:length(Pm)],log=TRUE))
+lik.cond<- exp(colSums(Pm))
+lik.marg[i]<- sum( lik.cond*Gprobs )
+}
+nv<-c(rep(1,length(lik.marg)-1),n0)
+part1<- lgamma(nrow(y)+n0+1) - lgamma(n0+1)
+part2<- sum(nv*log(lik.marg))
+out<-  -1*(part1+ part2)
+attr(out,"SSarea")<- SSarea
+out
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
