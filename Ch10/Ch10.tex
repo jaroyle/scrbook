@@ -604,8 +604,12 @@ that pixel.
 
 \subsection{Simulation and Analysis}
 
-We begin by simulating some data... we have to load the scrbook
-library and grab some covariates...............
+We begin by simulating some data... we have to load the \mbox{\tt 
+scrbook} library, use the function \mbox{\tt make.EDcovariates} to generate
+our raster covariates, process that into a least-cost path distance
+matrix, and then simulate observed encounter data using standard methods
+which we have used many times previously in this book. The complete set
+of {\bf R} commands is:
 
 {\small 
 \begin{verbatim}
@@ -625,13 +629,11 @@ projection(r)<- "+proj=utm +zone=12 +datum=WGS84"
 extent(r)<-c(.5,4.5,.5,4.5)
 theta2<-1
 cost<- exp(theta2*covariate)
-
 tr1<-transition(cost,transitionFunction=function(x) 1/mean(x),directions=8)
 tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
 
 # make up some trap locations
-xg<-seq(1,4,1)
-yg<-4:1
+xg<-seq(1,4,1); yg<-4:1
 pts<-cbind( sort(rep(xg,4)),rep(yg,4))
 
 traplocs<-pts
@@ -648,98 +650,60 @@ for(i in 1:nrow(Y)){
 }
 Y<-Y[apply(Y,1,sum)>0,]
 
-n0<- N-nrow(Y)
-frog1<-nlm(intlik3ed,c(theta0,theta1,log(n0)),hessian=TRUE,y=Y,K=K,X=traplocs,
+\end{verbatim}
+}
+
+
+Now we use the {\bf R} function \mbox{\tt nlm} along with
+our function to evaluate the likelihood and we can obtain the MLEs of the
+model parameters. We'll do that for both the standard Euclidean distance
+and then for the ecological distance based on the ``patchy'' covariate:
+{\small
+ \begin{verbatim}
+frog1<-nlm(intlik3ed,c(theta0,theta1,3)),hessian=TRUE,y=Y,K=K,X=traplocs,
                distmet="euclid",covariate=covariate,theta2=1)
 
-frog2<-nlm(intlik3ed,c(theta0,theta1,log(n0),-.3),hessian=TRUE,y=Y,K=K,X=traplocs,
+frog2<-nlm(intlik3ed,c(theta0,theta1,3,-.3),hessian=TRUE,y=Y,K=K,X=traplocs,
                distmet="ecol",covariate=covariate,theta2=NA)
 \end{verbatim}
 }
 
-Comment on the difference.......
-
+Show nlm() output for each and comment .......................XXXX
 
 \subsection{Simulation study}
 
-We devised a limited simulation study to evaluate three things: (1)
-the general statistical performance of the density estimator under
-this new model; (2) the effect of mis-specifying the model with a
-normal Euclidean distance metric and (3) the statistical performance
-of estimating the relative cost parameter.
+\citet{royle_etal:2012ecol}
+carried-out a limited simulation study to evaluate the
+general statistical performance of the density estimator under
+this new model, the effect of mis-specifying the model with a
+normal Euclidean distance metric and whether the parameter of the
+cost function could be effectively estimated.
+We recapitulate their results here. 
+For population sizes of 100 and 200 individuals with activity
+centers randomly distributed on the $20 \times 20$ landscape, they
+subjected individuals
+to encounter by 16 traps arranged in a $4\times 4$ grid 
+using a Gaussian 
+encounter model with least-cost path distance metric:
+\[
+log(p_{ij})= \theta_{0} + \theta_{1} d_{lcp}({\bf x}_{j},{\bf
+  s}_{i}; \theta_{2})^{2}
+\]
+with  $\theta_{0} = -2$ and $\theta_{1} = 2$, the latter value
+corresponding to $\sigma = 0.5$ of a stationary bivariate normal home
+range model.  Different numbers of replicate samples were considered
+$K=3,5,10$
+(e.g., nights in a camera trapping study) in order
+to produce varying sample
+sizes. 
 
-We used population sizes of 100 and 200 individuals with activity
-centers randomly distributed on the $20 \times 20$ landscape, and subjected them
-to encounter by 16 traps arranged in a $4\times 4$ grid according to
-the Euclidean distance metric. We fit 3 different models; (i) the
+Three different models were fitted
+to each simulated data set: the
 misspecified euclidean distance model; (ii) the true data-generating
 model with the relative cost raster {\it known} and (iii) the true
 data-generating model but estimating the relative cost parameter by
 maximum likelihood.  We used the ``systematic'' and ``patchy''
 covariates defined previously.
-
-We simulated encounter data for the $N$ individuals using the Gaussian
-encounter model with least-cost path distance metric:
-
-\[
-log(p_{ij})= \theta_{0} + \theta_{1} d_{lcp}({\bf x}_{j},{\bf
-  s}_{i}; \theta_{2})^{2}
-\]
-
-{\flushleft We } used here $\theta_{0} = -2$ and $\theta_{1} = 2$, the latter value
-corresponding to $\sigma = 0.5$ of a stationary bivariate normal home
-range model.  We varied the number of replicate samples $K=3,5,10$
-(e.g., nights in a camera trapping study) to produce varying sample
-sizes.  Because any simulation study is inherently arbitrary, we have
-provided {\bf R} scripts for carrying out simulations in Appendix 2 so
-that the interested reader can experiment with their own situations.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 \subsection{Simulation Results}
 
@@ -798,7 +762,6 @@ K=10&  65.81 &  132.39  &   69.44 &  138.76 \\
 \end{table}
 
 
-
 \begin{table}[htp]
 \centering
 \caption{
@@ -843,7 +806,7 @@ function (though we could) but instead we're going to use ecological
 distance ideas only to constrain movement within (or to avoid)
 landscape features.  However, the reader is encouraged to adapt the
 likelihood function given in the previous section for this specific
-case. 
+case, so that a parameter of the cost function can be estimated.
 
 \subsection{Basic Geographic Analysis in R}
 
@@ -861,7 +824,7 @@ Chapts. \ref{chapt.mle} and \ref{chapt.mcmc} XXX exact sections ??
 XXXX for examples of reading in the shapefile and using them to affect
 calculations in SCR models.
 
-The first thing we do here is create a set of polygons that arise by
+The first thing we do here is create a set of polygons by
 buffering and joining some line segments.
 In the {\bf R} library \mbox{\tt scrbook}, we provide 
  a function \mbox{\tt make.seg} which allows the user to make such
@@ -905,8 +868,6 @@ data("fakecorridor")
 library("sp")
 library("rgeos")
 
-l1<-l1.old
-l2<-l2.old
 buffer<- 0.5
 par(mfrow=c(1,1))
 aa<-gUnion(l1,l2)
@@ -926,7 +887,6 @@ points(pts[in.pts==1,],pch=20,col="red")
 \end{verbatim}
 }
 
-
 \begin{figure}
 \begin{center}
 \includegraphics[height=3.25in,width=3.25in]{Ch10/figs/corridor}
@@ -938,8 +898,8 @@ points(pts[in.pts==1,],pch=20,col="red")
 
 We focus on devising a SCR model for this corridor system and we
 imagine that animals will tend to severely avoid leaving the buffered
-habitat zone. Therefore, we assign $\mbox{\tt cost}=1$ if a pixel is within the
-buffer,
+habitat zone. Therefore, we assign $\mbox{\tt cost}=1$ if a pixel 
+is within the buffer,
 and $\mbox{\tt cost} = 10000$ if a pixel is outside of a
 buffer. Therefore the cost to move to a neighboring pixel outside of
 the buffered area is $5000.5$ compared to the cost of 1 to move to a
@@ -1024,7 +984,6 @@ distance-within-the-corridor to normal Euclidean distance and the
 results do not differ too much in this single instance. 
 
 
-
 \section{A stream network}
 
 Later we might add a 3rd prototype situation involving a stream network. 
@@ -1069,7 +1028,7 @@ of ignoring ecological distance and using normal Euclidean distance in
 the model for encounter probability, has the logical effect of causing
 negative bias in estimates of $N$.  We expect this because the effect
 is similar to failing to model heterogeneity. i.e., if we mis-specify
-``model Mh'' \citep{otis_etal:1978} with ``Model M0''
+``model $M_h$'' \citep{otis_etal:1978} with ``Model $M_0$''
 \citep{otis_etal:1978} then we will expect to under-estimate $N$. So
 the effect of mis-specifying the ecological distance metric with a
 standard homogeneous Euclidean distance has the same effect. As a
@@ -1089,8 +1048,10 @@ capture-recapture data.  Therefore SCR models based on ecological
 distance metrics might aid in corridor design and understanding other
 aspects of space usage and movement in animal populations.
 
-We adopted a standard approach to inference under our model based on
-marginal likelihood \citep{borchers_efford:2008}. In principle,
+We considered inference for ecological distance models based on 
+marginal likelihood \citep{borchers_efford:2008}
+(see Chapt. \ref{chapt.mle}).
+In principle,
 Bayesian analysis does not pose any unique challenges for this new
 class of models, except that computing the cost-weighted distance is
 computationally intensive.  So, having to do this at each iteration of
@@ -1099,20 +1060,6 @@ related issue is that the size of the raster slows things down. For
 very large rasters, even likelihood analysis can be computationally
 challenging and methods for efficient calculation of the ecological
 distance given the raster covariate(s) and parameters might be needed.
-
-
-Some additional extensions of the model may be of general interest.
-We have used least-cost paths here to represent ecological distance
-although other distance metrics could be used, including circuit
-resistance distances \citep{mcrae:2006} which allows that animals can
-move through multiple paths in the landscape.  Instead of
-characterizing cost with explicit covariates it might be possible to
-estimate the ``resistance surface'' as a latent field, much as
-\citep{wikle:2003} did in the developing of models of species spread
-based on a diffusion process. He defined the spatially-explicit rate
-of diffusion, $\delta(x)$, as a Gaussian spatial process and it was
-estimated from the data.
-
 
 
 
