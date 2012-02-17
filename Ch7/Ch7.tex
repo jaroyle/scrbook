@@ -469,7 +469,7 @@ look up these algorithms in \citet{robert_casella:2004} or
 
 Building a MH sampler can be broken down into several steps. We are going to demonstrate these steps using a different but still simple and common model: the logit-normal or logistic regression model. For simplicity, assume that
 \[
-y \sim \mbox{Bern} \left(\frac{\exp(\theta)}{1+ exp(\theta)}\right)
+y \sim \mbox{Bern} \left(\frac{\exp(\theta)}{1+ \exp(\theta)}\right)
 \]
 and
 \[
@@ -717,16 +717,9 @@ In this example we may not want to save each individual $\alpha$, but are only i
 \end{comment}
 {\small
 \begin{verbatim}
-
-
-Pmod<-Pois.reg(y,site,mu0, sig0, a0, b0, mu_beta, sig_beta,delta_alpha, delta_beta, 5000)
-
-plot(mcmc(Pmod))
-rejectionRate(mcmc(Pmod))
-summary(window(mcmc(Pmod), start=1001))
-
-Pois.reg<-function(y=y,site=site,mu0=mu0,sig0=sig0,a0=a0,b0=b0, mu_beta=mu_beta, sig_beta=sig_beta, 
-delta_alpha=delta_alpha, delta_beta=delta_beta, niter=niter){
+Pois.reg<-function(y=y,site=site,mu0=mu0,sig0=sig0,a0=a0,b0=b0, 
+mu_beta=mu_beta, sig_beta=sig_beta, delta_alpha=delta_alpha, 
+delta_beta=delta_beta, niter=niter){
 
 lev<-length(unique(site))     #number of sites
 alpha<-runif(lev,-5,5)		#initial values alpha
@@ -743,7 +736,8 @@ for (iter in 1:niter) {
 #initiate counter for acceptance rate of alpha
 alphaUps<-0
 
-#loop over sites, update intercepts alpha one at a time; only data at site i contributes information			
+#loop over sites, update intercepts alpha one at a time; 
+#only data at site i contributes information			
 
 for (i in 1:lev) { 		
 alpha.cand<-rnorm(1, alpha[i], delta_alpha)	
@@ -757,7 +751,8 @@ alphaUps<-alphaUps+1
 }
 }
 
-if(iter %% 100 == 0) {  #this lets you check the acceptance rate of alpha at every 100th iteration
+#this lets you check the acceptance rate of alpha at every 100th iteration
+if(iter %% 100 == 0) {  
             cat("   Acceptance rates\n")
             cat("     alpha =", alphaUps/lev, "\n")
 }
@@ -911,13 +906,13 @@ $y_{i},p_{i},z_{i}$ and also the prior distributions of the prior parameters:
 \]
 For prior distributions, we assume that $\mu_{p},\sigma_{p}, \psi$ are
 mutually independent and for $\mu_{p}$ and $\sigma_{p}$ we use
-improper uniform priors, and $\psi \sim \mbox{Unif}(0,1)$.  Note that
+improper uniform priors, and $\psi \sim \mbox{Unif}(0,1)$.  This is equivalent to $\mbox{Beta}(1,1)$, which will come in handy, as we will see in a moment. Note that
 the likelihood contribution for each individual, when conditioned on
 $p_{i}$ and $z_{i}$, does not depend on $\psi$, $\mu_{p}$, or
-$\sigma_{p}$.  As such, the full-conditionals for the structural
-parameters $\psi$ only depends on the collection of data augmentation
+$\sigma_{p}$.  As such, the full-conditional for the structural
+parameter $\psi$ only depend on the collection of data augmentation
 variables $z_{i}$, and that for $\mu_{p}$ and $\sigma_{p}$ will only
-depends on the collection of latent variables $p_{i}; i=1,2,\ldots,M$.
+depend on the collection of latent variables $p_{i}; i=1,2,\ldots,M$.
 The full conditionals for all the unknowns are as follows:
 
 {\bf (1)} For $p_{i}$:
@@ -928,125 +923,89 @@ The full conditionals for all the unknowns are as follows:
 \end{eqnarray*}
 
 XXX Andy, is the $z_i = 1$ on the left side supposed to be in there? You have the if $z=1$ and $z=0$ on the right hand side XXXXX
+XXX do the parameters that define the prior distribution go into the left side of the equation? Eg for p (above) you have mu and sigma on the left hand side,
+so for z should it be [z|y,p,psi]? XXXXX
 
 {\bf (2)} for $z_{i}$:
 \[
-z_{i} | \cdot \propto [y_{i}|z_{i}*p_{i}] \mbox{Bern}(z_{i}|\psi)
+[z_{i} | y_{i}, p_{i}] \propto [y_{i}|z_{i}*p_{i}] \mbox{Bern}(z_{i}|\psi)
 \]
 
 {\bf (3)} For $\mu_{p}$:
 \[
-[\mu_{p} | \cdot ] \sim \left\{ \prod_{i} [p_{i}| \cdot] \right\} *\mbox{const}
+[\mu_{p} | p_{i}, \sigma_{p}] \sim \left\{ \prod_{i} [p_{i}|\mu_{p}, \sigma_{p}] \right\} *\mbox{const}
 \]
 
 
 {\bf (4)} For $\sigma_{p}$:
 \[
-[ \sigma_{p}|\cdot ] \sim \left\{ \prod_{i}[p_{i}| \cdot ] \right\} *\mbox{const}
+[ \sigma_{p}|p_{i}, \mu_{p} ] \sim \left\{ \prod_{i}[p_{i}| \mu_{p},\sigma_{p} ] \right\} *\mbox{const}
 \]
 
 {\bf (5)} For $\psi$:
 \[
-\psi|\cdot\sim \mbox{Beta}(1 + \sum z_{i}, 1 + M - \sum z_{i})
+[\psi|z_{i}] \sim \propto \left\{ \prod_{i} [z_{i}|\psi] \right\} \mbox{Beta}(1,1)
 \]
-
+Remember that \mbox{Beta}(1,1) is equivalent to \mbox{Unif}(0,1). The Beta distribution is the conjugate prior to the Binomial and 
+Bernoulli distributions and the general form of a full conditional of a Beta-Binomial model 
+with $x_{i} \sim \mbox{Bern} (p) $ and $p \sim \mbox{Beta}(a,b)$ is
+\[
+[p|{\bf x}] \propto \mbox{Beta}(a + \sum_i x_i, b + n-\sum_i x_i)
+\]
+In our case that means
+\[
+[\psi|z_{i}] \sim \mbox{Beta}(1 + \sum z_{i}, 1 + M - \sum z_{i})
+\]
 
 What we've done here is identify each of the full conditional
 distributions in sufficient detail to toss them into our
-Metropolis-Hastings algorithm. With the exception of $\psi$ which has
-a convenient analytic solution -- it is a beta distribution which we
-can easily sample directly. In truth, we could also sample $\mu_{p}$
+Metropolis-Hastings algorithm (the constant term in the full conditionals for $\mu_{p}$ and $\sigma_{p}$ reflects the improper prior we chose for both parameters). 
+Below, you see the updating step for the detection parameter ${\bf p}$. Note that (1) we draw candidate values on the logit scale and (2) instead of looping through 1 -- M individuals to update all $p_{i}$, we update all elements of the vector of {\bf p} in parallel.   
+
+\begin{verbatim}
+
+### update the logit(p) parameters
+lp.cand<- rnorm(M,lp,1)  # 1 is a tuning parameter
+p.cand<-plogis(lp.cand)
+ll<-dbinom(ytot,K,z*p, log=T)
+prior<-dnorm(lp,mu,sigma, log=T)
+llcand<-dbinom(ytot,K,z*pc, log=T)
+prior.cand<-dnorm(lpc,mu,sigma, log=T)
+
+kp<- runif(M) < exp((llcand+prior.cand)-(ll+prior))
+p[kp]<-p.cand[kp]
+lp[kp]<-lp.cand[kp]
+
+\end{verbatim}
+
+Updating the $z_{i}$ is essentially analogous to updating the $p_{i}$ (although they can be updated directly from their full-conditional). $\mu_{p}$ and $\sigma_{p}$ are also updated using MH steps (see the code for $\mu_{p}$ below). In truth, we could also sample $\mu_{p}$
 and $\sigma_{p}^{2}$ directly with certain choices of prior
 distributions. For example, if $\mu_{p} \sim \mbox{Norm}(0, 1000)$
 then the full conditional for $\mu_{p}$ is also normal (see
 sec. \ref{mcmc.sec.gibbs}), etc..
-We implement an MCMC algorithm for this model in the following block
-of {\bf R} code.  
-\begin{comment}
-Rahel: Yes you can have the script and modify to be consistent with
-your stuff. I will send shortly.
-%Andy, I think we should edit code so it's comparable to the rest in this chapter (eg loglik instead of lik.curr etc. 
-%Should I do this in here or do you have an R script file for this code that's goint in the scrbook package? Then, I'd probably better
-% edit the .R file and paste it in here so they match.
-\end{comment}
+
 \begin{verbatim}
 
-## obtain the bear data by executing the previous data grabbing
-## function
-
-temp<-getdata()
-M<-temp$M
-K<-temp$K
-ytot<-temp$ytot
-
-
-###
-### MCMC algorithm for Model Mh
-
-out<-matrix(NA,nrow=100000,ncol=4)
-dimnames(out)<-list(NULL,c("mu","sigma","psi","N"))
-lp<- rnorm(M,-1,1)
-p<-expit(lp)
-mu<- -1
-p0<-exp(mu)/(1+exp(mu))
-sigma<- 1
-psi<- .5
-z<-rbinom(M,1,psi)
-z[ytot>0]<-1
-
-for(i in 1:100000){
-
-### update the logit(p) parameters
-lp.cand<- rnorm(M,lp,1)  # 0.5 is a tuning parameter
-p.cand<-expit(lp.cand)
-lik.curr<-log(dbinom(ytot,K,z*p)*dnorm(lp,mu,sigma))
-lik.cand<-log(dbinom(ytot,K,z*pc)*dnorm(lpc,mu,sigma))
-kp<- runif(M) < exp(lik.cand-lik.curr)
-p[kp]<-pc[kp]
-lp[kp]<-lpc[kp]
-
-p0c<- rnorm(1,p0,.05)
-if(p0c>0 & p0c<1){
-muc<-log(p0c/(1-p0c))
-lik.curr<-sum(dnorm(lp,mu,sigma,log=TRUE))
-lik.cand<-sum(dnorm(lp,muc,sigma,log=TRUE))
-if(runif(1)<exp(lik.cand-lik.curr)) {
- mu<-muc
- p0<-p0c
+p0.cand<- rnorm(1,p0,.05)
+if(p0.cand>0 & p0.cand<1){
+mu.cand<-log(p0.cand/(1-p0.cand))
+ll<-sum(dnorm(lp,mu,sigma,log=TRUE))
+llcand<-sum(dnorm(lp,muc,sigma,log=TRUE))
+if(runif(1)<exp(llcand-ll)) {
+ mu<-mu.cand
+ p0<-p0.cand
 }
 }
 
-sigmac<-rnorm(1,sigma,.5)
-if(sigmac>0){
-lik.curr<-sum(dnorm(lp,mu,sigma,log=TRUE))
-lik.cand<-sum(dnorm(lp,mu,sigmac,log=TRUE))
-if(runif(1)<exp(lik.cand-lik.curr))
- sigma<-sigmac
-}
-
-### update the z[i] variables
-zc<-  ifelse(z==1,0,1)  # candidate is 0 if current = 1, etc..
-lik.curr<- dbinom(ytot,K,z*p)*dbinom(z,1,psi)
-lik.cand<- dbinom(ytot,K,zc*p)*dbinom(zc,1,psi)
-kp<- runif(M) <  (lik.cand/lik.curr)
-z[kp]<- zc[kp]
-
-psi<-rbeta(1, sum(z) + 1, M-sum(z) + 1)
-
-out[i,]<- c(mu,sigma,psi,sum(z))
-}
 \end{verbatim}
 
+Finally, for $\psi$ we can easily sample directly from the beta distribution:
 
+\begin{verbatim}
+psi<-rbeta(1, sum(z) + 1, M-sum(z) + 1)
+\end{verbatim}
 
-{\bf Remarks}: (1) for parameters with bounded support, i.e.,
-$\sigma_{p}$ and $p_{0}$, we are using a random walk candidate
-generator but rejecting draws outside of the parameter space.  (2) We
-mostly use Metropolis-Hastings except for the data augmentation
-parameter $\psi$ which we sample directly from its full-conditional
-distribution which is a beta distribution.  (3) Even the latent data
-augmentation variables $z_{i}$ are updated using Metropolis-Hastings
-although they too can be updated directly from their full-conditional.
+You can check out the full code by invoking \mbox{\tt modelMh()} from the {\bf R} package \mbox{\tt scrbook}.\footnote{Andy, we could put the analysis of the bear data in here as an exercise.} 
 
 \section{MCMC algorithm for the basic spatial capture-recapture model}
 
