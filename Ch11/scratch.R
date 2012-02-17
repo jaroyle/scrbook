@@ -693,21 +693,6 @@ spatial.plot(grid2,probcap[1,],FALSE)
 
 nsims<-2
 
-###
-###
-### Using the "patchy" cost function execute these commands
-###
-###
-
-simout.low.N100.k<-sim.fn(N=100,nsim=nsims,theta0=-2,sigma=.5,K=5,covariate=covariate.patchy)
-simout.low.N200.k<-sim.fn(N=200,nsim=nsims,theta0= -2, sigma=.5,K=5,covariate=covariate.patchy)
-simout.reallylow.N100.k<-sim.fn(N=100,nsim=nsims,theta0=-2,sigma=.5,K=3,covariate=covariate.patchy)
-simout.reallylow.N200.k<-sim.fn(N=200,nsim=nsims,theta0= -2, sigma=.5,K=3,covariate=covariate.patchy)
-simout.high.N100.k<-sim.fn(N=100,nsim=nsims,theta0=-2,sigma=.5,K=10,covariate=covariate.patchy)
-simout.high.N200.k<-sim.fn(N=200,nsim=nsims,theta0= -2, sigma=.5,K=10,covariate=covariate.patchy)
-
-
-
 #
 # to do a single run you have to define a few things and then execute the code within the "sim.fn" below
 #
