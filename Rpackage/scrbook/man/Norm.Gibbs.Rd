@@ -20,7 +20,7 @@ SCR0pois(y,X,M, xl,xu,yl,yu,delta, niter)
     size of the augmented data set
 }
   \item{xl, xu, yl, yu}{
-    outer coordinates of the state-space 
+    outer coordinates of the state-space
 }
   \item{delta}{
     vector containing tuning parameters for sigma (1), lam0 (2) and S (3)
@@ -30,7 +30,7 @@ SCR0pois(y,X,M, xl,xu,yl,yu,delta, niter)
 }
 }
 \value{
-  A matrix with one row per iteration and four columns, for sigma, lam0, psi and N. 
+  A matrix with one row per iteration and four columns, for sigma, lam0, psi and N.
 }
 \details{
   Starting values are chosen at random within the function:
