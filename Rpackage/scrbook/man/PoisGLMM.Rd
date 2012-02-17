@@ -7,7 +7,7 @@ MCMC algorithm for Poisson regression with random intercept
 MCMC algorithm for Poisson regression with random intercept
 }
 \usage{
-PoisGLMM <-function(y,site,mu0,sig0,a0,b0, mu_beta, sig_beta, delta_alpha, delta_beta, niter)
+PoisGLMM(y,site,mu0,sig0,a0,b0, mu_beta, sig_beta, delta_alpha, delta_beta, niter)
 }
 \arguments{
   \item{y}{

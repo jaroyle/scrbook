@@ -709,36 +709,18 @@ For $\sigma_{\alpha}$ we use $\sigma_{\alpha}^{(1)}\sim InvGamma (a_n, b_n)$,
 where  $a_n = n_a/2   + a_0$, and $b_n = 0.5  \displaystyle\sum\limits_{i=1}^{n_{\alpha}} (\alpha_i^{(1)}-\mu_{\alpha}^{(1)})^2+ b_0$.
 
 
-We repeat these steps over $T$ iterations of the MCMC algorithm.
-In this example we may not want to save each individual $\alpha$, but are only interested in their mean and standard deviation. Since these two parameters will change as soon as the value for one element in $\bf{\alpha}$ changes, their acceptance rates will always be close to 1 and are not representative of how well your algorithm performs. To monitor the acceptance rates of parameters you do not want to save, you simply need to add a few lines of code into your updater to see how often the individual parameters are accepted. The full code for the MCMC algorithm of our Poisson GLMM below shows one way how to monitor acceptance of individual $\alpha$'s.
+We repeat these steps over $T$ iterations of the MCMC algorithm. Call the function \mbox{\tt PoisGLMM()}  in \mbox{\tt scrbook}  to check out what this algorithm looks like in {\bf R}.
 
-\begin{comment}
- Andy: should I remove part of the code from the text -- maybe just show the updating of alpha -- and put the full code into the R package?
-\end{comment}
+In this example we may not want to save each individual $\alpha$, but are only interested in their mean and standard deviation. Since these two parameters will change as soon as the value for one element in $\bf{\alpha}$ changes, their acceptance rates will always be close to 1 and are not representative of how well your algorithm performs. To monitor the acceptance rates of parameters you do not want to save, you simply need to add a few lines of code into your updater to see how often the individual parameters are accepted. The code for updating $\alpha$ from our Poisson GLMM below shows one way how to monitor acceptance of individual $\alpha$'s.
+
 {\small
 \begin{verbatim}
-Pois.reg<-function(y=y,site=site,mu0=mu0,sig0=sig0,a0=a0,b0=b0, 
-mu_beta=mu_beta, sig_beta=sig_beta, delta_alpha=delta_alpha, 
-delta_beta=delta_beta, niter=niter){
-
-lev<-length(unique(site))     #number of sites
-alpha<-runif(lev,-5,5)		#initial values alpha
-beta<-runif(1,0,5)			#initial value beta
-mu_alpha<-mean(alpha)
-sig_alpha<-sd(alpha)
-
-out<-matrix(nrow=niter, ncol=3)	
-colnames(out)<-c('mu_alpha','sig_alpha','beta')
-
-for (iter in 1:niter) {
-
-##########update alpha
 #initiate counter for acceptance rate of alpha
 alphaUps<-0
 
 #loop over sites, update intercepts alpha one at a time; 
 #only data at site i contributes information			
-
+#lev is the number of sites i
 for (i in 1:lev) { 		
 alpha.cand<-rnorm(1, alpha[i], delta_alpha)	
 loglike<- sum(dpois (y[site==i], exp(alpha[i] + beta*x[site==i]), log=TRUE))  
@@ -756,38 +738,6 @@ if(iter %% 100 == 0) {
             cat("   Acceptance rates\n")
             cat("     alpha =", alphaUps/lev, "\n")
 }
-
-###########update beta
-beta.cand<-rnorm(1, beta, delta_beta)
-avec<-rep(alpha, times=c(rep(10,10)))
-loglike<- sum(dpois (y, exp(avec + beta*x), log=TRUE))  
-logprior<- dnorm(beta, mu_beta,sig_beta, log=TRUE)
-loglike.cand<- sum(dpois (y, exp(avec + beta.cand *x), log=TRUE))  
-logprior.cand<- dunif(beta.cand, mu_beta,sig_beta, log=TRUE)
-if (runif(1)< exp((loglike.cand+logprior.cand) - (loglike+logprior) )) {
-beta<-beta.cand
-}
-
-###########update mu_alpha using Gibbs sampling
-abar<-mean(alpha)
-mun<- (sig_alpha/(sig_alpha+lev*sig0))*mu0 + (lev*sig0/(sig_alpha+lev* sig0))*abar 
-sign <- (sig_alpha*sig0)/ (sig_alpha+lev*sig0)
-mu_alpha<-rnorm(1,mun, sqrt(sign))
-
-#update sig_alpha using Gibbs sampling
-an<-lev/2 + a0
-bn<- 0.5 * (sum((alpha-mu_alpha)^2)) +b0
-sig_alpha<-1/rgamma(1,shape=an, rate=bn)
-
-out[iter,]<-c(mu_alpha, sqrt(sig_alpha), beta)
-
-}
-
-return(out)
-
-}
-
-
 \end{verbatim}
 }
 
@@ -1163,18 +1113,10 @@ to fall between 0 and 1.
 For our MCMC algorithm that means that, instead of using a Poisson 
 likelihood, $\mbox{Poisson}(y|\sigma,\lambda_0,{\bf s},z)$, we use a 
 Binomial likelihood, $\mbox{Bin}(y| \sigma,\lambda_0,{\bf s},z; K)$, 
-in all the conditional distributions. As an example, Panel
-\ref{mcmc.panel.updatelam0} shows 
-the updating step for $\lambda_0$ under a Binomial encounter model. 
+in all the conditional distributions. An exemplary updating step for $\lambda_0$ under a Binomial encounter model is shown below. 
 The full MCMC code for the Binomial SCR with a clog-log link (\mbox{\tt SCR0binom.cl()}) 
 can be found in the {\bf R} package \mbox{\tt scrbook}.
 
-
-\begin{panel}[htp]
-\centering
-\rule[0.15in]{\textwidth}{.03in}
-%\begin{minipage}{2.5in}
-{\small
 \begin{verbatim}
 
         lam0.cand <- rnorm(1, lam0, 0.1)
@@ -1190,17 +1132,6 @@ can be found in the {\bf R} package \mbox{\tt scrbook}.
             }
         }
 \end{verbatim}
-}
-%\end{minipage}
-\rule[-0.15in]{\textwidth}{.03in}
-\caption{
-MCMC updater for lam0 in a SCR model with Binomial encounter
-process and clog-log link function on detection. Here, pmat =
-1-exp(-lam).
-}
-\label{mcmc.panel.updatelam0}
-\end{panel}
-
 
 Another possibility is to model variation in the individual and site 
 specific detection probability,  $p_{ij}$, directly, without any 
@@ -1569,7 +1500,7 @@ from the package \mbox{\tt spatstat} \citep{baddeley_turner:2005},
 which generates random uniform points within a specified polygon. You'll 
 find this modified MCMC algorithm (\mbox{\tt SCR0poisSSp()}) in the {\bf R} 
 package \mbox{\tt scrbook}.
-
+%need to add and check this piece of code
 Finally, observe that we are converting candidate coordinates of ${\cal S}$ 
 back to meters to match the UTM polygon. In all previous examples, 
 for both the trap locations and the activity centers we have used UTM 
