@@ -1,45 +1,38 @@
-\name{SCR0pois}
-\alias{SCR0pois}
+\name{Norm.Gibbs}
+\alias{Norm.Gibbs}
 \title{
-MCMC algorithm for basic spatial capture-recapture model
+Gibbs sampler for Normal model
 }
 \description{
-Runs the MCMC algorithm described in Ch7. section 7.5 for spatial capture-recapture model with Poisson encounter process
+Gibbs sampler for Normal model y~Normal(mu, sigma)
 }
 \usage{
-SCR0pois(y,X,M, xl,xu,yl,yu,delta, niter)
+Norm.Gibbs(y,mu_0,sigma2_0,a,b,niter)
 }
 \arguments{
   \item{y}{
-	Matrix containing observation data, dimensions: M x J
+	vector of observations
 }
-  \item{X}{
-    2-dimensional matrix with X and Y coordinates for all Jtraps
+  \item{mu_0}{
+    mean for Normal prior on mu
 }
-  \item{M}{
-    size of the augmented data set
+  \item{sigma2_0}{
+    variance for normal prior on mu
 }
-  \item{xl, xu, yl, yu}{
-    outer coordinates of the state-space
+  \item{a}{
+    shape parameter for InvGamma prior for sigma2
 }
-  \item{delta}{
-    vector containing tuning parameters for sigma (1), lam0 (2) and S (3)
+  \item{b}{
+    scale parameter for InvGamma prior for sigma2
 }
   \item{niter}{
     Number of iterations to run the algorithm for
 }
 }
 \value{
-  A matrix with one row per iteration and four columns, for sigma, lam0, psi and N.
+  A matrix with one row per iteration and two columns, for mu and sigma. Note that the algorithm outputs the standard deviation, not sigma2.
 }
-\details{
-  Starting values are chosen at random within the function:
-S<-cbind(runif(M, xl, xu), runif(M,yl,yu))
-sigma<-runif(1,0.5,5)
-lam0<-runif(1,0.1,1)
-psi<-runif(1,0.2,0.8)
-z<-rbinom(M,1,psi)
-}
+
 \author{
 Rahel Sollmann
 }

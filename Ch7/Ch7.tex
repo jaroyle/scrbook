@@ -1056,7 +1056,7 @@ To link the two model components, we modify our trap encounter model to
 \]
 The model has the following structural parameters, for which we need to specify priors:
 \begin{itemize}
-\item[ $\psi$:] the $\mbox{Unif}(0,1)$ is required as part of the data augmentation procedure and in general is a natural choice of an uninformative prior for a probability; note that this is equivalent to a $\mbox{Beta}(1,1)$ prior, which will come in handy later.
+\item[ $\psi$:] the $\mbox{Unif}(0,1)$ is required as part of the data augmentation procedure and in general is a natural choice of an uninformative prior for a probability. It will also lead to conjugacy as we saw in the example of model Mh, so that we can update $\psi$ directly from its full conditional distribution using Gibbs sampling.
 \item[ ${\bf s}_{i}$:] since ${\bf s}_{i}$ is a pair of coordinates it is two-dimensional and we use a uniform prior limited by the extent of our state-space over both dimensions.
 \item[ $\sigma$:] we can conceive several priors for $\sigma$ but let's assume an improper prior, one that is Uniform over $(-\infty, \infty)$. We will see why this is convenient when we construct the full conditionals for $\sigma$.
 \item[ $\lambda_{0}$:] analogous, we will use a $\mbox{Unif}(-\infty, \infty)$ improper prior for $\lambda_{0}$.
@@ -1078,15 +1078,9 @@ Since the improper prior implies that $[\sigma] \propto 1$, we can reduce this f
 [\sigma|{\bf s}, \lambda_{0}, {\bf z}, {\bf y}] \propto \left\{
   \prod_{i} [y_{i}| {\bf s}_{i}, \lambda_{0}, z_{i}, \sigma] \right\}
 \]
-The {\bf R} code to update $\sigma$ is shown in Panel
-\ref{mcmc.panel.updatesigma}.
- Notice that we automatically reject negative candidate values, since $\sigma$ cannot be $<0$.  
+The {\bf R} code to update $\sigma$ is shown below.
+Notice that we automatically reject negative candidate values, since $\sigma$ cannot be $<0$.  
 
-\begin{panel}[htp]
-\centering
-\rule[0.15in]{\textwidth}{.03in}
-%\begin{minipage}{2.5in}
-{\small
 \begin{verbatim}
 sig.cand <- rnorm(1, sigma, 0.1)	#draw candidate value
  if(sig.cand>0){   #automatically reject sig.cand that are <0
@@ -1100,16 +1094,6 @@ sig.cand <- rnorm(1, sigma, 0.1)	#draw candidate value
       }
   }
 \end{verbatim}
-}
-%\end{minipage}
-\rule[-0.15in]{\textwidth}{.03in}
-\caption{
-{\bf R} code to update sigma within an MCMC algorithm for
-an SCR model when using an improper prior
-}
-\label{mcmc.panel.updatesigma}
-\end{panel}
-
 
 These steps are analogous for  $\lambda_{0}$ and ${\bf s}_i$ and we will 
 use MH steps for
@@ -1131,15 +1115,8 @@ We still have to update $z_i$. The full conditional for $z_i$ is
 {\bf s}_{i}] * [z_i]
 \]
 and since $z_i \sim Bernoulli(\psi)$,
-the term has to be taken into account when updating $z_i$. The 
-{\bf R} code for updating $z_i$ is shown in Panel \ref{mcmc.panel.updatez}.
+the term has to be taken into account when updating $z_i$:
 
-
-\begin{panel}[htp]
-\centering
-\rule[0.15in]{\textwidth}{.03in}
-%\begin{minipage}{2.5in}
-{\small
 \begin{verbatim}
         zUps <- 0		#set counter to monitor acceptance rate
         for(i in 1:M) {
@@ -1157,35 +1134,15 @@ the term has to be taken into account when updating $z_i$. The
             }
         }
 \end{verbatim}
-}
-%\end{minipage}
-\rule[-0.15in]{\textwidth}{.03in}
-\caption{
-{\bf R} code to update the auxiliary data augmentation variable ${\bf z}$
-}
-\label{mcmc.panel.updatez}
-\end{panel}
-
 
 $\psi$
  is a hyperparameter of the model, with an uninformative prior 
  distribution of $\mbox{Unif}(0,1)$ or $\mbox{Beta}(1,1)$, so that
 \[
-[psi|{\bf z}] \propto \left\{ \prod_{i} [z_{i}|\psi] \right\} \mbox{Beta}(1,1)
+[psi|{\bf z}] \propto \mbox{Beta}(1 + \sum_i z_i, 1 + M-\sum_i z_i)
 \]
-The beta distribution is the conjugate prior to the Binomial and 
-Bernoulli distributions (remember that $z \sim \mbox{Bern}(\psi))$. 
-The general form of a full conditional of a Beta-Binomial model 
-with $x_{i} \sim \mbox{Bern} (p) $ and $p \sim \mbox{Beta}(a,b)$ is
-\[
-[p|{\bf x}] \propto \mbox{Beta}(a + \sum_i x_i, b + n-\sum_i x_i)
-\]
-\begin{comment} Rahel: above is why i don't like p for distribution! Agree. Taken care of\end{comment}
-In our case, this means we update $\psi$ as follows:
-\begin{verbatim}
-psi<-rbeta(1, 1+sum(z), 1 + M-sum(z))
-\end{verbatim}
-\begin{comment} Rahel what is M here  ? \end{comment}
+
+
 These are all the building blocks you need to write the MCMC algorithm
 for the spatial null model with a Poisson encounter process.  You can
 find the full {\bf R} code by calling the function (\mbox{\tt SCR0pois()}) in the {\bf R} package 
@@ -1249,9 +1206,11 @@ Another possibility is to model variation in the individual and site
 specific detection probability,  $p_{ij}$, directly, without any 
 transformation, such that
 \begin{comment} Rahel the $\leftarrow$ isn't right here but I couldn't
-make this work \end{comment}
+make this work 
+What's wrong with a '=' ?
+\end{comment}
 \[
-p_{ij} \leftarrow p_0 * exp(-D_{ij}^2/(2\sigma^2))
+p_{ij} = p_0 * exp(-D_{ij}^2/(2\sigma^2))
 \]
 and $p_0 \in [0,1]$.
 This formulation is analogous to how detection probability is modeled 
@@ -1307,7 +1266,7 @@ yu<- max(trapmat[,2])+ 20
 \end{verbatim}
 
 Finally, source the MCMC code for the binomial encounter model algorithm 
-with the cloglog link and run 5000 iterations. This should take 
+with the clog-log link and run 5000 iterations. This should take 
 approximately 25 minutes.
 %need to look at tuning... not happy
 \begin{verbatim}
