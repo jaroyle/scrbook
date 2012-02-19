@@ -1537,16 +1537,31 @@ N<-sum(z[1:(nind+nz)])
 }
 ",file="modelMcov.txt")
 
-data2<-list(y=ytot,nz=nz,nind=nind,K=K,xcent=xcent,maxD=11.5)
+data2<-list(y=ytot,nz=nz,nind=nind,K=K,xcent=xcent,Dmax=maxD)
 params2<-list('p0','psi','N','beta')
-inits =  function() {list(z=z, psi=psi, p0=runif(1),beta=rnorm(1) ) }
-fit2 = bugs(data2, inits, params2, model.file="modelMcov.txt",working.directory=getwd(),
-       debug=T, n.chains=3, n.iter=4000, n.burnin=1000, n.thin=4)
+inits =  function() {list(z=zst, psi=psi, p0=runif(1),beta=rnorm(1) ) }
+fit2 = bugs(data2, inits, params2, model.file="modelMcov.txt",working.directory=getwd(),    
+       debug=T, n.chains=3, n.iter=11000, n.burnin=1000, n.thin=1)
 \end{verbatim}
 }
 
-Posterior summaries are given in Table \ref{tab.maxD} XXXXX, and the
-posterior distribution of $N$ is given in Fig. \ref{closed.fig.ha}. It might be
+This produces the following posterior summaries:
+{\small
+\begin{verbatim}
+Inference for Bugs model at "modelMcov.txt", fit using WinBUGS,
+ 3 chains, each with 11000 iterations (first 1000 discarded)
+ n.sims = 30000 iterations saved
+           mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
+p0         0.54  0.07   0.40   0.50   0.54   0.59   0.67    1  1100
+psi        0.34  0.05   0.25   0.31   0.34   0.37   0.44    1  3500
+N         58.92  5.49  50.00  55.00  58.00  62.00  71.00    1  1900
+beta      -0.25  0.06  -0.36  -0.29  -0.25  -0.21  -0.12    1   780
+deviance 459.51 13.21 435.80 450.20 458.80 467.90 487.40    1  2600
+\end{verbatim}
+}
+
+
+It might be 
 perplexing that the estimated $N$ is much lower than obtained by model
 $M_h$ but there is a good explanation for this, discussed
 subsequently. That issue notwithstanding, it is worth pondering how
@@ -1567,22 +1582,7 @@ area''\footnote{This is a bad use of this term. We have never defined
   ETA or ESA. What is it, exactly?} for a given $D_{max}$ is that of a circle
 with radius $D_{max}$.
 
-\begin{verbatim}
-Table XXXXXXX.
-\begin{table}
-\tabular{ccccccccc}
-Node statistics
-node	 mean	 sd	 MC error	2.5%	median	97.5%	start	sample
-N	58.89	5.483	0.2199	50.0	58.0	71.0	251	2250
-beta	-0.246	0.06087	0.003892	-0.3592	-0.2457	-0.126	251	2250
-deviance	459.4	13.29	0.4496	435.7	458.4	487.8	251	2250
-p0	0.5409	0.06817	0.004052	0.4072	0.544	0.6678	251	2250
-psi	0.1706	0.02572	7.759E-4	0.1247	0.1692	0.2242	251	2250
-\end{tabular}
-\caption{..... xyz ......}
-\end{table}
-\label{tab.maxD}
-\end{verbatim}
+
 
 \begin{figure}
 \begin{center}
@@ -1594,19 +1594,20 @@ psi	0.1706	0.02572	7.759E-4	0.1247	0.1692	0.2242	251	2250
 
 \subsection{Extension of the Model}
 
-One important issue in understanding the meaning of estimates produced
-under the individual covariate model is that the uniform distribution
-on $D_{max}$ implies that density is {\it not constant} over space. In
+This model is actually not a very good model for one important reason:
+Imposing a uniform prior distribution on $x$
+implies that density is {\it not constant} over space. In
 particular, this model implies that it {\it decreases} as we move away
-from the centroid of the trap array. This is one reason we have a
-lower estimate of density than that obtained previously and also why,
-if we were to increase $D_{max}$, we would see density continue to
-decrease: $x_{i} \sim \mbox{Unif}(0,D_{max})$ implies constant $N$ in
+from the centroid of the trap array. 
+That is, $x_{i} \sim \mbox{Unif}(0,D_{max})$ implies constant $N$ in
 each distance band from the centroid but obviously the {\it area} of
-each distance band is increasing.  The reader can verify this as a
-homework exercise.
+each distance band is increasing.  
+This is one reason we have a
+lower estimate of density than that obtained previously from model $M_0$ and also why,
+if we were to increase $D_{max}$, we would see density continue to
+decrease.
 
-The use of an individual covariate model is {\it not} restricted to
+Fortunately, the use of an individual covariate model is {\it not} restricted to
 use of this specific distribution for the individual
 covariate. Clearly, it is a bad choice and, therefore, we should think
 about whether we can choose a better distribution for $D_{max}$ - one that
@@ -1636,26 +1637,27 @@ sometimes comforting to verify things empirically:
 }
 
 It would be useful if we could describe this distribution in {\bf BUGS} but
-there is not a built-in way to do this.  One possibility is to use a
+there is not a built-in way to do this that we are aware of.  One possibility is to use a
 discrete version of the pdf. We might also be able to use what is
-referred to in {\bf WinBUGS} jargon as the ``zeros trick'' (see Advanced
-BUGS tricks in the manual) although we haven't pursued this approach. Instead, we
+referred to in {\bf WinBUGS} jargon as the ``zeros trick'' (see {\it Advanced
+BUGS tricks} in the manual) although we haven't pursued this approach. Instead, we
 consider using a discrete version and break $D_{max}$ into $L$ distance
 classes of width $\delta$, with probabilities proportional to
 $2*x$. In particular, if we denote the cut-points by $xg_{1}=0,xg_{2}, \ldots,
 xg_{L+1}=D_{max}$ and the interval midpoints are $xm_{i} = 
-xg_{i+1}-\delta$. Then, the interval probabilities are $p_{i} = 
-2*xm_{i}*\delta/(D_{max}^{2})$, which we can compute once and then send
+xg_{i+1}-\delta$ then the interval probabilities are $p_{i} = 
+2*xm_{i}*\delta/(D_{max}^{2})$, which we can compute once and then pass
 them to {\bf WinBUGS} as data.
 
-The {\bf R} script is as follows. In the model description the
-variable $x$ (observed home range center) has been rounded so that the
+The {\bf R} commands for doing all of this (noting that we have already loaded and processed
+the Fort Drum bear data) are given  as follows. In the model description the
+variable $x$ (observed distance from centroid of the trap array) has been rounded so that the
 discrete version of the $f(x)$ can be used as described
 previously. The new variable labeled \mbox{\tt xround} is actually
-then the integer category label in units of delta from 0. Thus, to
+then the integer category label in units of $\delta$ from 0. Thus, to
 convert back to distance in the expression for $lp[i]$, \mbox{\tt
-  xround[i]} has to be multiplied by $\delta$.
-
+  xround[i]} has to be multiplied by $\delta$. Here is the {\bf BUGS} model 
+  specification:
 {\small
 \begin{verbatim}
 delta<-.2
@@ -1706,8 +1708,9 @@ for different values of $D_{max}$ and observe that the estimated $N$ varies
 with $D_{max}$. Fortunately, we see empirically, that while $N$ seems
 highly sensitive to the prescribed value of $D_{max}$, density seems to
 be invariant to $D_{max}$ as long as it is chosen to be sufficiently
-large. We fit the model for $D_{max}=12$ (points in close proximity to
-the trap arra) to 20 for and the results are given in Table
+large. We fit the model for a random of values of $D_{max}$ from $D_{max}=12$ (restricting
+values of $x$ to be in close proximity to
+the trap array) on up to 20. The results are given in Table
 \ref{closed.tab.Dmax}.
 
 
@@ -1715,7 +1718,8 @@ the trap arra) to 20 for and the results are given in Table
 \centering
 \caption{Analysis of Fort Drum bear hair snare data using the individual covariate model, for different values of Dmax, the upper limit of the uniform distribution of `distance from centroid of the trap array' }
 \begin{tabular}{ccc}
- Dmax & mean & SD \\
+\hline \hline
+ Dmax & mean & SD \\ \hline
   12& 0.230 & 0.038 \\
   15& 0.244 &0.041 \\
   17& 0.249 &0.044 \\
@@ -1728,24 +1732,29 @@ the trap arra) to 20 for and the results are given in Table
 
 
 We see that the posterior mean and SD of density (individuals per
-square km) appear insensitive to choice of $D_{max}$ once we get a slight
+square km) appear insensitive to choice of $D_{max}$ once we get a 
 ways away from the maximum observed value of about 11.5. The estimated
-density of 0.250 per km$^2$ is actually quite a bit lower than we
-reported using model $M_h$ (0.37, see sec.
-\ref{closed.sec.modelmh} above)   XXXX CHECK THESE NUMBERS IN FINAL XXXXXX
- for which sample
-area is not an explicit feature of the model. On the other hand it is
+density of 0.25 per km$^2$ is actually quite a bit lower than we 
+reported using model $M_h$ 
+for which  no relevant ``area'' quantity is explicit in the model.
+Using MLEs of $N$ in conjunction with buffer strips
+(see Table \ref{intro.tab.fdtests}) our estimates were in the range of $0.32-0.43$ and
+the Bayesian estimates were XXXX (posterior mode of N = 102) or XXX (posterior mean of N = 117)
+(see sec.
+\ref{closed.sec.modelmh} above). 
+On the other hand our estimate of $\hat{D} = 0.25$ here (based on the posterior mean) is 
 higher than that reported from model $M_0$ using the buffered area
-(0.195). There is no basis really for comparing or contrasting these
+(0.18). There is no basis really for comparing or contrasting these
 various estimates and it would be a useful philosophical exercise for
 the reader to discuss this matter. In particular, application of models
 $M_0$ and $M_h$ are distinctly {\it not} spatially explicit models -- the
 area within which the population\footnote{We need to look back at
   Chapter 1 and make sure we quit calling this ``sample area'' - it
-  really isn't that at al, but rather the area within which N
+  really isn't that at al, but rather the area within which $N$
   resides.} resides is not defined under either model. There is
 therefore no reason at all to think that the estimates produced under
-either model, using a buffered area, are justifiable based on any
+either either closed population model, based on a buffered ``trap area'', 
+are justifiable by any
 theory. In fact, we would get exactly the same estimate of $N$ no
 matter what we declare the area to be. On the other hand, the
 individual covariate model explicitly describes a distribution for
@@ -1755,10 +1764,13 @@ individual home range centers are randomly distributed in space and
 that probability of detection depends on the distance between home
 range center and the centroid of the trap array. Under this definition
 of the system, we see that density is invariant to the choice of
-sample area which seems like a desirable feature. The individual
+sample area which seems like a desirable feature. 
+
+The individual
 covariate model is not ideal, however, because it does not make full
 use of the spatial information in the data set, i.e., the trap
-locations and the locations of each individual encounter.
+locations and the locations of each individual encounter, and there is hope
+to extend this model in order to resolve remaining deficiencies.
 
 
 \subsection{Invariance of density to $D_{max}$}
@@ -1768,7 +1780,7 @@ chapters, a general property of the estimators is that while $N$
 increases with the prescribed trap area (equivalent to $D_{max}$ in this
 case), we expect that density estimators should be invariant to this
 area. In the model used above, we note that $Area(D_{max}) = 
-\pi*D_{max}^{2}$ and $E[N(D_{max})] = \lambda*A(D_{max})$ and thus
+\pi*D_{max}^{2}$ and $E[N(D_{max})] = \lambda*Area(D_{max})$ and thus
 $E[Density(D_{max})] = \lambda$, i.e., constant. This should be 
 interpreted as the {\it prior} density. Absent data, then realizations
 under the model will have density $\lambda$ regardless of what $D_{max}$
@@ -1828,13 +1840,14 @@ fixed zeros for $z=0$).  In distance sampling we pay for having only a
 single sample (i.e., $K=1$) by requiring constraints on the model of
 detection probability. A standard model is
 \[
-\log(p_{i}) = b * x_{i}^{2}
+\log(p_{i}) = \beta x_{i}^{2}
 \]
-for $b < 0$, where $x_i$ denotes the distance at which the $i$th
+for $\beta < 0$, where $x_i$ denotes the distance at which the $i$th
 individual is detected relative to some reference location where
 perfect detectability ($p=1$) is assumed. This function corresponds to
-the ``half-normal'' detection function (i.e., with $b =
-1/\sigma^{2}$).  If $K>1$ then the intercept alpha is identifiable and
+the ``half-normal'' detection function (i.e., with $\beta =
+1/\sigma^{2}$).  If $K>1$ then an intercept in this model is
+identifiable and
 such models are usually called ``capture-recapture distance
 sampling''\citep{alpizar_pollock:1996,borchers_etal:1998}.
 
@@ -1855,14 +1868,14 @@ shown in Panel \ref{closed.panel.distance} from \citet{royle_dorazio:2008}.
 \rule[0.15in]{\textwidth}{.03in}
 \begin{minipage}{5in}
 \begin{verbatim}
-b~dunif(0,10)
+beta~dunif(0,10)
 psi~dunif(0,1)
 
 for(i in 1:(nind+nz)){
    z[i]~dbern(psi)    # DA Variables
    x[i]~dunif(0,B)    # B=strip width
    p[i]<-exp(logp[i])   # DETECTION MODEL
-   logp[i]<-   -((x[i]*x[i])*b)
+   logp[i]<-   - beta*(x[i]*x[i])
    mu[i]<-z[i]*p[i]
    y[i]~dbern(mu[i])  # OBSERVATION MODEL
  }
@@ -1882,9 +1895,9 @@ prior distribution on individual {\it location} instead of distance
 between individual and observation point (or transect).  Thus we can
 write the general distance sampling model as
 \[
-\mbox{logit}(p[i]) = \alpha + \beta*||{\bf u}_{i} - {\bf x}_0||
+p_{i} = f(\beta,||{\bf u}_{i} - {\bf x}_0||)
 \]
-Along with
+along with
 \[
  {\bf u}_{i} \sim \mbox{Unif}({\cal S})
 \]
@@ -1894,11 +1907,12 @@ practice it is easier to record distance instead of location.  Basic
 math can be used to argue that if individuals have a uniform
 distribution in space, then the distribution of Euclidean distance is
 also uniform. In particular, if a transect of length $L$ is used and $x$
-is distance to the transect then $F(x) = \Pr(X<=x) = L*x/L*B = x/B$ and
+is distance to the transect then $F(x) = \Pr(X\le x) = L*x/L*B = x/B$ and
 $f(x) = dF/dx = (1/B)$. For measurements of radial distance, see the
 previous section.
 
-In the context of our general characterization of SCR models (Chapt. \ref{intro.sec.characterization}),
+In the context of our general characterization of SCR models 
+(Chapt. \ref{modeling.sec.characterization}),
 we suggested that every SCR model can be described,
 conceptually, by a hierarchical model of the form:
 \[
@@ -1931,8 +1945,8 @@ Clearly, distance sampling requires that one can collect large
 quantities of distance data, which is not always possible. For tigers,
 it is much easier, efficient, and safer to employ camera traps or
 tracking plates and then apply SCR models. Furthermore, as we will see
-in Chapts.\footnote{probably search-encounter material and SCR-DS?}
-\ref{chapt.XYZ}, SCR models can use distance data to estimate all the
+in Chapts.
+\ref{chapt.searchencounter} and \ref{chapt.scrds}, SCR models can use distance data to estimate all the
 parameters of our enchilada, allowing us to study distribution,
 movement, and density. Thus, SCR models are much more general and
 versatile than distance sampling models (which clearly are a special
