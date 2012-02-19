@@ -1,5 +1,5 @@
 modelMh <-
-function(y,K,nsim=1000){
+function(ytot,K,nsim=1000){
 
 out<-matrix(NA,nrow=nsim,ncol=4)
 dimnames(out)<-list(NULL,c("mu","sigma","psi","N"))
@@ -19,8 +19,8 @@ lp.cand<- rnorm(M,lp,1)  # 1 is a tuning parameter
 p.cand<-plogis(lp.cand)
 ll<-dbinom(ytot,K,z*p, log=T)
 prior<-dnorm(lp,mu,sigma, log=T)
-llcand<-dbinom(ytot,K,z*pc, log=T)
-prior.cand<-dnorm(lpc,mu,sigma, log=T)
+llcand<-dbinom(ytot,K,z*p.cand, log=T)
+prior.cand<-dnorm(lp.cand,mu,sigma, log=T)
 
 kp<- runif(M) < exp((llcand+prior.cand)-(ll+prior))
 p[kp]<-p.cand[kp]
@@ -30,7 +30,7 @@ p0.cand<- rnorm(1,p0,.05)
 if(p0.cand>0 & p0.cand<1){
 mu.cand<-log(p0.cand/(1-p0.cand))
 ll<-sum(dnorm(lp,mu,sigma,log=TRUE))
-llcand<-sum(dnorm(lp,muc,sigma,log=TRUE))
+llcand<-sum(dnorm(lp,mu.cand,sigma,log=TRUE))
 if(runif(1)<exp(llcand-ll)) {
  mu<-mu.cand
  p0<-p0.cand
@@ -38,7 +38,7 @@ if(runif(1)<exp(llcand-ll)) {
 }
 
 sigma.cand<-rnorm(1,sigma,.5)
-if(sig.cand>0){
+if(sigma.cand>0){
 ll<-sum(dnorm(lp,mu,sigma,log=TRUE))
 llcand<-sum(dnorm(lp,mu,sigma.cand,log=TRUE))
 if(runif(1)<exp(llcand-ll))
@@ -50,8 +50,8 @@ if(runif(1)<exp(llcand-ll))
 z.cand<-  ifelse(z==1,0,1)  # candidate is 0 if current = 1, etc..
 ll<- dbinom(ytot,K,z*p, log=TRUE)
 prior<-dbinom(z,1,psi, log=TRUE)
-llcand<- dbinom(ytot,K,zc*p, log=TRUE)
-prior.cand<-dbinom(zc,1,psi, log=TRUE)
+llcand<- dbinom(ytot,K,z.cand*p, log=TRUE)
+prior.cand<-dbinom(z.cand,1,psi, log=TRUE)
 kp<- runif(M) <  exp((llcand+prior.cand)-(ll+prior))
 z[kp]<- z.cand[kp]
 
