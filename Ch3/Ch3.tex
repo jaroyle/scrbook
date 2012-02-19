@@ -1961,14 +1961,16 @@ muntjac deer (Muntiakus muntjak) collected in the year 2004 from
 Nagarahole National Park in southern India
 (Kumar et al. unpublished data). The muntjac is
 a solitary species and distance measurements were made on 57 groups
-that were largely singletons with XYZ pairs of individuals.  Commands
+that were largely singletons with 4 pairs of individuals.  Commands
 for reading in and organizing the data for {\bf WinBUGS}, followed by
 writing the model to a text file. Note that the total sampled area of
-the transects is fed in as ``striparea'' which is 708 (km of transect)
-multiplied by the strip width (B=150 = 0.15 km) multiplied by 2.
+the transects is fed in as ``striparea'' which is $708$ (km of transect walked)
+multiplied by the strip width ($B=120 = 0.12$ km) multiplied by 2.
+{\small 
 \begin{verbatim}
 library("R2WinBUGS")
 data<- read.csv("Muntjac.csv")
+hist(data[,3],30)
 nind<-nrow(data)
 y<-rep(1,nind)
 nz<-400
@@ -1976,18 +1978,17 @@ y<-c(y,rep(0,nz))
 x<-data[,3]
 x<-c(x,rep(NA,nz))
 z<-y
-data<-list(y=y,x=x,nz=nz,nind=nind,B=150,striparea=708*.15*2)
 
 cat("
 model{
-b~dunif(0,10)
+beta~dunif(0,10)
 psi~dunif(0,1)
 
 for(i in 1:(nind+nz)){
    z[i]~dbern(psi)    # DA Variables
    x[i]~dunif(0,B)    # B=strip width
    p[i]<-exp(logp[i])   # DETECTION MODEL
-   logp[i]<-   - beta*(x[i]*x[i])
+   logp[i]<-   -beta*(x[i]*x[i])
    mu[i]<-z[i]*p[i]
    y[i]~dbern(mu[i])  # OBSERVATION MODEL
  }
@@ -1996,29 +1997,37 @@ D<- N/striparea  # area of transects
 }
 ",file="dsamp.txt")
 \end{verbatim}
-
+}
 Next, we provide inits, indicate which parameters to monitor, and then
 pass those things to {\bf WinBUGS}:
+{\small
 \begin{verbatim}
+data<-list(y=y,x=x,nz=nz,nind=nind,B=120,striparea=(708*2*.120))
 params<-list('beta','N','D','psi')
 inits =  function() {list(z=z, psi=runif(1), beta=runif(1,0,.02) )}
-fit = bugs(data, inits,  params, model.file="dsamp.txt",
-working.directory=getwd(),debug=T, n.chains=3, n.iter=4000, n.burnin=1000, n.thin=2)
+fit = bugs(data, inits, params, model.file="dsamp.txt",working.directory=getwd(),    
+       debug=T, n.chains=3, n.iter=11000, n.burnin=1000, n.thin=2)
 \end{verbatim}
+}
 Posterior summaries are provided in the following table. Estimated
-density is pretty low, 1.1 individuals per sq. km.\footnote{ much
-  lower than Samba's : Observers walked about 708 km from 39 transects
-  in Nagarahole and the muntjac density is about 3 per sq km.. I need
-  to get to the bottom of this.}
+density is pretty low, 1.1 individuals per sq. km.\footnote{ This is much
+  lower than Samba's estimate produced from WinBUGS accounting for group
+  size. Reason unknown. }
+{\small
 \begin{verbatim}
- node	 mean	 sd	 MC error	2.5%	median	97.5%	start	sample
-D	1.096	0.1694	0.009122	0.8098	1.078	1.474	501	4500
-N	232.8	35.99	1.938	172.0	229.0	313.0	501	4500
-b	5.678E-4	1.05E-4	4.129E-6	3.867E-4	5.616E-4	7.949E-4	501	4500
-deviance	681.2	16.72	0.7536	650.8	680.6	716.6	501	4500
-psi	0.5099	0.08238	0.004442	0.3681	0.5033	0.6918	501	4500
-\end{verbatim}
+Inference for Bugs model at "dsamp.txt", fit using WinBUGS,
+ 3 chains, each with 11000 iterations (first 1000 discarded), n.thin = 2
+ n.sims = 15000 iterations saved
+           mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
+beta       0.00  0.00   0.00   0.00   0.00   0.00   0.00    1  1100
+N        185.73 26.53 138.00 167.00 184.00 203.00 242.00    1   570
+D          1.09  0.16   0.81   0.98   1.08   1.20   1.42    1   570
+psi        0.41  0.06   0.30   0.36   0.40   0.45   0.54    1   670
+deviance 655.74 16.26 626.00 644.50 655.10 666.40 689.80    1  1300
 
+[.... some output deleted .... ]
+\end{verbatim}
+}
 
 \section{Summary and Outlook}
 
@@ -2034,11 +2043,11 @@ binomial (from which which the so-called ``conditional likelihood''
 derives) since we only have encounter frequency data on observed
 individuals. If instead we analyze the models using data augmentation,
 the observations can be modeled using a zero-inflated binomial
-distribution. In short, when we deal with the unknown-N problem using
+distribution. In short, when we deal with the unknown-$N$ problem using
 data augmentation then we are left with zero-inflated GLM and GLMMs
 instead of ordinary GLM or GLMMs. The analysis of such zero-inflated
 models is practically convenient, especially using the various
-Bayesian analysis packages that use the BUGS language.
+Bayesian analysis packages that use the {\bf BUGS} language.
 
 Spatial capture-recapture models that we will consider in the rest of
 the chapters of this book are closely related to what have been called
