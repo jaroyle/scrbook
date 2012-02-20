@@ -13,7 +13,8 @@ The data on bears
  chr "beardata"
 }
 \details{
-%%  ~~ If necessary, more details than the __description__ above ~~
+loads the Fort Drum beardata.
+A list with "trapmat" and "bearArray" (3 d array)
 }
 \source{
 %%  ~~ reference to a publication or URL from which the data were obtained ~~
