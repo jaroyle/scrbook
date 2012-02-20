@@ -305,12 +305,20 @@ X <- cbind(rep(xsp, each=length(xsp)), rep(xsp, times=length(xsp)))
 str(X)
 
 
-png("figs/discrete.png", width=7, height=7, units="in", res=400)
-image(cell, cell, t(matrix(dat$elev, 1/pix, 1/pix)), ann=FALSE)
+elevMat <- t(matrix(dat$elev, 1/pix, 1/pix))
+library(raster)
+elev <- flip(raster(t(elevMat)), direction="y")
+
+windows(width=3, height=6)
+op <- par(mfrow=c(2,1), mai=rep(0.2,4))
+#png("figs/discrete.png", width=7, height=7, units="in", res=400)
+image(cell, cell, elevMat, ann=FALSE)
 points(dat[s.tmp>0,c("x","y")], cex=s.tmp[s.tmp>0])
 points(X, pch="+")
 box()
-dev.off()
+#dev.off()
+plot(elev)
+par(op)
 
 
 
@@ -600,61 +608,11 @@ sink()
 
 
 
-
-### Source all of the utility functions at the end of this script before
-### running any of the code.
-###
-###
-
 ### We require 3 R libraries
 library("shapefiles")
 library("gdistance")
 library("raster")
 
-###
-### following block of code creates a "patchy" looking covariate to use
-### in our cost function. It uses a standard method for generating a correlated
-### multivariate normal vector of length, in this case, 400 (one value for each
-### pixel). One can use any correlation function here but we chose a standard
-### exponential model with range parameter 0.5
-###png("raster_krige.png",width=5,height=5, units="in", res=400)
-par(mfrow=c(1,1))
-set.seed(12)
-r<-raster(nrows=20,ncols=20)
-projection(r)<- "+proj=utm +zone=12 +datum=WGS84"
-extent(r)<-c(.5,4.5,.5,4.5)
-delta<- (4.5-.5)/20
-gx<- seq(.5 + delta/2, 4.5-delta/2,,20)
-gy<- rev(gx)
-gx<-sort(rep(gx,20))
-gy<-rep(gy,20)
-grid<-cbind(gx,gy)
-Dmat<-as.matrix(dist(grid))
-V<-exp(-Dmat/.5)
-z<-t(chol(V))%*%rnorm(400)
-z<- (z-mean(z))/sqrt(var(as.vector(z)))
-#values(r)<-rot(rot(rot(matrix(z,20,20,byrow=TRUE))))
-#values(r)<-(matrix(z,20,20,byrow=FALSE))
-values(r)<-matrix(z,20,20,byrow=FALSE)
-spatial.plot(grid,z,FALSE)
-par(mfrow=c(2,1))
-plot(r)
-####dev.off()
-covariate.patchy<- z*sqrt(1.68) + .168   #approx. same scale as systematic covariate below
-values(r)<-matrix(covariate.patchy,20,20,byrow=FALSE)
-covariate.patchy<- r
-class(covariate.patchy)
-
-##
-## build systematic covariate
-## defined here as a trend from NW to SE
-##
-cost<-matrix(NA,nrow=20,ncol=20)
-cost<-row(cost)+col(cost)
-covariate.trend<- (cost-20)/10
-values(r)<-matrix(covariate.trend,20,20,byrow=FALSE)
-covariate.trend<-r
-class(covariate.trend)
 
 
 
@@ -668,16 +626,16 @@ class(covariate.trend)
 ### theta1 = coefficient on "distance" -- derived from "sigma"
 ### theta2 = coefficient on covariate used in cost function
 ###
-theta2<- 1
-theta0<- -2
-sigma<-.25
-theta1<- 1/(2*sigma*sigma)
-gx<- seq(.5 + delta/2, 4.5-delta/2,,20)
-gy<- rev(gx)
-gx<-sort(rep(gx,20))
-gy<-rep(gy,20)
-grid2<-cbind(gx,gy)
-D<-e2dist(grid,grid2)
+theta2 <- 1
+theta0 <- -2
+sigma <-.25
+theta1 <- 1/(2*sigma*sigma)
+gx <- seq(.5 + delta/2, 4.5-delta/2,,20)
+gy <- rev(gx)
+gx <-sort(rep(gx,20))
+gy <-rep(gy,20)
+grid2 <-cbind(gx,gy)
+D <- e2dist(grid,grid2)
 ## Here is the stationary and isotropic detection model:
 probcap<-plogis(theta0)*exp(-theta1*D*D)
 ## spatial.plot is a utility function (end of this script)
@@ -776,80 +734,102 @@ list(simout=simout,call=cl)
 
 }
 
-##
-##
-## UTILITY FUNCTIONS
-##
-## PUT ALL OF THE OBJECTS BELOW INTO YOUR WORKSPACE
-##
 
-intlik3ed<-function(start=NULL,y=y,K=NULL,delta=.2,X=traplocs,distmet="ecol",covariate){
-if(is.null(K)) return("need sample size")
-if(class(covariate)!="RasterLayer") {
- cat("make a raster out of this",fill=TRUE)
- return(NULL)
+image(elevMat)
 
+
+
+
+
+
+# Negative log-likelihood
+
+intlik3ed <- function(y=y, traplocs=traplocs,
+                      den.formula=~1, dist.formula=~1,
+                      rasters, K, start) {
+    if(class(covariate)[1] %*% c("RasterLayer", "RasterStack"))
+        stop("rasters should have class RasterLayer or RasterStack")
+
+    # do a check here that trap locations exist in same space as raster.
+    # forthcoming
+
+    if(missing(K))
+        stop("The binomial sample size, K, must be supplied")
+
+    dims <- dim(rasters)
+    rp <- as.data.frame(rasterToPoints(rasters))
+    G <- rp[,1:2] # state-space pixel centers
+    xg <- rp[,"x"]
+    yg <- rp[,"y"]
+
+    res <- res(elev)
+    area <- prod(res)
+    npix <- ncell(rasters)
+    SSarea <- area*npix # check for rasterStacks
+    ext <- extent(elev)
+
+    isEuclid <- identical(dist.formula, ~1)
+    if(isEuclid)
+        D <- e2dist(traplocs, G)
+
+    Xden <- model.matrix(den.formula, rp)
+    Xdist <- model.matrix(den.formula, rp)
+
+    isInt1 <- colnames(Xden) == "(Intercept)"
+    isInt2 <- colnames(Xdist) == "(Intercept)"
+    if(any(isInt1))
+        Xden <- Xden[,-which(isInt1),drop=FALSE]
+    if(any(isInt2))
+        Xdist <- Xdist[,-which(isInt2),drop=FALSE]
+
+    np.den <- ncol(Xden)
+    np.dist <- ncol(Xdist)
+    np <- 3+np.den+np.dist
+
+    if(missing(start))
+        start <- rep(0, np)
+
+    y.ij <- rbind(y, rep(0, ncol(y)))
+    nry <- nrow(y.ij)
+
+    # Negative log-likelihood
+    nll <- function(pars) {
+        theta0 <- pars[1]
+        theta1 <- pars[2]
+        n0 <- exp(pars[3])
+        if(np.den > 0) {
+            mu <- exp(Xden %*% pars[4:(3+np.den)])
+            mu <- mu/sum(mu) #Gprobs
+        }
+        if(!isEuclid) {
+            cost <- exp(Xdist %*% pars[(4+np.den):np])
+            tr1 <- transition(cost, transitionFunction = function(x)
+                              1/mean(x), directions=8)
+            tr1CorrC <- geoCorrection(tr1, type="c",
+                                      multpl=FALSE, scl=FALSE)
+            D <- costDistance(tr1CorrC, traplocs, G)
+        }
+
+        probcap <- (exp(theta0)/(1+exp(theta0)))*exp(-theta1*D*D)
+        Pm <- matrix(NA, nrow=nrow(probcap), ncol=ncol(probcap))
+        lik.marg <- rep(NA, nrow(y.ij))
+        for(i in 1:nry) {
+            Pm[1:length(Pm)] <- (dbinom(rep(y.ij[i,], npix), rep(K, npix),
+                                        probcap[1:length(Pm)], log=TRUE))
+            lik.cond<- exp(colSums(Pm))
+            lik.marg[i]<- sum(lik.cond*mu)
+        }
+        nv <- c(rep(1, length(lik.marg)-1), n0)
+        part1 <- lgamma(nrow(y)+n0+1) - lgamma(n0+1)
+        part2 <- sum(nv*log(lik.marg))
+        out <-  -1*(part1+ part2)
+        attr(out,"SSarea") <- SSarea
+        return(out)
+    }
+
+    fm <- optim(start, nll, ...)
+    return(fm)
 }
-# do a check here that trap locations exist in same space as raster.
-# forthcoming
-
-# build integration grid. This derives from the covariate raster
-# i.e., potential values of s are the mid-point of each raster pixel
-nc<-covariate@ncols
-nr<-covariate@nrows
-Xl<-covariate@extent@xmin
-Xu<-covariate@extent@xmax
-Yl<-covariate@extent@ymin
-Yu<-covariate@extent@ymax
-SSarea<- (Xu-Xl)*(Yu-Yl)
-### ASSUMES SQUARE RASTER -- NEED TO GENERALIZE THIS
-delta<- (Xu-Xl)/nc
-xg<-seq(Xl+delta/2,Xu-delta/2,delta)
-yg<-seq(Yl+delta/2,Yu-delta/2,delta)
-npix.x<-length(xg)
-npix.y<-length(yg)
-area<- (Xu-Xl)*(Yu-Yl)/((npix.x)*(npix.y))
-G<-cbind(rep(xg,npix.y),sort(rep(yg,npix.x)))
-nG<-nrow(G)
-
-if(distmet=="euclid")
-D<- e2dist(X,G)
-
-if(distmet=="ecol"){
-theta2<-exp(start[4])
-
-cost<- exp(theta2*covariate)
-tr1<-transition(cost,transitionFunction=function(x) 1/mean(x),directions=8)
-tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
-D<-costDistance(tr1CorrC,X,G)
-}
-
-#if(is.null(start)) start<-c(0,0,0,0,0)
-theta0<-start[1]
-theta1<-start[2]
-n0<-exp(start[3])
-
-lam<-exp(start[5]*covariate)
-vlam<-values(lam)
-Gprobs<-vlam/sum(vlam)
-
-probcap<- (exp(theta0)/(1+exp(theta0)))*exp(-theta1*D*D)
-Pm<-matrix(NA,nrow=nrow(probcap),ncol=ncol(probcap))
-ymat<-y
-ymat<-rbind(y,rep(0,ncol(y)))
-lik.marg<-rep(NA,nrow(ymat))
-for(i in 1:nrow(ymat)){
-Pm[1:length(Pm)]<- (dbinom(rep(ymat[i,],nG),rep(K,nG),probcap[1:length(Pm)],log=TRUE))
-lik.cond<- exp(colSums(Pm))
-lik.marg[i]<- sum( lik.cond*Gprobs )
-}
-nv<-c(rep(1,length(lik.marg)-1),n0)
-part1<- lgamma(nrow(y)+n0+1) - lgamma(n0+1)
-part2<- sum(nv*log(lik.marg))
-out<-  -1*(part1+ part2)
-attr(out,"SSarea")<- SSarea
-out
-}
 
 
 
@@ -857,7 +837,8 @@ out
 
 
 
-
+plot(function(x, theta0=0.5, theta1=1)
+     (exp(theta0)/(1+exp(theta0)))*exp(-theta1*D*D), 0, 1)
 
 
 
