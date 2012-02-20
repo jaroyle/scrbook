@@ -738,80 +738,97 @@ list(simout=simout,call=cl)
 image(elevMat)
 
 
-elev <-
+
 
 
 
 # Negative log-likelihood
 
-intlik3ed <- function(y=y, X=traplocs, rasters) {
-
-    if(class(covariate)!="RasterLayer")
-        stop("make a raster out of this",fill=TRUE)
+intlik3ed <- function(y=y, traplocs=traplocs,
+                      den.formula=~1, dist.formula=~1,
+                      rasters, K, start) {
+    if(class(covariate)[1] %*% c("RasterLayer", "RasterStack"))
+        stop("rasters should have class RasterLayer or RasterStack")
 
     # do a check here that trap locations exist in same space as raster.
     # forthcoming
 
-    # build integration grid. This derives from the covariate raster
-    # i.e., potential values of s are the mid-point of each raster pixel
+    if(missing(K))
+        stop("The binomial sample size, K, must be supplied")
 
     dims <- dim(rasters)
-    rp <- rasterToPoints(rasters)
+    rp <- as.data.frame(rasterToPoints(rasters))
+    G <- rp[,1:2] # state-space pixel centers
+    xg <- rp[,"x"]
+    yg <- rp[,"y"]
 
-    nc<-covariate@ncols
-    nr<-covariate@nrows
-    Xl<-covariate@extent@xmin
-    Xu<-covariate@extent@xmax
-    Yl<-covariate@extent@ymin
-    Yu<-covariate@extent@ymax
-    SSarea<- (Xu-Xl)*(Yu-Yl)
-    ### ASSUMES SQUARE RASTER -- NEED TO GENERALIZE THIS
-    delta<- (Xu-Xl)/nc
-    xg<-seq(Xl+delta/2,Xu-delta/2,delta)
-    yg<-seq(Yl+delta/2,Yu-delta/2,delta)
-    npix.x<-length(xg)
-    npix.y<-length(yg)
-    area<- (Xu-Xl)*(Yu-Yl)/((npix.x)*(npix.y))
-    G<-cbind(rep(xg,npix.y),sort(rep(yg,npix.x)))
-    nG<-nrow(G)
+    res <- res(elev)
+    area <- prod(res)
+    npix <- ncell(rasters)
+    SSarea <- area*npix # check for rasterStacks
+    ext <- extent(elev)
 
-    if(distmet=="euclid")
-        D<- e2dist(X,G)
+    isEuclid <- identical(dist.formula, ~1)
+    if(isEuclid)
+        D <- e2dist(traplocs, G)
 
-    if(distmet=="ecol"){
-        theta2<-exp(start[4])
+    Xden <- model.matrix(den.formula, rp)
+    Xdist <- model.matrix(den.formula, rp)
 
-        cost<- exp(theta2*covariate)
-        tr1<-transition(cost,transitionFunction=function(x) 1/mean(x),directions=8)
-        tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
-        D<-costDistance(tr1CorrC,X,G)
+    isInt1 <- colnames(Xden) == "(Intercept)"
+    isInt2 <- colnames(Xdist) == "(Intercept)"
+    if(any(isInt1))
+        Xden <- Xden[,-which(isInt1),drop=FALSE]
+    if(any(isInt2))
+        Xdist <- Xdist[,-which(isInt2),drop=FALSE]
+
+    np.den <- ncol(Xden)
+    np.dist <- ncol(Xdist)
+    np <- 3+np.den+np.dist
+
+    if(missing(start))
+        start <- rep(0, np)
+
+    y.ij <- rbind(y, rep(0, ncol(y)))
+    nry <- nrow(y.ij)
+
+    # Negative log-likelihood
+    nll <- function(pars) {
+        theta0 <- pars[1]
+        theta1 <- pars[2]
+        n0 <- exp(pars[3])
+        if(np.den > 0) {
+            mu <- exp(Xden %*% pars[4:(3+np.den)])
+            mu <- mu/sum(mu) #Gprobs
+        }
+        if(!isEuclid) {
+            cost <- exp(Xdist %*% pars[(4+np.den):np])
+            tr1 <- transition(cost, transitionFunction = function(x)
+                              1/mean(x), directions=8)
+            tr1CorrC <- geoCorrection(tr1, type="c",
+                                      multpl=FALSE, scl=FALSE)
+            D <- costDistance(tr1CorrC, traplocs, G)
+        }
+
+        probcap <- (exp(theta0)/(1+exp(theta0)))*exp(-theta1*D*D)
+        Pm <- matrix(NA, nrow=nrow(probcap), ncol=ncol(probcap))
+        lik.marg <- rep(NA, nrow(y.ij))
+        for(i in 1:nry) {
+            Pm[1:length(Pm)] <- (dbinom(rep(y.ij[i,], npix), rep(K, npix),
+                                        probcap[1:length(Pm)], log=TRUE))
+            lik.cond<- exp(colSums(Pm))
+            lik.marg[i]<- sum(lik.cond*mu)
+        }
+        nv <- c(rep(1, length(lik.marg)-1), n0)
+        part1 <- lgamma(nrow(y)+n0+1) - lgamma(n0+1)
+        part2 <- sum(nv*log(lik.marg))
+        out <-  -1*(part1+ part2)
+        attr(out,"SSarea") <- SSarea
+        return(out)
     }
 
-    #if(is.null(start)) start<-c(0,0,0,0,0)
-    theta0<-start[1]
-    theta1<-start[2]
-    n0<-exp(start[3])
-
-    lam<-exp(start[5]*covariate)
-    vlam<-values(lam)
-    Gprobs<-vlam/sum(vlam)
-
-    probcap<- (exp(theta0)/(1+exp(theta0)))*exp(-theta1*D*D)
-    Pm<-matrix(NA,nrow=nrow(probcap),ncol=ncol(probcap))
-    ymat<-y
-    ymat<-rbind(y,rep(0,ncol(y)))
-    lik.marg<-rep(NA,nrow(ymat))
-    for(i in 1:nrow(ymat)){
-        Pm[1:length(Pm)]<- (dbinom(rep(ymat[i,],nG),rep(K,nG),probcap[1:length(Pm)],log=TRUE))
-        lik.cond<- exp(colSums(Pm))
-        lik.marg[i]<- sum( lik.cond*Gprobs )
-    }
-    nv<-c(rep(1,length(lik.marg)-1),n0)
-    part1<- lgamma(nrow(y)+n0+1) - lgamma(n0+1)
-    part2<- sum(nv*log(lik.marg))
-    out<-  -1*(part1+ part2)
-    attr(out,"SSarea")<- SSarea
-    out
+    fm <- optim(start, nll, ...)
+    return(fm)
 }
 
 
@@ -820,7 +837,8 @@ intlik3ed <- function(y=y, X=traplocs, rasters) {
 
 
 
-
+plot(function(x, theta0=0.5, theta1=1)
+     (exp(theta0)/(1+exp(theta0)))*exp(-theta1*D*D), 0, 1)
 
 
 
