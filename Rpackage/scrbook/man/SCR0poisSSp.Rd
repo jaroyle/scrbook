@@ -43,12 +43,18 @@ lam0<-runif(1,0.1,1)
 psi<-runif(1,0.2,0.8)
 z<-rbinom(M,1,psi)
 Function requires the packages sp, spatstat...
-The code is currently set up for the format "SpatialPolygons" of SSp wand ill run into problems if SSp is a "SpatialPolygonsDataFrame". The code can easily be modified to fit a
-"SpatialPolygonsDataFrame" by substituting " 	if(is.na(SinPoly[i])==FALSE) { " with 	" if(is.na(SinPoly[i,1])==FALSE) { "
+The code is currently set up for the format "SpatialPolygons" of SSp
+wand ill run into problems if SSp is a "SpatialPolygonsDataFrame". The
+code can easily be modified to fit a
+\code{
+"SpatialPolygonsDataFrame" by substituting "
+if(is.na(SinPoly[i])==FALSE) { " with 	" if(is.na(SinPoly[i,1])==FALSE)
+  { "
+    }
 }
 \author{
 Rahel Sollmann, Richard Chandler, J. Andy Royle
 }
 \examples{
-
+1
 }

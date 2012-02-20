@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 \name{SCR0pois}
 \alias{SCR0pois}
 \title{
@@ -45,5 +44,5 @@ z<-rbinom(M,1,psi)
 Rahel Sollmann, Richard Chandler, J. Andy Royle
 }
 \examples{
-
+1
 }
