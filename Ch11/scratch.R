@@ -280,6 +280,9 @@ sink()
 
 
 library(scrbook)
+library(raster)
+library(gdistance)
+library(secr)
 
 
 set.seed(353)
@@ -608,159 +611,24 @@ sink()
 
 
 
-### We require 3 R libraries
-library("shapefiles")
-library("gdistance")
-library("raster")
-
-
-
-
-
-###
-### generate Pr(encounter) for all pixels, for hypothetical traps in every other pixel
-###
-### sigma = a bivariate normal home range parameter -- use different values to
-### see how this looks
-### theta0 = intercept of detection prob. model
-### theta1 = coefficient on "distance" -- derived from "sigma"
-### theta2 = coefficient on covariate used in cost function
-###
-theta2 <- 1
-theta0 <- -2
-sigma <-.25
-theta1 <- 1/(2*sigma*sigma)
-gx <- seq(.5 + delta/2, 4.5-delta/2,,20)
-gy <- rev(gx)
-gx <-sort(rep(gx,20))
-gy <-rep(gy,20)
-grid2 <-cbind(gx,gy)
-D <- e2dist(grid,grid2)
-## Here is the stationary and isotropic detection model:
-probcap<-plogis(theta0)*exp(-theta1*D*D)
-## spatial.plot is a utility function (end of this script)
-spatial.plot(grid2,probcap[1,],FALSE)
-
-
-
-###
-### R commands to carry-out the simulations. MUST SOURCE likelihood function first -- SEE BELOW
-### This takes 1-2 days to run for nsims=100
-###
-###
-
-nsims<-2
-
-#
-# to do a single run you have to define a few things and then execute the code within the "sim.fn" below
-#
-covariate<-covariate.patchy
-N<-200
-theta0<- -2
-sigma<- .5
-K<- 5
-
-sim.fn<-function(N=200,nsim=100,theta0= -2, sigma=.5, K=5,covariate){
-# input covariate as a RasterLayer
-#
-cl<-match.call()
-set.seed(2013)
-simout<-matrix(NA,nrow=nsim,ncol=6)
-theta1<- 1/(2*sigma*sigma)
-
-r<-raster(nrows=20,ncols=20)
-projection(r)<- "+proj=utm +zone=12 +datum=WGS84"
-extent(r)<-c(.5,4.5,.5,4.5)
-theta2<-1
-theta3<- -.5
-cost<- exp(theta2*covariate)
-#values(r)<-matrix(cost,20,20,byrow=FALSE)
-#par(mfrow=c(1,1))
-#plot(r)
-r<-cost
-
-lam<-exp(theta3*covariate)
-Gprobs<-values(lam)/sum(values(lam))
-
-nc<-covariate@ncols
-nr<-covariate@nrows
-Xl<-covariate@extent@xmin
-Xu<-covariate@extent@xmax
-Yl<-covariate@extent@ymin
-Yu<-covariate@extent@ymax
-### ASSUMES SQUARE RASTER -- NEED TO GENERALIZE THIS
-delta<- (Xu-Xl)/nc
-xg<-seq(Xl+delta/2,Xu-delta/2,delta)
-yg<-seq(Yl+delta/2,Yu-delta/2,delta)
-npix.x<-length(xg)
-npix.y<-length(yg)
-area<- (Xu-Xl)*(Yu-Yl)/((npix.x)*(npix.y))
-G<-cbind(rep(xg,npix.y),sort(rep(yg,npix.x)))
-
-## use max = doesn't count moving through boundary pixel
-tr1<-transition(r,transitionFunction=function(x) 1/mean(x),directions=8)
-tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
-
-xg<-seq(1,4,1)
-yg<-4:1
-pts<-cbind( sort(rep(xg,4)),rep(yg,4))
-#costs1<-costDistance(tr1CorrC,pts)
-#D<-as.matrix(costs1)
-
-traplocs<-pts
-#points(traplocs,pch=20,col="red")
-ntraps<-nrow(traplocs)
-
-
-for(sim in 1:nsim){
-
-S<- G[sample(1:nrow(G),N,replace=TRUE,prob=Gprobs),]
-D<-costDistance(tr1CorrC,S,traplocs)
-probcap<-plogis(theta0)*exp(-theta1*D*D)
-# now generate the encounters of every individual in every trap
-Y<-matrix(NA,nrow=N,ncol=ntraps)
-for(i in 1:nrow(Y)){
- Y[i,]<-rbinom(ntraps,K,probcap[i,])
-}
-Y<-Y[apply(Y,1,sum)>0,]
-
-# raster has to be defined for state-space and ssbuffer = 0 only
-n0<- N-nrow(Y)
-
-frog<-nlm(intlik3ed,c(theta0,theta1,log(n0),-.3,-.3),hessian=TRUE,y=Y,K=K,X=traplocs,distmet="ecol",covariate=covariate)
-simout[sim,]<-c(frog$estimate,nrow(Y))
-}
-list(simout=simout,call=cl)
-
-}
-
-
-image(elevMat)
-
-
-
-
-
-
-# Negative log-likelihood
-
-intlik3ed <- function(y=y, traplocs=traplocs,
+# Fit poisson SCR model with density and ecological-distance covariates
+scrDED <- function(y=y, traplocs=traplocs,
                       den.formula=~1, dist.formula=~1,
-                      rasters, K, start) {
-    if(class(covariate)[1] %*% c("RasterLayer", "RasterStack"))
+                      rasters, start, ...) {
+    if(!require(raster))
+        stop("raster package must be loaded")
+    if(!require(gdistance))
+        stop("gdistance package must be loaded")
+    if(! class(rasters)[1] %in% c("RasterLayer", "RasterStack"))
         stop("rasters should have class RasterLayer or RasterStack")
+    if(any(rowSums(y)==0))
+        stop("you cannot observer an all 0 capture history")
 
     # do a check here that trap locations exist in same space as raster.
-    # forthcoming
-
-    if(missing(K))
-        stop("The binomial sample size, K, must be supplied")
 
     dims <- dim(rasters)
     rp <- as.data.frame(rasterToPoints(rasters))
-    G <- rp[,1:2] # state-space pixel centers
-    xg <- rp[,"x"]
-    yg <- rp[,"y"]
+    G <- as.matrix(rp[,1:2]) # state-space pixel centers
 
     res <- res(elev)
     area <- prod(res)
@@ -768,12 +636,20 @@ intlik3ed <- function(y=y, traplocs=traplocs,
     SSarea <- area*npix # check for rasterStacks
     ext <- extent(elev)
 
-    isEuclid <- identical(dist.formula, ~1)
+    isEuclid <- isTRUE(all.equal(dist.formula, ~1))
     if(isEuclid)
         D <- e2dist(traplocs, G)
 
+    den.vars <- all.vars(den.formula)
+    dist.vars <- all.vars(dist.formula)
+
+    if(length(den.vars)>0 && (!den.vars %in% layerNames(elev)))
+        stop("variables in den.formula must occur in layerNames(rasters)")
+    if(length(dist.vars)>0 && (!dist.vars %in% layerNames(elev)))
+        stop("variables in dist.formula must occur in layerNames(rasters)")
+
     Xden <- model.matrix(den.formula, rp)
-    Xdist <- model.matrix(den.formula, rp)
+    Xdist <- model.matrix(dist.formula, rp)
 
     isInt1 <- colnames(Xden) == "(Intercept)"
     isInt2 <- colnames(Xdist) == "(Intercept)"
@@ -786,16 +662,28 @@ intlik3ed <- function(y=y, traplocs=traplocs,
     np.dist <- ncol(Xdist)
     np <- 3+np.den+np.dist
 
-    if(missing(start))
+    den.names <- dist.names <- character(0)
+    if(np.den>0)
+        den.names <- paste("den", 1:np.den, sep="")
+    if(np.dist>0)
+        dist.names <- paste("dist", 1:np.den, sep="")
+
+    if(missing(start)) {
         start <- rep(0, np)
+        start[3] <- log(nrow(y)+1)
+    }
+    if(is.null(names(start)))
+        names(start) <- c("lam0", "sigma", "n0", den.names, dist.names)
 
     y.ij <- rbind(y, rep(0, ncol(y)))
     nry <- nrow(y.ij)
 
+    mu <- rep(1, npix)
+
     # Negative log-likelihood
     nll <- function(pars) {
-        theta0 <- pars[1]
-        theta1 <- pars[2]
+        lam0 <- exp(pars[1])
+        sigma <- exp(pars[2])
         n0 <- exp(pars[3])
         if(np.den > 0) {
             mu <- exp(Xden %*% pars[4:(3+np.den)])
@@ -803,6 +691,8 @@ intlik3ed <- function(y=y, traplocs=traplocs,
         }
         if(!isEuclid) {
             cost <- exp(Xdist %*% pars[(4+np.den):np])
+            cost <- raster(matrix(cost, dims[1], dims[2], byrow=TRUE))
+            extent(cost) <- ext # should add projection too
             tr1 <- transition(cost, transitionFunction = function(x)
                               1/mean(x), directions=8)
             tr1CorrC <- geoCorrection(tr1, type="c",
@@ -810,12 +700,12 @@ intlik3ed <- function(y=y, traplocs=traplocs,
             D <- costDistance(tr1CorrC, traplocs, G)
         }
 
-        probcap <- (exp(theta0)/(1+exp(theta0)))*exp(-theta1*D*D)
+        probcap <- lam0 * exp(-D*D/(2*sigma*sigma))
         Pm <- matrix(NA, nrow=nrow(probcap), ncol=ncol(probcap))
         lik.marg <- rep(NA, nrow(y.ij))
         for(i in 1:nry) {
-            Pm[1:length(Pm)] <- (dbinom(rep(y.ij[i,], npix), rep(K, npix),
-                                        probcap[1:length(Pm)], log=TRUE))
+            Pm[] <- dpois(rep(y.ij[i,], npix),
+                           probcap[1:length(Pm)], log=TRUE)
             lik.cond<- exp(colSums(Pm))
             lik.marg[i]<- sum(lik.cond*mu)
         }
@@ -823,7 +713,6 @@ intlik3ed <- function(y=y, traplocs=traplocs,
         part1 <- lgamma(nrow(y)+n0+1) - lgamma(n0+1)
         part2 <- sum(nv*log(lik.marg))
         out <-  -1*(part1+ part2)
-        attr(out,"SSarea") <- SSarea
         return(out)
     }
 
@@ -833,12 +722,42 @@ intlik3ed <- function(y=y, traplocs=traplocs,
 
 
 
+elevMat <- t(matrix(dat$elev, 1/pix, 1/pix))
+elev <- flip(raster(t(elevMat)), direction="y")
+layerNames(elev) <- "elev"
+
+y.ded <- y[rowSums(y)>0,]
+
+(fm1 <- scrDED(y.ded, X, ~1, ~1, rasters=elev,
+               start=c(log(0.9), log(0.2), log(10)),
+#               method="BFGS",
+               lower=c(-3,-3,-3), upper=c(5,1,5),
+               control=list(trace=TRUE, REPORT=1, maxit=50)))
+
+exp(fm1$par[1:3]) # 0.8 0.1
+
+
+(fm2 <- scrDED(y.ded, X, ~elev, ~1, rasters=elev,
+#               start=c(log(0.8), log(0.1), log(10), 2),
+#               method="BFGS",
+               control=list(trace=TRUE, REPORT=1, maxit=500)))
+
+exp(fm2$par[1:2])               # 0.8, 0.1
+exp(fm2$par[3])+nrow(y.ded)     # 50
 
 
 
+(fm3 <- scrDED(y.ded, X, ~elev, ~elev, rasters=elev,
+#               start=c(log(0.8), log(0.1), log(10), 2, 0),
+#               method="BFGS",
+               control=list(trace=TRUE, REPORT=1, maxit=500)))
 
-plot(function(x, theta0=0.5, theta1=1)
-     (exp(theta0)/(1+exp(theta0)))*exp(-theta1*D*D), 0, 1)
+exp(fm3$par[1:2])                       # 0.8, 0.1
+c(N=exp(fm3$par[3])+nrow(y.ded))        # 50
+fm3$par[4:5]                            # 2, 0
+
+debugonce(scrDED)
+
 
 
 
