@@ -670,7 +670,8 @@ scrDED <- function(y=y, traplocs=traplocs,
 
     if(missing(start)) {
         start <- rep(0, np)
-        start[3] <- log(nrow(y)+1)
+        start[2] <- log((ext@xmax-ext@xmin)/3)
+        start[3] <- log(nrow(y)/2)
     }
     if(is.null(names(start)))
         names(start) <- c("lam0", "sigma", "n0", den.names, dist.names)
@@ -734,7 +735,8 @@ y.ded <- y[rowSums(y)>0,]
 #               lower=c(-3,-3,-3), upper=c(5,1,5),
                control=list(trace=TRUE, REPORT=1, maxit=50)))
 
-exp(fm1$par[1:3]) # 0.8 0.1
+exp(fm1$par[1:2])            # 0.8, 0.1
+exp(fm1$par[3])+nrow(y.ded)  # 50
 
 
 (fm2 <- scrDED(y.ded, X, ~elev, ~1, rasters=elev,
