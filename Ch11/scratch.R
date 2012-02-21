@@ -280,9 +280,9 @@ sink()
 
 
 library(scrbook)
-library(raster)
-library(gdistance)
 library(secr)
+library(raster) # raster after secr b/c of flip
+library(gdistance)
 
 
 set.seed(353)
@@ -678,7 +678,7 @@ scrDED <- function(y=y, traplocs=traplocs,
     y.ij <- rbind(y, rep(0, ncol(y)))
     nry <- nrow(y.ij)
 
-    mu <- rep(1, npix)
+    mu <- rep(1/npix, npix)
 
     # Negative log-likelihood
     nll <- function(pars) {
@@ -729,9 +729,9 @@ layerNames(elev) <- "elev"
 y.ded <- y[rowSums(y)>0,]
 
 (fm1 <- scrDED(y.ded, X, ~1, ~1, rasters=elev,
-               start=c(log(0.9), log(0.2), log(10)),
-#               method="BFGS",
-               lower=c(-3,-3,-3), upper=c(5,1,5),
+               start=c(-1, -1, 1),
+               method="BFGS",
+#               lower=c(-3,-3,-3), upper=c(5,1,5),
                control=list(trace=TRUE, REPORT=1, maxit=50)))
 
 exp(fm1$par[1:3]) # 0.8 0.1
@@ -739,7 +739,7 @@ exp(fm1$par[1:3]) # 0.8 0.1
 
 (fm2 <- scrDED(y.ded, X, ~elev, ~1, rasters=elev,
 #               start=c(log(0.8), log(0.1), log(10), 2),
-#               method="BFGS",
+               method="BFGS",
                control=list(trace=TRUE, REPORT=1, maxit=500)))
 
 exp(fm2$par[1:2])               # 0.8, 0.1
@@ -749,7 +749,7 @@ exp(fm2$par[3])+nrow(y.ded)     # 50
 
 (fm3 <- scrDED(y.ded, X, ~elev, ~elev, rasters=elev,
 #               start=c(log(0.8), log(0.1), log(10), 2, 0),
-#               method="BFGS",
+               method="BFGS",
                control=list(trace=TRUE, REPORT=1, maxit=500)))
 
 exp(fm3$par[1:2])                       # 0.8, 0.1
