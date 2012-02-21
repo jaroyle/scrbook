@@ -1114,6 +1114,10 @@ inefficient mixing for reasons that may be related to bad starting
 values. In some cases this was resolved if we supplied starting values
 for the $logit(p_{i})$ parameters and $\tau$.
 
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+ANDY NEED DENSITY ESTIMATES
+AFTER PUTTING RESULTS for 500k
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 Because of the skewed posterior we see that the posterior mean ($N=117$)
 is
@@ -1522,7 +1526,6 @@ make sense of.
 
 \subsubsection{Fort Drum Bear Study}
 
-
 \begin{figure}
 \centering
 \includegraphics[height=3.5in,width=3.5in]{Ch3/figs/bear_spiderplot.png}
@@ -1530,31 +1533,31 @@ make sense of.
 \label{closed.fig.spiderplot}
 \end{figure}
 
-
 We have to do a little bit of data processing to fit this individual
-covariate model to the Fort Drum data. 
-We need to compute the individual covariate ${\bf x}_{i}$ (distance from the centroid of the trapping
-array) using the {\bf R} function
-\mbox{\tt spiderplot}
-provided in \mbox{\tt scrbook}. This function also produces a keen plot shown in
-Fig. \ref{closed.fig.spiderplot} which we call a ``spider plot''.
-The {\bf R} commands for obtaining the individual covariate ``distance from trap centroid''
-are as follows:
+covariate model to the Fort Drum data.  We need to compute the
+individual covariate ${\bf x}_{i}$ (distance from the centroid of the
+trapping array) using the {\bf R} function \mbox{\tt spiderplot}
+provided in \mbox{\tt scrbook}. This function also produces the keen
+plot shown in Fig. \ref{closed.fig.spiderplot} which we call a
+``spider plot''.  The {\bf R} commands for obtaining the individual
+covariate ``distance from trap centroid'' and making the spider plot are as follows:
 \begin{verbatim}
 library("scrbook")
 data("beardata")
 toad<- spiderplot(beardata$bearArray,beardata$trapmat)
 xcent<-toad$xcent
 \end{verbatim}
-We picked $D_{max} = 11.5$ $km^2$ which is about the distance from the
-array center to the furthest trap. 
-Once we specific $D_{max}$ then the implication is that the population
-size parameter applies to the area 
-within 11.5 units of the trap centroid\footnote{To be convincing
-  this might  need a little bit of hand-holding}. The {\bf BUGS} model
-specification and {\bf R} commands to package the data and fit the model are
-as follows:
 
+For the analysis of these data using the individual covariate
+"distance from centroid" we used $x_{i} \sim \mbox{Unif}(0,D_{max})$
+with $D_{max} = 11.5$ $km^2$ which is about the distance from the
+array center to the furthest trap.  Once we pick $D_{max}$ then the
+direct implication is that the population size parameter applies to
+the area within 11.5 units of the trap centroid and thus we will find
+that $N$ does, in fact, scale with our choice of $D_{max}$ to reflect
+the changing area over which the $N$ individuals of the model reside.
+The {\bf BUGS} model specification and {\bf R} commands to package the
+data and fit the model are as follows:
 {\small
 \begin{verbatim}
 cat("
@@ -1565,7 +1568,7 @@ psi~dunif(0,1)
 beta~dnorm(0,.01)
 
 for(i in 1:(nind+nz)){
-  xcent[i]~dunif(0,maxD)
+  xcent[i]~dunif(0,Dmax)
   z[i]~dbern(psi)     # DA variables
   lp[i] <- mup + beta*xcent[i] # individual effect
   logit(p[i])<-lp[i]
@@ -1576,15 +1579,14 @@ N<-sum(z[1:(nind+nz)])
 }
 ",file="modelMcov.txt")
 
-data2<-list(y=ytot,nz=nz,nind=nind,K=K,xcent=xcent,Dmax=maxD)
+data2<-list(y=ytot,nz=nz,nind=nind,K=K,xcent=xcent,Dmax=11.5)
 params2<-list('p0','psi','N','beta')
 inits =  function() {list(z=zst, psi=psi, p0=runif(1),beta=rnorm(1) ) }
 fit2 = bugs(data2, inits, params2, model.file="modelMcov.txt",working.directory=getwd(),    
        debug=T, n.chains=3, n.iter=11000, n.burnin=1000, n.thin=1)
 \end{verbatim}
 }
-
-This produces the following posterior summaries:
+This produces the following posterior summary statistics:
 {\small
 \begin{verbatim}
 Inference for Bugs model at "modelMcov.txt", fit using WinBUGS,
@@ -1599,7 +1601,6 @@ deviance 459.51 13.21 435.80 450.20 458.80 467.90 487.40    1  2600
 \end{verbatim}
 }
 
-
 It might be 
 perplexing that the estimated $N$ is much lower than obtained by model
 $M_h$ but there is a good explanation for this, discussed
@@ -1613,15 +1614,13 @@ array. Moreover, we have done so using a model that is based on an
 explicit mechanism, as opposed to a phenomenological one such as Model
 $M_h$. Moreover, importantly, using our new model, {\it the estimated N
   applies to an explicit area which is defined by our prescribed value
-  of maxD}. That is, this area is a fixed component of the model and
+  of $D_{max}$}. That is, this area is a fixed component of the model and
 the parameter $N$ therefore has explicit spatial context, as the number
 of individuals with home range centers less than $D_{max}$ from the
-centroid of the trap array. As such, the implied ``effective trap
-area''\footnote{This is a bad use of this term. We have never defined
-  ETA or ESA. What is it, exactly? XXX IT IS SOMEWHAT DEFINED IN CH1; IN THE QUOTE FROM OBRIEN; ALTHOUGH HE NAMES IT EFFECTIVE AREA XXX} for a given $D_{max}$ is that of a circle
-with radius $D_{max}$.
-
-
+centroid of the trap array. As such, the implied ``effective 
+area'' of the trap array for a given $D_{max}$ is a precisely defined
+quantity -- it is that of a circle with with radius
+$D_{max}$. 
 
 \begin{figure}
 \begin{center}
@@ -1634,17 +1633,15 @@ with radius $D_{max}$.
 \subsection{Extension of the Model}
 
 This model is actually not a very good model for one important reason:
-Imposing a uniform prior distribution on $x$
-implies that density is {\it not constant} over space. In
-particular, this model implies that it {\it decreases} as we move away
-from the centroid of the trap array. 
-That is, $x_{i} \sim \mbox{Unif}(0,D_{max})$ implies constant $N$ in
-each distance band from the centroid but obviously the {\it area} of
-each distance band is increasing.  
-This is one reason we have a
-lower estimate of density than that obtained previously from model $M_0$ and also why,
-if we were to increase $D_{max}$, we would see density continue to
-decrease.
+Imposing a uniform prior distribution on $x$ implies that density is
+{\it not constant} over space. In particular, this model implies that
+it {\it decreases} as we move away from the centroid of the trap
+array.  That is, $x_{i} \sim \mbox{Unif}(0,D_{max})$ implies constant
+$N$ in each distance band from the centroid but obviously the {\it
+  area} of each distance band is increasing.  This is one reason we
+have a lower estimate of density than that obtained previously from
+model $M_0$ and also why, if we were to increase $D_{max}$, we would
+see density continue to decrease.
 
 Fortunately, the use of an individual covariate model is {\it not} restricted to
 use of this specific distribution for the individual
@@ -1680,7 +1677,7 @@ there is not a built-in way to do this that we are aware of.  One possibility is
 discrete version of the pdf. We might also be able to use what is
 referred to in {\bf WinBUGS} jargon as the ``zeros trick'' (see {\it Advanced
 BUGS tricks} in the manual) although we haven't pursued this approach. Instead, we
-consider using a discrete version and break $D_{max}$ into $L$ distance
+use a discrete approximation of the density of $x$, and break $D_{max}$ into $L$ distance
 classes of width $\delta$, with probabilities proportional to
 $2*x$. In particular, if we denote the cut-points by $xg_{1}=0,xg_{2}, \ldots,
 xg_{L+1}=D_{max}$ and the interval midpoints are $xm_{i} = 
@@ -1692,7 +1689,7 @@ The {\bf R} commands for doing all of this (noting that we have already loaded a
 the Fort Drum bear data) are given  as follows. In the model description the
 variable $x$ (observed distance from centroid of the trap array) has been rounded so that the
 discrete version of the $f(x)$ can be used as described
-previously. The new variable labeled \mbox{\tt xround} is actually
+previously. The new variable labeled \mbox{\tt xround} is 
 then the integer category label in units of $\delta$ from 0. Thus, to
 convert back to distance in the expression for $lp[i]$, \mbox{\tt
   xround[i]} has to be multiplied by $\delta$. Here is the {\bf BUGS} model 
@@ -1701,8 +1698,8 @@ convert back to distance in the expression for $lp[i]$, \mbox{\tt
 \begin{verbatim}
 delta<-.2
 xround<-xcent%/%delta  + 1
-Dgrid<- seq(delta,maxD,delta)
-xprobs<- delta*(2*Dgrid/(maxD*maxD))
+Dgrid<- seq(delta,Dmax,delta)
+xprobs<- delta*(2*Dgrid/(Dmax*Dmax))
 xprobs<-xprobs/sum(xprobs)
 
 cat("
@@ -1726,7 +1723,6 @@ N<-sum(z[1:(nind+nz)])
 ",file="modelMcov.txt")
 \end{verbatim}
 }
-
 To fit the model we do this - keeping in mind that the data objects
 required below have been defined in previous analyses of this chapter:
 {\small
@@ -1742,9 +1738,13 @@ fit = bugs(data2, inits, params2, model.file="modelMcov.txt",
 
 This is a useful model because it induces a clear definition of area
 in which the population of $N$ individuals reside. Under this model,
-that area is defined by specification of $D_{max}$. We can apply the model
-for different values of $D_{max}$ and observe that the estimated $N$ varies
-with $D_{max}$. Fortunately, we see empirically, that while $N$ seems
+that area is defined by specification of $D_{max}$. 
+Further, the parameter $N$ of the model is, explicitly, the
+population size that applies to the particular value of $D_{max}$ and,
+as such, we will see that $N$ scales with our choice of $D_{max}$.
+This might be disconcerting to some -- we can get whatever value of
+$N$ we want by changing $D_{max}$!
+Fortunately, we find empirically, that while $N$ seems
 highly sensitive to the prescribed value of $D_{max}$, density seems to
 be invariant to $D_{max}$ as long as it is chosen to be sufficiently
 large. We fit the model for a random of values of $D_{max}$ from $D_{max}=12$ (restricting
@@ -1752,13 +1752,16 @@ values of $x$ to be in close proximity to
 the trap array) on up to 20. The results are given in Table
 \ref{closed.tab.Dmax}.
 
-
 \begin{table}[htp]
 \centering
-\caption{Analysis of Fort Drum bear hair snare data using the individual covariate model, for different values of Dmax, the upper limit of the uniform distribution of `distance from centroid of the trap array' }
+\caption{Analysis of Fort Drum bear hair snare data using the
+  individual covariate model, for different values of $D_{max}$, the upper
+  limit of the uniform distribution of `distance from centroid of the
+  trap array'. ``Density'' is the posterior mean of density and SD is
+  the posterior standard deviation.}
 \begin{tabular}{ccc}
 \hline \hline
- Dmax & mean & SD \\ \hline
+ $D_{max}$ & Density & SD \\ \hline
   12& 0.230 & 0.038 \\
   15& 0.244 &0.041 \\
   17& 0.249 &0.044 \\
@@ -1769,6 +1772,7 @@ the trap array) on up to 20. The results are given in Table
 \label{closed.tab.Dmax}
 \end{table}
 
+andy stopped here
 
 We see that the posterior mean and SD of density (individuals per
 square km) appear insensitive to choice of $D_{max}$ once we get a 
@@ -1813,6 +1817,8 @@ to extend this model in order to resolve remaining deficiencies.
 
 
 \subsection{Invariance of density to $D_{max}$}
+
+
 
 Under the model above, and also under models that we consider in later
 chapters, a general property of the estimators is that while $N$
