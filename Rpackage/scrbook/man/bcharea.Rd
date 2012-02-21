@@ -32,7 +32,8 @@ B.MMDM<- 2.373
 aa<-chull(trapmat)
 buffered.area<- area(as.matrix(trapmat[aa,]))
 
-bcharea(buffers[i],traplocs=trapmat)
+bcharea(B.MMDM,traplocs=trapmat)
+cat("area of buffered convex hull: ",buffered.area,fill=TRUE)
 
 }
 \keyword{datasets}
