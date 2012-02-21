@@ -129,30 +129,32 @@ are mutually independent outcomes of a binomial random variable:
 	y_{ij} \sim \mbox{Bin}(K, p_{ij})
 \label{scr0.eq.bin}
 \end{equation}
-This is the basic model underlying ``logistic regression'' (chapter 2)
-as well as standard closed population models (chapter 3). The key
+This is the basic model underlying ``logistic regression'' (Chapt. \ref{chapt.glms})
+as well as standard closed population models
+(Chapt. \ref{chapt.closed}). The key
 element of the model is that the encounter probability $p_{ij}$ is
 indexed by (i.e., depends on) both individual and trap. In a sense,
 then, we can think of each {\it trap} as producing individual level
-encounter history data of the classical variety - an nind x nrep
+encounter history data of the classical variety - an $\mbox{\tt nind}
+\times \mbox{\tt nreps}$
 matrix of 0's and 1's (this is the ``encountered at most 1 time''
 assumption).
 
 
-As we did in section XXX.YYY, we will make explicit the notion that
+As we did in sec. \ref{closed.sec.indcov}, we will make explicit the notion that
 $p_{ij}$ is defined conditional on ``where'' individual $i$
 lives. Naturally, we think about defining an individual home range and
 then relating $p_{ij}$ explicitly to the centroid of the individuals
 home range, or its center of activity \citep{efford:2004,
   borchers_efford:2008, royle_young:2008}.  Therefore, define ${\bf
   s}_{i}$, a two-dimensional spatial coordinate, to be the activity
-center for individual $i$. Then, the basic SCR model postulates that
-encounter probability, $p_{ij}$, is related by a decreasing function
-to distance between trap $j$, having location ${\bf x}_{j}$, and ${\bf
-  s}_{i}$.  Naturally, if we think of modeling binomial counts using
+center for individual $i$. Then, the SCR model postulates that
+encounter probability, $p_{ij}$, is a decreasing function
+of distance between ${\bf s}_{i}$ and the location of trap $j$, ${\bf x}_{j}$.
+ Naturally, if we think of modeling binomial counts using
 logistic regression, we might specify the model according to:
 \begin{equation}
-	\mbox{logit}(p_{ij}) = \alpha_{0} + \theta *||s[i]-x[j]||
+	\mbox{logit}(p_{ij}) = \alpha_{0} + \theta ||{\bf s}_{i}-{\bf x}_{j} ||
 \label{scr0.eq.logit}
 \end{equation}
 where, here, $||{\bf s}_{i}-{\bf x}_{j}||$ is the distance between
@@ -164,7 +166,7 @@ might use the ``half-normal'' model of the form:
 p_{ij} = p_{0}*\exp(-\theta*||{\bf s}_{i}-{\bf x}_{j}||^2)
 \]
 Or any of a large number of standard detection models that are
-commonly used (we consider more in chapter XYZ). The half-normal model implies
+commonly used (we consider more in Chapt. \ref{chapt.covariates}). The half-normal model implies
 \begin{equation}
 \log(p_{ij})  = \log(p_{0}) - \theta*||{\bf s}_{i}-{\bf x}_{j}||^2
 \label{scr0.eq.norm}
@@ -178,6 +180,10 @@ commonly used (we consider more in chapter XYZ). The half-normal model implies
 %various dependencies by writing $p_{ij}$ or sometimes $p_{\theta,ij}$,
 %understanding that $p_{ij}$ is actually a function of the various important
 %quantities.
+We probably expect that the parameter $\theta$ in
+Eq. \ref{scr0.eq.logit} or \ref{scr0.eq.norm} should be negative, so
+that the probability of encounter decreases with distance between the
+trap and individual home range center.  
 Whatever model encounter probability we choose, we should always keep
 in mind that the model is described conditional on ${\bf s}_{i}$,
 which is an unobserved random variable.  Thus, to be precise about
@@ -186,10 +192,8 @@ this, we should write the observation model as
 y_{ij}|{\bf s}_{i} \sim \mbox{Bin}(K, p({\bf s}_{ij};\theta))
 \]
 
-Note that we probably expect that the parameter $\theta$ in
-Eq. \ref{scr0.eq.logit} or \ref{scr0.eq.norm} should be negative, so
-that the probability of encounter decreases with distance between the
-trap and individual home range center.  The joint likelihood for the
+
+The joint likelihood for the
 data, conditional on the collection of individual activity centers,
 can therefore be expressed as
 \[
@@ -199,7 +203,7 @@ can therefore be expressed as
 Which, if we switch the indices on the product operators, this shows
 the SCR likelihood (conditional on ${\bf s}$) to be the product of $J$
 {\it independent} capture-recapture likelihoods - one for each trap.
-However, the data have a ``repeated measures'' type of structure, with
+However, the data have a distinct ``repeated measures'' type of structure, with
 each of the $j$ likelihood contributions for each individual being
 grouped by individual. Thus, we cannot analyze the model
 meaningfully by $J$ trap-specific models. In classical repeated measures
@@ -211,12 +215,12 @@ models we take the same basic approach, which we develop subsequently.
 
 If we knew precisely every ${\bf s}_{i}$ in the population (and how
 many, $N$), then the model specified by eqs. \ref{scr0.eq.bin} and
-\ref{scr0.eq.logit} or \ref{scr0.eq.norm} is just an ordinary logistic
+\ref{scr0.eq.logit} is just an ordinary logistic
 regression type of a model which we learned how to fit using {\bf
-  WinBUGS} previously (chapt. 2), with a covariate $d_{ij}$. However,
+  WinBUGS} previously (Chapt. \ref{chapt.glms}), with a covariate $d_{ij}$. However,
 the activity centers are unobservable even in the best possible
 circumstances. In that case, $d_{ij}$ is an unobserved variable,
-analogous to classical ``random effects'' models. We need to therefore
+analogous to classical random effects models. We need to therefore
 extend the model to accommodate these random variables with an
 additional model component. A standard, and perhaps not unreasonable,
 assumption is the so-called ``uniformity assumption'' which is to say
@@ -226,9 +230,15 @@ uniformity assumption amounts to a uniform prior distribution on ${\bf
   s}_{i}$, i.e., the pdf of ${\bf s}_{i}$ is constant, which we may
 express
 \begin{equation}
-	\Pr({\bf s}_{i}) propto const
+	\Pr({\bf s}_{i}) \propto \mbox{\tt const}
 \label{scr0.eq.sprior}
 \end{equation}
+ As it turns out, this assumption is usually not precise
+enough to fit SCR models in practice for reasons we discuss in the
+following section.  We will give another way to represent this prior
+distribution that is more concrete, but it depends on specifying the
+``state-space'' of the random variable ${\bf s}_{i}$. The term
+state-space is a technical way of saying ``possible outcomes''.
 
 To summarize the preceeding model developing, a basic SCR model is
 defined by 3 essential components:
@@ -236,18 +246,13 @@ defined by 3 essential components:
 \item[(1)] Observation model: $y_{ij}|{\bf s}_{i} \sim \mbox{Bin}(K, p_{ij})$
 \item[(2)] Encounter probability: $\mbox{logit}(p_{ij}) = \alpha_{0} +
   \theta*||{\bf s}_{i}-{\bf x}_{j}||$
-\item[(3)] Point process model: $\Pr[{\bf s}_{i} ] \propto const$
+\item[(3)] Point process model: $\Pr({\bf s}_{i} ) \propto \mbox{\tt const}$
 \end{itemize}
 Therefore, the SCR model is little more than an ordinary
 capture-recapture model for closed populations. It is such a model,
 but augmented with a set of ``individual effects'', ${\bf s}_{i}$,
 which relate some sense of individual location to encounter
-probability.  As it turns out, assumption (3) is usually not precise
-enough to fit a model in practice for reasons we discuss in the
-following section.  We will give another way to represent this prior
-distribution that is more concrete, but it depends on specifying the
-``state-space'' of the random variable ${\bf s}_{i}$. The term
-``state-space'' is a technical way of saying ``possible outcomes''.
+probability. 
 
 \section{ The Binomial Point-process Model}
 
@@ -268,20 +273,23 @@ well does our estimator perform of $N=50$?
 \begin{center}
 \includegraphics[height=2.5in]{Ch4/figs/binomialpoint}
 \end{center}
-\caption{Realization of a binomial point process}
+\caption{Realization (small circles) of a binomial point process with $N=20$. The
+  large circles represent trap locations.}
 \label{scr0.fig.bpp}
 \end{figure}
 
 It is natural to consider a binomial point process in the context of
 capture-recapture models because it preserves $N$ in the model and thus
 preserves the linkage directly with closed population models. In fact,
-under the binomial point process model then Model M0 and other closed
-models are simple limiting cases of SCR models. In addition, use of
+under the binomial point process model then model $M_0$ and other closed
+models are simple limiting cases of SCR models, i.e., as the
+coefficient on distance tends to 0.
+In addition, use of
 the BPP model allows us to use data augmentation for Bayesian analysis
-of the models as in chapter 3, thus yielding a methodologically
+of the models as in Chapt. \ref{chapt.closed}, thus yielding a methodologically
 coherent approach to analyzing the different classes of
 models. Despite this, making explicit assumptions about $N$, such as
-Poisson, is convenient in some cases (see chapt. XYZ).
+Poisson, is convenient in some cases (see Chapt. \ref{chapt.hscr}).
 
 One consequence of having fixed $N$, in the BPP model, is that the
 model is not strictly a model of ``complete spatial randomness''. This
@@ -295,17 +303,19 @@ analysis and, as a practical matter, we will usually regard the BPP
 model as one of spatial independence among individual activity centers
 because each activity center is distributed independently of each
 other activity center. Despite this implicit independence we see in
-Fig. \ref{scr0.fig.bpp} that realizations of randomly distributed
+Fig. \ref{scr0.fig.bpp} that {\it realizations} of randomly distributed
 points will typically exhibit distinct non-uniformity. Thus,
 independent, uniformly distributed points will almost never appear
 regularly, uniformly or systematically distributed. For this reason,
 the basic binomial (or Poisson) point process models are enormously
 useful in practical settings.  More relevant for SCR models is that we
 actually have a little bit of data for some individuals and thus the
-resulting posterior point pattern can deviate strongly from uniformity
-(we should note this elsewhere too). The uniformity hypothesis is only
+resulting posterior point pattern can deviate strongly from
+uniformity, a point we come back to repeatedly in this book.
+The uniformity hypothesis is only
 a {\it prior} distribution which is directly affected by the quantity
-and quality of observations.
+and quality of observations, to produce a posterior distribution which
+may appear distinctly non-uniform.
 
 
 \subsection{Definition of home range center}
@@ -322,7 +332,7 @@ that individual was occupying (or using) during the period in which
 traps were active. Thinking about it in that way, it could even be
 observable (almost) as the centroid of a very large number of radio
 fixes over the course of a survey period or a season.  Thus, this
-practical version of a home range center is a well-defined construct
+practical version of a home range center in terms of space usage is a well-defined construct
 regardless of whether one thinks the home range concept is meaningful,
 even if individuals are not particularly territorial.  This is why we
 usually use the term ``activity center'' or maybe even ``centroid of
@@ -334,13 +344,14 @@ thing which applies only to a well-defined period of study.
 \subsection{The state-space of the point process}
 
 Shortly we will focus on Bayesian analysis of this model with $N$
-known so that we can directly apply what we learned in chapter 2 to
+known so that we can directly apply what we learned in
+Chapt. \ref{chapt.glms} to 
 this situation. To do this, we note that the individual effects ${\bf
   s}_{i},\ldots, {\bf s}_{N}$ are unknown quantities and we will need
 to be able to simulate each ${\bf s}_{i}$ in the population from the
-posterior distribution.  It should be self-vident that we cannot
+posterior distribution.  It should be self-evident that we cannot
 simulate the ${\bf s}_{i}$ unless we describe precisely the region
-over which those ${\bf s}_{i}'s$ are uniformly distributed. This is
+over which they are uniformly distributed. This is
 the quantity referred to above as the state-space, denoted henceforth
 by ${\cal S}$, which is a region or a set of points comprising the
 potential values of ${\bf s}_{i}$. Thus, an equivalent explicit
@@ -348,6 +359,10 @@ statement of the ``uniformity assumption'' is
 \[
 {\bf s}_{i} \sim \mbox{Unif}({\cal S})
 \]
+where ${\cal S}$ is a precisely defined region. e.g., in Fig. 
+\ref{scr0.fig.bpp}, ${\cal S}$ is the square defined by $[-1,7] \times
+[-1, 7]$. Thus each of the $N=20$ points were generated by randomly
+selecting each coordinate on the line $[-1, 7]$. 
 
 
 \subsubsection{Prescribing the state-space}
@@ -355,11 +370,12 @@ statement of the ``uniformity assumption'' is
 Evidently, we need to define the state-space, ${\cal S}$. How can we
 possibly do this objectively? Prescribing any particular ${\cal S}$
 seems like the equivalent of specifying a ``buffer'' which we
-criticized previously as being ad hoc. How is it that choosing a
+criticized previously as being ad hoc. How is it, then, is choosing a
 state-space is {\it not} ad hoc? As a practical matter, it turns out
 that estimates of density are insensitive to choice of the
-state-space. As we observed in chapter \ref{chapt.closed}, it is true that $N$ increases
-with ${\cal S}$, but only at the same rate as ${\cal S}$ under the
+state-space. As we observed in Chapt. \ref{chapt.closed}, it is true that $N$ increases
+with ${\cal S}$, but only at the same rate as the area of ${\cal S}$
+increases under the
 prior assumption of constant density. As a result, we say that density
 is invariant to ${\cal S}$ as long as ${\cal S}$ is sufficiently
 large. Thus, while choice of ${\cal S}$ is (or can be) essentially
@@ -368,10 +384,10 @@ exposed to sampling, which scales appropriately with the size of the
 state-space.
 
 For our simulated system developed previously in this chapter, we
-defined the state space to be a square within which our traps were
-centered perfectly. For many practical situations this might be an
+defined the state space to be a square within which our trap array was
+centered. For many practical situations this might be an
 acceptable approach to defining the state-space. We provide an example
-of this in section \ref{scr0.sec.wolverine} below in which the trap array is
+of this in sec. \ref{scr0.sec.wolverine} below in which the trap array is
 irregular and also situated within a realistic landscape that is
 distinctly irregular.  In general, it is most practical to define the
 state-space as a regular polygon (e.g., rectangle) containing the trap
@@ -382,13 +398,15 @@ cannot for irregular polygons), a regular polygon induces an apparent
 problem of admitting into the state-space regions that are distinctly
 non-habitat (e.g., oceans, large lakes, ice fields, etc.).  It is
 difficult to describe complex sets in mathematical terms that can be
-admitted to this spatial model. As an alternative, we can provide a
-representation of the state-space as a discrete set of points (section
+used in {\bf BUGS}. As an alternative, we can provide a
+representation of the state-space as a discrete set of points (sec.
 \ref{scr0.sec.discrete}) that will allow specific points to be deleted
 or not depending on whether they represent habitat, or we can define
-the state-space as an intersection of polygons, and analysis of models
-with state-space defined in that way can be analyzed easily using MCMC
-(see section XYZ in chapt. 6).  In what follows below we provide an
+the state-space as an arbitrary  collection of polygons stored as a GIS
+shapefile
+which can be analyzed easily using MCMC
+(see sec. \ref{mcmc.sec.state-space}), but not so easily in the {\bf
+  BUGS} variants.  In what follows below we provide an
 analysis of the camera data defining the state-space to be a regular
 continuous polygon (a rectangle).
 
@@ -396,14 +414,22 @@ continuous polygon (a rectangle).
 \subsection{Invariance and the State-space as a model assumption}
 
 We will assert for all models we consider in this book that density is
-invariant to the size and extent of ${\cal S}$, if ${\cal S}$ is sufficiently large. In
-fact, this only holds as long as our model relating $p_{ij}$ to ${\bf
-  s}_{i}$ is a decreasing function of distance.  We can prove this
-thinking about a 1-d case where $E[y]$ for the ``last cell'' (i.e.,
-for $d>B$ for $B$ large enough) is 0. So it always contributes nothing to
-the likelihood, i.e., $E[n(last cell)] = 0$. [sketch out a proof of
-this], in regular situations in which the detection function decays
-monotonically with distance and prior density is constant.  Sometimes
+invariant to the size and extent of ${\cal S}$, if ${\cal S}$ is
+sufficiently large as long 
+as our model relating $p_{ij}$ to ${\bf  s}_{i}$ is a decreasing
+function of distance.  
+We can prove this easily by drawing an analogy with a 1-d case such as
+in distance sampling.  Let $y_{j}$ be the number of individuals
+captured in some interval $[d_{j-1},d_{j})$, and define $d_{J} = B$
+for some large value of $B$.  By choosing $B$ large enough we
+guarantee that $E[y_{J+1}] = 0$ and therefore this ``last cell'' 
+contributes nothing to
+the likelihood
+in regular situations in which the detection function decays
+monotonically with distance and prior density is constant.  
+
+
+Sometimes
 our estimate of density can be influenced if we make ${\cal S}$ too small but
 this might be sensible if ${\cal S}$ is naturally well-defined. As we discussed
 in chapter 1, {\bf choice of ${\cal S}$ is part of the model and thus it makes
