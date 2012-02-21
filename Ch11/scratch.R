@@ -772,11 +772,13 @@ sim.data <- function(N=50, sigma=0.1, lam0=0.8, beta=1, theta=1, X,
 sum(sim.data(X=X, covar=elev))
 
 
-nsim <- 50
+
+nsim <- 500
 simout <- matrix(NA, nsim, 5)
 colnames(simout) <- c("lam0", "sigma", "N", "beta", "theta")
+set.seed(343)
 for(i in 1:nsim) {
-    cat("doing", i, "\n")
+    cat("doing", i, format(Sys.time(), "%H:%M:%S"), "\n")
     lam0 <- 2
     sigma <- 0.1
     N <- 50
@@ -787,22 +789,27 @@ for(i in 1:nsim) {
     cat("  ncaught =", nrow(y.i), "\n")
     fm.i <- scrDED(y=y.i, traplocs=X, ~elev, ~elev, rasters=elev,
                    start=c(0, -2, 3, 1, 1),
-                   method="BFGS", control=list(trace=TRUE, REPORT=1))
+                   method="BFGS", control=list(trace=TRUE, REPORT=5))
     mle <- fm.i$par
     simout[i,] <- c(exp(mle[1:2]), exp(mle[3])+nrow(y.i), mle[4:5])
     cat("  mle =", simout[i,], "\n\n")
 }
 
 
-
-op <- par(mfrow=c(3,2), mai=c(0.6,0.6,0.4,0.2))
-hist(simout[,1], main="", xlab="lam0"); abline(v=lam0, lwd=2, col=4)
-hist(simout[,2], main="", xlab="sigma"); abline(v=sigma, lwd=2, col=4)
-hist(simout[,3], main="", xlab="N"); abline(v=N, lwd=2, col=4)
-hist(simout[,4], main="", xlab="SScov"); abline(v=beta, lwd=2, col=4)
-hist(simout[,5], main="", xlab="EDcov"); abline(v=theta, lwd=2, col=4)
+png("figs/scrDEDsim.png", width=6, height=3, units="in", res=400)
+op <- par(mfrow=c(1,3), mai=c(0.6,0.3,0.3,0.2))
+#hist(simout[,1], main="", xlab="lam0", freq=FALSE)
+#abline(v=lam0, lwd=3, col=4, lty=1)
+#hist(simout[,2], main="", xlab="sigma", freq=FALSE)
+#abline(v=sigma, lwd=3, col=4, lty=1)
+hist(simout[,3], main="", xlab="N", freq=FALSE)
+abline(v=N, lwd=3, col=4, lty=1)
+hist(simout[,4], main="", xlab="beta", freq=FALSE)
+abline(v=beta, lwd=3, col=4, lty=1)
+hist(simout[,5], main="", xlab="theta", freq=FALSE)
+abline(v=theta, lwd=3, col=4, lty=1)
 par(op)
-
+dev.off()
 
 ytest <- sim.data(X=X, covar=elev, beta=0)
 fm.test <- scrDED(y=y.i, traplocs=X, ~1, ~elev, rasters=elev,
