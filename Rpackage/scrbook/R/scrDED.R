@@ -5,7 +5,7 @@
 # Fit poisson SCR model with density and ecological-distance covariates
 scrDED <- function(y=y, traplocs=traplocs,
                       den.formula=~1, dist.formula=~1,
-                      rasters, start, ...) {
+                      rasters, start, transform=TRUE, ...) {
     if(!require(raster))
         stop("raster package must be loaded")
     if(!require(gdistance))
@@ -48,6 +48,11 @@ scrDED <- function(y=y, traplocs=traplocs,
         Xden <- Xden[,-which(isInt1),drop=FALSE]
     if(any(isInt2))
         Xdist <- Xdist[,-which(isInt2),drop=FALSE]
+
+    if(transform & ncol(Xdist)>0) {
+        Xdist <- apply(Xdist, 2, function(x) x-min(x, na.rm=TRUE))
+        Xdist <- apply(Xdist, 2, function(x) x/max(x, na.rm=TRUE))
+    }
 
     np.den <- ncol(Xden)
     np.dist <- ncol(Xdist)

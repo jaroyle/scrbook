@@ -595,7 +595,7 @@ sink()
 
 
 
-
+# Consider both SS covs and ED covs
 
 
 
@@ -690,7 +690,7 @@ exp(fm3$par[1:2])                       # 0.8, 0.1
 c(N=exp(fm3$par[3])+nrow(y.ded))        # 50
 fm3$par[4:5]                            # 2, 0
 
-debugonce(scrDED)
+
 
 
 
@@ -710,6 +710,9 @@ debugonce(scrDED)
 # Simulation study
 
 
+library(scrbook)
+library(raster)
+library(gdistance)
 
 set.seed(353)
 pix <- 0.05
@@ -744,7 +747,11 @@ sim.data <- function(N=50, sigma=0.1, lam0=0.8, beta=1, theta=1, X,
 
     den <- exp(beta*dat$elev)
     den <- den/sum(den)
-    cost <- exp(theta*covar)
+
+    covar.tran <- covar-cellStats(covar, min)
+    covar.tran <- covar.tran/cellStats(covar.tran, max)
+
+    cost <- exp(theta*covar.tran)
     tr1 <- transition(cost, transitionFunction = function(x) 1/mean(x),
                       directions=8)
     tr1CorrC <- geoCorrection(tr1, type="c", multpl=FALSE, scl=FALSE)
@@ -765,21 +772,36 @@ sim.data <- function(N=50, sigma=0.1, lam0=0.8, beta=1, theta=1, X,
 sum(sim.data(X=X, covar=elev))
 
 
-nsim <- 5
+nsim <- 50
 simout <- matrix(NA, nsim, 5)
+colnames(simout) <- c("lam0", "sigma", "N", "beta", "theta")
 for(i in 1:nsim) {
     cat("doing", i, "\n")
-    y.i <- sim.data(X=X, covar=elev)
-    cat("  nguys =", nrow(y.i), "\n")
+    lam0 <- 2
+    sigma <- 0.1
+    N <- 50
+    beta <- 1
+    theta <- 1
+    y.i <- sim.data(N=N, sigma=sigma, lam0=lam0, beta=beta, theta=theta,
+                    X=X, covar=elev)
+    cat("  ncaught =", nrow(y.i), "\n")
     fm.i <- scrDED(y=y.i, traplocs=X, ~elev, ~elev, rasters=elev,
-                   start=c(0, -2, 2, 1, 1),
+                   start=c(0, -2, 3, 1, 1),
                    method="BFGS", control=list(trace=TRUE, REPORT=1))
     mle <- fm.i$par
     simout[i,] <- c(exp(mle[1:2]), exp(mle[3])+nrow(y.i), mle[4:5])
-    cat("  mle =", simout[i,], "\n")
+    cat("  mle =", simout[i,], "\n\n")
 }
 
 
+
+op <- par(mfrow=c(3,2), mai=c(0.6,0.6,0.4,0.2))
+hist(simout[,1], main="", xlab="lam0"); abline(v=lam0, lwd=2, col=4)
+hist(simout[,2], main="", xlab="sigma"); abline(v=sigma, lwd=2, col=4)
+hist(simout[,3], main="", xlab="N"); abline(v=N, lwd=2, col=4)
+hist(simout[,4], main="", xlab="SScov"); abline(v=beta, lwd=2, col=4)
+hist(simout[,5], main="", xlab="EDcov"); abline(v=theta, lwd=2, col=4)
+par(op)
 
 
 ytest <- sim.data(X=X, covar=elev, beta=0)

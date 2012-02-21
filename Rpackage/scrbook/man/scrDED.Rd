@@ -96,7 +96,9 @@ s <- matrix(NA, N, 3)
 colnames(s) <- c("pixID", "x", "y")
 
 set.seed(557828)
-cost <- exp(theta*elev)
+elev.tran <- elev-cellStats(elev, min)
+elev.tran <- elev.tran/cellStats(elev.tran, max)
+cost <- exp(theta*elev.tran)
 tr1 <- transition(cost, transitionFunction = function(x) 1/mean(x),
                   directions=8)
 tr1CorrC <- geoCorrection(tr1, type="c", multpl=FALSE, scl=FALSE)
@@ -121,9 +123,8 @@ str(y.ded)
 \dontrun{
 
 (fm1 <- scrDED(y.ded, X, ~1, ~1, rasters=elev,
-               start=c(-1, -1, 1),
+#               start=c(-1, -1, 1),
                method="BFGS",
-#               lower=c(-3,-3,-3), upper=c(5,1,5),
                control=list(trace=TRUE, REPORT=1, maxit=50)))
 
 exp(fm1$par[1:2])            # 0.8, 0.1
@@ -147,7 +148,7 @@ exp(fm2$par[3])+nrow(y.ded)     # 50
 
 exp(fm3$par[1:2])                       # 0.8, 0.1
 c(N=exp(fm3$par[3])+nrow(y.ded))        # 50
-fm3$par[4:5]                            # 2, 0
+fm3$par[4:5]                            # 2, 1
 
 
 }
