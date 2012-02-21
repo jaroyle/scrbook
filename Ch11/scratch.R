@@ -610,124 +610,56 @@ sink()
 
 
 
-
-# Fit poisson SCR model with density and ecological-distance covariates
-scrDED <- function(y=y, traplocs=traplocs,
-                      den.formula=~1, dist.formula=~1,
-                      rasters, start, ...) {
-    if(!require(raster))
-        stop("raster package must be loaded")
-    if(!require(gdistance))
-        stop("gdistance package must be loaded")
-    if(! class(rasters)[1] %in% c("RasterLayer", "RasterStack"))
-        stop("rasters should have class RasterLayer or RasterStack")
-    if(any(rowSums(y)==0))
-        stop("you cannot observer an all 0 capture history")
-
-    # do a check here that trap locations exist in same space as raster.
-
-    dims <- dim(rasters)
-    rp <- as.data.frame(rasterToPoints(rasters))
-    G <- as.matrix(rp[,1:2]) # state-space pixel centers
-
-    res <- res(elev)
-    area <- prod(res)
-    npix <- ncell(rasters)
-    SSarea <- area*npix # check for rasterStacks
-    ext <- extent(elev)
-
-    isEuclid <- isTRUE(all.equal(dist.formula, ~1))
-    if(isEuclid)
-        D <- e2dist(traplocs, G)
-
-    den.vars <- all.vars(den.formula)
-    dist.vars <- all.vars(dist.formula)
-
-    if(length(den.vars)>0 && (!den.vars %in% layerNames(elev)))
-        stop("variables in den.formula must occur in layerNames(rasters)")
-    if(length(dist.vars)>0 && (!dist.vars %in% layerNames(elev)))
-        stop("variables in dist.formula must occur in layerNames(rasters)")
-
-    Xden <- model.matrix(den.formula, rp)
-    Xdist <- model.matrix(dist.formula, rp)
-
-    isInt1 <- colnames(Xden) == "(Intercept)"
-    isInt2 <- colnames(Xdist) == "(Intercept)"
-    if(any(isInt1))
-        Xden <- Xden[,-which(isInt1),drop=FALSE]
-    if(any(isInt2))
-        Xdist <- Xdist[,-which(isInt2),drop=FALSE]
-
-    np.den <- ncol(Xden)
-    np.dist <- ncol(Xdist)
-    np <- 3+np.den+np.dist
-
-    den.names <- dist.names <- character(0)
-    if(np.den>0)
-        den.names <- paste("den", 1:np.den, sep="")
-    if(np.dist>0)
-        dist.names <- paste("dist", 1:np.den, sep="")
-
-    if(missing(start)) {
-        start <- rep(0, np)
-        start[2] <- log((ext@xmax-ext@xmin)/3)
-        start[3] <- log(nrow(y)/2)
-    }
-    if(is.null(names(start)))
-        names(start) <- c("lam0", "sigma", "n0", den.names, dist.names)
-
-    y.ij <- rbind(y, rep(0, ncol(y)))
-    nry <- nrow(y.ij)
-
-    mu <- rep(1/npix, npix)
-
-    # Negative log-likelihood
-    nll <- function(pars) {
-        lam0 <- exp(pars[1])
-        sigma <- exp(pars[2])
-        n0 <- exp(pars[3])
-        if(np.den > 0) {
-            mu <- exp(Xden %*% pars[4:(3+np.den)])
-            mu <- mu/sum(mu) #Gprobs
-        }
-        if(!isEuclid) {
-            cost <- exp(Xdist %*% pars[(4+np.den):np])
-            cost <- raster(matrix(cost, dims[1], dims[2], byrow=TRUE))
-            extent(cost) <- ext # should add projection too
-            tr1 <- transition(cost, transitionFunction = function(x)
-                              1/mean(x), directions=8)
-            tr1CorrC <- geoCorrection(tr1, type="c",
-                                      multpl=FALSE, scl=FALSE)
-            D <- costDistance(tr1CorrC, traplocs, G)
-        }
-
-        probcap <- lam0 * exp(-D*D/(2*sigma*sigma))
-        Pm <- matrix(NA, nrow=nrow(probcap), ncol=ncol(probcap))
-        lik.marg <- rep(NA, nrow(y.ij))
-        for(i in 1:nry) {
-            Pm[] <- dpois(rep(y.ij[i,], npix),
-                           probcap[1:length(Pm)], log=TRUE)
-            lik.cond<- exp(colSums(Pm))
-            lik.marg[i]<- sum(lik.cond*mu)
-        }
-        nv <- c(rep(1, length(lik.marg)-1), n0)
-        part1 <- lgamma(nrow(y)+n0+1) - lgamma(n0+1)
-        part2 <- sum(nv*log(lik.marg))
-        out <-  -1*(part1+ part2)
-        return(out)
-    }
-
-    fm <- optim(start, nll, ...)
-    return(fm)
-}
-
-
-
 elevMat <- t(matrix(dat$elev, 1/pix, 1/pix))
 elev <- flip(raster(t(elevMat)), direction="y")
 layerNames(elev) <- "elev"
 
+
+
+
+
+
+
+# Simulate capture histories, and augment the data
+npix <- nrow(dat)
+ntraps <- nrow(X)
+T <- 5
+y <- array(NA, c(N, ntraps))
+
+sigma <- 0.1  # half-normal scale parameter
+lam0 <- 0.8   # basal encounter rate
+lam <- matrix(NA, N, ntraps)
+theta <- 1
+
+# s defined earlier
+#s <- matrix(NA, N, 3)
+#colnames(s) <- c("pixID", "x", "y")
+
+set.seed(557828)
+cost <- exp(theta*elev)
+tr1 <- transition(cost, transitionFunction = function(x) 1/mean(x),
+                  directions=8)
+tr1CorrC <- geoCorrection(tr1, type="c", multpl=FALSE, scl=FALSE)
+D <- t(costDistance(tr1CorrC, X, s[,2:3]))
+for(i in 1:N) {
+#    s defined previously
+#    s.i <- sample(1:npix, 1, prob=dat$cp)
+#    sx <- dat[s.i, "x"]
+#    sy <- dat[s.i, "y"]
+#    s[i,] <- c(s.i, sx, sy)
+    for(j in 1:ntraps) {
+#        distSq <- (sx-X[j,1])^2 + (sy - X[j,2])^2
+        lam[i,j] <- exp(-D[i,j]^2/(2*sigma^2)) * lam0
+        y[i,j] <- rpois(1, lam[i,j])
+    }
+}
+
+sum(y)
+
+
+
 y.ded <- y[rowSums(y)>0,]
+str(y.ded)
 
 (fm1 <- scrDED(y.ded, X, ~1, ~1, rasters=elev,
                start=c(-1, -1, 1),
