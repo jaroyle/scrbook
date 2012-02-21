@@ -57,7 +57,7 @@ scrDED <- function(y=y, traplocs=traplocs,
     if(np.den>0)
         den.names <- paste("den", 1:np.den, sep="")
     if(np.dist>0)
-        dist.names <- paste("dist", 1:np.den, sep="")
+        dist.names <- paste("dist", 1:np.dist, sep="")
 
     if(missing(start)) {
         start <- rep(0, np)

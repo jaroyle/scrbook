@@ -707,12 +707,85 @@ debugonce(scrDED)
 
 
 
+# Simulation study
+
+
+
+set.seed(353)
+pix <- 0.05
+dat <- spcov(pix=pix)$R
+npix <- nrow(dat)
+colnames(dat) <- c("x","y","elev")
+cell <- seq(pix/2, 1-pix/2, pix)
+image(cell, cell, t(matrix(dat$elev, 1/pix, 1/pix)), ann=FALSE)
+
+head(dat)
+
+# Trap locations
+xsp <- seq(0.275, 0.725, by=0.05)
+X <- cbind(rep(xsp, each=length(xsp)), rep(xsp, times=length(xsp)))
+str(X)
+
+# Elevation covariate as a matrix, then as a raster
+elevMat <- t(matrix(dat$elev, 1/pix, 1/pix))
+elev <- flip(raster(t(elevMat)), direction="y")
+layerNames(elev) <- "elev"
+
+sim.data <- function(N=50, sigma=0.1, lam0=0.8, beta=1, theta=1, X,
+                     covar) {
+    ntraps <- nrow(X)
+    y <- lam <- matrix(NA, N, ntraps)
+
+    # Activity centers
+    s <- matrix(NA, N, 3)
+    colnames(s) <- c("pixID", "x", "y")
+
+    npix <- ncell(covar)
+
+    den <- exp(beta*dat$elev)
+    den <- den/sum(den)
+    cost <- exp(theta*covar)
+    tr1 <- transition(cost, transitionFunction = function(x) 1/mean(x),
+                      directions=8)
+    tr1CorrC <- geoCorrection(tr1, type="c", multpl=FALSE, scl=FALSE)
+    for(i in 1:N) {
+        s.i <- sample(1:npix, 1, prob=den)
+        sx <- dat[s.i, "x"]
+        sy <- dat[s.i, "y"]
+        s[i,] <- c(s.i, sx, sy)
+        distSq <- costDistance(tr1CorrC, X, s[i,2:3])^2
+        lam[i,] <- exp(-distSq/(2*sigma*sigma)) * lam0
+        y[i,] <- rpois(nrow(X), lam[i,])
+    }
+    y <- y[rowSums(y)>0,]
+    return(y)
+}
+
+
+sum(sim.data(X=X, covar=elev))
+
+
+nsim <- 5
+simout <- matrix(NA, nsim, 5)
+for(i in 1:nsim) {
+    cat("doing", i, "\n")
+    y.i <- sim.data(X=X, covar=elev)
+    cat("  nguys =", nrow(y.i), "\n")
+    fm.i <- scrDED(y=y.i, traplocs=X, ~elev, ~elev, rasters=elev,
+                   start=c(0, -2, 2, 1, 1),
+                   method="BFGS", control=list(trace=TRUE, REPORT=1))
+    mle <- fm.i$par
+    simout[i,] <- c(exp(mle[1:2]), exp(mle[3])+nrow(y.i), mle[4:5])
+    cat("  mle =", simout[i,], "\n")
+}
 
 
 
 
-
-
+ytest <- sim.data(X=X, covar=elev, beta=0)
+fm.test <- scrDED(y=y.i, traplocs=X, ~1, ~elev, rasters=elev,
+                  start=c(0, -2, 2, 1),
+                  method="BFGS", control=list(trace=TRUE, REPORT=1))
 
 
 
