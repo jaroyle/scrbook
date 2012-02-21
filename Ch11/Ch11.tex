@@ -1,7 +1,10 @@
 
 
 
-\chapter{State-space Covariates}
+\chapter{%State-space Covariates
+%Modeling Spatial Variation in Density Using State-Space Covariates
+Modeling Spatial Variation in Density
+}
 \markboth{Chapter 11 }{}
 \label{chapt.state-space}
 
@@ -40,16 +43,17 @@ covariates as is done in generalized linear models (GLMs)
 %link function is used to connect the intensity parameter to the linear
 %predictor.
 
-In this chapter we will present a method
+In this chapter we present a method
 for fitting inhomogeneous binomial point process models using
 covariates in much the same way as is done with GLMs. The
 covariates we consider differ
 from those covered in previous chapters, which were typically
-attributes of the animal ({\it e.g.} sex or age) XXX or the trap ({\it e.g.} baited or not, on or off-road CHECK WITH BETH'S CHAPTER WHICH EXAMPLE SHE USES) XXX and were used to model movement or encounter
+attributes of the animal ({\it e.g.} sex or age) or the trap ({\it
+  e.g.} baited or not) and were used to model movement or encounter
 rate. In contrast, here we wish to
 model covariates that are defined for all points in
 $\cal{S}$, which we will refer to as
-state-space, or density, covariates. These may
+state-space covariates or density covariates. These may
 include continuous covariates such as elevation, or discrete
 covariates such as habitat type.
 
@@ -118,7 +122,7 @@ state-space is 1 unit, and thus the intensity is $\mu = 1/1$.
 
 Although the Poisson model is typically described in terms of $\mu$,
 the binomial model is not; rather, it
-is more common to consider a discrete state space, such as a grid with
+is more common to consider a discrete state-space, such as a grid with
 with $K$ pixels. Under the binomial model, the number of points in
 each region is $n(B_k) \sim Bin(N, p_k)$
 where $p_k = A(B)/A(\cal{S})$, \emph{i.e.} $p_k$ is simply the fraction of
@@ -142,7 +146,7 @@ points in one pixel tells you exactly how many will occur in the
 remaining pixel. To gain familiarity with the multinomial distribution
 and the discrete representation of space, use the \verb+rmultinom+
 function in \R~to simulate counts similar to those shown in
-Fig.~\ref{ch9.fig.homo}, for example using a command
+Fig.~\ref{ch9.fig.homo}, for example using commands
 such as:
 
 \begin{verbatim}
@@ -180,9 +184,11 @@ As with the homogeneous model, the inhomogeneous binomial point process
 model is developed conditional on $N$. The primary distinction is that
 the uniform distribution is replaced with another distribution
 allowing for the intensity parameter to vary spatially. To arrive at
-this new distribution, define $\mu(x, {\bf \beta})$ to be a function of
-spatially-referenced covariates $\mathbf{v(x)}$ available at all points of the state
-space.  To be concise we will subsequently drop the vector of cofficients from our
+this new distribution, replace the scalar intensity parameter $\mu$
+with the function $\mu(x, {\bold \beta})$, where $\bold \beta$ is a
+vector of coefficients describing the effects of
+spatially-referenced covariates on the point process intensity.
+To be concise we will subsequently drop the vector of cofficients from our
 notation, and simply use $\mu(x)$. Since an intensity must be strictly
 positive, it is natural to model $\mu(x)$ using the log-link.
 \[
@@ -190,14 +196,17 @@ positive, it is natural to model $\mu(x)$ using the log-link.
 \]
 where $\beta_j$ is the regression coefficient for covariate
 $v_j(x)$. To be clear, $v(x)$ is the value of any covariate, such as
-habitat type or elevation, at location $x$.  This equation should look
+habitat type or elevation, defined at all points in  the state-space.
+This equation should look
 familiar because it is the standard linear model used in log-linear
 GLMs. Note, however, that we have no need
 for an intercept because it would be confounded with
 $N$. This should be intuitive since an intercept would
 represent the expected value of $N$ when $\beta=0$, but we already
 have a parameter in the model for expected abundance, namely $\mathbb{E}[N] =
-\psi M$. XXX I THINK THIS IS THE FIRST TIME PSI COMES UP XXX Thus an intercept would be
+\psi M$\footnote{Remember, $M$ is the size of the augmented population, and
+$\psi$ is the probability that a member of $M$ is an actual
+constituent of the population (Chapter~\ref{chapt.scr}).}. Thus an intercept would be
 redundant, and without it we are still able to achieve our goal of
 describing the distribution of $N$ activity centers as a function of
 spatial covariates.
@@ -222,7 +231,8 @@ region. Specifically, the proportion of $N$ expected to occur in any
 region $B$ when heterogeneity in density is present is $p(B) = \int_B
 f(x)\, \mathrm{d}x$. These are
 also the multinomial cell probabilities if the regions are
-disjoint and compose the entire state-space. XXX MAYBE ADD A LITTLE MORE EXPLANATION FOR THE MULTINOMIAL CASE XXX
+disjoint and compose the entire state-space. We provide an example in
+the next section, and in Fig.\ref{ch9.fig.hetero}.
 
 As a practical matter, note that the integral in the
 demoninator of $f(x)$ is evaluated over space, and since we always regard
@@ -241,14 +251,26 @@ which is much more efficient computationally.
 
 We now have all the tools needed to fit inhomogeneous point process
 (IPP) models. Before doing so, note that the IPP for the activity centers
-results in another IPP for the observation process, $\lambda(x)$. As
-a reminder, $\lambda(x)$ is the expected number of captures for a trap
-at point $x$. As was true for the homogeneous model, this
+results in another IPP for the observation process, $\lambda(x)$, the
+expected number of captures for a trap
+at point. As was true for the homogeneous model, this
 intensity function is a product of the point process intensity
 and the encounter rate function, $\lambda(x) = \mu(x, {\bold \beta})
-g(x, {\bold \theta})$.
-XXXX I DON'T KNOW IF IT WOULD BE WORTH IT TO MAKE THE CONNECTION TO OUR EARLIER NOTATION FOR THE EXPECTED NUMBER OF CAPTURES of individual i AT TRAP j,  $\lambda_{ij}$, MORE EXPLICIT, JUST FOR EASE OF READING XXXX 
-In the next section we walk through a few examples, building up from
+\lambda_{ij}$. If we refer to the distribution for the
+inhomogeneous point process as ``IPP'', we can now write a
+simple description of a SCR model with a Poisson encounter process and
+a half-normal detection function as
+\begin{gather*}
+w_i \sim \mbox{Bernoulli}(\psi) \\
+{\bf s_i} \sim \mbox{IPP}(\mu(x,\beta)) \\
+\lambda_{ij} = \lambda_0 \exp(-\|{\bf s_i} - {\bf x_{j}}\|^2/(2\sigma^2)) \\
+y_{ij} \sim \mbox{Poisson}(\lambda_{ij} w_i)
+\end{gather*}
+The use of $\mbox{IPP}(\mu(x, \beta))$ instead of
+$\mbox{Uniform}(\cal{S})$ is the only difference between a homogeneous
+point process model and an inhomogeneous point process model.
+
+In the next sections we walk through a few examples, building up from
 the simplest case where we actually observe the activity centers as
 though they were data. In the second example, we fit our new model to simulated
 data in which density is a function of a single continuous
@@ -261,16 +283,14 @@ last example, we model the intensity of
 activity centers for a real dataset collected on jaguars
 (\emph{Panthera onca}) in Argentina.
 
-\section{Examples}
-
-\subsection{Simulation and analysis of inhomogeneous point processes}
+\section{Observed Point Processes}
 
 In SCR models, the point process is not directly observed, but in
 other contexts it is. Examples include the locations of disease
 outbreaks, the locations of trees in a forest, or the locations of
 radio-tracked animals. Indeed Eq.~\ref{eq.pdf.ipp} has been used
 extensively in the radio-telemetry literature to model so-called
-``resource selection functions'' \citep{manly:2002,lele_keim:2006}.
+``resource selection functions'' \citep{manly_etal:2002,lele_keim:2006}.
 In such cases where the point locations are directly observed,
 estimating the parameters $\bf \beta$ is straight-forward as
 demonstrated in the following example. This example also illustrates
@@ -278,13 +298,13 @@ the fundamental process that we will later embed in our MCMC algorithm
 used to fit SCR models with IPP.
 
 Suppose we knew the locations of 100 animals' activity
-centers. To estimate the intensity surface $\mu(x)$ underlying these points, we
+centers. To estimate the intensity surface $\mu(x, \beta)$ underlying these points, we
 need to derive the likelihood for our data under this model. Given the
-pdf $f(x)$ (Eq.~\ref{eq.pdf.ipp}) and assuming that the points are
+probability density function $f(x)$ (Eq.~\ref{eq.pdf.ipp}) and assuming that the points are
 mutually independent of one another,
 the likelihood is given by the product
 of $R$ such terms, where $R=100$ is the sample size in this case,
-\emph{ie} the observed number of activity centers.
+\emph{i.e.} the observed number of activity centers.
 \[
 \mathcal{L}({\bf \beta} | {\bf x}_i) = \prod_{i=1}^R f(x_i)
 \]
@@ -299,7 +319,7 @@ sampling. Rejection sampling proceeds by
 simulating data from a standard distribution and then accepting or
 rejecting each sample using probabilities defined by the distribution
 of interest. For more information, readers should consult an
-accessible text such as \citet{robert_casella:2004}. In our example, we
+accessible text such as \citet{robert_casella:2010}. In our example, we
 simulate from a uniform distribution and then accept or reject using
 the (scaled) probability density function $f(x)$. Note that we first define a
 spatial covariate (elevation) that is a simple function of the spatial
@@ -321,7 +341,7 @@ elev.fn <- function(x) x[1]+x[2]-1
 # intensity function
 mu <- function(x, beta) exp(beta*elev.fn(x=x))
 
-# Simulate PP using rejection sampling
+# Simulate IPP using rejection sampling
 set.seed(300225)
 N <- 100
 count <- 1
@@ -351,17 +371,16 @@ while(count <= 100) {
 \label{ch9.fig.hetero}
 \caption{An example of a spatial covariate, say elevation, and a
   realization of a inhomogeneous binomial point process with $N$=100
-  and $\mu(x) = exp(\beta Elev)$ where $\beta=2$.}
+  and $\mu(x) = exp(\beta elev(x))$ where $\beta=2$.}
 \end{figure}
 
 The simulated data are shown in Fig~\ref{ch9.fig.hetero}. High elevations
 are represented by light green and low elevations by dark green. The
-activity centers of one hundred animals are shown as
+activity centers of 100 animals are shown as
 points, and it is clear that these simulated animals prefer the high
 elevations.  Perhaps they are mountain goats. The underlying model describing this preference is
-$\log(\mu(x)) = exp(\beta \times Elevation(x))$
-where $\beta=2$ is the parameter to be estimated and $Elevation(x)$
-is a function of the coordinates at $x$, as displayed on the map.
+$\log(\mu(x)) = exp(\beta \times elev(x))$
+where $\beta=2$ is the parameter to be estimated.
 
 Given these points, we will now estimate $\beta$ by minimizing the
 negative-log-likelihood using \verb+R+'s \verb+optim+ function.
@@ -370,7 +389,7 @@ negative-log-likelihood using \verb+R+'s \verb+optim+ function.
 \begin{verbatim}
 # Negative log-likelihood
 nll <- function(beta) {
-    int.mu <- cuhre(2, 1, mu, beta=beta)$value
+    int.mu <- R2Cuba:::cuhre(2, 1, mu, beta=beta)$value
     -sum(beta*elev.fn(s) - log(int.mu))
 }
 starting.value <- 0
@@ -394,9 +413,9 @@ SCR models, the activity centers cannot be directly observed, but
 spatial re-captures provide us with the information needed to
 estimate these latent parameters.
 
-\subsection{Fitting inhomogeneous point process SCR models}
+\section{Fitting inhomogeneous point process SCR models}
 
-\subsubsection{Continuous space}
+\subsection{Continuous space}
 
 One of the nice things about hierarchical models is that they allow us
 to break a problem up into a series of simple conditional
@@ -406,8 +425,8 @@ algorithm to simulate the posteriors of $\beta$ conditional on the
 simulated values of $\mathbf{s}$. To demonstrate, we will continue with
 the previous example. Specifically, we will overlay a grid of
 traps upon the map shown in Fig.~\ref{ch9.fig.hetero}. We will then
-simulate capture histories conditional upon the activity centers shown
-on the map. Then, we will attempt to estimate the activity center
+simulate capture histories conditional upon the activity
+centers. Then, we will attempt to estimate the activity center
 locations as though we did not know where they were, as is the case in
 real applications.
 
@@ -457,14 +476,16 @@ fit homogeneous point processes. First, we need to update the parameter
 ${\bf \beta}$ conditional on all other parameters in the model. The code to
 do so is:
 
-XXXX MAYBE COMMENT CODE A LITTLE MORE; EG HAD NO IDEA WHAT MU IS (DO NOW BECAUSE I CHECKED OUT THE FULL CODE)XXX
 \begin{small}
 \begin{verbatim}
+# Denominator of f(x). Integral of mu(x, beta) over space
 D1 <- cuhre(2, 1, mu, lower=c(xlims[1], ylims[1]),
             upper=c(xlims[2], ylims[2]), beta=beta1)$value
+# Compute the denominator again using a proposed beta1
 beta1.cand <- rnorm(1, beta1, tune[3])
 D1.cand <- cuhre(2, 1, mu, lower=c(xlims[1], ylims[1]),
                  upper=c(xlims[2], ylims[2]), beta=beta1.cand)$value
+# Compute log(f(x))
 ll.beta1 <- sum(  beta1*elev.fn.v(S) - log(D1) )
 ll.beta1.cand <- sum( beta1.cand*elev.fn.v(S) - log(D1.cand) )
 if(runif(1) < exp(ll.beta1.cand - ll.beta1) )  {
@@ -473,12 +494,12 @@ if(runif(1) < exp(ll.beta1.cand - ll.beta1) )  {
 \end{verbatim}
 \end{small}
 Next, we need to put the new prior on the activity centers:
-XXX WHY cov() AND WHY ADD SCAND? ALSO LOOKS DIFFERENT IN THE CH11 R SCRIPT XXX
 \begin{small}
 \begin{verbatim}
-#ln(prior), denominator is constant
-prior.S <- beta1*cov(S[i,1], S[i,2]) # - log(D1)
-prior.S.cand <- beta1*(Scand[1] + Scand[2]) # - log(D1)
+# Compute the prior for s_i and a candidate. denominator is constant
+# elev is a function returning elevation at any point in state-space
+prior.S <- beta1*elev(S[i,1], S[i,2]) # - log(D1)
+prior.S.cand <- beta1*elev(Scand[1] + Scand[2]) # - log(D1)
 if(runif(1)< exp((ll.S.cand+prior.S.cand) - (ll.S+prior.S))) {
     S[i,] <- Scand
     lam <- lam.cand
@@ -487,8 +508,19 @@ if(runif(1)< exp((ll.S.cand+prior.S.cand) - (ll.S+prior.S))) {
 \end{verbatim}
 \end{small}
 
-We can apply this modified sampler to our data using the code shown in
-the help file for \verb+scrIPP+. We obtain posterior
+We can apply this modified sampler to our data using the
+following \R~commands.
+\begin{small}
+\begin{verbatim}
+set.seed(3434)
+fm1 <- scrIPP(yz, X, M, 6000, xlims=c(0,1), ylims=c(0,1),
+            tune=c(0.003, 0.08, 0.3, 0.07) )
+plot(mcmc(fm1$out))
+rejectionRate(mcmc(fm1$out))
+\end{verbatim}
+\end{small}
+
+We obtain posterior
 distributions summarized in Table~\ref{ch9.tab.simIPP}. Mixing is good, and as usual,
 life is very nice when we are working with simulated data.
 
@@ -522,20 +554,21 @@ space versions XXX of the IPP model XXX are straight-forward, and virtually all 
 covariates are XXX(or can be)XXX defined as such.
 
 
-\subsubsection{Discrete space}
+\subsection{Discrete space}
 
 To fit discrete space models, we follow the same steps
 as outlined in Chapter~\ref{chapt.poisson-mn}---we define $s_i$ as
 pixel ID, and we use the categorical distribution as a prior. A good
-example of this is in +cite{Kery capricaillie ADDME}. Here we present
+example of this is in \citep{mollet_etal:2012}. Here we present
 an analysis of the simulated data shown in the right panel of
 Fig.~\ref{ch9.fig.hetero}. The spatial covariate, let's call it
 elevation again, was simulated
-from a kriging type of model XXX MAYBE A FOOTNOTE WITH A BRIEF EXPLANATION OF WHAT KIND OF MODEL THAT IS? XXX as shown on the help page
+using a model that generates spatially-correlated
+white noise as shown on the help page
 \verb+ch9simData+ in \scrbook. The points are the number of
 activity centers in each pixel, generated from a single realization of
 the inhomogeneous point process model with intensity
-$mu(x) = 2 \times Elevation(x)$.
+$mu(x) = 2 \times elev(x)$.
 
 
 \begin{figure}
@@ -609,7 +642,6 @@ Software & Par & Est. & SD & lower & upper \\
 \label{ch9:tab:secrYjags}
 \end{table}
 
-
 This model can also be fit in \secr, which refers
 to the raster data XXX of our covariate XXX as a ``habitat mask''. \R~code to
 fit the models using \secr~and \jags~is available in \scrbook---see
@@ -618,7 +650,7 @@ comparision are shown in Table \ref{ch9:tab:secrYjags} and are
 very similar as expected. \hl{ANDY, is there any point in discussing
   the slight differences?}
 
-\subsubsection{Ecological distance and state-space covariates}
+\section{Ecological distance and state-space covariates}
 
 Habitat characteristics that affect population
 density could also affect animal movement behavior. For example, a
@@ -684,11 +716,12 @@ inhomogeneous point process models can be used to test important
 hypotheses regarding the ecological factors affecting density.
 
 In this example, we make use of a single year of data from an 8-year
-camera-trapping study of jaguars (\emph{Panthera onca}) XXX GENERAL QUESTION: IS IT ENOUGH TO CITE THE LATIN NAME ONCE? YOU GIVE THE LATIN NAME IN THE BEGINNING OF THE CHAPTER SO MAYBE NO NEED TO REPEAT HERE XXXX in Argentina,
+camera-trapping study of jaguars in Argentina,
 along the borders with Brazil and Paraguay. The data come from 46
 camera stations, each consisting of a pair of cameras placed along
-roads or trails. Forty-five detections of 16 jaguars (8 males and 8 females) were made over a 95-day sampling period. The mean number of sampling days at each camera
-station was 48.2. 
+roads or trails. Forty-five detections of 16 jaguars (8 males and 8
+females) were made over a 95-day sampling period. The mean number of
+sampling days at each camera station was 48.2.
 
 Estimating density is a central objective of this study because
 ultimately, an estimate of the total population size for the entire

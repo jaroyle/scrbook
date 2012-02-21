@@ -798,15 +798,19 @@ for(i in 1:nsim) {
 
 png("figs/scrDEDsim.png", width=6, height=3, units="in", res=400)
 op <- par(mfrow=c(1,3), mai=c(0.6,0.3,0.3,0.2))
-#hist(simout[,1], main="", xlab="lam0", freq=FALSE)
+#hist(simout[,1], main="", xlab="lam0", freq=FALSE, cex.lab=1.2)
 #abline(v=lam0, lwd=3, col=4, lty=1)
-#hist(simout[,2], main="", xlab="sigma", freq=FALSE)
+#hist(simout[,2], main="", xlab="sigma", freq=FALSE, cex.lab=1.2)
 #abline(v=sigma, lwd=3, col=4, lty=1)
-hist(simout[,3], main="", xlab="N", freq=FALSE)
+hist(simout[,3], main="", xlab="population size (N)", freq=FALSE,
+     cex.lab=1.2)
 abline(v=N, lwd=3, col=4, lty=1)
-hist(simout[,4], main="", xlab="beta", freq=FALSE)
+hist(simout[,4], main="", xlab="Density effect (beta)",
+     freq=FALSE, cex.lab=1.2)
 abline(v=beta, lwd=3, col=4, lty=1)
-hist(simout[,5], main="", xlab="theta", freq=FALSE)
+hist(simout[,5], main="",
+     xlab="Ecological distance effect (theta)",
+     freq=FALSE, cex.lab=1.2)
 abline(v=theta, lwd=3, col=4, lty=1)
 par(op)
 dev.off()
