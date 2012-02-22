@@ -65,8 +65,9 @@ library("scrbook")
 # test with a small run -- this takes a few minutes
 data<-simSCR0.fn(discard0=TRUE,sd=2013)
 out1<-SCR0bayesDss(data,ng=8,M=200,engine="jags",ni=2000,nb=1000)
+summary(out1$out)
 out2<-SCR0bayesDss(data,ng=8,M=200,engine="winbugs",ni=2000,nb=1000)
-
+summary(as.mcmc.list(out2$out))
 
 
 }
