@@ -13,7 +13,7 @@ plot(traplocs)
 
 # define state-space of point process. (i.e., where animals live).
 # Here "delta" just adds
-# a fixed buffer to the outer extent of the traps. 
+# a fixed buffer to the outer extent of the traps.
 delta<-2
 Xl<-min(traplocs[,1] - delta)
 Xu<-max(traplocs[,1] + delta)
@@ -32,7 +32,7 @@ K<- 20
 # to simulate data we have to start with some activity centers
 sx<-runif(N,Xl,Xu)
 sy<-runif(N,Yl,Yu)
-S<-cbind(sx,sy) 
+S<-cbind(sx,sy)
 
 # how far is each individual from each trap?
 D<- e2dist(S,traplocs)
@@ -48,7 +48,7 @@ beta<- 1/(2*sigma*sigma)
 
 #probcap<- expit(-2.5 - beta*D)
 
-probcap<-expit(alpha0)*exp(-beta*D*D)
+probcap<-plogis(alpha0)*exp(-beta*D*D)
 # now generate the encounters of every individual in every trap
 Y<-matrix(NA,nrow=N,ncol=ntraps)
 for(i in 1:nrow(Y)){
