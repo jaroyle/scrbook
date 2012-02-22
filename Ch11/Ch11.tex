@@ -358,6 +358,10 @@ N <- 100
 count <- 1
 s <- matrix(NA, N, 2)
 beta <- 2 # parameter of interest
+elev.fn <- function(x) x[1]+x[2]-1
+# Intensity function, mu(x,beta)
+mu <- function(x, beta) exp(beta*elev.fn(x=x))
+# 2-dimensional integration over space
 int.mu <- R2Cuba:::cuhre(2, 1, mu, beta=beta)$value
 elev.min <- elev.fn(c(0,0)) #elev.fn(cbind(0,0))
 elev.max <- elev.fn(c(1,1)) #elev.fn(cbind(1,1))
@@ -442,7 +446,8 @@ locations as though we did not know where they were, as is the case in
 real applications.
 
 The following \R~code simulates encounter histories under a
-Poisson observation model, which would be appropriate if animals could
+Poisson observation model, which could be appropriate in camera
+trapping studies or when using other methods in which animals could
 be detected multiple times at a trap during a single occasion.
 
 \begin{small}
@@ -489,7 +494,7 @@ do so is:
 
 \begin{small}
 \begin{verbatim}
-# Denominator of f(x). Integral of mu(x, beta) over space
+# Denominator of f(x, beta). Integral of mu(x, beta) over space
 D1 <- cuhre(2, 1, mu, lower=c(xlims[1], ylims[1]),
             upper=c(xlims[2], ylims[2]), beta=beta1)$value
 # Compute the denominator again using a proposed beta1
@@ -508,7 +513,6 @@ Next, we need to put the new prior on the activity centers:
 \begin{small}
 \begin{verbatim}
 # Compute the prior for s_i and a candidate. denominator is constant
-# elev is a function returning elevation at any point in state-space
 prior.S <- beta1*elev(S[i,1], S[i,2]) # - log(D1)
 prior.S.cand <- beta1*elev(Scand[1] + Scand[2]) # - log(D1)
 if(runif(1)< exp((ll.S.cand+prior.S.cand) - (ll.S+prior.S))) {
@@ -554,20 +558,22 @@ life is very nice when we are working with simulated data.
 
 
 Fitting continuous space IPP models is somewhat
-difficult in \bugs~because our prior $f(x)$ is not one of the
-available distributions that come with the software\footnote{It is
-  possible, if somewhat
-  cumbersome, to add new distributions in \bugs.} \secr~allows
-users to fit continuous space using polynomials of the x- and y-
-coordinates, but not for truly continuous covariates. However, these
+difficult in \bugs~because our prior ``IPP'' is not one of the
+available distributions that come with the software. It is
+possible to add new distributions in \bugs, but it is somewhat
+cumbersome.  \secr~allows
+users to fit continuous space IPPs using polynomials of the x- and y-
+coordinates, but it does not accept truly continuous covariates that
+are functions of space. However, these
 are not really important limitations because discrete
-space versions XXX of the IPP model XXX are straight-forward, and virtually all spatial
-covariates are XXX(or can be)XXX defined as such.
+space versions of the IPP model are straight-forward, and virtually all spatial
+covariates are, or can be, defined as such.
 
 
 \subsection{Discrete space}
 
-To fit discrete space models, we follow the same steps
+To fit IPPs using covariates in discrete space, \emph{i.e.} in raster
+format, we follow the same steps
 as outlined in Chapter~\ref{chapt.poisson-mn}---we define $s_i$ as
 pixel ID, and we use the categorical distribution as a prior. A good
 example of this is in \citep{mollet_etal:2012}. Here we present
@@ -580,8 +586,6 @@ white noise as shown on the help page
 activity centers in each pixel, generated from a single realization of
 the inhomogeneous point process model with intensity
 $mu(x) = 2 \times elev(x)$.
-
-
 \begin{figure}
 \centering
 \includegraphics[width=3in,height=3in]{Ch11/figs/discrete}
@@ -594,10 +598,11 @@ $mu(x) = 2 \times elev(x)$.
   are shown as crosses.}
 \end{figure}
 
-
 The \bugs~code to fit an IPP model to these data is shown in
-the following panel. XXX DON'T KNOW IF YOU WANT TO MAKE IT A PANEL BUT IF SO THERE ARE EXAMPLES YOU CAN USE AS TEMPLATE IN CH7 XXX
-
+panel~\ref{ch9.panel1}.
+\begin{panel}[h!]
+\centering
+\rule[0.15in]{\textwidth}{.03in}
 \begin{small}
 \begin{verbatim}
 model{
@@ -605,96 +610,118 @@ sigma ~ dunif(0, 1)
 lam0 ~ dunif(0, 5)
 beta ~ dnorm(0,0.1)
 psi ~ dbeta(1,1)
-
 for(x in 1:nPix) {
   theta[x] <- exp(beta*elevation[j])
   probs[x] <- theta[j]/sum(theta[])
 }
-
 for(i in 1:M) {
   w[i] ~ dbern(psi)
   s[i] ~ dcat(probs[])
   x0g[i] <- Sgrid[s[i],1]
   y0g[i] <- Sgrid[s[i],2]
   for(j in 1:ntraps) {
-    dist[i,j] <- sqrt(pow(x0g[i]-grid[j,1],2) + pow(y0g[i]-grid[j,2],2))
-    lambda[i,j] <- lam0*exp(-dist[i,j]*dist[i,j]/(2*sigma*sigma)) * w[i]
+    dist[i,j] <- sqrt(pow(x0g[i]-grid[j,1],2) +
+                      pow(y0g[i]-grid[j,2],2))
+    lambda[i,j] <- lam0*exp(-dist[i,j]*dist[i,j] /
+                            (2*sigma*sigma)) * w[i]
     y[i,j] ~ dpois(lambda[i,j])
     }
   }
-
 N <- sum(w[])
 Density <- N/1 # unit square
 }
 \end{verbatim}
 \end{small}
-In this \bugs~code, \verb+probs[]+ is the prior probability defined
+\rule[0.15in]{\textwidth}{.03in}
+\label{ch9.panel1}
+\end{panel}
+The vector \verb+probs[]+ is the prior probability defined
 by~\ref{eq.pdf.ipp.d}, which is the probability that an individual's
-activity center is located at pixel $x$. \verb+Sgrid+ is simply the
+activity center is located at pixel $x$. \verb+Sgrid+ is the
 matrix of coordinates for each pixel.
 
-\begin{table}[b]
-\centering
-\caption{Comparision of \secr~and \jags~results}
-\begin{tabular}{llrrrr}
-\hline
-Software & Par & Est. & SD & lower & upper \\
-\hline
- secr & $N$ & 49.2803 & 5.7535 & 41.0087 & 64.3879 \\
-      & $\beta$ &  2.1772 & 0.5628 &  1.0741 &  3.2804 \\
-      & $\lambda_0$ &  0.9203 & 0.0764 &  0.7824 &  1.0825 \\
-      & $\sigma$ &  0.0990 & 0.0038 &  0.0918 &  0.1068 \\
- JAGS & $N$ & 48.2072 & 5.4053 & 39.0000 & 60.0000 \\
-      & $\beta$ &  2.1026 & 0.5323 &  1.0889 &  3.1506 \\
-      & $\lambda_0$ &  0.9328 & 0.0766 &  0.7898 &  1.0921 \\
-      & $\sigma$ &  0.1004 & 0.0041 &  0.0929 &  0.1089 \\
-\hline
-\end{tabular}
-\label{ch9:tab:secrYjags}
-\end{table}
-
 This model can also be fit in \secr, which refers
-to the raster data XXX of our covariate XXX as a ``habitat mask''. \R~code to
+to the raster data as a ``habitat mask''. \R~code to
 fit the models using \secr~and \jags~is available in \scrbook---see
 \verb#help(ch9secrYjags)#. Results of the
 comparision are shown in Table \ref{ch9:tab:secrYjags} and are
 very similar as expected. \hl{ANDY, is there any point in discussing
   the slight differences?}
+\begin{table}[h!]
+\centering
+\caption{Comparision of \secr~and \jags~results. Point estimates from
+  the Bayesian analysis are posterior means. Intervals are lower and
+  upper 95\% CIs.}
+\begin{tabular}{llrrrr}
+\hline
+Software & Parameter & Estimate & SD & lower & upper \\
+\hline
+ secr & $N=50$ & 49.2803 & 5.7535 & 41.0087 & 64.3879 \\
+      & $\beta=2$ &  2.1772 & 0.5628 &  1.0741 &  3.2804 \\
+      & $\lambda_0=0.8$ &  0.9203 & 0.0764 &  0.7824 &  1.0825 \\
+      & $\sigma=0.1$ &  0.0990 & 0.0038 &  0.0918 &  0.1068 \\
+\hline
+ JAGS & $N=50$ & 48.2072 & 5.4053 & 39.0000 & 60.0000 \\
+      & $\beta=2$ &  2.1026 & 0.5323 &  1.0889 &  3.1506 \\
+      & $\lambda_0=0.8$ &  0.9328 & 0.0766 &  0.7898 &  1.0921 \\
+      & $\sigma=0.1$ &  0.1004 & 0.0041 &  0.0929 &  0.1089 \\
+\hline
+\end{tabular}
+\label{ch9:tab:secrYjags}
+\end{table}
+
 
 \section{Ecological distance and state-space covariates}
 
 Habitat characteristics that affect population
-density could also affect animal movement behavior. For example, a
+density could also affect home range size and movement behavior. For
+example, a
 species that occurs in high density in a forest may be reluctant to
 venture from a forest patch into an adjacent field. Thus, even if a
 trap placed in a field is located very close to an animal's activity
 center, the probability of capture may be very low. In this case
 forest cover is a covariate of both density and encounter probability,
 and we could model it as such by combining the methods described in
-this chapter and in Chapter\ref{chapt.ecoldist}. To demonstrate, we
+this chapter and in Chapter~\ref{chapt.ecoldist}. To demonstrate, we
 continue with our analysis of the data shown in
 Fig~\ref{ch9.fig.hetero}. Once again, we suppose that density
-increases with elevation, but this time, the animals move less at
-higher elevations, which could represent the common phenomenon of home
-range size decreasing with habitat quality. XXX THAT SEEMS A LITTLE COUNTERINTUITIVE - SMALLER RANGES IN WORSE HABITAT; DO YOU MEAN THAT ANIMALS WOULD TRY TO INCLUDE LESS 'BAD' HABITAT IN THEIR HOME RANGE AND THEREFORE MOVE LESS IN SUCH 'BAD' HABITAT? PROBABLY JUST NEEDS SOME RE-WORDING; OR MY INTUITION COULD BE TOTALLY WRONG XXXX To model this effect, we
+increases with elevation, but this time, we also make the
+assumption that home range size decreases as density increases. This
+commonly-observed phenomenon can be explained by numerous factors such
+as intra-specific competition \citep{sillett_etal:2004} or optimal
+foraging behavior \citep{tufto_etal:1996,said_servanty:2005}. To model
+this effect, we
 introduce the parameter $\theta$, which determines the ``cost'' of
 moving between pixels. If $\theta=0$, then the animal perceives
 distance as Euclidean. If $\theta>0$, then least-cost distance (LCD)
-is less XXX DON'T YOU MEAN MORE? XXX than Euclidean distance (ED). In most cases, we would not expect,
+is greater than than Euclidean distance (ED). In most cases, we would
+not expect,
 or should not even consider the possiblity of $\theta<0$ because this
 implies that LCD$<$ED, which would mean that an animal could view
 1000km as 1m. In addition to the fact that this is not biologically
 justifiable, it also suggests that the area of the state-space could
 be infinitely large. Thus, one may want to enforce the constraint that
-$\theta$ is strictly $\geq 0$.
+$\theta$ is strictly $\geq 0$. See Chapter~\ref{chapt.ecoldist} for
+more details.
 
 One may wonder if it is possible to estimate both $\beta$
 and $\theta$ using standard SCR data. Currently, it is not possible to
 model least-cost distance using \jags~or \secr, so we wrote our own
 function, \verb+scrDED+, to fit the model using maximum likelihood. An
 example analysis is provided on the help page for the function in our
-\R~package \scrbook. Here, we present results from a small simulation
-study in which $\beta$ and $\theta$ were both set to 1, to match the
+\R~package \scrbook. We briefly note here that the function requires
+the capture history data, the trap locations, and the raster data
+formatted using the {\tt raster} package. The linear model for the
+intensity parameter $\mu(x, \beta)$ and the least-cost distance
+function $lcd(\theta)$ are specified using \R's formula interface. A
+simple function call is
+\begin{verbatim}
+fm <- scrDED(y, traplocs=X, den.formula=~elev, dist.formula=~elev,
+             rasters=elev.raster)
+\end{verbatim}
+To assess the possiblity of estimating both $\beta$ and $\theta$, we
+conducated a small simulation study, generating 500 datasets from the
+model with both parameters set to 1, which corresponds to the
 conditions described above. Rather incredibly, we see that it is
 possible to estimate both parameters with high accuracy
 (Fig~\ref{ch9.fig.sim}).
@@ -705,15 +732,13 @@ possible to estimate both parameters with high accuracy
 \caption{Histograms of parameter estimates from 500 simulations under
   the model in which both density and ecological distance are affected
 by the same covariate, elevation. The vertical lines indicate the
-data-generating value. NOTE, 500 SIMS ARE STILL RUNNING}
+data-generating value.}
 \label{ch9.fig.sim}
 \end{figure}
 
 
 
-
-
-\subsection{The jaguar data}
+\section{The jaguar data}
 
 Estimating density of large felines has been a priority for many
 conservation organizations, but no robust methodologies existed before
