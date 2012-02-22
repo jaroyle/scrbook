@@ -154,7 +154,7 @@ of distance between ${\bf s}_{i}$ and the location of trap $j$, ${\bf x}_{j}$.
  Naturally, if we think of modeling binomial counts using
 logistic regression, we might specify the model according to:
 \begin{equation}
-	\mbox{logit}(p_{ij}) = \alpha_{0} + \theta ||{\bf s}_{i}-{\bf x}_{j} ||
+	\mbox{logit}(p_{ij}) = \alpha_{0} + \alpha_1 ||{\bf s}_{i}-{\bf x}_{j} ||
 \label{scr0.eq.logit}
 \end{equation}
 where, here, $||{\bf s}_{i}-{\bf x}_{j}||$ is the distance between
@@ -163,12 +163,12 @@ ${\bf s}_{i}$ and ${\bf x}_{j}$. We sometimes write $||{\bf
 d_{ij}$. Alternatively, if we think about distance sampling then we
 might use the ``half-normal'' model of the form:
 \[
-p_{ij} = p_{0}*\exp(-\theta*||{\bf s}_{i}-{\bf x}_{j}||^2)
+p_{ij} = p_{0}*\exp(-\alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||^2)
 \]
 Or any of a large number of standard detection models that are
 commonly used (we consider more in Chapt. \ref{chapt.covariates}). The half-normal model implies
 \begin{equation}
-\log(p_{ij})  = \log(p_{0}) - \theta*||{\bf s}_{i}-{\bf x}_{j}||^2
+\log(p_{ij})  = \log(p_{0}) - \alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||^2
 \label{scr0.eq.norm}
 \end{equation}
 %We would always like to be clear that encounter probability depends on individual activity
@@ -180,7 +180,7 @@ commonly used (we consider more in Chapt. \ref{chapt.covariates}). The half-norm
 %various dependencies by writing $p_{ij}$ or sometimes $p_{\theta,ij}$,
 %understanding that $p_{ij}$ is actually a function of the various important
 %quantities.
-We probably expect that the parameter $\theta$ in
+We probably expect that the parameter $\alpha_{1}$ in
 Eq. \ref{scr0.eq.logit} or \ref{scr0.eq.norm} should be negative, so
 that the probability of encounter decreases with distance between the
 trap and individual home range center.  
@@ -189,7 +189,7 @@ in mind that the model is described conditional on ${\bf s}_{i}$,
 which is an unobserved random variable.  Thus, to be precise about
 this, we should write the observation model as
 \[
-y_{ij}|{\bf s}_{i} \sim \mbox{Bin}(K, p({\bf s}_{ij};\theta))
+y_{ij}|{\bf s}_{i} \sim \mbox{Bin}(K, p({\bf s}_{ij};\alpha_{1}))
 \]
 
 
@@ -197,8 +197,8 @@ The joint likelihood for the
 data, conditional on the collection of individual activity centers,
 can therefore be expressed as
 \[
-{\cal L}(\theta | \{ {\bf y}_{i},{\bf s}_{i} \}_{i=1}^{N})
- =  \prod_{i} \prod_{j} \mbox{Bin}(y_{ij}|p_{ij}(\theta))
+{\cal L}(\alpha_{1} | \{ {\bf y}_{i},{\bf s}_{i} \}_{i=1}^{N})
+ =  \prod_{i} \prod_{j} \mbox{Bin}(y_{ij}|p_{ij}(\alpha_{1}))
 \]
 Which, if we switch the indices on the product operators, this shows
 the SCR likelihood (conditional on ${\bf s}$) to be the product of $J$
@@ -245,7 +245,7 @@ defined by 3 essential components:
 \begin{itemize}
 \item[(1)] Observation model: $y_{ij}|{\bf s}_{i} \sim \mbox{Bin}(K, p_{ij})$
 \item[(2)] Encounter probability: $\mbox{logit}(p_{ij}) = \alpha_{0} +
-  \theta*||{\bf s}_{i}-{\bf x}_{j}||$
+  \alpha_{1}*||{\bf s}_{i}-{\bf x}_{j}||$
 \item[(3)] Point process model: $\Pr({\bf s}_{i} ) \propto \mbox{\tt const}$
 \end{itemize}
 Therefore, the SCR model is little more than an ordinary
@@ -598,8 +598,8 @@ D<- e2dist(S,traplocs)  # distance of each individual from each trap
 
 alpha0<- -2.5      # define parameters of encounter probability
 sigma<- 0.5        #
-theta<- 1/(2*sigma*sigma)
-probcap<- expit(-2.5)*exp( - theta*D*D)    # probability of encounter
+alpha1<- 1/(2*sigma*sigma)
+probcap<- expit(-2.5)*exp( - alpha1*D*D)    # probability of encounter
 # now generate the encounters of every individual in every trap
 Y<-matrix(NA,nrow=N,ncol=ntraps)
 for(i in 1:nrow(Y)){
@@ -726,14 +726,14 @@ cat("
 model {
 alpha0~dnorm(0,.1)
 logit(p0)<- alpha0
-theta~dnorm(0,.1)
+alpha1~dnorm(0,.1)
 for(i in 1:N){
  s[i,1]~dunif(Xl,Xu)
  s[i,2]~dunif(Yl,Yu)
 for(j in 1:J){
 d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
 y[i,j] ~ dbin(p[i,j],K)
-p[i,j]<- p0*exp(- theta*d[i,j]*d[i,j])
+p[i,j]<- p0*exp(- alpha1*d[i,j]*d[i,j])
 }
 }
 
@@ -767,11 +767,11 @@ sst[i,2]<- mean( X[y[i,]>0,2] )
 
 data <- list (y=y,X=X,K=K,N=nind,J=J,Xl=Xl,Yl=Yl,Xu=Xu,Yu=Yu)
 inits <- function(){
-  list (alpha0=rnorm(1,-4,.4),theta=runif(1,1,2),s=sst)
+  list (alpha0=rnorm(1,-4,.4),alpha1=runif(1,1,2),s=sst)
 }
 
 library("R2WinBUGS")
-parameters <- c("alpha0","theta")
+parameters <- c("alpha0","alpha1")
 nthin<-1
 nc<-3
 nb<-1000
@@ -787,7 +787,7 @@ package \mbox{\tt scrbook}.
  We ran $1000$ burn-in and $1000$ after burn-in, 3 chains,
 to obtain 3000 posterior samples.  Because we know $N$ for this
 particular data set we only have 2 parameters of the detection model
-to summarize (\mbox{\tt alpha0} and \mbox{\tt theta}).  When the
+to summarize (\mbox{\tt alpha0} and \mbox{\tt alpha1}).  When the
 object \mbox{\tt out} is produced we print a summary of the results as
 follows:
 {\small
@@ -798,7 +798,7 @@ Inference for Bugs model at "SCR0a.txt", fit using WinBUGS,
  n.sims = 3000 iterations saved
             mean     sd    2.5%     25%    50%     75%   97.5%  Rhat n.eff
 alpha0    -2.496  0.224  -2.954  -2.648  -2.48  -2.340  -2.091 1.013   190
-theta      2.442  0.419   1.638   2.145   2.44   2.721   3.303 1.005   530
+alpha1     2.442  0.419   1.638   2.145   2.44   2.721   3.303 1.005   530
 deviance 292.803 21.155 255.597 277.500 291.90 306.000 339.302 1.006   380
 
 For each parameter, n.eff is a crude measure of effective sample size,
@@ -811,7 +811,7 @@ DIC is an estimate of expected predictive error (lower deviance is better).
 }
 
 We know the data were generated with \mbox{\tt alpha0} $= -2.5$ and
-\mbox{\tt theta = -2}. The estimates look reasonably close to those
+\mbox{\tt alpha1 = -2}. The estimates look reasonably close to those
 data-generating values and we probably feel pretty good about the
 performance of the Bayesian analysis and MCMC algorithm that {\bf WinBUGS}
 cooked-up based on our sample size of 1 data set.  It is worth noting
@@ -920,7 +920,7 @@ cat("
 model {
 alpha0~dnorm(0,.1)
 logit(p0)<- alpha0
-theta~dnorm(0,.1)
+alpha1~dnorm(0,.1)
 psi~dunif(0,1)
 
 for(i in 1:M){
@@ -930,7 +930,7 @@ for(i in 1:M){
 for(j in 1:J){
 d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
 y[i,j] ~ dbin(p[i,j],K)
-p[i,j]<- z[i]*p0*exp(- theta*d[i,j]*d[i,j])
+p[i,j]<- z[i]*p0*exp(- alpha1*d[i,j]*d[i,j])
 }
 }
 N<-sum(z[])
@@ -962,11 +962,11 @@ sst[i,2]<- mean( X[y[i,]>0,2] )
 }
 data <- list (y=y,X=X,K=K,M=M,J=J,Xl=Xl,Yl=Yl,Xu=Xu,Yu=Yu)
 inits <- function(){
-  list (alpha0=rnorm(1,-4,.4),theta=runif(1,1,2),s=sst,z=z)
+  list (alpha0=rnorm(1,-4,.4),alpha1=runif(1,1,2),s=sst,z=z)
 }
 
 library("R2WinBUGS")
-parameters <- c("alpha0","theta","N")
+parameters <- c("alpha0","alpha1","N")
 nthin<-1
 nc<-3
 nb<-1000
@@ -993,7 +993,7 @@ Inference for Bugs model at "SCR0a.txt", fit using WinBUGS,
  n.sims = 3000 iterations saved
            mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
 alpha0    -2.57  0.23  -3.04  -2.72  -2.56  -2.41  -2.15 1.01   320
-theta      2.46  0.42   1.63   2.16   2.46   2.73   3.33 1.02   120
+alpha1     2.46  0.42   1.63   2.16   2.46   2.73   3.33 1.02   120
 N        113.62 15.73  86.00 102.00 113.00 124.00 147.00 1.01   260
 D          1.78  0.25   1.34   1.59   1.77   1.94   2.30 1.01   260
 deviance 302.60 23.67 261.19 285.47 301.50 317.90 354.91 1.00  1400
@@ -1017,7 +1017,7 @@ as to reduce the MC error to a tolerable level. What constitutes
 tolerable is up to the investigator. Certainly less than 1\% is called
 for. As a general rule, Rhat gets closer to 1 and MC error decreases
 toward 0 as the number of iterations increases.  We see that the
-estimated parameters ($\alpha_0$ and $\theta$) are comparable to the
+estimated parameters ($\alpha_0$ and $\alpha1$) are comparable to the
 previous results obtained for the known-$N$ case, and also not too
 different from the data-generating values. The posterior of $N$
 overlaps the data-generating value substantially with a mean of
@@ -1304,12 +1304,12 @@ complex models in later chapters. The model is summarized by the
 following 3 components:
 \begin{itemize}
 \item[(1)] $y_{ij}|{\bf s}_{i} \sim \mbox{Bin}(K, z_{i}\; p_{ij})$
-\item[(2)] $p_{ij} = p_{0} \exp(-\theta \; ||{\bf s}_{i}-x_{j}||^2)$
+\item[(2)] $p_{ij} = p_{0} \exp(-\alpha1 \; ||{\bf s}_{i}-x_{j}||^2)$
 \item[(3)] $ {\bf s}_{i} \sim \mbox{Unif}({\cal S})$
 \item[(4)] $ z_{i} \sim \mbox{Bern}(\psi)$
 \end{itemize}
 We assume customary flat priors on the structural (hyper-) parameters
-of the model, $\alpha_{0} = \mbox{logit}(p_{0})$, $\theta$ and $\psi$.  It remains to define the
+of the model, $\alpha_{0} = \mbox{logit}(p_{0})$, $\alpha1$ and $\psi$.  It remains to define the
 state-space ${\cal S}$. For this, we nested the trap array (Fig.
 \ref{scr0.fig.wolverinelocs}) in a
 a rectangular state-space extending $20$ km beyond the traps in each cardinal
@@ -1486,12 +1486,12 @@ populations nor attempts to estimate density or vital rates.
 One thing we haven't talked about yet is that we can calibrate the
 desired size of the state-space by looking at the estimated home range
 radius of the species. For some models it is possible to convert the
-parameter $\theta$ directly into the home range radius (sec. 
-XXX XYZ). For the half-normal model we interpret the half-normal scale
-parameter $\sigma$ which is related to $\theta$ by $\theta =
+parameter $\alpha1$ directly into the home range radius (sec. 
+XXX MISSING XYZ). For the half-normal model we interpret the half-normal scale
+parameter $\sigma$ which is related to $\alpha1$ by $\alpha1 =
 1/(2\sigma^2)$ as the radius of a bivariate normal movement model. 
 In this case $\sigma = 1.82$ standardized units = 18.2 $km$ which 
-translates into a home range area of XXXX. 
+translates into a home range area of XXXX MISSING XXXXX. 
 
 It is worth thinking about this model, and these estimates, computed
 under a rectangular state space roughly centered over the trapping
@@ -1503,14 +1503,15 @@ state space has to be a regular polygon -- we defined it as such here
 strictly for convenience and for ease of implementation in {\bf WinBUGS}
 where it enables us to specify the prior for the activity centers as
 uniform priors for each coordinate.  While it would be possible to
-define a more realistic state-space using some general polygon, it
-might take some effort to implement that in the {\bf BUGS} language (see
-chapter XYZXYZ\footnote{raccoon example or something?} for example of
-a simple case).
+define a more realistic state-space using some general polygon GIS coverage, it
+might take some effort to implement that in the {\bf BUGS} language
+but it is not difficult to devise custom MCMC algorithms to do that
+(see Chapt. \ref{chapt.mcmc}).
 Alternatively, we recommend
 using a discrete representation of the state-space -- i.e., approximate
-${\cal S}$ by a grid of $G$ points. We discuss this in the following
-section.
+${\cal S}$ by a grid of $G$ points. We discuss this in sec. 
+\ref{scr0.sec.discrete}.
+
 
 \section{Constructing Density Maps}
 \label{scr0.sec.mapping}
@@ -1523,35 +1524,36 @@ make a spatial density plot by tallying up the number of activity
 centers ${\bf s}_{i}$ in boxes of arbitrary size and then producing a
 nice multi-color spatial plot of those which, we find, increases the
 acceptance probability of your manuscripts by a substantial amount.
-We discussed in chapter \ref{chapt.glms} the idea of estimating
-derived parameters from MCMC output. In SCR models, there are many
-derived parameters that are functions of the latent point locations
-$({\bf s}_{1},\ldots, {\bf s}_{N})$. In the present context, the
-number of individuals living in any well-defined polygon is a derived
-parameter. Specifically, let $B(x)$ indicate a box centered at $x$
-then
+We discussed in Chapt. \ref{chapt.glms} the idea of estimating derived
+parameters from MCMC output. In SCR models, there are many derived
+parameters that are functions of the latent point locations $({\bf
+  s}_{1},\ldots, {\bf s}_{N})$. In the present context, the number of
+individuals living in any well-defined polygon is a derived
+parameter. Specifically, let $B({\bf x})$ indicate a box centered at
+${\bf x}$ then
 \[
-N(x)=\sum_{i} I({\bf s}_{i} \in B(x))
+N({\bf x})=\sum_{i} I({\bf s}_{i} \in B({\bf x}))
 \]
-is the population size of box $B(x)$, and $D(x) = N(x)/||B(x)||$ is
-the local density. These are just ``derived parameters'' (see chapter
-\ref{chapt.glms}) which are estimated from MCMC output using the
-appropriate Monte Carlo average. One thing to be careful about, in the
-context of models in which $N$ is unknown, is that, for each MCMC
-iteration $m$, we only tabulate those activity centers which
-correspond to individuals in the sampled population. i.e., for which
-the data augmentation variable $z_{i} = 1$.  In this case, we take all
-of the output for MCMC iterations $m=1,2,\ldots,\mbox{\tt niter}$ and
-compute this summary:
+is the population size of box $B({\bf x})$, and $D({\bf x}) = N({\bf
+  x})/||B({\bf x})||$ is the local density. These are just ``derived
+parameters'' (see Chapt.  \ref{chapt.glms}) which are estimated from
+MCMC output using the appropriate Monte Carlo average. One thing to be
+careful about, in the context of models in which $N$ is unknown, is
+that, for each MCMC iteration $m$, we only tabulate those activity
+centers which correspond to individuals in the sampled
+population. i.e., for which the data augmentation variable $z_{i} =
+1$.  In this case, we take all of the output for MCMC iterations
+$m=1,2,\ldots,\mbox{\tt niter}$ and compute this summary:
 \[
-   N(x,m) = \sum_{z_{i,m}=1} I(s_{i,m} \in B(x))
+   N({\bf x},m) = \sum_{z_{i,m}=1} I(s_{i,m} \in B({\bf x}))
 \]
-Thus, $N(x,1),N(x,2),\dots,$ is the Markov chain for parameter $N(x)$.
-In what follows we will provide a set of {\bf R} commands for doing
-this calculations and making a basic image plot from the MCMC output.
+Thus, $N({\bf x},1),N({\bf x},2),\dots,$ is the Markov chain for
+parameter $N({\bf x})$.  In what follows we will provide a set of {\bf
+  R} commands for doing this calculations and making a basic image
+plot from the MCMC output.
 
-{\flushleft \bf Step 1:} Define the center points of each box, $B(x)$,
-or point at which local density will be estimated:
+{\flushleft \bf Step 1:} Define the center points of each box, $B({\bf
+  x})$, or point at which local density will be estimated:
 \begin{verbatim}
 xg<-seq(Xl,Xu,,50)
 yg<-seq(Yl,Yu,,50)
@@ -1613,12 +1615,10 @@ puts it on the monitor as if it was a map you were looking at.  You
 can always specify the $x$ and $y-$ labels explicitly as we did above.
 
 {\bf Spatial dot plots } -- Now here is a cruder version based on the
-``spatial dot map'' function \mbox{\tt spatial.plot}.  The useful
-functions in {\bf R}
-are \mbox{\tt image()} and \mbox{\tt image.scale()} which is a function we grabbed off
-the web somewhere. Use of this function requires arguments of point
-locations and the resulting value to be displayed. The function is
-defined and applied as follows:
+``spatial dot map'' function \mbox{\tt spatial.plot}, which uses
+the function \mbox{\tt image.scale()}.
+The \mbox{\tt spatial.plot} function requires arguments of point
+locations and the resulting value to be displayed:
 \begin{verbatim}
 spatial.plot<- function(x,y){
  nc<-as.numeric(cut(y,20))
