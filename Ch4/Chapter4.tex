@@ -1261,7 +1261,11 @@ total of 50 unique wolverine-trap encounters.  These numbers might be
 hard to get your mind around whereas some tabular summary is often
 more convenient. For that it seems natural to tabulate individuals by
 trap and total encounter frequencies. The spatial information in SCR
-data is based on multi-trap captures, and so, it is informative to
+data is based on multi-trap captures\footnote{I will add more 
+context here on revision about spatial recaptures, lost recaptures,
+ordinary recaptures. Function \mbox{\tt SCRsmy} in \mbox{\tt
+  scrbook}}, 
+and so, it is informative to
 understand how many unique traps each individual is captured in. At
 the same, it is useful to understand how many total captures we have
 of each individual because this is, in an intuitive sense, the
@@ -1269,7 +1273,7 @@ effective sample size.  So, we reproduce Table 1 from
 \citet{royle_etal:2011jwm} which shows the trap and total encounter
 frequencies:
 
-\begin{table} [ht]
+\begin{table} [htp]
   \caption{Individual frequencies of capture for wolverines captured
     in camera traps in Southeast Alaska in 2008. Rows index unique
     trap frequencies and columns represent total number of captures
@@ -1290,7 +1294,6 @@ No. of traps & 1 & 2 & 3 & 4 & 5 & 6 & 8 & 10 &13 &14 \\
 6 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
 \hline
 \end{tabular}
-
 \end{table}
 
 \subsection{Fitting the model in WinBUGS}
@@ -1314,26 +1317,38 @@ direction.  We also considered larger state-spaces up to 50 km to
 evaluate that choice.  The buffer of the state space should be larger
 enough so that individuals beyond the state-space boundary are not
 likely to be encountered. Thus some knowledge of typical space usage
-patterns of the species is useful.  The coordinate system was scaled
+patterns of the species is useful.  For the analysis, 
+we scaled the coordinate system 
 so that a unit distance was equal to $10$ km, producing a rectangular
 state-space of dimension $9.88 \times 10.5$ units ($area = 10374$ km$^2$)
 within which the trap array was nested. As a general rule, we
 recommend scaling the state-space so that it is defined near the
 origin $(x,y)=(0,0)$. While the scaling of the coordinate system is
 theoretically irrelevant, a poorly scaled coordinate system can
-produce Markov chains that mix poorly.  We fitted this model in
+produce Markov chains that mix poorly.  For the scaled coordinate
+system we fit models for various choices of a rectangular state-space
+based on 
+buffers from 1.0 to 5.0 units on the scaled coordinate system (10 km to
+50 km). In the {\bf R} package \mbox{\tt scrbook} we provide a
+function
+\mbox{\tt wolvSCR0.fn} which will fit the basic SCR model. For
+example, to fit the model in 
 {\bf WinBUGS} using data augmentation with $M=300$ potential individuals,
 using 3 Markov chains each of 12000 total iterations, discarding the
-first 2000 as burn-in.
-[{\bf R} commands for reading in the data and
-executing the analysis are as follows:
+first 2000 as burn-in, we execute the following {\bf R} commands:
+{\small
 \begin{verbatim}
-
-provide those commands here
-
-use new get_wolv_data.fn()
-
+library("scrbook")
+data(wolverine)
+traps<-wolverine$wtraps
+y3d <-SCR23darray.fn(wolverine$wcaps,wolverine$wtraps)
+toad<-wolvSCR0.fn(y3d,traps,nb=12000,ni=2000,delta=1,M=300)
 \end{verbatim}
+}
+The argument $\delta$ determines the buffer size of the state-space.
+Note that this analysis takes 
+between 1-2 hours on many machines so we recommend trying it out with
+lower values of $M$ and fewer iterations.
 The output
 follows (note, we have a parameter ``sigma'' which we discuss
 shortly)\footnote{Final as of 1/11/2012. 
