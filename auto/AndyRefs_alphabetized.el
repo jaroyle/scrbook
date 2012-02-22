@@ -1,6 +1,7 @@
 (TeX-add-style-hook "AndyRefs_alphabetized"
  (lambda ()
     (LaTeX-add-bibitems
+     "hijmans_vanetten:2012"
      "vanhorne:1983"
      "said_servanty:2005"
      "tufto_etal:1996"
