@@ -14,7 +14,7 @@ Yu<-max(Syout)*1.001
 }
 xg<-seq(Xl,Xu,,nx)
 yg<-seq(Yl,Yu,,ny)
- 
+
 Sxout<-cut(Sxout[w==1],breaks=xg)
 Syout<-cut(Syout[w==1],breaks=yg)
 Dn<-table(Sxout,Syout)/niter  # Dn = avg # guy (posterior)
@@ -26,13 +26,5 @@ par(mar=c(3,3,3,6))
 image(xg,yg,Dn,col=terrain.colors(10))
 image.scale(Dn,col=terrain.colors(10))
 box()
-Sxout<-obj$Sx
-Syout<-obj$Sy
-stat<-rep(NA,niter)
-for(i in 1:niter){
-Dn<- table(cut(Sxout[i,][w[i,]==1],breaks=xg),cut(Syout[i,][w[i,]==1],breaks=yg))
-Dnv<-Dn[1:length(Dn)]
-stat[i]<-(length(Dnv)-1)*(var(Dnv)/mean(Dnv))
-}
-return(NULL)
+return(grid=cbind(xg,yg),Dn=Dn)
 }
