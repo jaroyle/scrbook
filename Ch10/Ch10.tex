@@ -128,8 +128,8 @@ where $\theta_{0} = log(\lambda_{0})$ and $\theta_{1} =
 
 %In all previous applications of SCR models in this book, as well as in
 %the literature,
-T main problem with the normal Euclidean distance metric, i.e., $
-dist({\bf x}_{j} - {\bf s}_{i}) = ||{\bf x}_{j} - {\bf s}_{i}||$,
+The main problem with the normal Euclidean distance metric, i.e., 
+$dist({\bf x}_{j} - {\bf s}_{i}) = ||{\bf x}_{j} - {\bf s}_{i}||$,
 %and
 %the parameters $\theta_0$ and $\theta_1$ have been estimated using
 %standard methods (likelihood or Bayesian).  The main problem with this
@@ -269,7 +269,6 @@ these factors that influence space usage, and test explicit hypotheses
 about these things using only individual level encounter history data
 from capture-recapture studies.
 
-
 \subsection{Example of Computing Cost-weighted distance}
 
 As an example of the cost-weighted distance calculation consider the
@@ -285,7 +284,10 @@ identified as follows, along with the pixel-specific cost:
 \end{verbatim}
 \end{center}
 This simple cost
-raster is shown in Fig. \ref{ecoldist.fig.raster}.
+raster is shown in Fig. \ref{ecoldist.fig.raster}. We assume the scale
+is such that the distance between neighboring pixels in any cardinal
+direction is 1 unit, and the distance between neighbors on a diagonal
+is $\sqrt{2}$ units.
 We assigned low cost of 1 to ``good habitat'' pixels (or pixels
 we think of as ``highly connected'' by virtue of being in good
 habitat) and, conversely, we assign high cost (100) to ``bad
@@ -295,18 +297,27 @@ pixels 5 and 10 is $\sqrt{2}(1+1)/2 = 1.414214$ units, the shortest
 distance between pixels 4 and 8 is 100 units, while the shortest
 cost-distance between 4 and 12 is 150.5. A tough one is: what is the
 shortest distance between 7 and 16? An individual at pixel 7 can move
-diagonal and pay $sqrt(2)*(100+1)/2 + 1 =72.41778$.
-XXX MAYBE SAY SOMETHING EXPLICIT ABOUT DIAGONAL MOVEMENTS... SILLY BUT IT TOOK ME A COUPLE OF MINUTES TO GET WHERE THE SQRT(2) COMES FROM; WHAT MIGHT HELP, TOO, IS JUST STATING THAT THE EUCLEDIAN DISTANCE BETWEEN PIXELS IN THIS EXAMPLE IS 1 UNIT XXX
+diagonal (which has distance $\sqrt{2}$) and pay $sqrt(2)*(100+1)/2 + 1 =72.41778$.
+
+\begin{figure}
+\begin{center}
+\includegraphics[height=3.25in,width=3.25in]{Ch10/figs/raster_2values}
+\end{center}
+\caption{A $4 \times 4$ raster with cost = 1 (white) or 100 (shaded) to represent ease of movement across a pixel.}
+\label{ecoldist.fig.raster}
+\end{figure}
+
 
 Once the cost raster is created, the least-cost path distances are
 computed with just a couple {\bf R} commands, and those can be
 inserted directly into the likelihood construction for an ordinary
-spatial capture-recapture model XXX I GUESS THE CHAPTER WON'T HAVE AN APPENDIX(Appendix 1)XXX. The {\bf R} package
+spatial capture-recapture model The {\bf R} package
 \mbox{\tt gdistance} uses the implementation of Dijkstra's algorithm
 \citep{dijkstra:1959} found in the \mbox{\tt igraph} package
-\citep{csardi:2010}.  Using \mbox{\tt gdistance}, (Appendix 1), we
+\citep{csardi:2010}.  Using \mbox{\tt gdistance}, we 
 define the incremental cost of moving from one pixel to another as the
-distance-weighted {\it average} of the 2 pixel costs.
+distance-weighted {\it average} of the 2 pixel costs. We demonstrate
+how to do this subsequently.
 
 The {\bf R} commands for computing the least-cost distance between all pairs of pixels
 are as follows:
@@ -319,16 +330,6 @@ values(r)<-matrix(costs1,4,4,byrow=FALSE)
 par(mfrow=c(1,1))
 plot(r)
 \end{verbatim}
-
-
-\begin{figure}
-\begin{center}
-\includegraphics[height=3.25in,width=3.25in]{Ch10/figs/raster_2values}
-\end{center}
-\caption{A $4 \times 4$ raster with cost = 1 (white) or 100 (shaded) to represent ease of movement across a pixel.}
-\label{ecoldist.fig.raster}
-\end{figure}
-
 Then we use the functions \mbox{\tt transition}, \mbox{\tt
   geoCorrection} (which is only necessary if the data are not
 projected or if cells are considered to have more than 4 neighbors)
@@ -338,9 +339,8 @@ transition between
 any two pixels, and it operates on the inverse-scale (''conductance'')
 and so the
 \mbox{\tt transitionFunction} argument is given as $1/mean(x)$.
-
-To compute the cost distance we prescribe a set of points, or XXX we
-can compute it XXX between
+To compute the cost distance we prescribe a set of points, or  we
+can compute it  between
 two sets of points (which is handy when one of the sets is of trap
 locations, and the other is of individual activity centers).
 To compute the distances for pixels in a raster,
@@ -466,7 +466,6 @@ approximated by
             y}_{i} |{\bf s}_u, \theta]
 \label{mle.eq.intlik}
 \end{equation}
-
 To deal with the fact that $N$ is unknown, there are two key issues
 that need to be addressed.  First is that we don't observe the
 ``all-zero'' encounter histories (i.e., $y_{ij} = 0$ for all $j$)
@@ -615,7 +614,9 @@ along with 16 trap locations. }
 When distance is defined by the cost-weighted distance metric given
 by Eq. \ref{eq.lcp} then individual space-usage varies
 spatially in response to the landscape covariate(s) used in the
-distance metric. XXX As a consequence, home ranges contours are no longer circular, as in SCR models based on Euclidean distance. XXX For example, using one of the covariates we use in
+distance metric.  As a consequence, home ranges contours are no longer
+circular, as in SCR models based on Euclidean distance.
+ For example, using one of the covariates we use in
 our simulation study below (Fig. \ref{ecoldist.fig.raster100}, right
 panel) with a Gaussian pdf detection function but having distance
 metric defined by Eq. \ref{eq.lcp}, produces home ranges such
@@ -748,7 +749,7 @@ For both landscapes and all simulation conditions (levels of $K$ and
 $N$) the average sample sizes of individuals captured are given in
 Tab. \ref{tab.samplesize}.  The simulation results for estimating $N$
 for the prescribed state-space are presented in Table
-\ref{tab.results1} XXX 2 ?XXX below.  For the ``patchy'' landscape we see extreme
+\ref{tab.results1}.  For the ``patchy'' landscape we see extreme
 bias in estimates of $N$ when the Euclidean distance is used. There is
 moderate small sample bias of 3-5\% in the MLE of $N$ using the
 least-cost distance which becomes negligible as $K$ increases. For
@@ -756,8 +757,7 @@ $N=200$ the bias is on the order of 2\% for the lowest sample size
 case ($K=3$) but negligible otherwise.  Interestingly, for the
 landscape exhibiting systematic structure, there is a persistent bias
 in the MLE of $N$ of 1-3\% even for the highest level of $K$.
-RRRRRR I think it would be better to show the results in the appendix
-RRRRRR We were
+We were
 initially surprised by this but, in fact, it is due to the fact that
 the state-space is small relative to the extent of the trap grid and
 sensitivity to a state-space that is too small is expected because the
@@ -767,7 +767,7 @@ where cost of movement is low, individuals use large areas of space,
 and the fitted model is under-stating the apparent
 heterogeneity in encounter probability for the prescribed raster.  We
 found that the issue is resolved when the traps are moved away from
-the boundary XXXX(see Appendix 3) IS THERE AN APPENDIX?XXX.
+the boundary (Tab. \ref{tab.results3}).
 
 The performance of estimating the cost parameter $\theta_{2}$ mirrors
 the results for estimating $N$ for the prescribed state space. In the
@@ -801,6 +801,63 @@ K=10&  65.81 &  132.39  &   69.44 &  138.76 \\
 \end{table}
 
 
+
+
+\begin{table}[htp]
+\label{tab.results1}
+{\tiny
+\caption{Simulation results for estimating population size $N$ for a prescribed state-space with
+$N=100$ or $N=200$ and various levels of replication ($K$) chosen to affect the observed sample
+size of individuals (Tab. \ref{tab.samplesize}). For each simulated data set, the SCR model was fitted with
+standard Euclidean distance (``euclid''), least-cost path assuming the
+cost parameter $\theta_2$ is known (``lcp/known''), or allowing it to
+be estimated by maximum likelihood (``lcp/est'').
+The summary statistics of the
+sampling distribution reported are the mean, standard deviation
+(``SD'') and quantiles (0.025, 0.50, 0.975).
+}
+{\bf Systematic trend raster:} \\
+\begin{tabular}{l|rrrrr|rrrrr}
+         & \multicolumn{5}{c}{N=100   } & \multicolumn{5}{c}{N=200  }  \\
+         &   mean &  SD  & 0.025 & 0.50 & 0.975  & mean  & SD   & 0.025 & 0.50  & 0.975 \\ \hline
+K=3      &        &      &       &      &        &       &      &       &       &       \\
+euclid   &   63.65& 12.62& 44.77 & 61.17&  90.98 & 126.68& 17.05&  98.93& 124.49& 168.26 \\
+lcp/known&   99.28& 20.80& 68.83 & 97.55& 152.59 & 196.47& 27.39& 152.03& 192.96& 259.78\\
+lcp/est  &  101.93& 21.68& 67.95 &101.56& 156.21 & 201.58& 28.14& 154.96& 200.15& 263.20\\
+K=5      &        &      &       &      &        &       &      &       &       &        \\
+euclid   &  64.60 & 7.11 & 51.52 & 63.86&  77.33 & 130.02& 10.25& 113.48& 128.96& 151.32\\
+lcp/known&  95.96 &11.64 & 74.21 & 96.16& 117.65 & 193.04& 17.13& 166.84& 191.88& 226.16\\
+lcp/est  &  98.94 &12.97 & 74.68 & 99.00& 123.88 & 198.80& 19.60& 166.87& 197.97& 239.46\\
+K=10     &        &      &       &      &        &       &      &       &       &       \\
+euclid   &  69.24 & 4.83 & 59.37 & 69.47&  79.18 & 139.83&  7.62& 125.65& 139.65& 154.82\\
+lcp/known&  94.46 & 7.04 & 81.45 & 94.04& 108.83 & 190.47& 11.55& 170.49& 189.74& 213.19\\
+lcp/est  &  97.53 & 8.18 & 82.02 & 97.62& 113.16 & 195.19& 13.28& 171.63& 194.58& 217.96\\ \hline
+\end{tabular}
+\\
+{\bf Patchy "random" raster: } \\
+\begin{tabular}{l|rrrrrrrrrr}
+         & \multicolumn{5}{c}{N=100  } & \multicolumn{5}{c}{N=200   }  \\
+         &   mean &  SD  & 0.025 & 0.50  & 0.975  & mean  & SD   & 0.025 & 0.50  & 0.975 \\ \hline
+K=3      &        &      &       &       &        &       &      &       &       &       \\
+euclid   &  78.68 & 18.12& 49.40 & 76.34 & 125.47 & 154.34& 33.74& 107.00& 146.34& 221.43\\
+lcp/known& 109.09 & 27.52& 69.50 &104.86 & 183.72 & 207.18& 46.53& 143.31& 198.42& 315.89\\
+lcp/est  & 110.96 & 28.65& 69.55 &106.98 & 181.84 & 208.77& 49.29& 141.68& 197.89& 325.77\\
+K=5      &        &      &       &       &        &       &      &       &       &        \\
+euclid   &  77.85 & 11.55& 59.17 & 77.44 & 101.14 & 153.39& 15.57& 129.31& 149.54& 185.38\\
+lcp/known& 103.57 & 15.83& 78.15 &100.58 & 137.48 & 201.57& 21.25& 165.94& 199.95& 243.26\\
+lcp/est  & 104.44 & 15.79& 78.38 &101.47 & 139.55 & 200.91& 20.78& 164.42& 200.47& 246.46\\
+K=10     &        &      &       &       &        &       &      &       &       &       \\
+euclid   &  78.01 & 5.26 & 68.00 & 77.96 & 87.81  & 156.27&  8.51& 142.17& 156.05& 174.55\\
+lcp/known&  99.84 & 7.09 & 86.86 & 99.84 & 114.11 & 198.64& 11.04& 181.43& 197.62& 220.45\\
+lcp/est  & 100.42 & 7.56 & 86.72 &100.34 & 115.47 & 198.45& 11.44& 180.06& 198.04& 219.52\\ \hline
+\end{tabular}
+}
+\end{table}
+
+
+
+
+
 \begin{table}[htp]
 \centering
 \caption{
@@ -816,6 +873,46 @@ K=5 &   1.02&    1.01 &     1.12 &1.12 \\
 K=10&   1.01&    1.00 &     1.10 &1.08 \\
 \end{tabular}
 \label{tab.results2}
+\end{table}
+
+
+
+
+\begin{table}[htp]
+{\tiny
+\caption{Simulation results for estimating population size $N$ for a prescribed state-space with
+$N=100$ or $N=200$ and various levels of replication ($K$) chosen to affect the observed sample
+size of individuals. These results correspond to those of the
+systematic landscape in Table 2 except with the traps
+moved 0.5 units in from the boundary of the raster.
+Each grouping of 3 rows (for a given value of $K$) summarizes the
+performance of $\hat{N}$ under 3 distance models: (1) A model in which
+Euclidean distance was used (``euclid''); (2) A model in which the
+least-cost path distance was used, with the coefficient of the cost
+function fixed (``lcp/known''); and (3) A model in which the
+coefficient was estimated (``lcp/est''). The summary statistics of the
+sampling distribution reported are the mean, standard deviation
+(``SD'') and quantiles (0.025, 0.50, 0.975).
+}
+{\bf Systematic trend raster:} \\
+\begin{tabular}{l|rrrrr|rrrrr}
+         & \multicolumn{5}{c}{N=100   } & \multicolumn{5}{c}{N=200  }  \\
+         &   mean &  SD  & 0.025 & 0.50 & 0.975  & mean  & SD   & 0.025 & 0.50  & 0.975 \\ \hline
+K=3      &        &      &       &      &        &       &      &       &       &       \\
+euclid   &   84.48& 20.42& 51.16 & 81.51& 140.62 &163.70 &24.55 &126.64 &157.67 &223.63 \\
+lcp/known&  104.14& 25.49& 65.67 &101.50& 173.19 &200.16 &29.27 &158.65 &191.04 &268.78\\
+lcp/est  &  105.90& 26.19& 65.95 &103.40& 182.30 &201.34 &29.54 &161.88 &192.36 &268.98\\
+K=5      &        &      &       &      &        &       &      &       &       &       \\
+euclid   & 81.21  &11.33 &61.35  &79.20 & 98.86  &163.27 &13.06 &140.21 &162.97 &185.94\\
+lcp/known& 99.93  &12.86 &76.97  &99.75 &117.76  &199.80 &16.60 &170.25 &198.23 &227.66\\
+lcp/est  & 100.84 &13.15 &79.96  &99.51 &119.08  &200.25 &16.53 &168.88 &199.29 &227.39\\
+K=10     &        &      &       &      &        &       &      &       &       &       \\
+euclid   &  80.10 & 7.81 &66.45  &79.14 &93.33   &158.40 & 9.25 &142.74 &157.86 &173.18\\
+lcp/known& 100.07 & 9.50 &82.99  &100.33&114.81  &197.62 &12.58 &171.95 &199.21 &217.19\\
+lcp/est  & 100.10 & 9.88 &82.31  &100.91&116.27  &197.52 &13.03 &169.49 &200.68 &217.82\\ \hline
+\end{tabular}
+}
+\label{tab.results3}
 \end{table}
 
 
@@ -859,8 +956,8 @@ depending on whether pixels are in the polygon or not, or how far they
 are from polygon boundaries. These operations are relatively easy to
 do within a GIS system but we need to be able to do them in ${\bf R}$
 and we develop methods for this here.  See also
-Chapts. \ref{chapt.mle} and \ref{chapt.mcmc} XXX exact sections ??
-XXXX for examples of reading in the shapefile and using them to affect
+secs. \ref{mle.sec.shapefile} and \ref{mcmc.sec.state-space} 
+for examples of reading in the shapefile and using them to affect
 calculations in SCR models.
 
 The first thing we do here is create a set of polygons by
@@ -950,12 +1047,14 @@ distance matrix one time and modify our likelihood code to accept the
 distance matrix as input. We give that likelihood in the library
 \mbox{\tt scrbook} as the function \mbox{\tt intlik3edv2}.
 We note also that it provides a vector of 0's and 1's that
-define any potential state-space restrictions XXX DOES THAT MEAN PIXELS WITHIN S HAVE A '1' AND OTHERS HAVE A '0'? XXXX. In the analysis of this
+define any potential state-space restrictions. i.e., 1 if the pixel is
+an element of the state-space and 0 if it is not.
+In the analysis of this
 simulated data set, we define the state-space to be the buffered
 corridor system. The help file for \mbox{\tt intlik3edv2} contains the
 script that follows.
 
-Here we simulate N=200 guys in the corridor system and so we
+Here we simulate $N=200$ guys in the corridor system and so we
 restrict out state-space accordingly for purposes of fitting the
 model. However we encourage the reader to refit the model without the
 state-space restriction (for fitting the model only) and then
@@ -1020,7 +1119,9 @@ frog2<-nlm(intlik3edv2,c(-2.5,2,log(4)),hessian=TRUE,y=Y,K=K,X=traplocs,
 
 In the example that we ran above we compared the result for using
 distance-within-the-corridor to normal Euclidean distance and the
-results do not differ too much in this single instance.XXX ANY SUGGESTION WHY?XX
+results do not differ too much in this single instance. One reason is
+that the distance between individuals and traps that they are likely
+to be captured in is well-approximated by normal Euclidean distance.
 
 
 \section{A stream network}
@@ -1067,7 +1168,7 @@ of ignoring ecological distance and using normal Euclidean distance in
 the model for encounter probability, has the logical effect of causing
 negative bias in estimates of $N$.  We expect this because the effect
 is similar to failing to model heterogeneity. i.e., if we mis-specify
-``model $M_h$'' \citep{otis_etal:1978} with ``Model $M_0$''
+``model $M_h$'' \citep{otis_etal:1978} with ``model $M_0$''
 \citep{otis_etal:1978} then we will expect to under-estimate $N$. So
 the effect of mis-specifying the ecological distance metric with a
 standard homogeneous Euclidean distance has the same effect. As a
@@ -1102,107 +1203,11 @@ distance given the raster covariate(s) and parameters might be needed.
 
 
 
-\begin{table}[h!]
-\label{tab.results1}
-{\small
-\caption{Simulation results for estimating population size $N$ for a prescribed state-space with
-$N=100$ or $N=200$ and various levels of replication ($K$) chosen to affect the observed sample
-size of individuals (Tab. \ref{tab.samplesize}). For each simulated data set, the SCR model was fitted with
-standard Euclidean distance (``euclid''), least-cost path assuming the
-cost parameter $\theta_2$ is known (``lcp/known''), or allowing it to
-be estimated by maximum likelihood (``lcp/est'').
-The summary statistics of the
-sampling distribution reported are the mean, standard deviation
-(``SD'') and quantiles (0.025, 0.50, 0.975).
-}
-{\bf Systematic trend raster:} \\
-\begin{tabular}{l|rrrrr|rrrrr}
-         & \multicolumn{5}{c}{N=100   } & \multicolumn{5}{c}{N=200  }  \\
-         &   mean &  SD  & 0.025 & 0.50 & 0.975  & mean  & SD   & 0.025 & 0.50  & 0.975 \\ \hline
-K=3      &        &      &       &      &        &       &      &       &       &       \\
-euclid   &   63.65& 12.62& 44.77 & 61.17&  90.98 & 126.68& 17.05&  98.93& 124.49& 168.26 \\
-lcp/known&   99.28& 20.80& 68.83 & 97.55& 152.59 & 196.47& 27.39& 152.03& 192.96& 259.78\\
-lcp/est  &  101.93& 21.68& 67.95 &101.56& 156.21 & 201.58& 28.14& 154.96& 200.15& 263.20\\
-K=5      &        &      &       &      &        &       &      &       &       &        \\
-euclid   &  64.60 & 7.11 & 51.52 & 63.86&  77.33 & 130.02& 10.25& 113.48& 128.96& 151.32\\
-lcp/known&  95.96 &11.64 & 74.21 & 96.16& 117.65 & 193.04& 17.13& 166.84& 191.88& 226.16\\
-lcp/est  &  98.94 &12.97 & 74.68 & 99.00& 123.88 & 198.80& 19.60& 166.87& 197.97& 239.46\\
-K=10     &        &      &       &      &        &       &      &       &       &       \\
-euclid   &  69.24 & 4.83 & 59.37 & 69.47&  79.18 & 139.83&  7.62& 125.65& 139.65& 154.82\\
-lcp/known&  94.46 & 7.04 & 81.45 & 94.04& 108.83 & 190.47& 11.55& 170.49& 189.74& 213.19\\
-lcp/est  &  97.53 & 8.18 & 82.02 & 97.62& 113.16 & 195.19& 13.28& 171.63& 194.58& 217.96\\ \hline
-\end{tabular}
-\\
-{\bf Patchy "random" raster: } \\
-\begin{tabular}{l|rrrrrrrrrr}
-         & \multicolumn{5}{c}{N=100  } & \multicolumn{5}{c}{N=200   }  \\
-         &   mean &  SD  & 0.025 & 0.50  & 0.975  & mean  & SD   & 0.025 & 0.50  & 0.975 \\ \hline
-K=3      &        &      &       &       &        &       &      &       &       &       \\
-euclid   &  78.68 & 18.12& 49.40 & 76.34 & 125.47 & 154.34& 33.74& 107.00& 146.34& 221.43\\
-lcp/known& 109.09 & 27.52& 69.50 &104.86 & 183.72 & 207.18& 46.53& 143.31& 198.42& 315.89\\
-lcp/est  & 110.96 & 28.65& 69.55 &106.98 & 181.84 & 208.77& 49.29& 141.68& 197.89& 325.77\\
-K=5      &        &      &       &       &        &       &      &       &       &        \\
-euclid   &  77.85 & 11.55& 59.17 & 77.44 & 101.14 & 153.39& 15.57& 129.31& 149.54& 185.38\\
-lcp/known& 103.57 & 15.83& 78.15 &100.58 & 137.48 & 201.57& 21.25& 165.94& 199.95& 243.26\\
-lcp/est  & 104.44 & 15.79& 78.38 &101.47 & 139.55 & 200.91& 20.78& 164.42& 200.47& 246.46\\
-K=10     &        &      &       &       &        &       &      &       &       &       \\
-euclid   &  78.01 & 5.26 & 68.00 & 77.96 & 87.81  & 156.27&  8.51& 142.17& 156.05& 174.55\\
-lcp/known&  99.84 & 7.09 & 86.86 & 99.84 & 114.11 & 198.64& 11.04& 181.43& 197.62& 220.45\\
-lcp/est  & 100.42 & 7.56 & 86.72 &100.34 & 115.47 & 198.45& 11.44& 180.06& 198.04& 219.52\\ \hline
-\end{tabular}
-}
-\end{table}
 
 
 
 
 
-
-
-\newpage
-
-
-
-
-
-
-
-\begin{table}[ht]
-{\small
-\caption{Simulation results for estimating population size $N$ for a prescribed state-space with
-$N=100$ or $N=200$ and various levels of replication ($K$) chosen to affect the observed sample
-size of individuals. These results correspond to those of the
-systematic landscape in Table 2 except with the traps
-moved 0.5 units in from the boundary of the raster.
-Each grouping of 3 rows (for a given value of $K$) summarizes the
-performance of $\hat{N}$ under 3 distance models: (1) A model in which
-Euclidean distance was used (``euclid''); (2) A model in which the
-least-cost path distance was used, with the coefficient of the cost
-function fixed (``lcp/known''); and (3) A model in which the
-coefficient was estimated (``lcp/est''). The summary statistics of the
-sampling distribution reported are the mean, standard deviation
-(``SD'') and quantiles (0.025, 0.50, 0.975).
-}
-{\bf Systematic trend raster:} \\
-\begin{tabular}{l|rrrrr|rrrrr}
-         & \multicolumn{5}{c}{N=100   } & \multicolumn{5}{c}{N=200  }  \\
-         &   mean &  SD  & 0.025 & 0.50 & 0.975  & mean  & SD   & 0.025 & 0.50  & 0.975 \\ \hline
-K=3      &        &      &       &      &        &       &      &       &       &       \\
-euclid   &   84.48& 20.42& 51.16 & 81.51& 140.62 &163.70 &24.55 &126.64 &157.67 &223.63 \\
-lcp/known&  104.14& 25.49& 65.67 &101.50& 173.19 &200.16 &29.27 &158.65 &191.04 &268.78\\
-lcp/est  &  105.90& 26.19& 65.95 &103.40& 182.30 &201.34 &29.54 &161.88 &192.36 &268.98\\
-K=5      &        &      &       &      &        &       &      &       &       &       \\
-euclid   & 81.21  &11.33 &61.35  &79.20 & 98.86  &163.27 &13.06 &140.21 &162.97 &185.94\\
-lcp/known& 99.93  &12.86 &76.97  &99.75 &117.76  &199.80 &16.60 &170.25 &198.23 &227.66\\
-lcp/est  & 100.84 &13.15 &79.96  &99.51 &119.08  &200.25 &16.53 &168.88 &199.29 &227.39\\
-K=10     &        &      &       &      &        &       &      &       &       &       \\
-euclid   &  80.10 & 7.81 &66.45  &79.14 &93.33   &158.40 & 9.25 &142.74 &157.86 &173.18\\
-lcp/known& 100.07 & 9.50 &82.99  &100.33&114.81  &197.62 &12.58 &171.95 &199.21 &217.19\\
-lcp/est  & 100.10 & 9.88 &82.31  &100.91&116.27  &197.52 &13.03 &169.49 &200.68 &217.82\\ \hline
-\end{tabular}
-}
-\label{tab.results3}
-\end{table}
 
 
 
