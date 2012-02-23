@@ -10,11 +10,15 @@ Modeling Spatial Variation in Density
 
 \vspace{0.3cm}
 
+\begin{comment} ok this is a minor tech mpoint for now: but this is introduced as a ``point process''
+but what is being decribed here is a REALiZATION of a point process. Lets clarify this in the final
+draft
+\end{comment}
 Underlying all spatial capture recapture models is a point process
 model describing the distribution of individual activity
 centers (${\bf s}_i$) within the state space ($\cal{S}$). So far we have focused our
 attention on the homogeneous binomial point process,
-${\bf s}_i \sim Uniform({\cal S}), i=1,2,\dots,N$, where $N$ is the
+${\bf s}_i \sim \mbox{Unif}({\cal S}), i=1,2,\dots,N$, where $N$ is the
 size of the population. This is a model of
 ``spatial-randomness''\footnote{The phrase ``complete
   spatial-randomness'' is reserved for the homogeneous Poisson point
@@ -92,7 +96,7 @@ $\mathbb{E}[n(B)] = A(B)\mu$ where $A(B)$ is the area of region $B$.  In words,
 the expected number of points in $B$ is simply the area of $B$
 multiplied by the intensity parameter. One property
 of the Poisson model is that if we divide the entire state-space into
-$k=1,\dots,K$ disjunct regions, the counts $\bf n(B)$ are
+$k=1,\dots,K$ disjunct regions, the vector of counts $\bf n(B)$ are
 independent and identically distributed, ({\it i.i.d.}). This is one
 of the distinctions between the Poisson model and the binomial model,
 for which the counts $n(B_k)$ are not {\it i.i.d.} as we will explain
@@ -136,7 +140,7 @@ happens to be the empirical mean of the data in
 Fig.~\ref{ch9.fig.homo}. Note also that these counts are not
 independent realizations from a binomial distribution since $\sum_k
 n(B_k) = N$. Instead, the model for the entire vector
-is ${\bf n(B)} \sim Multinomial(N, {\mathbf{\pi}} = (p_1, p_2, \dots,
+is ${\bf n(B)} \sim \mbox{Multin}(N, {\mathbf{\pi}} = (p_1, p_2, \dots,
 p_K))$ \citep{illian_etal:2008}. The dependence among counts has virtually
 no practical consequence when the number of pixels is large. For
 example, if we have 100 pixels, the number of points in one pixels
@@ -148,7 +152,9 @@ and the discrete representation of space, use the \verb+rmultinom+
 function in \R~to simulate counts similar to those shown in
 Fig.~\ref{ch9.fig.homo}, for example using commands
 such as:
-
+\begin{comment}  I find that reading R code with under-scores ``_'' is rather
+difficult. and especially in this case with both periods and under-scores!
+\end{comment}
 \begin{verbatim}
 n.B_k <- rmultinom(1, size=50, prob=rep(1/25, 25))
 matrix(n.B_k, 5, 5)
@@ -168,8 +174,8 @@ The discrete space representation of the binomial point process is of
 practical importance when fitting SCR models because spatial covariates
 are almost always represented in a discrete-space format called
 ``rasters'' in GIS-speak. In such cases, we often need to change our
-definition of the prior for an activity center from $s_i \sim
-Uniform(\cal{S})$ to $s_i \sim Multinomial(1, \mathbf{\pi})$. In the
+definition of the prior for an activity center from ${\bf s}_i \sim
+\mbox{Unif}(\cal{S})$ to ${\bf s}_i \sim \mbox{Multin}(1, \mathbf{\pi})$. In the
 latter case, the activity center is simply defined as an integer
 representing pixel ``id''. Note also that the multinomial distribution
 with an index of 1 (\emph{i.e.} \verb+size=1+ in \verb+rmultinom+)
@@ -185,7 +191,7 @@ model is developed conditional on $N$. The primary distinction is that
 the uniform distribution is replaced with another distribution
 allowing for the intensity parameter to vary spatially. To arrive at
 this new distribution, replace the scalar intensity parameter $\mu$
-with the function $\mu(x, {\bold \beta})$, where $\bold \beta$ is a
+with the function $\mu(x, {\bold \beta})$, where $\bold \beta$ is a 
 vector of coefficients describing the effects of
 spatially-referenced covariates on the point process intensity.
 Since an intensity must be strictly
@@ -197,10 +203,10 @@ where $\beta_j$ is the regression coefficient for covariate
 $v_j(x)$. To be clear, $v(x)$ is the value of any covariate, such as
 habitat type or elevation, defined at all points in  the state-space.
 This equation should look
-familiar because it is the standard linear model used in log-linear
+familiar because it is the standard linear predictor used in log-linear
 GLMs. Note, however, that we have no need
 for an intercept because it would be confounded with
-$N$. This should be intuitive since an intercept would
+$N$ (see Chapt. \ref{chapt.hscr}). This should be intuitive since an intercept would
 represent the expected value of $N$ when $\beta=0$, but we already
 have a parameter in the model for expected abundance, namely $\mathbb{E}[N] =
 \psi M$\footnote{Remember, $M$ is the size of the augmented population, and
@@ -216,7 +222,13 @@ in place of the uniform prior. Remembering that
 the integral of a pdf must be unity, we can create a pdf by dividing
 $\mu(x)$ by a normalizing constant, which in this case is the integral
 of $\mu(x)$ evaluated over the entire
-state-space\hl{ANDY, is there a better justification for this?}. The
+state-space. \begin{comment}
+this is the conditional probability distribution of location -- i.e., conditional on their being a point in x, this
+is the probability distribution of its location. I think we need to use the term ``conditional probability distribution''
+and maybe a concise coherent justification can be copied out of Illian at a later date. we can also contemplate
+this later and resolve things
+\end{comment}
+The
 probability density function is therefore
 \begin{equation}
 f(x, \beta) = \frac{\mu(x, \beta)}{\int_{x \in \mathcal{S}} \mu(x, \beta)\, \mathrm{d}x}
@@ -254,13 +266,13 @@ inhomogeneous point process as ``IPP'', we can write a
 hierarchical description of a SCR model with a Poisson encounter process and
 a half-normal detection function as
 \begin{gather*}
-w_i \sim \mbox{Bernoulli}(\psi) \\
+w_i \sim \mbox{Bern}(\psi) \\
 {\bf s_i} \sim \mbox{IPP}(\mu(x,\beta)) \\
 \lambda_{ij} = \lambda_0 \exp(-\|{\bf s_i} - {\bf x_{j}}\|^2/(2\sigma^2)) \\
 y_{ij} \sim \mbox{Poisson}(\lambda_{ij} w_i)
 \end{gather*}
 The use of $\mbox{IPP}(\mu(x, \beta))$ instead of
-$\mbox{Uniform}(\cal{S})$ is the only difference between a homogeneous
+$\mbox{Unif}(\cal{S})$ is the only difference between a homogeneous
 point process model and an inhomogeneous point process model, and the
 two are equivalent when $\beta=0$.
 
@@ -333,7 +345,7 @@ the (scaled) probability density function $f(x, \beta)$. Note that we first defi
 spatial covariate (elevation) that is a simple function of the spatial
 coordinates increasing from the southwest to the northeast of our
 state-space.\footnote{Such functional forms of
-covariates are rarely available, which is why continuous spatial
+covariates are rarely available. Instead,  continuous spatial
 covariates are more often measured on a discrete grid.}
 
 The following \R~commands demonstrate the use of rejection sampling to
@@ -386,7 +398,7 @@ while(count <= 100) {
 \label{ch9.fig.hetero}
 \caption{An example of a spatial covariate, say elevation, and a
   realization of a inhomogeneous binomial point process with $N$=100
-  and $\mu(x) = exp(\beta elev(x))$ where $\beta=2$.}
+  and $\mu(x) = exp(\beta \mbox{elev}(x))$ where $\beta=2$.}
 \end{figure}
 
 The simulated data are shown in Fig~\ref{ch9.fig.hetero}. High elevations
@@ -434,7 +446,7 @@ estimate these latent parameters.
 
 One of the nice things about hierarchical models is that they allow us
 to break a problem up into a series of simple conditional
-relationships. Thus,
+models. Thus,
 we can simply add the methods described above into our existing MCMC
 algorithm to simulate the posteriors of $\beta$ conditional on the
 simulated values of $\mathbf{s}$. To demonstrate, we will continue with
@@ -446,7 +458,7 @@ locations as though we did not know where they were, as is the case in
 real applications.
 
 The following \R~code simulates encounter histories under a
-Poisson observation model, which could be appropriate in camera
+Poisson observation model (see Chapt. \ref{chapt.poisson-mn}), which could be appropriate in camera
 trapping studies or when using other methods in which animals could
 be detected multiple times at a trap during a single occasion.
 
@@ -490,7 +502,7 @@ in \R~is available in the accompanying \R~package \scrbook~(see
 \R~code that distinguish it from previous code we have shown to
 fit homogeneous point processes. First, we need to update the parameter
 ${\bf \beta}$ conditional on all other parameters in the model. The code to
-do so is:
+do so is: \begin{comment} need cite to Ch 2 or 7 on MCMC for this \end{comment}
 
 \begin{small}
 \begin{verbatim}
@@ -510,6 +522,7 @@ if(runif(1) < exp(ll.beta1.cand - ll.beta1) )  {
 \end{verbatim}
 \end{small}
 Next, we need to put the new prior on the activity centers:
+\begin{comment} see Ch 7 MCMC for SCR and cite some section of that \end{comment}
 \begin{small}
 \begin{verbatim}
 # Compute the prior for s_i and a candidate. denominator is constant
@@ -574,7 +587,7 @@ covariates are, or can be, defined as such.
 
 To fit IPPs using covariates in discrete space, \emph{i.e.} in raster
 format, we follow the same steps
-as outlined in Chapter~\ref{chapt.poisson-mn}---we define $s_i$ as
+as outlined in Chapter~\ref{chapt.poisson-mn}---we define ${\bf s}_i$ as
 pixel ID, and we use the categorical distribution as a prior. A good
 example is found in \citep{mollet_etal:2012}. Here we present
 an analysis of the simulated data shown in the right panel of
@@ -584,7 +597,7 @@ using using the code shown on the help page
 \verb+ch9simData+ in \scrbook. The points are the number of
 activity centers in each pixel, generated from a single realization of
 the inhomogeneous point process model with intensity
-$mu(x) = 2 \times elev(x)$.
+$\mu(x) = 2 \times \mbox{elev}(x)$.
 \begin{figure}
 \centering
 \includegraphics[width=3in,height=3in]{Ch11/figs/discrete}
@@ -647,8 +660,14 @@ to the raster data as a ``habitat mask''. \R~code to
 fit the models using \secr~and \jags~is available in \scrbook---see
 \verb#help(ch9secrYjags)#. Results of the
 comparison are shown in Table \ref{ch9:tab:secrYjags} and are
-very similar as expected. \hl{ANDY, is there any point in discussing
+very similar as expected. 
+\begin{comment} 
+\hl{ANDY, is there any point in discussing
   the slight differences?}
+  YES: If we can explain it. Could it be MC error alone?
+Otherwise I guess attributing it to differences between MLE and BAyes is ok. That seems like
+a reasonable thing.
+\end{comment}
 \begin{table}[h!]
 \centering
 \caption{Comparison of \secr~and \jags~results. Point estimates from
@@ -804,7 +823,7 @@ the methods described in the previous section and in
 Chapter~\ref{chapt.ecoldist}; however, no sampling was conducted on
 the northern side of the river, and ancillary data indicates that
 jaguars very rarely forge the waterway. \R~code to fit the model is
-available in \scrbook on the help page \verb+jaguarDataCh9+. Parameter
+available in \scrbook  on the help page \verb+jaguarDataCh9+. Parameter
 estimates are shown in Table\ref{ch9.tab.jagposts}.
 \begin{table}
 \centering
