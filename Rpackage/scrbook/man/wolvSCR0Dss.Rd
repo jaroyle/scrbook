@@ -1,7 +1,7 @@
 \name{wolvSCR0Dss}
 \alias{wolvSCR0Dss}
 \title{
-fit SCR0 to wolverine data using discrete state-space 
+fit SCR0 to wolverine data using discrete state-space
 }
 \description{
   JAGS has extremely wierd results which I Cannot figure out
@@ -71,7 +71,7 @@ y3d <-SCR23darray.fn(wolverine$wcaps,wolverine$wtraps)
 g<-as.matrix(wolverine$grid8)
 bln<-wolvSCR0Dss(y3d,traps,nb=1000,ni=2000,M=100,Sgrid=g,engine="jags",area=8)
 
-
+}
 
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
