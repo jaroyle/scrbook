@@ -13,7 +13,7 @@ K=K
 delta=delta
 
 #initiate distance matrix and lamij matrix
-D <- e2dist1(S, X)
+D <- e2dist(S, X)
 lam<-lam0*exp(-(D*D)/(2*sigma*sigma))
 pmat<- 1-exp(-lam)
 pmat[pmat<1e-30] <- 1e-30 #ensures >0 detection probabilities in first iteration
