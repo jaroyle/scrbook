@@ -82,30 +82,35 @@ rejectionRate(mc2)
 
 # Simulate data using dimensions of parula data
 
-N <- 50
+N <- 25
 X <- nopaDat$X
 J <- nrow(X)
-K <- ncol(nopaDat$y)
+K <- 5 # ncol(nopaDat$y)
 z <- array(NA, c(N, J, K))
 s <- cbind(runif(N, 0, 24), runif(N, 0, 16))
-p0 <- 0.3
-sigma <- 2
+p0 <- 0.6
+sigma <- 1
 for(j in 1:J) {
     dist <- sqrt((s[,1]-X[j,1])^2 + (s[,2]-X[j,2])^2)
     p <- p0 * exp(-dist^2/(2*sigma^2))
-    probs <- p / sum(p)
     for(k in 1:K) {
-        z[,j,k] <- rbinom(N, 1, p) # latent encounter histories
+#        z[,j,k] <- rbinom(N, 1, p) # latent encounter histories
+        z[,j,k] <- rpois(N, p) # latent encounter histories
     }
 }
-n <- colSums(z) # observed counts
+n <- colSums(z) # observed counts = sum z over individuals
+table(n)
 
-fm3 <- scrUN(n, X, M=100, obsmod="bern", niters=5000,
-    xlims=c(0,24), ylim=c(0,16), tune=c(0.3, 0.05, 10))
+plot(s, pch=16, col=4)
+points(X, pch="+")
+
+fm3 <- scrUN(n, X, M=100, obsmod="pois", niters=105000,
+    xlims=c(0,24), ylim=c(0,16), tune=c(0.1, 0.03, 4))
 
 mc3 <- mcmc(fm3)
 plot(mc3)
 rejectionRate(mc3)
+summary(window(mc3, start=10001))
 
 
 
