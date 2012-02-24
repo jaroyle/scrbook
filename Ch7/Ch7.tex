@@ -4,15 +4,9 @@ MCMC for Spatial Capture-Recapture
 \markboth{MCMC}{}
 \label{chapt.mcmc}
 
-%%% NOTES
-%%% Andy's working through this doing format edits mostly and math
-%%% stuff , but not in order
-%%% anytime you see a XXX or XYZ that is a marker to change some
-%%% hard-wired reference to a float
 
 \vspace{.3in}
 
-\section{Introduction}
 In this chapter we will dive a little deeper into Markov chain Monte
 Carlo (MCMC) sampling. We will construct custom MCMC samplers in {\bf R},
 starting with easy-to-code GLMs and GLMMs and moving on to simple CR and SCR
@@ -170,7 +164,7 @@ chain\footnote{In case you are not familiar with Markov chains, for
   $T$ random samples $\theta^ {(1)}$, ... $\theta^{(T)}$ from a Markov chain
   the distribution of $\theta^{(t)}$ depends only on the immediately preceding
   value, $\theta^{(t-1)}$.}. As $T$ goes to infinity, the Markov chain
-converges to the desired distribution – in our case the posterior
+converges to the desired distribution, in our case the posterior
 distribution for $\theta|y$. Thus, once the Markov chain has reached
 its stationary distribution, the generated samples can be used to
 characterize the posterior distribution, $[\theta|y]$, and point
@@ -215,9 +209,9 @@ conjugate prior for $\sigma^2$ is an Inverse-Gamma distribution with shape and s
 With fixed $a$ and $b$, the posterior $[\sigma|\mu,y]$ is also an Inverse Gamma distribution, namely:
 \begin{equation}
 \sigma|\mu,y \sim InvGamma (a_n, b_n),
-\label{eq. 3}
+\label{mcmc.eq.sig-posterior}
 \end{equation}
-XXXXX Andy, when do we use square brackets around $\theta|y$ and when don't we? On a similar note, when do we use the asterisk for multiplication? Any rules? XXXXXXX
+\begin{comment}Andy, when do we use square brackets around $\theta|y$ and when don't we? On a similar note, when do we use the asterisk for multiplication? Any rules? \end{comment}
  where  $a_n = n/2   + a$ and $b_n = (1/2) \displaystyle\sum\limits_{i=1}^{n} (y_i-\mu)^2 + b$.
 However, what if we know neither $\mu$ nor $\sigma$, which is probably the
 more common case? The joint posterior distribution of $\mu$ and $\sigma$
@@ -229,10 +223,7 @@ or
 \[
 [\mu, \sigma|y] \propto [y|\mu] [\mu] [\sigma]
 \]
-\begin{comment} Rahel : use of p() here might violate some convention of the
-book -- I dunno. Lets think about it 
-I changed it to the way you use in Ch2
-\end{comment}
+
 This cannot easily be reduced to a distribution we recognize. However,
 we can condition $\mu$ on $\sigma$ (i.e., we treat $\sigma$ as fixed) and remove
 all terms from the joint posterior distribution that do not involve $\mu$
@@ -244,7 +235,7 @@ to construct the full conditional distribution,
 The full conditional of $\mu$ again takes the form of the Normal
 distribution shown in Eq. \ref{mcmc.eq.mu-posterior}; similarly, $[\sigma|\mu,y]$ takes
 the form of the Inverse Gamma distribution shown in
-Eq. \ref{eq. 3}, both distribution we can easily sample
+Eq. \ref{mcmc.eq.sig-posterior}, both distribution we can easily sample
 from. And this is precisely what we do when using Gibbs sampling: we
 break down high-dimensional problems into convenient one-dimensional
 problems by constructing the full conditional distributions for each
@@ -267,7 +258,7 @@ later.)
 Here, $\theta_1$ is $\mu$, which we draw from the Normal distribution in Eq. \ref{mcmc.eq.mu-posterior}  using $\sigma^{(0)}$ as value for $\sigma$.
 {\flushleft {\bf Step 2:} Draw $\theta_{2}^{(1)}$ from the conditional distribution $[\theta_{2}^{(1)}|\theta_{1}^{(1)}$, $\theta_{3}^{(0)}$,\ldots, $\theta_{d}^{(0)}]$. }
 Here, $\theta_2$ is $\sigma$, which we draw from the Inverse Gamma
-distribution of Eq. \ref{eq. 3}, using $\mu^{(1)}$ as value for $\mu$.
+distribution of Eq. \ref{mcmc.eq.sig-posterior}, using $\mu^{(1)}$ as value for $\mu$.
 
 {\flushleft {\bf Step 3:} Draw $\theta_{d}^{(1)}$ from the conditional distribution $[\theta_{d}^{(1)}|\theta_{1}^{(1)}$,\ldots, $\theta_{d-1}^{(1)}]$. }
 In our example we have no additional parameters, so we only need step 0 through to 2.
@@ -322,8 +313,7 @@ for both parameters.
 \label{mcmc.panel.gibbs1}
 \end{panel}
 
-This is it! You can go ahead and simulate some data, $y \sim \mbox{Normal}(5, 0.5)$ and then use the function \mbox{\tt NormGibbs()} in the {\bf
-  R} package \mbox{\tt scrbook} to run your first Gibbs sampler. 
+This is it! You can go ahead and simulate some data, $y \sim \mbox{Normal}(5, 0.5)$ and then use the function \mbox{\tt NormGibbs()} in the {\bf R} package \mbox{\tt scrbook} to run your first Gibbs sampler. 
 
 \begin{verbatim}
 set.seed(13)
@@ -386,7 +376,7 @@ summary(mod[501:10000,])
 
 \begin{figure}
 \begin{center}
-\includegraphics[height=3in]{Ch7/figs/postdist}
+\includegraphics[height=4in]{Ch7/figs/postdist}
 \end{center}
 \caption{Joint posterior distribution of $\mu$ and $\sigma$ from a Normal Model}
 \label{postdist.fig}
@@ -394,7 +384,7 @@ summary(mod[501:10000,])
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=2.5in]{Ch7/figs/plotsofPD}
+\includegraphics[width=5in]{Ch7/figs/plotsofPD}
 \end{center}
 \caption{
 Plots of the posterior distributions of $\mu$ (upper left) and
@@ -585,11 +575,10 @@ two values of $\delta$ (solid and dotted)the burn-in phase seems to be
 over after only about 10 iterations. While $\delta=0.2$ leads to
 reasonably good mixing, the chain clearly gets stuck on certain values
 with $\delta=1$.
-%'tuning' is a new figure I made... don't know about the size specifications, just copied those from another picture. Do you set them at 
-%the actual size of the figure or the size you want it to be??
+
  \begin{figure}
 \begin{center}
-\includegraphics[height=3in,width=4in]{Ch7/figs/tuning}
+\includegraphics[height=3in,width=3.5in]{Ch7/figs/tuning}
 \end{center}
 \caption{Time series plots of $\theta$ from a MH algorithm with tuning parameter  $\delta = 0.01$ (dashed line), 0.2 (solid line) and  1 (dotted line).}
 \label{mcmc.fig.tuning}
@@ -603,8 +592,7 @@ Other than graphically, you can easily check acceptance rates for the parameters
 
 One weakness of the MH sampler is that formulating the joint posterior when evaluating whether to accept or reject the candidate values for $\theta$ becomes increasingly complex or inefficient as the number of parameters in a model increases. As you already saw in Chapter 2, in these cases you can simply combine MH sampling and Gibbs sampling. You can use Gibbs sampling to break down your high-dimensional parameter space into easy-to-handle one-dimensional conditional distributions and use MH sampling for these conditional distributions. Better yet, if you have some conjugacy in your model, you can use the more efficient Gibbs sampling for these parameters and one-dimensional MH for all the others. You have already seen the basics of how to build both types of algorithms, so we can jump straight into an example here and build a Metropolis-within-Gibbs algorithm.
 
-XXXX Maybe we make this an unnumbered subsubsection... since it's still part of the 'Types of MCMC samplers' section...
-\subsubsection*{ GLMMs: Poisson regression with a random effect }
+{\flushleft \bf  GLMMs: Poisson regression with a random effect }
 
 Let's assume a model that gets us closer to the problem we ultimately
 want to deal with - a GLMM. Here, we assume we have Poisson counts,
@@ -651,9 +639,7 @@ observed counts for site $i=1$ and, in general, ${\bf y}_{i}$ is the
 vector of all counts for site $i$; analogous,${\bf x}_{i}$ is the
 vector of all observations of the covariate for site $i$. The other full conditionals for
 each $\alpha_{i}$ are constructed similarly:
-\begin{comment} 
-Does it look right now?
-\end{comment}
+
 \begin{eqnarray*}
 [\alpha_2|\alpha_1,\alpha_3,\ldots,\alpha_i,\beta,{\bf y}_{2}] & \propto&  [{\bf y}_{2}|\alpha_2,\beta] * [\alpha_2] \\
 	 & \propto  & \mbox{Poisson}({\bf y}_{2}| \exp(\alpha_2 + \beta {\bf x}_2)) * \mbox{Norm}(\alpha_2|\mu_{\alpha}, \sigma_{\alpha})
@@ -781,13 +767,12 @@ of $[\theta|y]$ at $U$ (Fig. \ref{mcmc.fig.slicesample}):
 \theta|U \sim \mbox{Unif}(B),
 \]
 where $B = \{\theta: [\theta|y] \geq U\}$
-%do these symbols mean  'B is element of the interval of all theta for which p(theta) is larger than or equal to U?' 
 
 \begin{figure}
 \begin{center}
-\includegraphics[height=2in]{Ch7/figs/slicesampling}
+\includegraphics[height=3in]{Ch7/figs/slicesampling}
 \end{center}
-\caption{Slice sampling. For...}
+\caption{Slice sampling. For ...}
 \label{mcmc.fig.slicesample}
 \end{figure}
 
@@ -795,7 +780,7 @@ where $B = \{\theta: [\theta|y] \geq U\}$
 4 but it kept causing errors. Rahel: Let me see the equations you want
 in there....}
 
-%Slice sampling. For $U \sim Uniform (0, [theta|y])$, we can sample $\theta$ from the vertical slice of $[\theta|y]$ at $U$;  $theta|U \simUnif(B)$, where $B = {theta: U < [theta|y]}$.
+%Slice sampling. For $U \sim \mbox{Unif} (0, [\theta|y])$, we can sample $\theta$ from the vertical slice of $[\theta|y]$ at $U$;  $theta|U \sim \mbox{Unif}(B)$, where $B = {\theta: [\theta|y] \geq U\}$.
 
 Slice sampling can be applied in many situations; however,
 implementing an efficient slice sampling procedure can be
@@ -805,10 +790,6 @@ sampling and slice sampling can be applied on one-dimensional
 conditional distributions within a Gibbs sampling setup.
 
 \section{MCMC for closed capture-recapture Model Mh}
-\begin{comment}
-\subsection{Building your own MCMC algorithm}
-% subsection needed here? maybe not?
-\end{comment}
 
 By now you have seen MCMC samplers for some simple GL(M)M's. Now, to
 ease you into more complex models, we construct our own MCMC algorithm
@@ -895,8 +876,8 @@ so for z should it be [z|y,p,psi]? XXXXX
 \[
 [\psi|z_{i}] \sim \propto \left\{ \prod_{i} [z_{i}|\psi] \right\} \mbox{Beta}(1,1)
 \]
-Remember that \mbox{Beta}(1,1) is equivalent to \mbox{Unif}(0,1). The Beta distribution is the conjugate prior to the Binomial and 
-Bernoulli distributions and the general form of a full conditional of a Beta-Binomial model 
+Remember that \mbox{Beta}(1,1) is equivalent to \mbox{Unif}(0,1). The beta distribution is the conjugate prior to the binomial and 
+Bernoulli distributions and the general form of a full conditional of a beta-binomial model 
 with $x_{i} \sim \mbox{Bern} (p) $ and $p \sim \mbox{Beta}(a,b)$ is
 \[
 [p|{\bf x}] \propto \mbox{Beta}(a + \sum_i x_i, b + n-\sum_i x_i)
@@ -954,11 +935,11 @@ Finally, for $\psi$ we can easily sample directly from the beta distribution:
 psi<-rbeta(1, sum(z) + 1, M-sum(z) + 1)
 \end{verbatim}
 
-You can check out the full code by invoking \mbox{\tt modelMh()} from the {\bf R} package \mbox{\tt scrbook}.\footnote{Andy, we could put the analysis of the bear data in here as an exercise.} 
+You can check out the full code by invoking \mbox{\tt modelMh()} from the {\bf R} package \mbox{\tt scrbook}.
 
 \section{MCMC algorithm for the basic spatial capture-recapture model}
 
-Conceptually, but also in terms of MCMC coding, it is only a small step from the non-spatial model Mh to a fully spatial capture-recapture model. Next, we'll walk you through the steps of building your own MCMC sampler for the basic SCR model (i.e. without any individual, site or time specific covariates) with both a Poisson and a Binomial encounter process.
+Conceptually, but also in terms of MCMC coding, it is only a small step from the non-spatial model $M_h$ to a fully spatial capture-recapture model. Next, we'll walk you through the steps of building your own MCMC sampler for the basic SCR model (i.e. without any individual, site or time specific covariates) with both a Poisson and a Binomial encounter process.
 As usual, we will have to go through two general steps before we write the MCMC algorithm:
 \begin{itemize}
 \item[  (1)] Identify your model with all its components (including
@@ -1094,7 +1075,7 @@ $\psi$
 
 These are all the building blocks you need to write the MCMC algorithm
 for the spatial null model with a Poisson encounter process.  You can
-find the full {\bf R} code by calling the function (\mbox{\tt SCR0pois()}) in the {\bf R} package 
+find the full {\bf R} code by calling the function (\mbox{\tt SCR0pois}) in the {\bf R} package 
 \mbox{\tt scrbook}.
 
 \subsection{SCR model with binomial encounter process}
@@ -1113,7 +1094,7 @@ For our MCMC algorithm that means that, instead of using a Poisson
 likelihood, $\mbox{Poisson}(y|\sigma,\lambda_0,{\bf s},z)$, we use a 
 Binomial likelihood, $\mbox{Bin}(y| \sigma,\lambda_0,{\bf s},z; K)$, 
 in all the conditional distributions. An exemplary updating step for $\lambda_0$ under a Binomial encounter model is shown below. 
-The full MCMC code for the Binomial SCR with a clog-log link (\mbox{\tt SCR0binom.cl()}) 
+The full MCMC code for the Binomial SCR with a clog-log link (\mbox{\tt SCR0binom.cl}) 
 can be found in the {\bf R} package \mbox{\tt scrbook}.
 
 \begin{verbatim}
@@ -1178,7 +1159,8 @@ detection data (\mbox{\tt bearArray}) and build the augmented $M \times J$ array
 encounter histories:
 \begin{verbatim}
 M=700
-bearmat<-apply(bearArray, 1:2, sum) #summarizes captures across occasions
+trapmat<-beardata$trapmat
+bearmat<-apply(beardata$bearArray, 1:2, sum) #summarizes captures across occasions
 Xaug<-matrix(0, nrow=M, ncol=dim(trapmat)[1])
 Xaug[1:dim(bearmat)[1],]<-bearmat  #create augmented data set
 \end{verbatim}
@@ -1195,11 +1177,12 @@ xu<- max(trapmat[,1])+ 20
 yu<- max(trapmat[,2])+ 20
 \end{verbatim}
 
-Finally, source the MCMC code for the binomial encounter model algorithm 
-with the clog-log link and run 5000 iterations. This should take 
-approximately 25 minutes.
+Finally, use the MCMC code for the binomial encounter model
+with the clog-log link  ({\tt SCR0binom.cl}) and run 5000 iterations. This should take 
+approximately 25 minutes (in real life we would of course run the algorithm a lot longer but for demonstration purposes let's stick with a number of iterations that can be run in a manageable amount of time).
 %need to look at tuning... not happy
 \begin{verbatim}
+set.seed(13)
  mod0<-SCR0binom.cl(y=Xaug, X=trapmat, M=M, xl=xl, xu=xu, yl=yl, 
                    yu=yu, K=8, delta=c(0.1, 0.05, 2), niter=5000)
 \end{verbatim}
@@ -1220,7 +1203,7 @@ Start by looking at time series plots of your Markov chains using
 \verb#plot(chain)#. This command produces a time series plot and
  marginal posterior density plots for each monitored parameter, 
  similar to what we did before using the \verb#hist()# and \verb#plot()# 
- commands (Fig. \ref{mcmc.fig.timeseries}). Time series plots will tell 
+ commands. Fig. \ref{mcmc.fig.timeseries} shows an example of these plots for $\sigma$ and $\lambda_0$. Time series plots will tell 
  you several things:
 First, recall from Sect. \ref{Metropolis-Hastings sampling} that the way the chains move 
 through the parameter space gives you an idea of whether your MH 
@@ -1233,7 +1216,7 @@ parameter so that the parameter space is explored more efficiently.
 
 \begin{figure}
 \begin{center}
-\includegraphics[height=2.5in]{Ch7/figs/timeseries}
+\includegraphics[height=3in]{Ch7/figs/timeseries}
 \end{center}
 \caption{Time series and posterior density plots for $\sigma$ and $\lambda_0$.}
 \label{mcmc.fig.timeseries}
@@ -1243,17 +1226,17 @@ parameter so that the parameter space is explored more efficiently.
 Second, you will be able to see if your chains converged and how many initial simulations you have to discard as burn-in. In the case of the chains shown in Fig. \ref{mcmc.fig.timeseries}, we would probably consider the first 750 -- 1000 iterations as burn-in, as afterwards the chains seem to be fairly stationary.
 
 \subsection{Posterior density plots}
-The \verb#plot()# command also produces posterior density plots and it is worthwhile to look at those carefully. For parameters with priors that have bounds (e.g. Uniform over some interval), you will be able to see if your choice of the prior is truncating the posterior distribution. In the context of SCR models, this will mostly involve our choice of $M$, the size of the augmented data set. If the posterior of $N$ has a lot of mass concentrated close to $M$ (or equivalently the posterior of $\psi$ has a lot of mass concentrated close to 1), as in the example in Fig. \ref{timeseries2.fig}, we have to re-run the analysis with a larger $M$.  A diffuse
+The \verb#plot()# command also produces posterior density plots and it is worthwhile to look at those carefully. For parameters with priors that have bounds (e.g. Uniform over some interval), you will be able to see if your choice of the prior is truncating the posterior distribution. In the context of SCR models, this will mostly involve our choice of $M$, the size of the augmented data set. If the posterior of $N$ has a lot of mass concentrated close to $M$ (or equivalently the posterior of $\psi$ has a lot of mass concentrated close to 1), as in the example in Fig. \ref{mcmc.fig.timeseries2}, we have to re-run the analysis with a larger $M$.  A diffuse
 posterior plot suggests
 that the parameter may not be well-identified. 
 There may not be enough information in your data to estimate model parameters and you may have to consider a simpler model. Finally, posterior density plots will show you if the posterior distribution is symmetrical or skewed -- if the distribution has a heavy tail, using the mean as a point estimate of your parameter of interest may be biased and you may want to opt for the median or mode instead.
 
 \begin{figure}
 \begin{center}
-\includegraphics[height=2.5in]{Ch7/figs/timeseries2}
+\includegraphics[height=3in]{Ch7/figs/timeseries2}
 \end{center}
 \caption{Time series and posterior density plots of $\psi$ and $N$ for the bear data set truncated by the upper limit of $M$ (500).}
-\label{timeseries2.fig}
+\label{mcmc.fig.timeseries2}
 \end{figure}
 
 \subsection{Serial autocorrelation and effective sample size}
@@ -1267,25 +1250,24 @@ be part of evaluating your model output. If you use {\bf WinBUGS}
  to do so. \verb#effectiveSize()# will directly give you an estimate 
  of the effective sample size for you parameters:
 \begin{verbatim}
-> effectiveSize(chain)
-    sigma      lam0       psi         N
- 3.930303 78.259159 30.436348 32.047392
+effectiveSize(chain)
+    sigma      lam0       psi         N 
+ 3.126890 73.019018  9.867273  9.116547 
 \end{verbatim}
 
 Alternatively, you can use the \verb#autocorr.diag()# function, which will show you the degree of autocorrelation for different lag values (which you can specify within the function call, we use the defaults below):
 \begin{verbatim}
-> autocorr.diag(mcmc(mod))
+autocorr.diag(chain)
            sigma      lam0       psi         N
 Lag 0  1.0000000 1.0000000 1.0000000 1.0000000
-Lag 1  0.9979948 0.9494134 0.9847503 0.9774201
-Lag 5  0.9915567 0.8038168 0.9111951 0.9113525
-Lag 10 0.9836016 0.6714021 0.8462108 0.8509803
-Lag 50 0.8985337 0.1983780 0.6138516 0.6233994
+Lag 1  0.9985872 0.9704262 0.9941343 0.9927297
+Lag 5  0.9935938 0.8614026 0.9697146 0.9703636
+Lag 10 0.9878771 0.7332325 0.9489093 0.9507547
+Lag 50 0.9392096 0.1341815 0.8345999 0.8370000
 \end{verbatim}
 In the present case we see that autocorrelation is especially high for the 
 parameter $\sigma$ and our effective sample size for this parameter is 
-4! \footnote{Anyone have any idea how the autocorrelation in sigma could 
-be reduced? XXXXXXXXXX YES: Mess with the MH tuning parameter......XXXXXXXX} 
+3! 
 This means we would have to run the model for much longer to 
 obtain a reasonable effective sample size. Unfortunately, with many SCR models we observe high degrees of serial autocorrelation. For now, let's continue using this small set of samples to continue looking at the output.
 
@@ -1317,26 +1299,26 @@ trajectories of our Markov chains. For our example,
 
 \begin{verbatim}
 Iterations = 1001:5000
-Thinning interval = 1
-Number of chains = 1
-Sample size per chain = 4000
+Thinning interval = 1 
+Number of chains = 1 
+Sample size per chain = 4000 
 
 1. Empirical mean and standard deviation for each variable,
    plus standard error of the mean:
 
           Mean       SD  Naive SE Time-series SE
-sigma   1.9986  0.13805 0.0021827       0.016091
-lam0    0.1096  0.01523 0.0002407       0.001401
-psi     0.6113  0.09148 0.0014465       0.010734
-N     489.8535 71.79695 1.1352094       8.431119
+sigma   1.9697  0.12534 0.0019818       0.012792
+lam0    0.1124  0.01521 0.0002405       0.001311
+psi     0.7295  0.11794 0.0018648       0.015278
+N     510.9190 81.99868 1.2965130      10.580567
 
 2. Quantiles for each variable:
 
-           2.5%       25%      50%      75%    97.5%
-sigma   1.75780   1.89847   1.9900   2.0944   2.2772
-lam0    0.08357   0.09824   0.1087   0.1192   0.1427
-psi     0.45110   0.54838   0.6052   0.6639   0.8192
-N     366.00000 440.00000 485.0000 530.0000 654.0000
+          2.5%      25%      50%      75%    97.5%
+sigma   1.7288   1.8831   1.9666   2.0517   2.2240
+lam0    0.0863   0.1008   0.1112   0.1217   0.1449
+psi     0.5100   0.6423   0.7261   0.8170   0.9549
+N     359.0000 451.0000 508.0000 572.0000 668.0000
 \end{verbatim}
 
 Looking at the MC errors (column labeled \mbox{\tt Time-series SE}), 
@@ -1352,32 +1334,33 @@ each value of $N$ ($N$ at each iteration) by the area of the state-space
  (here 3032.719 km$^2$) and we can use summary statistics of the 
  resulting distribution to characterize $D$:
 \begin{verbatim}
-> summary(window(chain[,4]/ 3032.719, start=1001))
+summary(window(chain[,4]/ 3032.719, start=1001))
+
 Iterations = 1001:5000
-Thinning interval = 1
-Number of chains = 1
-Sample size per chain = 4000
+Thinning interval = 1 
+Number of chains = 1 
+Sample size per chain = 4000 
 
 1. Empirical mean and standard deviation for each variable,
    plus standard error of the mean:
 
-          Mean             SD       Naive SE Time-series SE
-     0.1615229      0.0236741      0.0003743      0.0027801
+          Mean             SD       Naive SE Time-series SE 
+     0.1684690      0.0270380      0.0004275      0.0034888 
 
 2. Quantiles for each variable:
 
-  2.5%    25%    50%    75%  97.5%
-0.1207 0.1451 0.1599 0.1748 0.2156
+  2.5%    25%    50%    75%  97.5% 
+0.1184 0.1487 0.1675 0.1886 0.2203 
 \end{verbatim}
-We see that our mean density of $0.16/km^2$ is very similar to the estimate of $0.18/km^2$ obtained under the non-spatial model M0 in Chapt. \ref{chapt.closed}.
+We see that our mean density of $0.17/km^2$ is very similar to the estimate of $0.18/km^2$ obtained under the non-spatial model M0 in Chapt. \ref{chapt.closed}.
 
 
 \subsection{Other useful commands }
 While inspecting the time series plot gives you a first idea of how well you tuned your MH algorithm, use \verb#rejectionRate()# to obtain the rejection rates (1 -- acceptance rates) of the parameters that are written to your output:
 \begin{verbatim}
-> rejectionRate(chain)
-     sigma       lam0        psi          N
-0.44108822 0.77675535 0.00000000 0.01940388
+rejectionRate(chain)
+     sigma       lam0        psi          N 
+0.42988598 0.78775755 0.00000000 0.03160632 
 \end{verbatim}
  Recall (\ref{Metropolis-Hastings sampling}) that rejection rates should lie between 0.2 and 0.8, so our tuning seems to have been appropriate here. $\psi$ is never rejected since we update it with Gibbs sampling, where all candidate values are kept. And since $N$ is the sum of all $z_i$, all it takes for $N$ to change from one iteration to the next are small changes in the z-vector, so the rejection rate of $N$ is always low.
 If you have run several parallel chains, you can combine them into a single mcmc object using the \verb#mcmc.list()# command on the individual chains (note that each chain has to be converted to an mcmc object before combining them with \verb#mcmc.list()#). You can then easily obtain the Gelman-Rubin diagnostic \citep{gelman_etal:2004}, in {\bf WinBUGS} called R-hat, using \verb#gelman.diag()#, which 
@@ -1406,7 +1389,7 @@ use the actual state-space polygon to constrain out ${\bf s}_i$.
 otherwise, use raccoon example.} To illustrate that, let's look at a camera 
 trapping study of Florida panthers (\emph{Puma concolor coryi}) conducted 
 in the Picayune Strand Restoration Project (PSRP) area, southwest Florida 
-(Fig. \ref{mcmc.fig.pantercamera}), by XXX, and financed by XXX. In the 1960ies 
+(Fig. \ref{mcmc.fig.pantercamera}), by the Florida Fish and Wildlife Conservation Commission and the Conservancy of Southwest Florida, and financed by XXX. In the 1960ies 
 the PSRP area was slated for housing development, but then bought back by 
 the State of Florida and is currently being restored to its original 
 hydrology and vegetation. In an effort to estimate the density of the 
@@ -1415,7 +1398,7 @@ for 21 months between 2005 and 2007. Florida panthers are wide-ranging
 animals and in order to account for their wide movements, the state-space 
 was defined as the trapping grid buffered by 15 km around its outermost 
 coordinates. However, the resulting rectangle contained some ocean in its 
-southwestern corner (Fig. \ref{pantercamera.fig}).
+southwestern corner (Fig. \ref{mcmc.fig.pantercamera}).
 In order to precisely describe the state-space, the ocean has to be 
 removed. You can create a precise state-space polygon in {\bf ArcGIS} and 
 read it into {\bf R}, or create the polygon directly within {\bf R}. In 
@@ -1500,9 +1483,9 @@ coordinates. To make sure that our initial values for {\bf s} also fall
 within the polygon of ${\cal S}$, we use the function \verb#runifpoint()# 
 from the package \mbox{\tt spatstat} \citep{baddeley_turner:2005}, 
 which generates random uniform points within a specified polygon. You'll 
-find this modified MCMC algorithm (\mbox{\tt SCR0poisSSp()}) in the {\bf R} 
+find this modified MCMC algorithm (\mbox{\tt SCR0poisSSp}) in the {\bf R} 
 package \mbox{\tt scrbook}.
-%need to add and check this piece of code
+
 Finally, observe that we are converting candidate coordinates of ${\cal S}$ 
 back to meters to match the UTM polygon. In all previous examples, 
 for both the trap locations and the activity centers we have used UTM 
@@ -1612,8 +1595,8 @@ On the plus side, {\bf JAGS} usually runs a little faster than {\bf WinBUGS},
  on differences between {\bf JAGS} and {\bf OpenBUGS}.
 For questions and problems there is a {\bf JAGS} forum online at 
 \url{http://sourceforge.net/projects/mcmc-jags/forums/forum/610037}.
-\footnote{As we make progress on the book, lets be sure  to add 
-linkages to places where we use JAGS in examples.}
+\begin{comment}As we make progress on the book, lets be sure  to add 
+linkages to places where we use JAGS in examples.\end{comment}
 
 \section{Summary and Outlook}
 
@@ -1626,6 +1609,7 @@ distributions, use Gibbs sampling to draw candidate parameter values from
 those distributions; otherwise use Metropolis-Hastings sampling to draw 
 candidate values from a proposal distribution and accept or reject them 
 based on their posterior probability densities.
+
 These custom-made MCMC algorithms give you more modeling flexibility than 
 existing software packages, especially when it comes to handling the
  state-space: In {\bf BUGS} (and {\bf JAGS} for that matter) we define
@@ -1639,25 +1623,20 @@ existing software packages, especially when it comes to handling the
    state-space. Another example is the SCR {\bf R} package \mbox{\tt SPACECAP}
     \citep{gopalaswamy_etal:2011} that was developed because implementation
      of an SCR model with a discrete state-space was inefficient in {\bf WinBUGS}.
+     
 Another situations in which using {\bf BUGS}/{\bf JAGS} becomes
 increasingly
 complicated or inefficient is when using point processes other 
 than the 
  Binomial point process (''uniformity'') which underlies the basic 
  SCR model (see Chapt. \ref {Chapter X}). In the Chapt. 
- \ref {Chapter X} and XX you will see examples of different point processes,
+ \ref {chapt.state-space} and BETHS PP CHAPTER you will see examples of different point processes,
   implemented using custom-made MCMC algorithms.
-   \footnote{Richard, Beth expand on that?}
-Finally, the Chapt. \ref {Chapter X} and XX deal with unmarked or 
+
+Finally, the Chapt. \ref {chapt.scr-unmarked} and \ref {chapt.partialID} deal with unmarked or 
 partially marked populations using hand-made MCMC algorithms to 
 handle the (partially) latent individual encounter histories. 
-While some of these models can be written in {\bf BUGS}/{\bf JAGS}, 
-\footnote{the Poisson one for partially marked we wrote in BUGS and it 
-should work with a known number of marked; the Bernoulli in JAGS with the 
-dsum() function should work for the fully unknown; maybe some others?
- I don’t remember. We may have to try writing the others before saying 
- that they don’t work in {\bf BUGS}/{\bf JAGS}; they are certainly much faster in {\bf R}, 
- though.}, they are painstakingly slow; others cannot be implemented in 
+While some of these models can be written in {\bf BUGS}/{\bf JAGS}, they are painstakingly slow; others cannot be implemented in 
  {\bf BUGS}/{\bf JAGS} at all (e.g., the classes of models
  considered in Chapts. \ref{chapt.ecoldist} and  \ref{chapt.state-space}).
 In conclusion, while you can certainly get by using {\bf BUGS}/{\bf JAGS} 
