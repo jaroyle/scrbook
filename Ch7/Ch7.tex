@@ -8,20 +8,22 @@ MCMC for Spatial Capture-Recapture
 \vspace{.3in}
 
 In this chapter we will dive a little deeper into Markov chain Monte
-Carlo (MCMC) sampling. We will construct custom MCMC samplers in {\bf R},
-starting with easy-to-code GLMs and GLMMs and moving on to simple CR and SCR
-models. Finally, we will illustrate some alternative
+Carlo (MCMC) sampling. We will construct custom MCMC samplers in {\bf
+  R}, starting with easy-to-code GLMs and GLMMs and moving on to
+simple CR and SCR models. Finally, we will illustrate some alternative
 ready-to-use software packages for MCMC sampling. We will NOT provide
 exhaustive background information on the theory and justification of
 MCMC sampling -- there are entire books dedicated to that subject and
 we refer you to \citet{robert_casella:2004} and
 \citet{robert_casella:2010}. Rather we aim to provide you with enough
 background and technical know-how to start building your own MCMC
-samplers for SCR models in {\bf R}. You will find that quite a few topics that come up 
-in this chapter have already been covered in previous chapters, particularly the introduction
-into Bayesian analysis in Chapt. \ref{chapt.glms}. To keep you from having to leaf back and forth
-we will in some places briefly review aspects of Bayesian analysis, but we try to focus on the more 
-technical issues of building MCMC samplers relevant to SCR models. 
+samplers for SCR models in {\bf R}. You will find that quite a few
+topics that come up in this chapter have already been covered in
+previous chapters, particularly the introduction into Bayesian
+analysis in Chapt. \ref{chapt.glms}. To keep you from having to leaf
+back and forth we will in some places briefly review aspects of
+Bayesian analysis, but we try to focus on the more technical issues of
+building MCMC samplers relevant to SCR models.
 
 
 
@@ -61,11 +63,16 @@ have hundreds or more simulated data sets, several years' worth of
 data or other large models, this can be a big advantage.
 
 Finally, building your own MCMC algorithm is a great exercise to
-understand how MCMC sampling works. So while using the {\bf BUGS} language requires you to understand the structure of your model, building an MCMC algorithm requires you to think about the relationship between your data, priors and posteriors, and how these can be efficiently analyzed and characterized. Not to mention that, if you are an {\bf R} junkie, it can actually be fun.
-However, if you don't think you will ever sit down and write your own
-MCMC sampler, consider skipping this chapter - apart from coding it
-will not cover anything SCR-related that is not covered by other, more
-model-oriented chapters as well.
+understand how MCMC sampling works. So while using the {\bf BUGS}
+language requires you to understand the structure of your model,
+building an MCMC algorithm requires you to think about the
+relationship between your data, priors and posteriors, and how these
+can be efficiently analyzed and characterized. Not to mention that, if
+you are an {\bf R} junkie, it can actually be fun.  However, if you
+don't think you will ever sit down and write your own MCMC sampler,
+consider skipping this chapter - apart from coding it will not cover
+anything SCR-related that is not covered by other, more model-oriented
+chapters as well.
 
 
 \section{MCMC and posterior distributions}
@@ -176,8 +183,9 @@ be obtained directly from this approximation of the posterior.
 \section{Types of MCMC sampling}
 
 There are several MCMC algorithms, the most popular being Gibbs
-sampling and Metropolis-Hastings sampling, both of which were briefly introduced in Chapt. \ref{chapt.glms}. We will be dealing with
-these two classes in more detail and use them to construct the MCMC
+sampling and Metropolis-Hastings sampling, both of which were briefly
+introduced in Chapt. \ref{chapt.glms}. We will be dealing with these
+two classes in more detail and use them to construct the MCMC
 algorithms for SCR models. Also, we will briefly review alternative
 techniques that are applicable in some situations.
 
@@ -197,12 +205,13 @@ will focus on the technical aspects of this algorithm, but if you find
 yourself hungry for more background, \citet{casella_george:1992}
 provide a more in-depth introduction to the Gibbs sampler.
 
-Let's go back to our
-simple example from above to understand the motivation and functioning
-of Gibbs sampling. Recall that for a Normal model with known variance
-and a Normal prior for $\mu$, the posterior distribution of $\mu|y$ is also
-Normal. Conversely, with a fixed (known) $\mu$, but unknown variance, the
-conjugate prior for $\sigma^2$ is an Inverse-Gamma distribution with shape and scale parameters $a$ and $b$:
+Let's go back to our simple example from above to understand the
+motivation and functioning of Gibbs sampling. Recall that for a Normal
+model with known variance and a Normal prior for $\mu$, the posterior
+distribution of $\mu|y$ is also Normal. Conversely, with a fixed
+(known) $\mu$, but unknown variance, the conjugate prior for
+$\sigma^2$ is an Inverse-Gamma distribution with shape and scale
+parameters $a$ and $b$:
 \[
 \sigma^2 \sim InvGamma(a,b),
 \]
@@ -395,6 +404,7 @@ Plots of the posterior distributions of $\mu$ (upper left) and
 
 
 \subsection{ Metropolis-Hastings sampling   }
+\label{mcmc.sec.mh}
 
 Although it is applicable to a wide range of problems, the limitations
 of Gibbs sampling are immediately obvious: what if we do not want to
@@ -438,14 +448,16 @@ are drawn from a normal distribution with mean equal to the current
 value and some standard deviation, say $\delta$, which is prescribed by
 the user (see below for further explanation). 
 
-{\bf Parameters with bounded support}: Many models contain parameters that
-have  bounded support. E.g., variance parameters live on $[0,\infty]$,
-parameters that represent probabilities live on $[0,1]$, etc..
-For such cases, it is sometimes convenient to use a random
-walk proposal distribution that can generate any real number (e.g., a
-normal random walk proposal). Under these circumstances you should not constrain the proposal distribution itself, 
-but you can just reject parameters that are
-outside of the parameter space \citep{robert_casella:2010}. You will see plenty of examples of updating parameters with bounded support in this chapter. 
+{\bf Parameters with bounded support}: Many models contain parameters
+that have bounded support. E.g., variance parameters live on
+$[0,\infty]$, parameters that represent probabilities live on $[0,1]$,
+etc..  For such cases, it is sometimes convenient to use a random walk
+proposal distribution that can generate any real number (e.g., a
+normal random walk proposal). Under these circumstances you should not
+constrain the proposal distribution itself, but you can just reject
+parameters that are outside of the parameter space
+\citep{robert_casella:2010}. You will see plenty of examples of
+updating parameters with bounded support in this chapter.
 
 It is worth
 knowing that there are alternatives to the random walk MH algorithm. For
@@ -536,7 +548,13 @@ return(out)
 
 
 
-The reason we sum the logs of the likelihood and the prior, rather than multiplying the original values, is simply computational. The product of small probabilities can be numbers very close to 0, which computers do not handle well. Thus we add the logarithms, sum, and exponentiate to achieve the desired result. Similarly, in case you have forgotten some elementary math, $x/y = exp(log(x)-log(y))$, with the latter being favored for computational reasons.
+The reason we sum the logs of the likelihood and the prior, rather
+than multiplying the original values, is simply computational. The
+product of small probabilities can be numbers very close to 0, which
+computers do not handle well. Thus we add the logarithms, sum, and
+exponentiate to achieve the desired result. Similarly, in case you
+have forgotten some elementary math, $x/y = exp(log(x)-log(y))$, with
+the latter being favored for computational reasons.
 
 Comparing MH sampling to Gibbs sampling, where all draws from the
 conditional distribution are used, in the MH algorithm we discard a
@@ -584,19 +602,42 @@ with $\delta=1$.
 \label{mcmc.fig.tuning}
 \end{figure}
 
-Other than graphically, you can easily check acceptance rates for the parameters you monitor (that are part of your output) using the \verb#rejectionRate()# function of the package coda (we will talk more about this package a little later on). Do not let the term 'rejection rate' confuse you; it is simply 1 -- acceptance rate. There may be parameters -- for example, individual values of a random effect or latent variables -- that you do not want to save, though, and in our next example we will show you a way to monitor their acceptance rates with a few extra lines of code.
+Other than graphically, you can easily check acceptance rates for the
+parameters you monitor (that are part of your output) using the
+\verb#rejectionRate()# function of the package coda (we will talk more
+about this package a little later on). Do not let the term 'rejection
+rate' confuse you; it is simply 1 -- acceptance rate. There may be
+parameters -- for example, individual values of a random effect or
+latent variables -- that you do not want to save, though, and in our
+next example we will show you a way to monitor their acceptance rates
+with a few extra lines of code.
 
 
 
 \subsection{ Metropolis-within-Gibbs }
 
-One weakness of the MH sampler is that formulating the joint posterior when evaluating whether to accept or reject the candidate values for $\theta$ becomes increasingly complex or inefficient as the number of parameters in a model increases. As you already saw in Chapter 2, in these cases you can simply combine MH sampling and Gibbs sampling. You can use Gibbs sampling to break down your high-dimensional parameter space into easy-to-handle one-dimensional conditional distributions and use MH sampling for these conditional distributions. Better yet, if you have some conjugacy in your model, you can use the more efficient Gibbs sampling for these parameters and one-dimensional MH for all the others. You have already seen the basics of how to build both types of algorithms, so we can jump straight into an example here and build a Metropolis-within-Gibbs algorithm.
+One weakness of the MH sampler is that formulating the joint posterior
+when evaluating whether to accept or reject the candidate values for
+$\theta$ becomes increasingly complex or inefficient as the number of
+parameters in a model increases. As you already saw in Chapter 2, in
+these cases you can simply combine MH sampling and Gibbs sampling. You
+can use Gibbs sampling to break down your high-dimensional parameter
+space into easy-to-handle one-dimensional conditional distributions
+and use MH sampling for these conditional distributions. Better yet,
+if you have some conjugacy in your model, you can use the more
+efficient Gibbs sampling for these parameters and one-dimensional MH
+for all the others. You have already seen the basics of how to build
+both types of algorithms, so we can jump straight into an example here
+and build a Metropolis-within-Gibbs algorithm.
 
 {\flushleft \bf  GLMMs: Poisson regression with a random effect }
 
 Let's assume a model that gets us closer to the problem we ultimately
 want to deal with - a GLMM. Here, we assume we have Poisson counts,
-$y_{ij}$, from $j=1,2,\ldots,n$ plots in $i$ different study sites, and we believe that the counts are influenced by some plot-specific covariate, ${\bf x}$, but that there is also a random site effect. So our model is:
+$y_{ij}$, from $j=1,2,\ldots,n$ plots in $i$ different study sites,
+and we believe that the counts are influenced by some plot-specific
+covariate, ${\bf x}$, but that there is also a random site effect. So
+our model is:
 \begin{comment} Rahel: I put
   ``n'' here because you had ``n'' used above. But I wonder if we
   should have a convention for ``number of sites'' and use that
@@ -658,11 +699,22 @@ vector ${\bf \alpha}$:
 \[
 [\sigma_{\alpha}|{\bf\alpha}] \propto [\alpha|\mu_{\alpha}, \sigma_{\alpha}] *[\sigma_{\alpha}]
 \]
-Since we assumed ${\bf \alpha}$ to come from a Normal distribution, the choice of priors for $\mu_{\alpha}$ (Normal) and $\sigma_{\alpha}$ (Inverse-Gamma) leads to the same conjugacy we observed in our initial Normal model, so that both hyperparameters can be updated using Gibbs sampling.
+Since we assumed ${\bf \alpha}$ to come from a Normal distribution,
+the choice of priors for $\mu_{\alpha}$ (Normal) and $\sigma_{\alpha}$
+(Inverse-Gamma) leads to the same conjugacy we observed in our initial
+Normal model, so that both hyperparameters can be updated using Gibbs
+sampling.
 
-Now let's build the updating steps for these full conditionals. Again, for the MH steps that update ${\bf \alpha}$ and $\beta$ we use Normal proposal distributions with standard deviations $\delta_{\alpha}$ and $\delta_{\beta}$.
+Now let's build the updating steps for these full conditionals. Again,
+for the MH steps that update ${\bf \alpha}$ and $\beta$ we use Normal
+proposal distributions with standard deviations $\delta_{\alpha}$ and
+$\delta_{\beta}$.
 
-First, we set the initial values ${\bf \alpha}^{(0)}$ and $\beta^{(0)}$. Then, starting with $\alpha_1$, we draw $\alpha_1^{(1)}$ from $\mbox{Norm}(\alpha_1^{(0)}, \delta_{\alpha})$, calculate the conditional posterior density of $\alpha_1^{(0)}$ and $\alpha_1^{(1)}$  and compare their ratios,
+First, we set the initial values ${\bf \alpha}^{(0)}$ and
+$\beta^{(0)}$. Then, starting with $\alpha_1$, we draw
+$\alpha_1^{(1)}$ from $\mbox{Norm}(\alpha_1^{(0)}, \delta_{\alpha})$,
+calculate the conditional posterior density of $\alpha_1^{(0)}$ and
+$\alpha_1^{(1)}$ and compare their ratios,
 \[
 r = \frac{\mbox{Poisson}({\bf y}_{1}|exp(\alpha_1^{(1)} + \beta {\bf x}_1)) *
   \mbox{Norm}(\alpha_1^{(1)}|\mu_{\alpha}, \sigma_{\alpha})} {\mbox{Poisson}({\bf y}_{1}|exp(\alpha_1^{(0)} + \beta {\bf x}_1)) * \mbox{Norm}(\alpha_1^{(0)}|\mu_{\alpha}, \sigma_{\alpha})}
@@ -694,9 +746,20 @@ For $\sigma_{\alpha}$ we use $\sigma_{\alpha}^{(1)}\sim InvGamma (a_n, b_n)$,
 where  $a_n = n_a/2   + a_0$, and $b_n = 0.5  \displaystyle\sum\limits_{i=1}^{n_{\alpha}} (\alpha_i^{(1)}-\mu_{\alpha}^{(1)})^2+ b_0$.
 
 
-We repeat these steps over $T$ iterations of the MCMC algorithm. Call the function \mbox{\tt PoisGLMM()}  in \mbox{\tt scrbook}  to check out what this algorithm looks like in {\bf R}.
+We repeat these steps over $T$ iterations of the MCMC algorithm. Call
+the function \mbox{\tt PoisGLMM()} in \mbox{\tt scrbook} to check out
+what this algorithm looks like in {\bf R}.
 
-In this example we may not want to save each individual $\alpha$, but are only interested in their mean and standard deviation. Since these two parameters will change as soon as the value for one element in $\bf{\alpha}$ changes, their acceptance rates will always be close to 1 and are not representative of how well your algorithm performs. To monitor the acceptance rates of parameters you do not want to save, you simply need to add a few lines of code into your updater to see how often the individual parameters are accepted. The code for updating $\alpha$ from our Poisson GLMM below shows one way how to monitor acceptance of individual $\alpha$'s.
+In this example we may not want to save each individual $\alpha$, but
+are only interested in their mean and standard deviation. Since these
+two parameters will change as soon as the value for one element in
+$\bf{\alpha}$ changes, their acceptance rates will always be close to
+1 and are not representative of how well your algorithm performs. To
+monitor the acceptance rates of parameters you do not want to save,
+you simply need to add a few lines of code into your updater to see
+how often the individual parameters are accepted. The code for
+updating $\alpha$ from our Poisson GLMM below shows one way how to
+monitor acceptance of individual $\alpha$'s.
 
 {\small
 \begin{verbatim}
@@ -772,13 +835,15 @@ where $B = \{\theta: [\theta|y] \geq U\}$
 \begin{center}
 \includegraphics[height=3in]{Ch7/figs/slicesampling}
 \end{center}
-\caption{Slice sampling. For ...}
+\caption{
+Slice sampling. For 
+$U \sim \mbox{Unif}(0, [\theta|y])$, 
+we can sample $\theta$ from the vertical slice of $[\theta|y]$ at $U$; 
+$\theta|U \sim \mbox{Unif}(B)$, 
+where $B = \{ \theta: [\theta|y] \geq U\}$.
+}
 \label{mcmc.fig.slicesample}
 \end{figure}
-
-\footnote{there are supposed to be equations in the caption of figure
-4 but it kept causing errors. Rahel: Let me see the equations you want
-in there....}
 
 %Slice sampling. For $U \sim \mbox{Unif} (0, [\theta|y])$, we can sample $\theta$ from the vertical slice of $[\theta|y]$ at $U$;  $theta|U \sim \mbox{Unif}(B)$, where $B = {\theta: [\theta|y] \geq U\}$.
 
@@ -802,13 +867,13 @@ individuals is either detected (1) or not (0) during each of $K$
 sampling occasions. We estimate $N$ using data augmentation and have a
 Bernoulli model for the zero-inflation variables $z_{i}$. 
 \[
-z_{i} \sim Bernoulli(\psi)
+z_{i} \sim \mbox{Bern}(\psi)
 \]
 The binomial
 observation model is expressed conditional on the latent variables
 $z_{i}$. 
 \[
-y_i \sim Binomial (p_i * z_i, K)
+y_i \sim \mbox{Bin} (p_i * z_i, K)
 \]
 Further, we prescribe a distribution for the capture
 probability $p_{i}$. Here we assume
@@ -836,36 +901,41 @@ $y_{i},p_{i},z_{i}$ and also the prior distributions of the prior parameters:
 \]
 For prior distributions, we assume that $\mu_{p},\sigma_{p}, \psi$ are
 mutually independent and for $\mu_{p}$ and $\sigma_{p}$ we use
-improper uniform priors, and $\psi \sim \mbox{Unif}(0,1)$.  This is equivalent to $\mbox{Beta}(1,1)$, which will come in handy, as we will see in a moment. Note that
-the likelihood contribution for each individual, when conditioned on
-$p_{i}$ and $z_{i}$, does not depend on $\psi$, $\mu_{p}$, or
-$\sigma_{p}$.  As such, the full-conditional for the structural
-parameter $\psi$ only depend on the collection of data augmentation
-variables $z_{i}$, and that for $\mu_{p}$ and $\sigma_{p}$ will only
-depend on the collection of latent variables $p_{i}; i=1,2,\ldots,M$.
-The full conditionals for all the unknowns are as follows:
+improper uniform priors, and $\psi \sim \mbox{Unif}(0,1)$.  This is
+equivalent to $\mbox{Beta}(1,1)$, which will come in handy, as we will
+see in a moment. Note that the likelihood contribution for each
+individual, when conditioned on $p_{i}$ and $z_{i}$, does not depend
+on $\psi$, $\mu_{p}$, or $\sigma_{p}$.  As such, the full-conditional
+for the structural parameter $\psi$ only depend on the collection of
+data augmentation variables $z_{i}$, and that for $\mu_{p}$ and
+$\sigma_{p}$ will only depend on the collection of latent variables
+$p_{i}; i=1,2,\ldots,M$.  The full conditionals for all the unknowns
+are as follows:
 
 {\bf (1)} For $p_{i}$:
 \begin{eqnarray*}
-[p_{i}|y_{i}, \mu_p, \sigma_{p},z_{i}=1] &\propto  &
+[p_{i}|y_{i}, \mu_p, \sigma_{p},z_{i}] &\propto  &
 [y_{i}|p_{i}][p_{i}|\mu_p,\sigma_{p}^{2}] \mbox{ if $z_{i}=1$ }  \\
                  &  &  [p_{i}|\mu_p,\sigma_{p}] \mbox{ if $z_{i}=0$ }
 \end{eqnarray*}
-
+\begin{comment}
 XXX Andy, is the $z_i = 1$ on the left side supposed to be in there? You have the if $z=1$ and $z=0$ on the right hand side XXXXX
+XXXX response: I don't think so -- I took it out! XXXX
+
 XXX do the parameters that define the prior distribution go into the left side of the equation? Eg for p (above) you have mu and sigma on the left hand side,
 so for z should it be [z|y,p,psi]? XXXXX
 
+XXXX response: Yes I think psi should be in there in that case
+\end{comment}
 {\bf (2)} for $z_{i}$:
 \[
-[z_{i} | y_{i}, p_{i}] \propto [y_{i}|z_{i}*p_{i}] \mbox{Bern}(z_{i}|\psi)
+[z_{i} | y_{i}, p_{i}, \psi] \propto [y_{i}|z_{i}*p_{i}] \mbox{Bern}(z_{i}|\psi)
 \]
 
 {\bf (3)} For $\mu_{p}$:
 \[
 [\mu_{p} | p_{i}, \sigma_{p}] \sim \left\{ \prod_{i} [p_{i}|\mu_{p}, \sigma_{p}] \right\} *\mbox{const}
 \]
-
 
 {\bf (4)} For $\sigma_{p}$:
 \[
@@ -889,11 +959,15 @@ In our case that means
 
 What we've done here is identify each of the full conditional
 distributions in sufficient detail to toss them into our
-Metropolis-Hastings algorithm (the constant term in the full conditionals for $\mu_{p}$ and $\sigma_{p}$ reflects the improper prior we chose for both parameters). 
-Below, you see the updating step for the detection parameter ${\bf p}$. Note that (1) we draw candidate values on the logit scale and (2) instead of looping through 1 -- M individuals to update all $p_{i}$, we update all elements of the vector of {\bf p} in parallel.   
+Metropolis-Hastings algorithm (the constant term in the full
+conditionals for $\mu_{p}$ and $\sigma_{p}$ reflects the improper
+prior we chose for both parameters).  Below, you see the updating step
+for the detection parameter ${\bf p}$. Note that (1) we draw candidate
+values on the logit scale and (2) instead of looping through $1 -- M$
+individuals to update all $p_{i}$, we update all elements of the
+vector of {\bf p} in parallel.
 
 \begin{verbatim}
-
 ### update the logit(p) parameters
 lp.cand<- rnorm(M,lp,1)  # 1 is a tuning parameter
 p.cand<-plogis(lp.cand)
@@ -905,17 +979,17 @@ prior.cand<-dnorm(lp.cand,mu,sigma, log=T)
 kp<- runif(M) < exp((llcand+prior.cand)-(ll+prior))
 p[kp]<-p.cand[kp]
 lp[kp]<-lp.cand[kp]
-
 \end{verbatim}
 
-Updating the $z_{i}$ is essentially analogous to updating the $p_{i}$ (although they can be updated directly from their full-conditional). $\mu_{p}$ and $\sigma_{p}$ are also updated using MH steps (see the code for $\mu_{p}$ below). In truth, we could also sample $\mu_{p}$
+Updating the $z_{i}$ is essentially analogous to updating the $p_{i}$
+(although they can be updated directly from their
+full-conditional). The parameters $\mu_{p}$ and $\sigma_{p}$ are also updated using MH steps (see the code for $\mu_{p}$ below). In truth, we could also sample $\mu_{p}$
 and $\sigma_{p}^{2}$ directly with certain choices of prior
 distributions. For example, if $\mu_{p} \sim \mbox{Norm}(0, 1000)$
 then the full conditional for $\mu_{p}$ is also normal (see
 sec. \ref{mcmc.sec.gibbs}), etc..
 
 \begin{verbatim}
-
 p0.cand<- rnorm(1,p0,.05)
 if(p0.cand>0 & p0.cand<1){
 mu.cand<-log(p0.cand/(1-p0.cand))
@@ -926,7 +1000,6 @@ if(runif(1)<exp(llcand-ll)) {
  p0<-p0.cand
 }
 }
-
 \end{verbatim}
 
 Finally, for $\psi$ we can easily sample directly from the beta distribution:
@@ -939,8 +1012,13 @@ You can check out the full code by invoking \mbox{\tt modelMh()} from the {\bf R
 
 \section{MCMC algorithm for the basic spatial capture-recapture model}
 
-Conceptually, but also in terms of MCMC coding, it is only a small step from the non-spatial model $M_h$ to a fully spatial capture-recapture model. Next, we'll walk you through the steps of building your own MCMC sampler for the basic SCR model (i.e. without any individual, site or time specific covariates) with both a Poisson and a Binomial encounter process.
-As usual, we will have to go through two general steps before we write the MCMC algorithm:
+Conceptually, but also in terms of MCMC coding, it is only a small
+step from the non-spatial model $M_h$ to a fully spatial
+capture-recapture model. Next, we'll walk you through the steps of
+building your own MCMC sampler for the basic SCR model (i.e. without
+any individual, site or time specific covariates) with both a Poisson
+and a Binomial encounter process.  As usual, we will have to go
+through two general steps before we write the MCMC algorithm:
 \begin{itemize}
 \item[  (1)] Identify your model with all its components (including
     priors)
@@ -982,7 +1060,7 @@ z_{i} \sim \mbox{Bern}(\psi)
 
 To link the two model components, we modify our trap encounter model to
 \[
-\lambda_{ij} = \lambda_0 * exp(-D_{ij}^2/2\sigma^2) * z_{i}.
+\lambda_{ij} = \lambda_0 * \exp(-D_{ij}^2/2\sigma^2) * z_{i}.
 \]
 The model has the following structural parameters, for which we need to specify priors:
 \begin{itemize}
@@ -1044,7 +1122,7 @@ We still have to update $z_i$. The full conditional for $z_i$ is
 [z_i|y_{i}, \sigma, \lambda_0, {\bf s}_{i}] \propto [y_{i}|z_{i},\sigma, \lambda_0, 
 {\bf s}_{i}] * [z_i]
 \]
-and since $z_i \sim Bernoulli(\psi)$,
+and since $z_i \sim \mbox{Bern}(\psi)$,
 the term has to be taken into account when updating $z_i$:
 
 \begin{verbatim}
@@ -1079,8 +1157,9 @@ find the full {\bf R} code by calling the function (\mbox{\tt SCR0pois}) in the 
 \mbox{\tt scrbook}.
 
 \subsection{SCR model with binomial encounter process}
-The equivalent SCR model with a binomial encounter process is very similar. Here, each individual $i$ can only be detected once at any given trap $j$ during a sampling occasion $k$.
-Thus
+The equivalent SCR model with a binomial encounter process is very
+similar. Here, each individual $i$ can only be detected once at any
+given trap $j$ during a sampling occasion $k$.  Thus
 \[
 y_{ij} \sim \mbox{Bin} (p_{ij}, K)
 \]
@@ -1098,7 +1177,6 @@ The full MCMC code for the Binomial SCR with a clog-log link (\mbox{\tt SCR0bino
 can be found in the {\bf R} package \mbox{\tt scrbook}.
 
 \begin{verbatim}
-
         lam0.cand <- rnorm(1, lam0, 0.1)
         if(lam0.cand >0){   #automatically reject lam0.cand that are <0
             lam.cand <- lam0.cand*exp(-(D*D)/(2*sigma*sigma))
@@ -1183,7 +1261,7 @@ approximately 25 minutes (in real life we would of course run the algorithm a lo
 %need to look at tuning... not happy
 \begin{verbatim}
 set.seed(13)
- mod0<-SCR0binom.cl(y=Xaug, X=trapmat, M=M, xl=xl, xu=xu, yl=yl, 
+mod0<-SCR0binom.cl(y=Xaug, X=trapmat, M=M, xl=xl, xu=xu, yl=yl, 
                    yu=yu, K=8, delta=c(0.1, 0.05, 2), niter=5000)
 \end{verbatim}
 
@@ -1205,7 +1283,7 @@ Start by looking at time series plots of your Markov chains using
  similar to what we did before using the \verb#hist()# and \verb#plot()# 
  commands. Fig. \ref{mcmc.fig.timeseries} shows an example of these plots for $\sigma$ and $\lambda_0$. Time series plots will tell 
  you several things:
-First, recall from Sect. \ref{Metropolis-Hastings sampling} that the way the chains move 
+First, recall from Sect. \ref{mcmc.sec.mh} that the way the chains move 
 through the parameter space gives you an idea of whether your MH 
 steps are well tuned. If chains were constant over many iterations 
 you would need to decrease the tuning parameter of the (Normal) 
@@ -1226,6 +1304,7 @@ parameter so that the parameter space is explored more efficiently.
 Second, you will be able to see if your chains converged and how many initial simulations you have to discard as burn-in. In the case of the chains shown in Fig. \ref{mcmc.fig.timeseries}, we would probably consider the first 750 -- 1000 iterations as burn-in, as afterwards the chains seem to be fairly stationary.
 
 \subsection{Posterior density plots}
+
 The \verb#plot()# command also produces posterior density plots and it is worthwhile to look at those carefully. For parameters with priors that have bounds (e.g. Uniform over some interval), you will be able to see if your choice of the prior is truncating the posterior distribution. In the context of SCR models, this will mostly involve our choice of $M$, the size of the augmented data set. If the posterior of $N$ has a lot of mass concentrated close to $M$ (or equivalently the posterior of $\psi$ has a lot of mass concentrated close to 1), as in the example in Fig. \ref{mcmc.fig.timeseries2}, we have to re-run the analysis with a larger $M$.  A diffuse
 posterior plot suggests
 that the parameter may not be well-identified. 
@@ -1296,7 +1375,7 @@ flexibility to make decisions about the burn-in after we have seen the
 trajectories of our Markov chains. For our example,
 \verb#summary(window(chain, start=1001))# returns the following output:
 
-
+{\small
 \begin{verbatim}
 Iterations = 1001:5000
 Thinning interval = 1 
@@ -1320,6 +1399,7 @@ lam0    0.0863   0.1008   0.1112   0.1217   0.1449
 psi     0.5100   0.6423   0.7261   0.8170   0.9549
 N     359.0000 451.0000 508.0000 572.0000 668.0000
 \end{verbatim}
+}
 
 Looking at the MC errors (column labeled \mbox{\tt Time-series SE}), 
 we see that in spite of the high autocorrelation, the MC error for 
@@ -1362,7 +1442,7 @@ rejectionRate(chain)
      sigma       lam0        psi          N 
 0.42988598 0.78775755 0.00000000 0.03160632 
 \end{verbatim}
- Recall (\ref{Metropolis-Hastings sampling}) that rejection rates should lie between 0.2 and 0.8, so our tuning seems to have been appropriate here. $\psi$ is never rejected since we update it with Gibbs sampling, where all candidate values are kept. And since $N$ is the sum of all $z_i$, all it takes for $N$ to change from one iteration to the next are small changes in the z-vector, so the rejection rate of $N$ is always low.
+ Recall (\ref{mcmc.sec.mh}) that rejection rates should lie between 0.2 and 0.8, so our tuning seems to have been appropriate here. $\psi$ is never rejected since we update it with Gibbs sampling, where all candidate values are kept. And since $N$ is the sum of all $z_i$, all it takes for $N$ to change from one iteration to the next are small changes in the z-vector, so the rejection rate of $N$ is always low.
 If you have run several parallel chains, you can combine them into a single mcmc object using the \verb#mcmc.list()# command on the individual chains (note that each chain has to be converted to an mcmc object before combining them with \verb#mcmc.list()#). You can then easily obtain the Gelman-Rubin diagnostic \citep{gelman_etal:2004}, in {\bf WinBUGS} called R-hat, using \verb#gelman.diag()#, which 
 will indicate if all chains have converged to the same stationary distribution.
 For details on these and other functions, see the \mbox{\tt coda} manual, 
@@ -1389,7 +1469,7 @@ use the actual state-space polygon to constrain out ${\bf s}_i$.
 otherwise, use raccoon example.} To illustrate that, let's look at a camera 
 trapping study of Florida panthers (\emph{Puma concolor coryi}) conducted 
 in the Picayune Strand Restoration Project (PSRP) area, southwest Florida 
-(Fig. \ref{mcmc.fig.pantercamera}), by the Florida Fish and Wildlife Conservation Commission and the Conservancy of Southwest Florida, and financed by XXX. In the 1960ies 
+(Fig. \ref{mcmc.fig.pantercamera}), by the Florida Fish and Wildlife Conservation Commission and the Conservancy of Southwest Florida, and financed by XXX. In the 1960s 
 the PSRP area was slated for housing development, but then bought back by 
 the State of Florida and is currently being restored to its original 
 hydrology and vegetation. In an effort to estimate the density of the 
@@ -1582,7 +1662,7 @@ writing a \mbox{\bf JAGS} model is virtually identical to writing a {\bf WinBUGS
  take the {\bf R} GUI with it. Only re-installing both {\bf JAGS} and 
  {\tt rjags} seemed to solve this problem.
 On the plus side, {\bf JAGS} usually runs a little faster than {\bf WinBUGS},
- sometimes considerably faster (see Sect. \ref {4.XYZ}), is constantly 
+ sometimes considerably faster (see sec. \ref {scr0.sec.discrete}), is constantly 
  being developed and improved and it has a variety of functions that are 
  not available in {\bf WinBUGS}. For example, {\bf JAGS} allows you to 
  supply observed data for some deterministic functions of unobserved 
@@ -1630,7 +1710,7 @@ complicated or inefficient is when using point processes other
 than the 
  Binomial point process (''uniformity'') which underlies the basic 
  SCR model (see Chapt. \ref {Chapter X}). In the Chapt. 
- \ref {chapt.state-space} and BETHS PP CHAPTER you will see examples of different point processes,
+ \ref {chapt.state-space} and XXXX BETHS PP CHAPTER XXXX you will see examples of different point processes,
   implemented using custom-made MCMC algorithms.
 
 Finally, the Chapt. \ref {chapt.scr-unmarked} and \ref {chapt.partialID} deal with unmarked or 
