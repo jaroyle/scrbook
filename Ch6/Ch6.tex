@@ -448,16 +448,20 @@ X<-data$traplocs
 J<-nrow(X)
 K<-data$K
 \end{verbatim}
-
 Recall that these data were generated with $N=100$, on an $8 \times 8$ unit
 state-space representing the trap locations (${\bf X}$) buffered by 2 units.
+
 As before, the likelihood is defined in the {\bf R} workspace as an
 {\bf R}
-function which takes an argument being the unknown parameters of the
+function, \mbox{\tt intlik2} (contained in the package \mbox{\tt
+  scrbook}),
+ which takes an argument being the unknown parameters of the
 model and additional arguments as prescribed. In particular, 
  we provide the encounter history matrix ${\bf y}$, the trap locations
-\mbox{\tt traplocs}, the spacing of the integration grid ($\delta$) and the
+\mbox{\tt traplocs}, the spacing of the integration grid (argument
+\mbox{\tt delta}) and the
 state-space buffer. Here is the new likelihood function:
+{\small
 \begin{verbatim}
 intlik2<-function(parm,y=y,delta=.3,X=traplocs,ssbuffer=2){
 
@@ -466,7 +470,6 @@ Xu<-max(X[,1])+ ssbuffer
 Yu<-max(X[,2])+ ssbuffer
 Yl<-min(X[,2])- ssbuffer
 
-#delta<- (Xu-Xl)/npix
 xg<-seq(Xl+delta/2,Xu-delta/2,delta) 
 yg<-seq(Yl+delta/2,Yu-delta/2,delta) 
 npix.x<-length(xg)
@@ -495,7 +498,7 @@ part2<- sum(nv*log(lik.marg))
  -1*(part1+ part2)
 }
 \end{verbatim}
-
+}
 To execute this function for the data that we created with \mbox{\tt simSCR0.fn},
  we execute the following command (saving the result in our
 friend \mbox{\tt frog}).
@@ -503,18 +506,19 @@ This results in the usual output, including the parameter estimates,
 the gradient, and the numerical Hessian which is useful for obtaining
 asymptotic standard errors (see below):
 \begin{verbatim}
-> frog<-nlm(intlik2,c(-2.5,2,log(4)),hessian=TRUE,y=y,X=X,delta=.2,ssbuffer=2)
+starts<-c(-2.5,2,log(4))
+frog<-nlm(intlik2,starts,hessian=TRUE,y=y,X=X,delta=.2,ssbuffer=2)
+
 There were 50 or more warnings (use warnings() to see the first 50)
-> 
->
-> frog
+
+frog
 $minimum
 [1] 113.5004
 
 $estimate
 [1] -2.538334  2.466515  4.232810
 
-[…. Additional output deleted ….]
+[... Additional output deleted ...]
 \end{verbatim}
 While this produces some {\bf R} warnings, these happen to be harmless
 in this case, and we will see from the \mbox{\tt nlm} output that the
@@ -522,11 +526,11 @@ algorithm performed satisfactory in minimizing the objective function.
 The estimate of population size for the state-space (using the default 
 state-space buffer) is
 \begin{verbatim}
-> nrow(y)+exp(4.2328)
+nrow(y)+exp(4.2328)
 [1] 110.9099
 \end{verbatim}
 Which differs from the data-generating value ($N=100$) as we might
-expect. We usually will present an estimate of uncertainty assocated
+expect for a single realization. We usually will present an estimate of uncertainty assocated
 with this MLE which we can obtain by inverting the Hessian. Note that
 $Var(\hat{N}) = n + \mbox{Var}(\hat{n}_{0})$.
 Since we
@@ -534,15 +538,18 @@ have parameterized the model in terms of $log(n_{0})$ we use a delta
 approximation to obtain the variance on the scale of $n_{0}$ as
 follows:
 \begin{verbatim}
-> (exp(4.2328)^2)*solve(frog$hessian)[3,3]
+(exp(4.2328)^2)*solve(frog$hessian)[3,3]
 [1] 260.2033
 > sqrt(260)
 [1] 16.12452
 \end{verbatim}
 Therefore, the asymptotic ``Wald-type'' confidence interval for $N$ is
-$110.91 +/- 1.96 \times 16.125 = (79.305, 142.515)$. To report this in
+$110.91 \pm 1.96 \times 16.125 = (79.305, 142.515)$. To report this in
 terms of density, we scale appropriately by the area of the prescribed
 state-space which is $64$ units of area (i.e., an $8 \times 8$ square).
+
+
+\begin{comment}
 
 \subsection{Exercises}
 
@@ -575,6 +582,9 @@ Further extensions: It should be straightforward to
   difficult but naturally will slow down the execution
   substantially. The interested reader should try to expand the
   capabilities of this basic {\bf R} function.  }
+\end{comment}
+
+
 
 
 \subsection{Integrated Likelihood using the model under data augmentation } 
@@ -616,9 +626,10 @@ European wildcat in which traps are either baited or not (a
 trap-specific covariate with only 2 values), and also encounter
 probability varies over time in the form of a quadratic seasonal response.
 We consider models with behavioral response or fixed covariates in
-chapter XXXX, although 
-the integrated likelihood routines we provided above can be
-modified directly for such cases, which we leave to the interested reader. 
+Chapt. \ref{chapt.covariates}.
+Although the integrated likelihood routines we provided above can be
+modified directly for such cases, which we leave to the interested
+reader to investigate. 
 
 Sex-specificity is more difficult to deal with since sex is not known
 for uncaptured individuals (and sometimes not even for all captured
