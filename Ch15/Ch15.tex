@@ -140,8 +140,8 @@ The last subtle change concerns the acceptance rate of w. Again, we no longer di
 %%% I don’t think we need these details since this is not the MCMC chapter any more. Maybe just some well commented code in the R package
 
 \subsection{Example – Canada geese in North Carolina} 
-We applied this spatial mark-resight model to a data set of Canada geese collected by XXX from North Carolina State University during her PhD dissertation (Rutledge 2012). 750 individual geese were captured and tagged with neck and leg bands in XXXX, North Carolina. Geese were resighted over a period of almost two years (during 81 resightin events) at 87 different locations. In addition to the banded geese, the number of unmarked geese was also recorded at each resighting event. Here, we only looked at a subset of the data, from July to October 2008, the first part of the post molt season, when Canada geese start to move around again after molting (WHAT IS IT THAT DEFINES THIS SEASON?).  
-In this time block XX of the 750 marked geese were resighted XXX times, and XXX sightings of unmarked geese were recorded. Since an individual could only be observed once on a given occasion at a given site, we adopted a binomial encounter model to model detection. So far, we have only worked with Poisson encounter models for partially identifiable or unmarked populations; when we use the binomial model we have to make a slight modification to how we update the latent $z_{ijk}$, to ensure that a hypothetical individual receives at most a single observation at a given trap and occasion from the pool of $y_{jk}$ pictures. Effectively, we move from a multinomial situation to a sampling without replacement situation (an individual drawn once at j and k cannot be drawn again); here is how we implement this in our MCMC algorithm:
+We applied this spatial mark-resight model to a data set of Canada geese studied in North Carolina (Rutledge 2012). 751 individual geese were captured and tagged with neck and leg bands in XXXX, North Carolina. Geese were resighted over a period of almost two years (during 81 resightin events) at 87 different locations. In addition to the banded geese, the number of unmarked geese was recorded at each resighting event. Here, we only looked at a subset of the data, from mid July to the end of October 2008, which corresponds to the first part of the post molt season.  
+In this time block 746 of the 751 marked geese were known to be alive. Of those, 654 were resighted 3994 times at 40 different sites. In addition, 7944 sightings of unmarked geese were recorded at 48 sites. Since an individual could only be observed once on a given occasion at a given site, we adopted a binomial encounter model to model detection. So far, we have only worked with Poisson encounter models for partially identifiable or unmarked populations; when we use the binomial model we have to make a slight modification to how we update the latent $z_{ijk}$, to ensure that a hypothetical individual receives at most a single observation at a given trap and occasion from the pool of $y_{jk}$ pictures. Effectively, we move from a multinomial situation to a sampling without replacement situation (an individual drawn once at $j$ and $k$ cannot be drawn again); here is how we implement this in our MCMC algorithm:
 
 \begin{verbatim}
 ####updating latent Z's
@@ -164,25 +164,75 @@ In this time block XX of the 750 marked geese were resighted XXX times, and XXX 
 		Z[noGuys,r,t] <- 0
         }
     }
-\begin{verbatim}
+\end{verbatim}
 
-In the case of the Canada geese, we also allowed $\sigma$ to vary between males and females. This only requires minor changes to the MCMC sampler and you can check these out by calling the XXX function from the scrbook package.
-We augmented the data set with 4500 - $n$ all-zero encounter histories and ran 100000 iterations -- we provide all the data and functions for you to repeat this analysis but be aware that given the large data set this will take you anywhere between 5 and 7 days -- and removed a burn-in of XXX iterations. The model results are shown in Tab. \ref{XXX}. We see that BLABLABLA, discuss results.  
+In the case of the Canada geese, we also allowed $\sigma$ to vary between males and females. This only requires minor changes to the MCMC sampler and you can check these out by calling the XXX function from the {\tt scrbook} package.
+We augmented the data set with 4500 - $n$ all-zero encounter histories and ran 50000 MCMC iterations and removed a burn-in of 1000 iterations. We provide all the data (data(canadageese)) and functions for you to repeat this analysis but be aware that given the large data set it will take days to do so. The model results, including the derived parameter density ($D$) are shown below. 
+
+\begin{verbatim}
+Iterations = 1001:50000
+Thinning interval = 1 
+Number of chains = 1 
+Sample size per chain = 49000 
+
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
+
+            Mean        SD  Naive SE Time-series SE
+sigmaF    1.0594 1.902e-02 8.593e-05      0.0011674
+sigmaM    1.1347 2.375e-02 1.073e-04      0.0014294
+lam0      0.3245 8.037e-03 3.631e-05      0.0003103
+psi       0.7924 3.284e-02 1.483e-04      0.0017778
+phi       0.4337 1.857e-02 8.387e-05      0.0003754
+N      3720.8128 1.210e+02 5.466e-01      6.6264003
+D         6.6832 2.173e-01 9.817e-04      0.0119021
+
+2. Quantiles for each variable:
+
+            2.5%       25%       50%       75%     97.5%
+sigmaF    1.0218    1.0470    1.0594    1.0717    1.0971
+sigmaM    1.0909    1.1182    1.1341    1.1502    1.1834
+lam0      0.3088    0.3191    0.3244    0.3298    0.3407
+psi       0.7298    0.7698    0.7917    0.8143    0.8573
+phi       0.3976    0.4210    0.4336    0.4462    0.4702
+N      3492.0000 3637.0000 3717.0000 3802.0000 3961.0000
+D         6.2722    6.5326    6.6763    6.8290    7.1146
+\end{verbatim}
+
+We see that credible intervals of estimates are pretty tight. Take, for example, $\sigma$ for males and females: Although they differ only by 0.08, there is barely any overlap between the respective credible intervals, surely an effect of the large data set.     
+
+
+
 
 \subsection  {Individual identification rate of tagged animals <100 \%}
-Often during resighting, it may be possible to see that an individual is tagged but impossible to determine the individual identity of the tag. As discussed above, in such a situation we have three sets of data: Individual site-specific encounter histories of marked and identified individuals, site specific counts of unmarked individuals and site specific counts of marked but not identified individuals. Here, the individual encounter histories are essentially incomplete, and if we used these incomplete data to inform the detection parameter of the model, we are likely to underestimate detection/trap encounter rate and overestimate abundance.
-McClintock et al. (2009) suggest an intuitive means of correcting for this bias in a non-spatial model framework: In their model formulation the expected number of records of unmarked individuals, $E(n_u)$ is
-
-{\bf EXPAND, THIS MAKES NO SENSE STANDING ALON}
+Often during resighting, it may be possible to see that an individual is tagged but impossible to determine the individual identity of the tag. As discussed above, in such a situation we have three sets of data: Individual site-specific encounter histories of marked and identified individuals, site specific counts of unmarked individuals and site specific counts of marked but unidentified individuals. Here, the individual encounter histories are essentially incomplete, and if we used these incomplete data to inform the detection parameter of the model, we are likely to underestimate detection/trap encounter rate and overestimate abundance.
+\citet{mclintock_etal:2009} suggest an intuitive means of correcting for this bias in a non-spatial model framework: Simplified, in their model formulation the number of records of unmarked individuals,$T_u$, is assumed to come from a Normal distribution that is left truncated at 0 (because $T_u >= 0$), where  $E(T_u)$ is
 
 \[
-E(n_u) = (N--n) { lam , eta/n}
+E(T_u) = (N-n) { $\lambda$  + $\eta$/n}
 \]
-where $N$ is the total population size, $n$ is the known number of marked individuals, $\lambda$ is the individual encounter rate estimated from the known resighted individuals and $\eta$ is the number of records of marked but unidentified individuals. So essentially, because $\lambda$ is known to be too low, the average number of unidentified pictures per known individual is added as a correction factor. This procedure assumes that the inability to identify a marked individual occurs at random throughout the population, which seems to be a reasonable assumption under most circumstances.
+Here, $N$ is the total population size, $n$ is the known number of marked individuals, $\lambda$ is the individual encounter rate estimated from the known resighted individuals and $\eta$ is the number of records of marked but unidentified individuals. So essentially, because $\lambda$ is known to be too low, the average number of unidentified pictures per known individual is added as a correction factor. This procedure assumes that the inability to identify a marked individual occurs at random throughout the population, which seems to be a reasonable assumption under most circumstances.
 
-We can relatively easily translate this concept to our spatial mark-resight models.  In the spatial model framework we are interested in the individual and trap specific encounter rate, $lambda_{ij}$. Further, we do not look at the sum of all records of unmarked individuals, but formulate the model conditional on the latent individual encounter histories. Thus, instead of using the number of unidentified pictures per marked individual as a correction factor, we need something that applies at the individual and trap level. If we take the sum of all correctly identified records of marked individuals and divide it by the total number of records of marked individuals, we get the average rate of correct individual identification for marked individuals, say, $c$. We can then multiply $\lambda_0$ times $c$ in the model for the marked individuals, to account for the fact that we observe incomplete individual encounter histories. For example, if on average we are able to assign 80\% of the records of marked to the individual, we would multiply $\lambda_0 * 0.8$ in the part of the model for the marked individuals. The model for unmarked individuals remains as before. Observe that now, in addition to assuming that failure to identify tagged individuals occurs at random throughout the population, we also assume that it occurs at random throughout space, i.e. our success of identifying a tagged individual does not depend on the trap we encounter it in. 
+We can relatively easily translate this concept to our spatial mark-resight models.  In the spatial model framework we are interested in the individual and trap specific encounter rate, $lambda_{ij}$. Further, we do not look at the sum of all records of unmarked individuals, but formulate the model conditional on the latent individual encounter histories. Thus, instead of using the number of unidentified pictures per marked individual as a correction factor, we need something that applies at the individual and trap level. If we take the sum of all correctly identified records of marked individuals, $\sum y_c$ and divide it by the total number of records of marked individuals, $\sum y_t$, we get the average rate of correct individual identification for marked individuals, say, $c$:
+\[
+c = \sum y_c/\sum y_t
+\]
 
-{\bf Example ?}
+For the marked individuals we can then multiply $\lambda_0$ with $c$ to account for the fact that we observe incomplete individual encounter histories. For example, if on average we are able to assign 80\% of the records of marked to the individual, we would multiply $\lambda_0 \times 0.8$ for the marked individuals. Since we don't have this identification issue for unmarked individuals, their baseline trap encounter rate remains as before simply $\lambda_0$. Observe that now, in addition to assuming that failure to identify tagged individuals occurs at random throughout the population, we also assume that it occurs at random throughout space, i.e. our success of identifying a tagged individual does not depend on the trap we encounter it in. 
+
+In practice, adding a correction factor $c$ into our partial ID model means that we have to look at the individual encounter histories of known individuals and the estimated individual encounter histories of unmarked individuals separately. The likelihood component is no longer simply
+\[
+\prod_{i} [y_{i}| {\bf s}_{i}, \lambda_{0}, z_{i}, \sigma]
+\]
+but rather
+\[
+\prod_{m} [y_{m}| {\bf s}_{m}, \lambda_{0} \times c, z_{m}, \sigma] \times \prod_{u} [y_{u}| {\bf s}_{u}, \lambda_{0}, z_{u}, \sigma] 
+\]
+where ${\bf m}$ and ${\bf u}$ are index vectors for the marked and unmarked individuals, respectively. It is straightforward to implement that in the MCMC algorithm - see the updating step for $\lambda_0$ below as an example.
+
+\begin{verbatim}
+XXX
+\end{verbatim}
 
 \section {Spatial mark-resight models for unknown numbers of marked individuals}
 \subsection{Lincoln-Petersen extension of the SCR model }
