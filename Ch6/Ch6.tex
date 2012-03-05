@@ -762,7 +762,12 @@ $iterations
 Of course we're interested in obtaining an estimate of population size
 for the prescribed state-space, or density, and associated measures of
 uncertainty which we do using the delta method approximation
-\citep[][Appendix F4]{williams_etal:2003}. 
+\citep[][Appendix F4]{williams_etal:2003}
+\footnote{
+We found a good set of notes on the delta approximation on Dr. David
+Patterson's ST549 notes: 
+\url{http://www.math.umt.edu/patterson/549/Delta.pdf}
+}).
 To do all of that we need to manipulate the output of
 \mbox{\tt nlm} since we have our  estimate in terms of $\mbox{\tt
   log(n0)}$. We execute the following commands:
@@ -808,7 +813,6 @@ integral on a mesh of points, and that error increases as the
 coarsenss of the mesh increases. 
 
 
-
 \begin{table}[ht]
 \centering
 \caption{Run time and MLEs for different integration grid resolutions.}
@@ -848,11 +852,10 @@ is within the numerical error associated with approximating the
 integral.  
 
 
-
 \subsection{Restricted state-space}
 \label{mle.sec.shapefile}
 
-In Sec. \ref{scr0.sec.discrete} 
+In sec. \ref{scr0.sec.discrete} 
  we used a discrete representation of
 the state-space in order to have control over its extent and shape,
 for example so that we could clip out ``non-habitat''. Clearly that
@@ -862,17 +865,17 @@ underlies the computation of the integral. Thus, for example, we could
 easily compute the MLE of parameters under some model with a
 restricted state-space merely by creating the required state-space at
 whatever grid resolution is desired, and then feed that state-space
-into the likelihood evaluation above. The {\bf R} function \mbox{\tt scr}
-which comes with the {\bf R} package for this book accommodates an
-arbitrary state-space fashioned in this manner, as well as
-state-spaces created by polygons or GIS shapefiles \index{shapefile} which we
+into the likelihood evaluation above. We can easily create an explicit
+state-space grid for integration from arbitrary polygons or GIS
+shapefiles \index{shapefile} which we 
 demonstrate here. Our approach here is to create the integration grid
 (or state-space grid) outside of the likelihood evaluation, and then
 determine which points of the grid lie in the polygon defined by the
 shapefile using 
-functions in the {\bf R} libraries \mbox{\tt sp} \index{R
+functions in the {\bf R} packages \mbox{\tt sp} \index{R
   package!sp} and
-\mbox{\tt maptools} \index{R package!maptools} \index{maptools}.
+\mbox{\tt maptools} \index{R package!maptools} \index{maptools}.  Here
+are the {\bf R} commands for doing this:  
 {\small
 \begin{verbatim}
 library(maptools}
@@ -884,9 +887,9 @@ Pin<-as.numeric(!is.na(PinPoly[,1]))
 G<-G[Pin==1,]
 \end{verbatim}
 }
-We modified the function \mbox{\tt intlik3} to accept the integration
-grid as an argument and so we pass \mbox{\tt G} directly. The {\bf R} 
-script is in package \mbox{\tt scrbook}.
+We created  the function \mbox{\tt intlik4} which accepts the integration
+grid as an explict argument, and this function is also available in
+the package  \mbox{\tt scrbook}.
 
 We apply this modification to the wolverine camera trapping
 study. \citet{royle_etal:2011jwm} created 2, 4 and 8 km state-space
@@ -894,23 +897,54 @@ grids so as to remove ``non-habitat'' (mostly ocean, bayes, and large
 lakes). We previously analyzed the model using {\bf JAGS} and {\bf WinBUGS} in
 Chapt. \ref{chapt.scr0}.  To set up the wolverine data and fit the
 model we execute the following commandes
+{\small 
 \begin{verbatim}
-wolvdata<-get_wolv_data.fn(nz=0)
-y<-wolvdata$ncaps
-K<-wolvdata$Kt
-traplocs<-wolvdata$traplocs
-G<-wolvdata$Sgrid2
-area<-4  # using 2 x 2 km grid cell, each has area 4 sq. km.
-frog<-nlm(intlik3b,c(-1.5,1.2,log(4)),hessian=TRUE,y=y,K=K,X=traplocs,G=G)
+library("scrbook")
+data("wolverine")
+
+traps<-wolverine$wtraps
+traplocs<-traps[,1:2]/10000
+K.wolv<-apply(traps[,3:ncol(traps)],1,sum)
+traps<-cbind(1:nrow(traps),traps)  # pad with an ID variable
+y3d<-SCR23darray.fn(wolverine$wcaps,traps)
+y2d<-apply(y3d,c(1,3),sum)
+G<-wolverine$grid2/10000
+
+starts<-c(-1.5,1.2,log(4))
+frog<-nlm(intlik4,starts,hessian=TRUE,y=y2d,K=K.wolv,X=traplocs,G=G)
+
+frog
+$minimum
+[1] 225.8355
+
+$estimate
+[1] -2.995541  1.265021  4.110476
+
+$gradient
+[1]  3.808485e-05 -9.930579e-06  3.906668e-06
+
+$hessian
+           [,1]       [,2]      [,3]
+[1,]  47.059393 -21.415124  4.406148
+[2,] -21.415124  38.255192 -7.386245
+[3,]   4.406148  -7.386245 15.406613
+
+$code
+[1] 1
+
+$iterations
+[1] 14
 \end{verbatim}
+}
+
 Next we convert the parameter estimates to estimates of total
-population size for the prescribed state-space, density (per 1000
-$km^2$) and standard errors (obtained using a delta
-approximation\footnote{
-We found a good set of notes on the delta approximation on Dr. David
-Patterson's ST549 notes: 
-\url{http://www.math.umt.edu/patterson/549/Delta.pdf}
-}):
+population size for the prescribed state-space, and then obtain an
+estimate of density (per 1000
+$km^2$) using the area computed as the number of pixels in the
+state-space grid \mbox{\tt G} multiplied by the area per grid cell. In
+the present case (the calcuation above) we used a state-space grid
+with $2 \times 2$ $km$ pixels.  Finally, we compute
+a standard errors using the delta approximation: 
 \begin{verbatim}
 Nhat<- 21+exp(frog$estimate[3])
 SE<-  exp(frog$estimate[3])*sqrt(solve(frog$hessian)[3,3])
@@ -919,15 +953,17 @@ SE.D<- (SE/(nrow(G)*area))*1000
 \end{verbatim}
 We did this for each the 2 $km$, 4 $km$ and 8 $km$ state-space grids
 which produced the estimates summarized in Tab. \ref{mle.tab.wolv}.
-These estimates compare with XYZ-lookup-XYZ reported in
+These estimates compare with the 8.6 (2 km grid) and 8.2 (8 km grid)
+reported in 
 \citet{royle_etal:2011jwm} based on a clipped state-space as described
-in section XYZ (XYZ chapter 4 XYZ).
+in sec. \ref{scr0.sec.discrete}.
 
 \begin{table}
 \centering
-\caption{Wolverine MLES for 2 4 and 8 km grid}
+\caption{MLEs for the wolverine camera trapping data using 2, 4 and 8 km state-space grids.}
 \begin{tabular}{cccccccc}
-grid &  alpha0  &  alpha1 &   logn0  & N   &  SE & D(1000) &  SE \\
+\hline \hline
+grid &  $\alpha_0$  &  $\alpha_1$ &   $log(n_0)$  & $N$   &  SE & D(1000) &  SE \\ \hline
 2  &  -2.995541& 1.265021 &4.110476 &81.97574& 16.30904 &8.310598 &1.653391\\
 4  &  -2.991268&1.344055  &4.157026 &84.88126& 16.76202 &8.570401& 1.692450\\
 8   & -3.051705& 1.080083 &4.058542 &78.88983& 15.31392 &7.851296& 1.524077\\
@@ -972,8 +1008,8 @@ contains more functionality and is based in {\bf R}.
 and run models in \mbox{\tt secr}, you must download the package and load itin
 {\bf R}.
 \begin{verbatim}
-> install.packages(“secr”)
-> library(secr)
+ install.packages(“secr”)
+ library(secr)
 \end{verbatim}
 \mbox{\tt secr} allows the user to simulate data and fit a suite of models with
 various detection functions and covariate responses.  \mbox{\tt secr}
