@@ -83,8 +83,9 @@ spatial.plot(grid2,probcap[1,])
 ###
 ### Set one of the cost functions -- either covariate.trend or covariate.patchy
 ###
-cost<- exp(theta2*covariate.trend)
-values(r)<-matrix(cost,20,20,byrow=FALSE)
+cost<- exp(theta2*covariate.patchy)
+#values(r)<-matrix(cost,20,20,byrow=FALSE)
+r<-cost
 tr1<-transition(r,transitionFunction=function(x) 1/mean(x),directions=8)
 tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
 costs1<-costDistance(tr1CorrC,grid,grid2)
