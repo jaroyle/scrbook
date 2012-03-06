@@ -82,7 +82,7 @@ rejectionRate(mc2)
 
 # Simulate data using dimensions of parula data
 
-N <- 40
+N <- 30
 X <- nopaDat$X
 J <- nrow(X)
 K <- 20 # ncol(nopaDat$y)

@@ -63,6 +63,13 @@ scrUN <- function(y, X, Zknown, M, obsmod=c("pois", "bern"),
             cat("   current =", out[iter-1,], "\n")
         }
 
+
+        if(identical(obsmod, "pois")) {
+            ll <- sum(dpois(Z, lam*w, log=TRUE))
+        } else if(identical(obsmod, "bern")) {
+            ll <- sum(dbinom(Z, 1, lam*w, log=TRUE))
+        }
+
         # update sigma
         sigma.cand <- rnorm(1, sigma, tune[1])
         if(sigma.cand > 0) {
@@ -76,10 +83,8 @@ scrUN <- function(y, X, Zknown, M, obsmod=c("pois", "bern"),
             # w is recycled over lam, R times
             # lam*w is recycled over Z, T times
             if(identical(obsmod, "pois")) {
-                ll <- sum(dpois(Z, lam*w, log=TRUE))
                 llcand <- sum(dpois(Z, lam.cand*w, log=TRUE))
             } else if(identical(obsmod, "bern")) {
-                ll <- sum(dbinom(Z, 1, lam*w, log=TRUE))
                 llcand <- sum(dbinom(Z, 1, lam.cand*w, log=TRUE))
             }
             if(runif(1) < exp((llcand+prior.cand) -
