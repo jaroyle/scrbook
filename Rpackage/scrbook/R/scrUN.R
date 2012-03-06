@@ -4,49 +4,44 @@
 
 # MCMC with Z partially observed
 # Need to allow for different observation models
-scrUN <- function(y, X, Zknown, M, obsmod=c("pois", "bern"),
+scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
                   niters, xlims, ylims, a, b, tune=c(0.2, 0.1, 2)) {
 
     obsmod <- match.arg(obsmod)
-    R <- nrow(y)
-    T <- ncol(y)
-    S <- cbind(runif(M, xlims[1], xlims[2]), runif(M, ylims[1], ylims[2]))
+    J <- nrow(y)
+    K <- ncol(y)
+    S <- cbind(runif(M, xlims[1], xlims[2]),
+               runif(M, ylims[1], ylims[2]))
     D <- e2dist(S, X)
-    sigma <- runif(1, 1, 3)
-    lam0 <- runif(1, .1, 0.6) # This is p0 when obsmod="bern"
+    sigma <- runif(1, 0.5, 1.5)
+    lam0 <- runif(1, 0.7, 0.9) # This is p0 when obsmod="bern"
     lam <- lam0*exp(-(D*D)/(2*sigma*sigma))
-    psi <- runif(1,.1,.6)
-    w <- rbinom(M,1,psi)
+    psi <- runif(1, 0.7, 1)
+    w <- rbinom(M, 1, psi)
 
-    Z <- array(NA, c(M,R,T))
-    nMarked <- 0
-    marked <- rep(FALSE, M)
-    if(!missing(Zknown)) {# || !is.null(Zknown)) {
-        nMarked <- nrow(Zknown)
-        marked[1:nMarked] <- TRUE
-        Z[1:nMarked,,] <- Zknown
-    }
-    w[marked] <- 1
-    Zdata <- !is.na(Z)
-    for(r in 1:R) {
-        for(t in 1:T) {
-            if(y[r,t]==0) {
-                Z[,r,t] <- 0
+    Z <- array(0, c(M,J,K))
+    up <- 0
+    for(j in 1:J) {
+        for(k in 1:K) {
+            if(y[j,k]==0) {
+                Z[,j,k] <- 0
+                up <- up+1
                 next
             }
-            unmarked <- !Zdata[,r,t]
-            nUnknown <- y[r,t] - sum(Z[!unmarked,r,t])
-            if(nUnknown < 0)
-                browser()
-            probs <- lam[,r]*w
-            probs <- probs[unmarked]
-            probs <- probs/sum(probs)
-            if(identical(obsmod, "pois"))
-                Z[unmarked,r,t] <- rmultinom(1, nUnknown, probs)
+            probs <- lam[,j]*w
+            if(identical(obsmod, "pois")) {
+                probs <- probs/sum(probs)
+                Z[,j,k] <- rmultinom(1, y[j,k], probs)
+            }
             else if(identical(obsmod, "bern")) {
-                Z[unmarked,r,t] <- 0
-                guys <- sample(which(unmarked), nUnknown, prob=probs)
-                Z[guys,r,t] <- 1
+#                Z[,j,k] <- 0
+#                guys <- sample(1:M, y[j,k], prob=probs)
+#                Z[guys,j,k] <- 1
+                while(sum(Z[,j,k]) != y[j,k]) {
+                    Z[,j,k] <- rbinom(M, 1, probs)
+                    }
+                up <- up+1
+                cat("  z init", up, "of", J*K, "\n")
             }
         }
     }
@@ -67,6 +62,7 @@ scrUN <- function(y, X, Zknown, M, obsmod=c("pois", "bern"),
         if(identical(obsmod, "pois")) {
             ll <- sum(dpois(Z, lam*w, log=TRUE))
         } else if(identical(obsmod, "bern")) {
+
             ll <- sum(dbinom(Z, 1, lam*w, log=TRUE))
         }
 
@@ -87,8 +83,8 @@ scrUN <- function(y, X, Zknown, M, obsmod=c("pois", "bern"),
             } else if(identical(obsmod, "bern")) {
                 llcand <- sum(dbinom(Z, 1, lam.cand*w, log=TRUE))
             }
-            if(runif(1) < exp((llcand+prior.cand) -
-                              (ll+prior))) {
+            if(runif(1) < exp((llcand + prior.cand) -
+                              (ll + prior))) {
                 ll <- llcand
                 lam <- lam.cand
                 sigma <- sigma.cand
@@ -117,7 +113,7 @@ scrUN <- function(y, X, Zknown, M, obsmod=c("pois", "bern"),
         wUps <- 0
         seen <- apply(Z>0, 1, any)
         for(i in 1:M) {
-            if(seen[i] | marked[i])
+            if(seen[i])
                 next
             wcand <- ifelse(w[i]==0, 1, 0)
             if(identical(obsmod, "pois")) {
@@ -137,27 +133,29 @@ scrUN <- function(y, X, Zknown, M, obsmod=c("pois", "bern"),
         }
 
         # update Z
-        for(r in 1:R) {
-            zip <- lam[,r]*w
-            for(t in 1:T) {
-                if(y[r,t]==0) {
-                    Z[,r,t] <- 0
+        Zups <- 0
+        for(j in 1:J) {
+            probs <- lam[,j]*w
+            for(k in 1:K) {
+                if(y[j,k]==0) {
+                    Z[,j,k] <- 0
                     next
                 }
-                unmarked <- !Zdata[,r,t]
-                nUnknown <- y[r,t] - sum(Z[!unmarked,r,t])
-                if(nUnknown == 0)
-                    next
-                probs <- zip[unmarked]
-                probs <- probs/sum(probs)
-                if(identical(obsmod, "pois"))
-                    Z[unmarked,r,t] <- rmultinom(1, nUnknown,
-                                                 probs[unmarked])
+#                probs <- probs/sum(probs)
+                if(identical(obsmod, "pois")) {
+                    probs <- probs/sum(probs)
+                    Z[,j,k] <- rmultinom(1, y[j,k], probs)
+                    Zups <- Zups+1
+                }
                 else if(identical(obsmod, "bern")) {
-                    Z[unmarked,r,t] <- 0
-                    guy <- sample(which(unmarked), nUnknown,
-                                  prob=probs)
-                    Z[guy,r,t] <- 1
+#                    Z[,j,k] <- 0
+#                    guy <- sample(1:M, y[j,k], prob=probs)
+#                    Z[guy,j,k] <- 1
+                    zcand <- rbinom(M, 1, probs)
+                    if(sum(zcand) != y[j,k])
+                        next
+                    Z[,j,k] <- zcand
+                    Zups <- Zups+1
                 }
             }
         }
@@ -198,6 +196,7 @@ scrUN <- function(y, X, Zknown, M, obsmod=c("pois", "bern"),
         if(iter %% 100 == 0) {
             cat("   Acceptance rates\n")
             cat("     w =", wUps/M, "\n")
+            cat("     Z =", round(Zups/(J*K), 2), "\n")
             cat("     S =", Sups/M, "\n")
         }
 
