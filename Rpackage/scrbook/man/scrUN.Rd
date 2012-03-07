@@ -82,7 +82,7 @@ rejectionRate(mc2)
 
 # Simulate data using dimensions of parula data
 
-set.seed(343)
+set.seed(3413)
 N <- 20
 X <- nopaDat$X
 J <- nrow(X)
@@ -95,7 +95,7 @@ ylims <- c(2, 14)
 s <- cbind(runif(N, xlims[1], xlims[2]),
            runif(N, ylims[1], ylims[2]))
 p0 <- 0.8
-sigma <- 1.5
+sigma <- 1
 for(j in 1:J) {
     dist <- sqrt((s[,1]-X[j,1])^2 + (s[,2]-X[j,2])^2)
     p <- p0 * exp(-dist^2/(2*sigma^2))
@@ -121,8 +121,8 @@ summary(window(mc3, start=10001))
 
 
 # Use M-H to update z
-fm4 <- scrUN(n, X, M=40, obsmod="bern", niters=12000,
-    xlims=xlims, ylim=ylims, tune=c(0.05, 0.06, 1), zGibbs=FALSE)
+fm4 <- scrUN(n, X, M=40, obsmod="bern", niters=120000,
+    xlims=xlims, ylim=ylims, tune=c(0.03, 0.03, 0.5), zGibbs=FALSE)
 
 mc4 <- mcmc(fm4)
 plot(mc4)
