@@ -82,7 +82,7 @@ rejectionRate(mc2)
 
 # Simulate data using dimensions of parula data
 
-N <- 40
+N <- 30
 X <- nopaDat$X
 J <- nrow(X)
 K <- 20 # ncol(nopaDat$y)
@@ -104,8 +104,8 @@ table(n)
 plot(s, pch=16, col=4)
 points(X, pch="+")
 
-fm3 <- scrUN(n, X, M=100, obsmod="pois", niters=105000,
-    xlims=c(0,24), ylim=c(0,16), tune=c(0.1, 0.1, 4))
+fm3 <- scrUN(n, X, M=100, obsmod="pois", niters=5000,
+    xlims=c(0,24), ylim=c(0,16), tune=c(0.1, 0.1, 5))
 
 mc3 <- mcmc(fm3)
 plot(mc3)
@@ -113,8 +113,8 @@ rejectionRate(mc3)
 summary(window(mc3, start=10001))
 
 
-fm4 <- scrUN(n, X, M=100, obsmod="bern", niters=25000,
-    xlims=c(0,24), ylim=c(0,16), tune=c(0.08, 0.08, 8))
+fm4 <- scrUN(n, X, M=100, obsmod="bern", niters=55000,
+    xlims=c(0,24), ylim=c(0,16), tune=c(0.06, 0.06, 4))
 
 mc4 <- mcmc(fm4)
 plot(mc4)
@@ -124,6 +124,14 @@ summary(window(mc4, start=10001))
 
 
 
+
+M <- 100
+pr <- seq(0, 1, length=M)
+(pr <- pr/sum(pr))
+
+pr <- rep(1/M, M)
+x <- sample(1:M, 20, prob=pr)
+plot(table(x), xlab=c(1,100))
 
 
 }
