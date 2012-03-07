@@ -5,7 +5,8 @@
 # MCMC with Z partially observed
 # Need to allow for different observation models
 scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
-                  niters, xlims, ylims, a, b, tune=c(0.2, 0.1, 2)) {
+                  niters, xlims, ylims, a, b, tune=c(0.2, 0.1, 2),
+                  zGibbs=FALSE) {
 
     obsmod <- match.arg(obsmod)
     J <- nrow(y)
@@ -35,13 +36,13 @@ scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
             }
             else if(identical(obsmod, "bern")) {
                 Z[,j,k] <- 0
-                guys <- sample(1:M, y[j,k], prob=probs)
+                guys <- sample(1:M, y[j,k], prob=probs/sum(probs))
                 Z[guys,j,k] <- 1
 #                while(sum(Z[,j,k]) != y[j,k]) {
 #                    Z[,j,k] <- rbinom(M, 1, probs)
 #                    }
-                up <- up+1
-                cat("  z init", up, "of", J*K, "\n")
+#                up <- up+1
+#                cat("  z init", up, "of", J*K, "\n")
             }
         }
     }
@@ -63,7 +64,6 @@ scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
         if(identical(obsmod, "pois")) {
             ll <- sum(dpois(Z, lam*w, log=TRUE))
         } else if(identical(obsmod, "bern")) {
-
             ll <- sum(dbinom(Z, 1, lam*w, log=TRUE))
         }
 
@@ -140,6 +140,7 @@ scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
             for(k in 1:K) {
                 if(y[j,k]==0) {
                     Z[,j,k] <- 0
+#                    Zups <- Zups+1
                     next
                 }
 #                probs <- probs/sum(probs)
@@ -149,9 +150,13 @@ scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
                     Zups <- Zups+1
                 }
                 else if(identical(obsmod, "bern")) {
-#                    Z[,j,k] <- 0
-#                    guy <- sample(1:M, y[j,k], prob=probs)
-#                    Z[guy,j,k] <- 1
+                    if(zGibbs) {
+                        Z[,j,k] <- 0
+                        probs <- probs/sum(probs)
+                        guy <- sample(1:M, y[j,k], prob=probs)
+                        Z[guy,j,k] <- 1
+                        Zups <- 1
+                    } else {
 #                    zcand <- rbinom(M, 1, probs)
 #                    if(sum(zcand) != y[j,k])
 #                        next
@@ -165,6 +170,7 @@ scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
                         Z[,j,k] <- z.cand
                         Zups <- Zups+1
                     }
+                }
                 }
             }
         }
