@@ -17,8 +17,14 @@ scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
     sigma <- runif(1, 0.5, 1.5)
     lam0 <- runif(1, 0.7, 0.9) # This is p0 when obsmod="bern"
     lam <- lam0*exp(-(D*D)/(2*sigma*sigma))
-    psi <- runif(1, 0.7, 1)
+    psi <- runif(1, 0.9, 0.99)
     w <- rbinom(M, 1, psi)
+    N0 <- sum(w)
+    ymx <- max(y, na.rm=TRUE)
+    if(N0 < ymx) {
+        is0 <- which(w==0)
+        w[sample(is0, ymx-N0)] <- 1
+    }
 
     Z <- array(0, c(M,J,K))
     up <- 0
