@@ -82,14 +82,20 @@ rejectionRate(mc2)
 
 # Simulate data using dimensions of parula data
 
-N <- 30
+set.seed(343)
+N <- 20
 X <- nopaDat$X
 J <- nrow(X)
-K <- 20 # ncol(nopaDat$y)
+K <- 10 # ncol(nopaDat$y)
 z <- array(NA, c(N, J, K))
-s <- cbind(runif(N, 0, 24), runif(N, 0, 16))
+#xlims <- c(0, 24)
+#ylims <- c(0, 16)
+xlims <- c(2, 22)
+ylims <- c(2, 14)
+s <- cbind(runif(N, xlims[1], xlims[2]),
+           runif(N, ylims[1], ylims[2]))
 p0 <- 0.8
-sigma <- 1
+sigma <- 1.5
 for(j in 1:J) {
     dist <- sqrt((s[,1]-X[j,1])^2 + (s[,2]-X[j,2])^2)
     p <- p0 * exp(-dist^2/(2*sigma^2))
@@ -101,11 +107,12 @@ for(j in 1:J) {
 n <- colSums(z) # observed counts = sum z over individuals
 table(n)
 
-plot(s, pch=16, col=4)
+plot(s, pch=16, col=4, asp=1, xlim=xlims)
+rect(xlims[1], ylims[1], xlims[2], ylims[2])
 points(X, pch="+")
 
 fm3 <- scrUN(n, X, M=100, obsmod="pois", niters=5000,
-    xlims=c(0,24), ylim=c(0,16), tune=c(0.1, 0.1, 5))
+    xlims=xlims, ylim=ylims, tune=c(0.1, 0.1, 5))
 
 mc3 <- mcmc(fm3)
 plot(mc3)
@@ -113,25 +120,25 @@ rejectionRate(mc3)
 summary(window(mc3, start=10001))
 
 
-fm4 <- scrUN(n, X, M=40, obsmod="bern", niters=6000,
-    xlims=c(0,24), ylim=c(0,16), tune=c(0.05, 0.05, 3))
+# Use M-H to update z
+fm4 <- scrUN(n, X, M=40, obsmod="bern", niters=12000,
+    xlims=xlims, ylim=ylims, tune=c(0.05, 0.06, 1), zGibbs=FALSE)
 
 mc4 <- mcmc(fm4)
 plot(mc4)
 rejectionRate(mc4)
-summary(window(mc4, start=10001))
+summary(window(mc4, start=3001))
 
 
+# Use Gibbs to update z (Why doesn't this work?????)
+fm5 <- scrUN(n, X, M=40, obsmod="bern", niters=12000,
+    xlims=xlims, ylim=ylims, tune=c(0.05, 0.06, 1), zGibbs=TRUE)
 
+mc5 <- mcmc(fm5)
+plot(mc5)
+rejectionRate(mc5)
+summary(window(mc5, start=3001))
 
-
-M <- 100
-pr <- seq(0, 1, length=M)
-(pr <- pr/sum(pr))
-
-pr <- rep(1/M, M)
-x <- sample(1:M, 20, prob=pr)
-plot(table(x), xlab=c(1,100))
 
 
 }
