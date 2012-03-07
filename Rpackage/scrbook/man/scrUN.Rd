@@ -113,8 +113,8 @@ rejectionRate(mc3)
 summary(window(mc3, start=10001))
 
 
-fm4 <- scrUN(n, X, M=100, obsmod="bern", niters=55000,
-    xlims=c(0,24), ylim=c(0,16), tune=c(0.06, 0.06, 4))
+fm4 <- scrUN(n, X, M=40, obsmod="bern", niters=6000,
+    xlims=c(0,24), ylim=c(0,16), tune=c(0.05, 0.05, 3))
 
 mc4 <- mcmc(fm4)
 plot(mc4)

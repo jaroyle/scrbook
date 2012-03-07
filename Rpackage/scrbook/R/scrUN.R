@@ -34,12 +34,12 @@ scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
                 Z[,j,k] <- rmultinom(1, y[j,k], probs)
             }
             else if(identical(obsmod, "bern")) {
-#                Z[,j,k] <- 0
-#                guys <- sample(1:M, y[j,k], prob=probs)
-#                Z[guys,j,k] <- 1
-                while(sum(Z[,j,k]) != y[j,k]) {
-                    Z[,j,k] <- rbinom(M, 1, probs)
-                    }
+                Z[,j,k] <- 0
+                guys <- sample(1:M, y[j,k], prob=probs)
+                Z[guys,j,k] <- 1
+#                while(sum(Z[,j,k]) != y[j,k]) {
+#                    Z[,j,k] <- rbinom(M, 1, probs)
+#                    }
                 up <- up+1
                 cat("  z init", up, "of", J*K, "\n")
             }
@@ -47,7 +47,8 @@ scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
     }
 
     out <- matrix(NA,nrow=niters,ncol=4)
-    colnames(out) <- c("sigma", "lam0", "psi", "N")
+    nought <- ifelse(obsmod=="pois", "lam0", "p0")
+    colnames(out) <- c("sigma", nought, "psi", "N")
 
     cat("\nstarting values =", c(sigma, lam0, psi, sum(w)), "\n\n")
 
@@ -151,11 +152,19 @@ scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
 #                    Z[,j,k] <- 0
 #                    guy <- sample(1:M, y[j,k], prob=probs)
 #                    Z[guy,j,k] <- 1
-                    zcand <- rbinom(M, 1, probs)
-                    if(sum(zcand) != y[j,k])
-                        next
-                    Z[,j,k] <- zcand
-                    Zups <- Zups+1
+#                    zcand <- rbinom(M, 1, probs)
+#                    if(sum(zcand) != y[j,k])
+#                        next
+#                    Z[,j,k] <- zcand
+#                    Zups <- Zups+1
+                    z.cand <- sample(Z[,j,k]) # random permutation
+                    prior <- sum(dbinom(Z[,j,k], 1, probs, log=TRUE))
+                    prior.cand <- sum(dbinom(z.cand, 1, probs, log=TRUE))
+                    # no likelihood contribution
+                    if(runif(1) < exp(prior.cand - prior)) {
+                        Z[,j,k] <- z.cand
+                        Zups <- Zups+1
+                    }
                 }
             }
         }
