@@ -74,10 +74,13 @@ scrQUAD <- function(y, X, M, raster,
         wUps <- 0
         w.cand <- w
         N.cand <- N
+        N.cand[] <- 0
         for(i in 1:M) {
             w.cand[i] <- if(w[i]==0) 1 else 0
             for(k in 1:K) {
-                cells <- cellFromXY(raster, u[,,k] * w.cand)
+                inout <- w.cand
+                inout[w.cand==0] <- -1
+                cells <- cellFromXY(raster, u[,,k] * inout)
                 counts <- table(cells)
                 counts.in <- counts[names(count) %in% rownames(N)]
                 N.cand[names(counts.in),k] <- counts.in
@@ -122,38 +125,42 @@ scrQUAD <- function(y, X, M, raster,
         u.ups <- 0
         u.cand <- u #array(NA, c(M, 2, K))
         N.cand <- N
+        N.cand[] <- 0
         for(i in 1:M) {
             for(k in 1:K) {
                 u.cand[i,,k] <- c(rnorm(1, s[i,1], tune[3]),
                                   rnorm(1, s[i,2], tune[3]))
-                cells <- cellFromXY(raster, u[,,k] * w)
+                inout <- w
+                inout[w==0] <- -1
+                cells <- cellFromXY(raster, u[,,k] * inout)
                 counts <- table(cells)
                 counts.in <- counts[names(count) %in% rownames(N)]
                 N.cand[names(counts.in),k] <- counts.in
-            }
-            ll <- sum(dbinom(y, N, p, log=TRUE))
-            ll.c <- sum(dbinom(y, N.cand, p, log=TRUE))
 
-            priorx <- dnorm(u[i,1,], s[i,1], tau, log=TRUE)
-            priory <- dnorm(u[i,2,], s[i,2], tau, log=TRUE)
-            prior <- sum(priorx + priory)
+                ll <- sum(dbinom(y[,k], N[,k], p, log=TRUE))
+                ll.c <- sum(dbinom(y[,k], N.cand[,k], p, log=TRUE))
 
-            priorx.c <- dnorm(u.cand[i,1,], s[i,1], tau, log=TRUE)
-            priory.c <- dnorm(u.cand[i,2,], s[i,2], tau, log=TRUE)
-            prior.c <- sum(priorx.c + priory.c)
+                priorx <- dnorm(u[i,1,k], s[i,1], tau, log=TRUE)
+                priory <- dnorm(u[i,2,k], s[i,2], tau, log=TRUE)
+                prior <- sum(priorx + priory)
 
-            if(runif(1) < exp((ll.c+prior.c) - (ll + prior))) {
-                u[i,,] <- u.cand[i,,]
-                u.ups <- u.ups+1
-                N <- N.cand
+                priorx.c <- dnorm(u.cand[i,1,k], s[i,1], tau, log=TRUE)
+                priory.c <- dnorm(u.cand[i,2,k], s[i,2], tau, log=TRUE)
+                prior.c <- sum(priorx.c + priory.c)
+
+                if(runif(1) < exp((ll.c+prior.c) - (ll + prior))) {
+                    u[i,,k] <- u.cand[i,,k]
+                    u.ups <- u.ups+1
+                    N[,k] <- N.cand[,k]
+                }
             }
         }
 
         if(iter %% 100 == 0) {
             cat("   Acceptance rates\n")
             cat("     w =", wUps/M, "\n")
-            cat("     Z =", round(Zups/(J*K), 2), "\n")
             cat("     s =", s.ups/M, "\n")
+            cat("     u =", u.ups/(M*K), "\n")
         }
 
         out[iter,] <- c(tau, p, psi, sum(w) )

@@ -65,4 +65,8 @@ n
 source("sampler.R")
 
 
-fm1 <- scrQUAD(n, X, 50, r, 100, xlims, ylims, tune=c())
+fm1 <- scrQUAD(n, X, 50, r, 10000, xlims, ylims, tune=c(0.1, 0.5, 2))
+
+mc1 <- mcmc(fm1)
+plot(mc1)
+rejectionRate(mc1)
