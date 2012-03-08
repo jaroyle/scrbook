@@ -168,15 +168,28 @@ scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
 #                        next
 #                    Z[,j,k] <- zcand
 #                    Zups <- Zups+1
-                    z.cand <- sample(Z[,j,k]) # random permutation
-                    prior <- sum(dbinom(Z[,j,k], 1, probs, log=TRUE))
-                    prior.cand <- sum(dbinom(z.cand, 1, probs, log=TRUE))
-                    # no likelihood contribution
-                    if(runif(1) < exp(prior.cand - prior)) {
-                        Z[,j,k] <- z.cand
-                        Zups <- Zups+1
+
+#                    z.cand <- sample(Z[,j,k]) # random permutation
+                        # alternative: just move one 1
+                        z.cand <- Z[,j,k]
+                        w1 <- w==1
+                        z1w1 <- which(z.cand==1 & w1)
+                        to0 <- sample(z1w1, 1)
+                        z.cand[to0] <- 0
+                        z0w1 <- which(z.cand==0 & w1)
+                        to1 <- sample(z0w1, 1)
+                        if(identical(to0, to1))
+                            next
+                        z.cand[to1] <- 1
+                        prior <- sum(dbinom(Z[,j,k], 1, probs, log=TRUE))
+                        prior.cand <- sum(dbinom(z.cand, 1, probs,
+                                                 log=TRUE))
+                        # no likelihood contribution
+                        if(runif(1) < exp(prior.cand - prior)) {
+                            Z[,j,k] <- z.cand
+                            Zups <- Zups+1
+                        }
                     }
-                }
                 }
             }
         }
