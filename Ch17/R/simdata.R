@@ -1,6 +1,8 @@
 
 # Simulate quadrat count data
 # guys have activity centers and they move
+# Only 2 parameters! tau = scale parameter of bivariate normal move model
+#                      p = detection prob
 
 library(raster)
 
@@ -35,7 +37,7 @@ plot(X, pch="+", xlim=xlims, ylim=ylims, asp=1)
 points(s, pch=16, col=4)
 for(k in 1:K) {
     u[,,k] <- cbind(rnorm(N, s[,1], tau), rnorm(N, s[,2], tau))
-    points(u[,1,k], u[,2,k], pch=16, col=3, cex=0.5)
+    points(u[,,k], pch=16, col=3, cex=0.5)
 }
 
 # tabulate the number of guys in each trap pixel (quadrat)
@@ -45,7 +47,7 @@ rownames(Nj) <- cellFromXY(r, X)
 for(k in 1:K) {
     cells <- cellFromXY(r, u[,,k])
     counts <- table(cells)
-    counts.in <- counts[names(counts) %in% rownames(n)]
+    counts.in <- counts[names(counts) %in% rownames(Nj)]
     Nj[names(counts.in),k] <- counts.in
 }
 
@@ -57,3 +59,10 @@ p <- 0.5
 n <- Nj
 n[] <- rbinom(prod(dim(Nj)), Nj, p)
 n
+
+
+
+source("sampler.R")
+
+
+fm1 <- scrQUAD(n, X, 50, r, 100, xlims, ylims, tune=c())
