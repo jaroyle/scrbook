@@ -82,7 +82,7 @@ rejectionRate(mc2)
 
 # Simulate data using dimensions of parula data
 
-set.seed(3413)
+set.seed(34123)
 N <- 20
 X <- nopaDat$X
 J <- nrow(X)
@@ -121,18 +121,18 @@ summary(window(mc3, start=10001))
 
 
 # Use M-H to update z
-fm4 <- scrUN(n, X, M=40, obsmod="bern", niters=120000,
-    xlims=xlims, ylim=ylims, tune=c(0.03, 0.03, 0.5), zGibbs=FALSE)
+fm4 <- scrUN(n, X, M=40, obsmod="bern", niters=50000,
+    xlims=xlims, ylim=ylims, tune=c(0.03, 0.04, 2), zGibbs=FALSE)
 
 mc4 <- mcmc(fm4)
 plot(mc4)
 rejectionRate(mc4)
-summary(window(mc4, start=3001))
+summary(window(mc4, start=101001))
 
 
 # Use Gibbs to update z (Why doesn't this work?????)
-fm5 <- scrUN(n, X, M=40, obsmod="bern", niters=12000,
-    xlims=xlims, ylim=ylims, tune=c(0.05, 0.06, 1), zGibbs=TRUE)
+fm5 <- scrUN(n, X, M=40, obsmod="bern", niters=150000,
+    xlims=xlims, ylim=ylims, tune=c(0.03, 0.05, 0.6), zGibbs=TRUE)
 
 mc5 <- mcmc(fm5)
 plot(mc5)
