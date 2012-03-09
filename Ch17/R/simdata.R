@@ -15,7 +15,6 @@ r <- raster(xmn=xlims[1], xmx=xlims[2], ymn=ylims[1], ymx=ylims[2])
 res(r) <- c(5,5)
 values(r) <- 1
 r
-plot(r)
 
 
 # Traps
@@ -66,8 +65,14 @@ library(coda)
 source("sampler.R")
 
 
-fm1 <- scrQUAD(n, X, 60, r, 200, xlims, ylims, tune=c(1, 0.1, 2))
+fm1 <- scrQUAD(n, X, 220, r, 2000, xlims, ylims, tune=c(0.07, 0.1, 3, 0.2))
 
 mc1 <- mcmc(fm1)
 plot(mc1)
 rejectionRate(mc1)
+
+
+
+fm1save <- fm1
+
+debugonce(scrQUAD)
