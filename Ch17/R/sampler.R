@@ -19,27 +19,40 @@ scrQUAD <- function(y, X, M, raster,
     N <- matrix(0, nrow(y), ncol(y))
     rownames(N) <- rownames(y) # Important
 
-#    tau <- runif(1, 1, 2)
-    tau <- 2
+    tau <- runif(1, 1, 2)
+#    tau <- 2
+    p <- runif(1, 0.4, 0.8)
 
     # Cheat by using original true s matrix
-    s <- rbind(s, matrix(runif((M-nrow(s))*2, xlims[1], xlims[2]),
-                         M-nrow(s), 2, byrow=TRUE))
+    cheat <- nrow(s)
+    s <- rbind(s, matrix(runif((M-cheat)*2, xlims[1], xlims[2]),
+                         M-cheat, 2, byrow=TRUE))
 #    s <- cbind(runif(M, xlims[1], xlims[2]),
 #               runif(M, ylims[1], ylims[2]))
-    u <- array(NA, c(M, 2, K))
 
     plot(s, xlim=xlims, ylim=ylims, col=4, pch=16)
     points(X, pch="+")
 
     cells <- matrix(NA, M, K)
 
+    # cheat by using original u
+#    u <- array(NA, c(M, 2, K))
+    u2 <- array(NA, c(M, 2, K))
+    u2[1:cheat,,] <- u
+    for(i in (cheat+1):M) {
+        for(k in 1:K) {
+            u2[i,,k] <- rnorm(2, s[i,], tau)
+        }
+    }
+    u <- u2
+
     for(k in 1:K) {
         cat("finding starting values for u[,,", k, "]...\n", sep="")
+        points(u[,,k], cex=0.5, pch=16, col=3)
         while(any(N[,k] < y[,k])) {
             N[,k] <- 0
-            u[,,k] <- cbind(rnorm(M, s[,1], tau), rnorm(M, s[,2], tau))
-            points(u[,,k], cex=0.5, pch=16, col=3)
+#            u[,,k] <- cbind(rnorm(M, s[,1], tau), rnorm(M, s[,2], tau))
+#            points(u[,,k], cex=0.5, pch=16, col=3)
 
             cells[,k] <- cellFromXY(raster, u[,,k])
             cells[,k] <- ifelse(w==1, cells[,k], -1*cells[,k])
@@ -119,13 +132,13 @@ scrQUAD <- function(y, X, M, raster,
         wUps <- 0
         w.cand <- w
         N.cand <- N
-        N.cand[] <- 0
-        cells.cand <- cells
         for(i in 1:M) {
             w.cand[i] <- if(w[i]==0) 1 else 0
             prior <- dbinom(w[i], 1, psi, log=TRUE)
             prior.c <- dbinom(w.cand[i], 1, psi, log=TRUE)
             for(k in 1:K) {
+                N.cand[,k] <- 0
+                cells.cand <- cells
                 cells.cand[i,k] <- cellFromXY(raster, matrix(u[i,,k], 1))
                 if(w.cand[i]==0)
                     cells.cand[i,k] <- cells.cand[i,k] * -1
@@ -178,7 +191,7 @@ scrQUAD <- function(y, X, M, raster,
         u.ups <- 0
         u.cand <- u #array(NA, c(M, 2, K))
         N.cand <- N
-        cells.cand <- cells
+#        cells.cand <- cells
         for(i in 1:M) {
             for(k in 1:K) {
 #                u.cand[i,,k] <- c(rnorm(1, s[i,1], tune[4]),
@@ -211,6 +224,7 @@ scrQUAD <- function(y, X, M, raster,
 #                    inout <- w
 #                    inout[w==0] <- -1
 #                    cells <- cellFromXY(raster, u[,,k] * inout)
+                    cells.cand <- cells
                     cells.cand[i,k] <- cellFromXY(raster,
                                                   matrix(u.cand[i,,k], 1))
                     counts <- table(cells.cand[,k])

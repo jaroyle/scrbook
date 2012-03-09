@@ -65,7 +65,7 @@ library(coda)
 source("sampler.R")
 
 
-fm1 <- scrQUAD(n, X, 220, r, 2000, xlims, ylims, tune=c(0.07, 0.1, 3, 0.2))
+fm1 <- scrQUAD(n, X, 60, r, 2000, xlims, ylims, tune=c(0.07, 0.1, 3, 0.2))
 
 mc1 <- mcmc(fm1)
 plot(mc1)
