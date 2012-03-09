@@ -26,9 +26,9 @@ dim(X)
 
 
 # guys have activity centers (s) and coordinates at time k (u)
-N <- 40
-K <- 5
-tau <- 2
+N <- 60
+K <- 10
+tau <- 1
 s <- cbind(runif(N, xlims[1], ylims[2]), runif(N, ylims[1], ylims[2]))
 u <- array(NA, c(N, 2, K))
 #plot(r)
@@ -57,6 +57,9 @@ Nj
 p <- 0.7
 n <- Nj
 n[] <- rbinom(prod(dim(Nj)), Nj, p)
+table(n)
+sum(n)
+
 n
 
 
@@ -64,8 +67,8 @@ library(coda)
 
 source("sampler.R")
 
-
-fm1 <- scrQUAD(n, X, 60, r, 2000, xlims, ylims, tune=c(0.07, 0.1, 3, 0.2))
+windows()
+fm1 <- scrQUAD(n, X, 100, r, 2000, xlims, ylims, tune=c(0.07, 0.1, 1, 0.5))
 
 mc1 <- mcmc(fm1)
 plot(mc1)
