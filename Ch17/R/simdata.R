@@ -26,8 +26,8 @@ dim(X)
 
 
 # guys have activity centers (s) and coordinates at time k (u)
-N <- 60
-K <- 10
+N <- 50
+K <- 5
 tau <- 1
 s <- cbind(runif(N, xlims[1], ylims[2]), runif(N, ylims[1], ylims[2]))
 u <- array(NA, c(N, 2, K))

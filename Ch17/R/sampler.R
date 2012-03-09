@@ -194,24 +194,24 @@ scrQUAD <- function(y, X, M, raster,
 #        cells.cand <- cells
         for(i in 1:M) {
             for(k in 1:K) {
-#                u.cand[i,,k] <- c(rnorm(1, s[i,1], tune[4]),
-#                                  rnorm(1, s[i,2], tune[4]))
-                u.cand[i,,k] <- c(rnorm(1, s[i,1], tau),
-                                  rnorm(1, s[i,2], tau))
+                u.cand[i,,k] <- c(rnorm(1, s[i,1], tune[4]),
+                                  rnorm(1, s[i,2], tune[4]))
+#                u.cand[i,,k] <- c(rnorm(1, s[i,1], tau),
+#                                  rnorm(1, s[i,2], tau))
 #                cat(" u curr =", u[i,,k], "\n")
 #                cat("  u cand =", u.cand[i,,k], "\n")
 
-                if(w[i]==0) {
-                    u[i,,k] <- u.cand[i,,k]
-                    llu1[i,k] <- dnorm(u.cand[i,1,k], s[i,1], tau,
-                                       log=TRUE)
-                    llu1[i,k] <- dnorm(u.cand[i,2,k], s[i,2], tau,
-                                       log=TRUE)
-                    llu[i,k] <- llu1[i,k] + llu2[i,k]
-#                    cat("    accepted\n")
-                    points(u[i,1,k], u[i,2,k], cex=0.5, col=3)
-                    next
-                } else {
+##                 if(w[i]==0) {
+##                     u[i,,k] <- u.cand[i,,k]
+##                     llu1[i,k] <- dnorm(u.cand[i,1,k], s[i,1], tau,
+##                                        log=TRUE)
+##                     llu1[i,k] <- dnorm(u.cand[i,2,k], s[i,2], tau,
+##                                        log=TRUE)
+##                     llu[i,k] <- llu1[i,k] + llu2[i,k]
+## #                    cat("    accepted\n")
+##                     points(u[i,1,k], u[i,2,k], cex=0.5, col=3)
+##                     next
+##                 } else {
                     # These are the priors
                     # Are they need since u was drawn from prior?
                     llu1.c[i,k] <- dnorm(u.cand[i,1,k], s[i,1], tau,
@@ -250,12 +250,12 @@ scrQUAD <- function(y, X, M, raster,
                         lly[,k] <- lly.c[,k]
                         cells[i,k] <- cells.cand[i,k]
                 points(u[i,1,k], u[i,2,k], cex=0.5, col=3)
-                    }
+#                    }
                 }
             }
         }
 
-        if(iter %% 100 == 0) {
+        if(iter %% 10 == 0) {
             cat("   Acceptance rates\n")
             cat("     w =", wUps/M, "\n")
             cat("     s =", s.ups/M, "\n")
