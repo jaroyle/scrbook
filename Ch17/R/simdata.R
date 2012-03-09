@@ -27,7 +27,7 @@ dim(X)
 
 
 # guys have activity centers (s) and coordinates at time k (u)
-N <- 50
+N <- 40
 K <- 5
 tau <- 2
 s <- cbind(runif(N, xlims[1], ylims[2]), runif(N, ylims[1], ylims[2]))
@@ -55,17 +55,18 @@ Nj
 
 
 # Imperfect detection
-p <- 0.5
+p <- 0.7
 n <- Nj
 n[] <- rbinom(prod(dim(Nj)), Nj, p)
 n
 
 
+library(coda)
 
 source("sampler.R")
 
 
-fm1 <- scrQUAD(n, X, 50, r, 10000, xlims, ylims, tune=c(0.1, 0.5, 2))
+fm1 <- scrQUAD(n, X, 60, r, 200, xlims, ylims, tune=c(1, 0.1, 2))
 
 mc1 <- mcmc(fm1)
 plot(mc1)
