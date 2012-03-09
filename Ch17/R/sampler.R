@@ -4,46 +4,65 @@
 
 
 scrQUAD <- function(y, X, M, raster,
-                  niters, xlims, ylims, tune=c(0.5, 0.1, 2)) {
+                  niters, xlims, ylims, tune=c(0.5, 0.1, 2, 0.2)) {
 
     J <- nrow(y)
     K <- ncol(y)
 
     psi <- runif(1, 0.7, 0.9)
-    w <- rbinom(M, 1, psi)
-    N0 <- sum(w)
-    ymx <- max(y, na.rm=TRUE)
-    if(N0 < ymx) {
-        is0 <- which(w==0)
-        w[sample(is0, ymx-N0)] <- 1
-    }
+#    w <- rbinom(M, 1, psi)
+    w <- rep(0L, M)
+#    w[1:nrow(s)] <- 1
+    w[] <- 1
 
-    N <- y
+#    N <- ifelse(y==0, y, y+2)
+    N <- matrix(0, nrow(y), ncol(y))
+    rownames(N) <- rownames(y) # Important
 
-    tau <- runif(1, 2, 4)
-    s <- cbind(runif(M, xlims[1], xlims[2]),
-               runif(M, ylims[1], ylims[2]))
+#    tau <- runif(1, 1, 2)
+    tau <- 2
+
+    # Cheat by using original true s matrix
+    s <- rbind(s, matrix(runif((M-nrow(s))*2, xlims[1], xlims[2]),
+                         M-nrow(s), 2, byrow=TRUE))
+#    s <- cbind(runif(M, xlims[1], xlims[2]),
+#               runif(M, ylims[1], ylims[2]))
     u <- array(NA, c(M, 2, K))
-    tau <- runif(1, 2, 4)
 
-    plot(s, xlim=xlims, ylim=ylims, col=4)
+    plot(s, xlim=xlims, ylim=ylims, col=4, pch=16)
     points(X, pch="+")
 
+    cells <- matrix(NA, M, K)
+
     for(k in 1:K) {
-        u[,,k] <- cbind(rnorm(M, s[,1], tau), rnorm(M, s[,2], tau))
-    }
-    for(j in 1:J) {
-        dist <- sqrt((s[,1]-X[j,1])^2 + (s[,2]-X[j,2])^2)
-        prob <- exp(-dist^2/exp(2*tau^2)) * w
-        for(k in 1:K) {
-            if(N[j,k]==0)
-                next
-            where <- sample(1:M, N[j,k], prob=prob)
-            u[where,,k] <- X[j,]
+        cat("finding starting values for u[,,", k, "]...\n", sep="")
+        while(any(N[,k] < y[,k])) {
+            N[,k] <- 0
+            u[,,k] <- cbind(rnorm(M, s[,1], tau), rnorm(M, s[,2], tau))
+            points(u[,,k], cex=0.5, pch=16, col=3)
+
+            cells[,k] <- cellFromXY(raster, u[,,k])
+            cells[,k] <- ifelse(w==1, cells[,k], -1*cells[,k])
+
+            counts <- table(cells[,k])
+            counts.in <- counts[names(counts) %in% rownames(N)]
+            N[names(counts.in),k] <- counts.in
         }
     }
+    if(any(N < y))
+        stop("doh")
 
-    points(u, cex=0.4)
+    ## for(j in 1:J) {
+    ##     dist <- sqrt((s[,1]-X[j,1])^2 + (s[,2]-X[j,2])^2)
+    ##     prob <- exp(-dist^2/exp(2*tau^2)) * w
+    ##     for(k in 1:K) {
+    ##         if(N[j,k]==0)
+    ##             next
+    ##         where <- sample(1:M, N[j,k], prob=prob)
+    ##         u[where,,k] <- X[j,]
+    ##     }
+    ## }
+
 
     llu <- llu.c <- llu1 <- llu2 <- llu1.c <- llu2.c <- matrix(NA, M, K)
     lly <- lly.c <- matrix(NA, J, K)
@@ -101,23 +120,27 @@ scrQUAD <- function(y, X, M, raster,
         w.cand <- w
         N.cand <- N
         N.cand[] <- 0
+        cells.cand <- cells
         for(i in 1:M) {
             w.cand[i] <- if(w[i]==0) 1 else 0
-            for(k in 1:K) {
-                inout <- w.cand
-                inout[w.cand==0] <- -1 # force these guy out of box
-                cells <- cellFromXY(raster, u[,,k] * inout)
-                counts <- table(cells)
-                counts.in <- counts[names(count) %in% rownames(N)]
-                N.cand[names(counts.in),k] <- counts.in
-            }
-            lly.c[] <- dbinom(y, N.cand, p, log=TRUE)
             prior <- dbinom(w[i], 1, psi, log=TRUE)
             prior.c <- dbinom(w.cand[i], 1, psi, log=TRUE)
+            for(k in 1:K) {
+                cells.cand[i,k] <- cellFromXY(raster, matrix(u[i,,k], 1))
+                if(w.cand[i]==0)
+                    cells.cand[i,k] <- cells.cand[i,k] * -1
+                counts <- table(cells.cand[,k])
+                counts.in <- counts[names(counts) %in% rownames(N)]
+                N.cand[names(counts.in),k] <- counts.in
+            }
+            if(any(N.cand < y))
+                next
+            lly.c[] <- dbinom(y, N.cand, p, log=TRUE)
             if(runif(1) < exp((sum(lly.c)+prior.c) - (sum(lly)+prior))) {
                 w[i] <- w.cand[i]
                 N <- N.cand
                 lly <- lly.c
+                cells[i,] <- cells.cand[i,]
                 wUps <- wUps+1
             }
         }
@@ -149,16 +172,22 @@ scrQUAD <- function(y, X, M, raster,
             }
         }
 
+        points(s, cex=0.5, col=4)
+
         # update u
         u.ups <- 0
         u.cand <- u #array(NA, c(M, 2, K))
         N.cand <- N
+        cells.cand <- cells
         for(i in 1:M) {
             for(k in 1:K) {
-#                u.cand[i,,k] <- c(rnorm(1, s[i,1], tune[3]),
-#                                  rnorm(1, s[i,2], tune[3]))
+#                u.cand[i,,k] <- c(rnorm(1, s[i,1], tune[4]),
+#                                  rnorm(1, s[i,2], tune[4]))
                 u.cand[i,,k] <- c(rnorm(1, s[i,1], tau),
                                   rnorm(1, s[i,2], tau))
+#                cat(" u curr =", u[i,,k], "\n")
+#                cat("  u cand =", u.cand[i,,k], "\n")
+
                 if(w[i]==0) {
                     u[i,,k] <- u.cand[i,,k]
                     llu1[i,k] <- dnorm(u.cand[i,1,k], s[i,1], tau,
@@ -166,36 +195,48 @@ scrQUAD <- function(y, X, M, raster,
                     llu1[i,k] <- dnorm(u.cand[i,2,k], s[i,2], tau,
                                        log=TRUE)
                     llu[i,k] <- llu1[i,k] + llu2[i,k]
+#                    cat("    accepted\n")
+                    points(u[i,1,k], u[i,2,k], cex=0.5, col=3)
                     next
                 } else {
-                    N.cand[,k] <- 0
-                    inout <- w
-                    inout[w==0] <- -1
-                    cells <- cellFromXY(raster, u[,,k] * inout)
-                    counts <- table(cells)
-                    counts.in <- counts[names(count) %in% rownames(N)]
-                    N.cand[names(counts.in),k] <- counts.in
-                    lly.c[,k] <- dbinom(y[,k], N.cand[,k], p, log=TRUE)
-
-
                     # These are the priors
+                    # Are they need since u was drawn from prior?
                     llu1.c[i,k] <- dnorm(u.cand[i,1,k], s[i,1], tau,
                                          log=TRUE)
                     llu1.c[i,k] <- dnorm(u.cand[i,2,k], s[i,2], tau,
                                          log=TRUE)
                     llu.c[i,k] <- llu1.c[i,k] + llu2.c[i,k]
 
+                    N.cand[,k] <- 0
+#                    inout <- w
+#                    inout[w==0] <- -1
+#                    cells <- cellFromXY(raster, u[,,k] * inout)
+                    cells.cand[i,k] <- cellFromXY(raster,
+                                                  matrix(u.cand[i,,k], 1))
+                    counts <- table(cells.cand[,k])
+                    counts.in <- counts[names(counts) %in% rownames(N)]
+                    N.cand[names(counts.in),k] <- counts.in
+                    if(any(N.cand[,k] < y[,k]))
+                        next
+
+                    lly.c[,k] <- dbinom(y[,k], N.cand[,k], p, log=TRUE)
+
+
                     if(runif(1) < exp((sum(lly.c[,k]) + llu.c[i,k]) -
                                       (sum(lly[,k]) + llu[i,k]))) {
                         u[i,,k] <- u.cand[i,,k]
+#                        cat("    accepted\n")
                         u.ups <- u.ups+1
+                        if(any(N.cand[,k] < y[,k]))
+                            stop("N.cand[,k] < n[,k]")
                         N[,k] <- N.cand[,k]
                         llu1[,k] <- llu1.c[,k]
                         llu2[i,k] <- llu2.c[i,k]
                         llu[i,k] <- llu.c[i,k]
                         lly[,k] <- lly.c[,k]
+                        cells[i,k] <- cells.cand[i,k]
+                points(u[i,1,k], u[i,2,k], cex=0.5, col=3)
                     }
-                    points(u[i,,k], cex=0.4)
                 }
             }
         }
