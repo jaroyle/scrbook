@@ -83,6 +83,8 @@ spatial.plot(grid2,probcap[1,])
 ###
 ### Set one of the cost functions -- either covariate.trend or covariate.patchy
 ###
+theta1<- 1/(2*.2*.2)
+theta2<-.5
 cost<- exp(theta2*covariate.patchy)
 #values(r)<-matrix(cost,20,20,byrow=FALSE)
 r<-cost
@@ -97,18 +99,22 @@ probcap<-plogis(theta0)*exp(-theta1*outD*outD)
 ### activity centers selected arbitrarily. You can plot this for any hypothetical
 ### individual if you wish
 ###png("home_ranges.png",width=5,height=8, units="in", res=400)
-par(mfrow=c(3,2),mar=c(2,2,2,2))
+#par(mfrow=c(3,2),mar=c(2,2,2,2))
+par(mfrow=c(2,2),mar=c(2,2,2,2))
+
 #spatial.plot(grid2,probcap[63,])
 #spatial.plot(grid2,probcap[76,])
+
 values(r)<-matrix(probcap[63,],20,20,byrow=FALSE)
 image(r,col=terrain.colors(10),axes=FALSE)
 points(matrix(grid[63,],nrow=1),pch=20,cex=2)
+
 values(r)<-matrix(probcap[76,],20,20,byrow=FALSE)
 #plot(r,axes=FALSE)
 image(r,col=terrain.colors(10),axes=FALSE)
 points(matrix(grid[76,],nrow=1),pch=20,cex=2)
 
-
+if(1==2){
 #spatial.plot(grid2,probcap[183,])
 #spatial.plot(grid2,probcap[196,])
 #spatial.plot(grid2,probcap[363,])
@@ -120,6 +126,7 @@ points(matrix(grid[183,],nrow=1),pch=20,cex=2)
 values(r)<-matrix(probcap[196,],20,20,byrow=FALSE)
 image(r,col=terrain.colors(10),axes=FALSE)
 points(matrix(grid[196,],nrow=1),pch=20,cex=2)
+}
 
 values(r)<-matrix(probcap[363,],20,20,byrow=FALSE)
 image(r,col=terrain.colors(10),axes=FALSE)
@@ -129,7 +136,20 @@ values(r)<-matrix(probcap[376,],20,20,byrow=FALSE)
 image(r,col=terrain.colors(10),axes=FALSE)
 points(matrix(grid[376,],nrow=1),pch=20,cex=2)
 
-#####dev.off()
+png("home_rangesv2.png",width=6,height=5, units="in", res=400)
+
+par(mfrow=c(1,1),mar=c(2,2,2,6))
+values(r)<-matrix(probcap[63,]+probcap[76,]+probcap[363,]+probcap[376,],20,20,byrow=FALSE)
+image(r,col=terrain.colors(10),axes=FALSE)
+image.scale(as.matrix(r),col=terrain.colors(10))
+points(matrix(grid[63,],nrow=1),pch=20,cex=2)
+points(matrix(grid[76,],nrow=1),pch=20,cex=2)
+points(matrix(grid[363,],nrow=1),pch=20,cex=2)
+points(matrix(grid[376,],nrow=1),pch=20,cex=2)
+
+
+
+dev.off()
 
 
 
