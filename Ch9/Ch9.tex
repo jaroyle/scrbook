@@ -1,15 +1,18 @@
 \chapter{
-Modeling Covariate Effects in SCR Models
+Modeling Encounter Probability
+%%%%Modeling Covariate Effects in SCR Models
 }
-\markboth{Model Assessment}{}
-\label{chapt.gof}
+\markboth{Encounter probability}{}
+\label{chapt.covariates}
 
 \vspace{.3in}
 
 \section{Introduction}
 
 In previous chapters we showed how to fit basic spatial capture-recapture models using Bayesian analysis (in WinBUGS; chapter 4) or by classical likelihood methods (Chapter 5). These basic models involved only constant parameter values that did not vary in response to covariates of any type.  However, in practice, investigators are invariably concerned with explicit factors or covariates that might influence variation in parameters. Traditionally, in the non-spatial capture recaptures literature, such models were called as ``model $M_t$'', ``model $M_h$'', or ``model $M_b$'', identifying models that account for variation in detection probability as a function of time, ``individual heterogeneity'' or ``behavior'', where behavior often describes whether or not an individual had been previously captured.   
+
 Until this point, we have covered how to use only the basic model in various software packages and the suite of possible encounter models (e.g., the Binomial, Poisson, and Multinomial encounter models) for dealing with different types of sampling.  However, we have not considered different detection functions or covariates that my affect the parameters of the detection function, including those that may arise from the individual or the trap device.  In general, we can consider that most detection functions include a baseline encounter rate termed $\lambda_0$ (or $g_0$ for the detection probability when we use a logit link for the detection function) and a shape parameter termed $\sigma$, which takes on different interpretations depending on the selected function.  For example, the most commonly used detection functions are also those used in the distance sampling literature: the half-normal, the hazard, and the negative exponential.  The R package secr allows the user to access 12 different detection models, of which some are only used for simulating data (see Table 1).   These detection functions can be also be coded in R, BUGS, jags, etc.   We will quickly demonstrate how to model different detection functions, but then will focus on the fitting covariates to the baseline encounter rate and the shape parameter of half-normal detection function.  Such covariates include time (e.g., day of year, or season), behavior (e.g., has the individual been previously captured), sex of the individual, and trap type (e.g., various camera types, or different constructions for hair snares). 
+
 In this chapter, we describe extensions of SCR models to accommodate many different kinds of covariates. We focus on the Binomial encounter model used in chapter 4 and 5 and the half-normal detection function, but the extension to other encounter and detection models is straightforward.  Specifically, we consider three distinct types of covariates - those which are fixed, partially observed or completely unobserved (latent).  Fixed covariates are those that are fully observed; for example, the date of all sampling occasions.  Partially observed covariates are those which are not known for all observations; for example, the sex of an individual cannot always be determined from photos taken during camera trapping.  Even if we are able to observe the sex of all individuals sampled, we cannot know it for those individuals never observed during the study.  And finally, unobserved covariates are those which we cannot observe at all, for example, the home range size of individuals, or unstructured random ``individual effects''. 
 
 
@@ -21,6 +24,7 @@ Another type of covariate is a covariate that varies spatially across the landsc
 We will see that models containing all of these different types of covariates are relatively easy to describe in the BUGS language, and therefore to analyze using Bayesian analysis of the joint likelihood based on data augmentation thus providing a coherent and flexible framework for inference for all classes of SCR models.   Throughout the chapter, we will continue to develop an analysis of the black bear study introduced in Chapter 3, using the bugs language.  We also consider likelihood analysis of many of these models, to do so, we will demonstrate the use of the R package 'secr' and how to do model comparison with AIC.  
 
 Before we  describe the types of covariates and demonstrate how to implement them, a brief note about the different inference approaches. In taking a Bayesian approach to analysis of covariate models, inference is always based on analysis of the ``joint likelihood'' based on data augmentation. That is, the conditional-on-N likelihood, with N removed by integration (as described in chapter 3 somewhere where we introduced data augmentation). However, likelihood analysis based on the conditional likelihood is often done in practice and, in particular, in the secr() package.  A variant of the conditional likelihood which is kind of distinct and relevant to the individual covariates is the ``Huggins-Alho'' idea which is based on thinking about Horwitz-Thompson estimators involving unequal probabilities of sampling.  This is not a very coherent approach in the sense that analysis of the joint likelihood is fully general and requires no modification to the manner in which the estimator is constructured. Conversely, different estimators are employed in secr() depending on which type of model is being considered. For latent covariates like finite-mixtures, you have a different estimator than if sex is the covariate (for which there are 2 or 3 estimators) and the basic null model is based on the plain old conditional estimator which integrates $s[i]$ from the likelihood. \footnote{ I'm bullshitting here but this is a point that we need to make somehow and I will come back to it after you finish this chapter.}
+
 
 \section{Detection Functions}
 
@@ -58,35 +62,90 @@ $\alpha_1$, we can basically create any distance function for the
 data.  It is important to note that sigma is not comparable under
 these different distance functions for detection.  Additionally, the
 relationship between sigma and home range radius does not have
-precision definition under alternative distance functions.  We demonstrate how to fit different distance functions under the Bayesian and likelihood sections below.
+precision definition under alternative distance functions.  We
+demonstrate how to fit different distance functions under the Bayesian
+and likelihood sections below.
 
 
 \section{Types of Covariates}
 
 
-Broadly speaking, we recognize (here) 2 types of covariates: Fixed covariates which are observable and might vary by trap alone (e.g., type of trap, baited or not, disturbance regime, even habitat), sample occasion (e.g., day of season or weather conditions), or both (e.g., behavior, weather - if over a large region).  The other class of covariates are those which vary at the level of the individual (and possibly also over time).   As a technical matter, these are different than fixed covariates because we cannot see all of the individuals and the covariates are almost always incompletely observed (if at all).  The lone exception is the behavioral response which is known for all individuals, captured or not.  We noted in other chapters that space itself (i.e., the activity centers) is a type of individual covariate. We do not get to observe the activity center for any individuals, but for individuals that are encountered we get to observe some information about it in the form of which traps the individual was encountered in.
+Broadly speaking, we recognize (here) 2 types of covariates: Fixed
+covariates which are observable and might vary by trap alone (e.g.,
+type of trap, baited or not, disturbance regime, even habitat), sample
+occasion (e.g., day of season or weather conditions), or both (e.g.,
+behavior, weather - if over a large region).  The other class of
+covariates are those which vary at the level of the individual (and
+possibly also over time).  As a technical matter, these are different
+than fixed covariates because we cannot see all of the individuals and
+the covariates are almost always incompletely observed (if at all).
+The lone exception is the behavioral response which is known for all
+individuals, captured or not.  We noted in other chapters that space
+itself (i.e., the activity centers) is a type of individual
+covariate. We do not get to observe the activity center for any
+individuals, but for individuals that are encountered we get to
+observe some information about it in the form of which traps the
+individual was encountered in.
 
-To begin, we will again assume a standard sampling design in which an array of $J$ traps is operated for $K$ time periods, which produces encounter histories for $n$ individuals.  For the basic model, there are no time-varying covariates that influence encounter, there are no explicit individual-specific covariates, and there are no covariates that influence density. 
-For fixed effects, those which we observe fully, we can easily incorporate these into the encounter probability model, just as we would do in any standard GLM or GLMM. For example,
-	\[
-                    logit(p[i,j,k]) = \alpha_0 + \alpha_1*||s[i]-x[j]|| + \alpha_2*C[i,j,k][**]
-        \]            
-where $\alpha_2$ is a vector of coefficients and C is an array of covariates.  How we define these covariates (e.g., trap specific versus individual specific) will influence exactly how we include them in the model.  For example, the dimensions of C will be defined by individual, trap, or both.  We can also extend this to include session specific covariates such as time of day or season by incorporating the session $k$ information.
+To begin, we will again assume a standard sampling design in which an
+array of $J$ traps is operated for $K$ time periods, which produces
+encounter histories for $n$ individuals.  For the basic model, there
+are no time-varying covariates that influence encounter, there are no
+explicit individual-specific covariates, and there are no covariates
+that influence density.  For fixed effects, those which we observe
+fully, we can easily incorporate these into the encounter probability
+model, just as we would do in any standard GLM or GLMM. For example,
+\[
+logit(p[i,j,k]) = \alpha_0 + \alpha_1*||s[i]-x[j]|| +
+\alpha_2*C[i,j,k][**]
+\]
+where $\alpha_2$ is a vector of coefficients and C is an array of
+covariates.  How we define these covariates (e.g., trap specific
+versus individual specific) will influence exactly how we include them
+in the model.  For example, the dimensions of C will be defined by
+individual, trap, or both.  We can also extend this to include session
+specific covariates such as time of day or season by incorporating the
+session $k$ information.
 
 
 \subsection{Date and Time}
 
-We might be interested in the effect of date on the detection probability, for example in a long term hair snare study, we may expect that seasonal shedding will influence our detection probabilities.   Or we may expect reproductive behaviors to influence the detection of certain species at certain times of year.   There are a number of ways to incorporate such information into the model; here we will describe two that seem most common.  The first is to allow detection probability to be different for each date, but not to be a parametric function of data.   In this case, we allow each sampling occasion, k, to have its own baseline detection probability, $\alpha_0$.  
+We might be interested in the effect of date on the detection
+probability, for example in a long term hair snare study, we may
+expect that seasonal shedding will influence our detection
+probabilities.  Or we may expect reproductive behaviors to influence
+the detection of certain species at certain times of year.  There are
+a number of ways to incorporate such information into the model; here
+we will describe two that seem most common.  The first is to allow
+detection probability to be different for each date, but not to be a
+parametric function of data.  In this case, we allow each sampling
+occasion, k, to have its own baseline detection probability,
+$\alpha_0$.
 \[
 logit(p0[k]) = \alpha_0[k]			
 \]
-Thus, $p[i,j,k] = p0[k]*exp(- \alpha_1*||s[i]-x[j]||^z)$	
-This delineation of $\alpha_0[k]$ will return $k$ baseline detection probabilities.  Thus, if we had 4 sampling occasions, we will have 4 different baseline detection probabilities.  This is useful specification in situations where we have just a few sampling occasions or we do not expect a pattern in the timing of the occasions.  
+Thus, $p[i,j,k] = p0[k]*exp(- \alpha_1*||s[i]-x[j]||^z)$ This
+delineation of $\alpha_0[k]$ will return $k$ baseline detection
+probabilities.  Thus, if we had 4 sampling occasions, we will have 4
+different baseline detection probabilities.  This is useful
+specification in situations where we have just a few sampling
+occasions or we do not expect a pattern in the timing of the
+occasions.
 
-However, in many cases, we might expect the date to be important for a variety of reasons.  For example, if we have camera traps running for an entire year and we expect mating behavior or denning behavior to change the patterns of individuals, then we might want to incorporate date as a linear or quadratic effect.  This is the reason that \citet{kery_etal:2011} incorporated a day of year covariate into their model of European wildcats; the data had been collected over a year long period and cat behavior was expected to vary seasonally thus influencing the detection probabilities.  In these cases, we would specifically incorporate day of year (Date) as a continuous covariate as:
+However, in many cases, we might expect the date to be important for a
+variety of reasons.  For example, if we have camera traps running for
+an entire year and we expect mating behavior or denning behavior to
+change the patterns of individuals, then we might want to incorporate
+date as a linear or quadratic effect.  This is the reason that
+\citet{kery_etal:2011} incorporated a day of year covariate into their
+model of European wildcats; the data had been collected over a year
+long period and cat behavior was expected to vary seasonally thus
+influencing the detection probabilities.  In these cases, we would
+specifically incorporate day of year (Date) as a continuous covariate
+as:
 \[
  	logit(p[i,j,k]) = \alpha_0 + \alpha_1*||s[i]-x[j]|| + \alpha_2*Date[k]  
-                   	\]
+\]
 It is easy to see that we could model the quadratic effect of day of years as:
 \[
            logit(p[i,j,k]) = \alpha_0 + \alpha_1*||s[i]-x[j]|| + \alpha_2*Date[k] + \alpha_3*Date^2[k]   [**]
@@ -100,10 +159,16 @@ detection probability including if the trap is baited or not, if trap
 type varies (e.g., different camera models are used in a camera
 trapping study), or because of the habitat type (e.g., if the trap is
 located on a road/trail).  For example, \citet{sollmann_etal:2011} found a large difference in the detection probability due to traps being located on roads which the animals were using to travel along as opposed to traps placed off roads.  In each of these cases, the trap type is a binary or categorical variable - on/off road, baited/non-baited, and camera model.   We write this such that:  
-                              \[
-                                  logit(p[i,j,k]) = alpha[type[j]] + \alpha_1*||s[i]-x[j]||                          [**]
-                                  \]
-Here, we use an indicator variable, ``type'', that will be a numeric value for the trap-specific covariate.  Thus for our example of on/off road, we would have $type[j] = 1$ if trap j is on a road and $type[j] = 2$ otherwise.  This general set up allows for multiple categories, say if 3 or 4 different camera models were used.  
+\[
+                                  logit(p[i,j,k]) = alpha[type[j]] +
+                                  \alpha_1*||s[i]-x[j]||
+                                  [**]
+\]
+Here, we use an indicator variable, ``type'', that will be a numeric
+value for the trap-specific covariate.  Thus for our example of on/off
+road, we would have $type[j] = 1$ if trap j is on a road and $type[j]
+= 2$ otherwise.  This general set up allows for multiple categories,
+say if 3 or 4 different camera models were used.
 
 
 \subsection{Behavior or Trap Response by Individual}
@@ -117,15 +182,24 @@ more. On the other hand, if being captured is traumatic then an
 individual might learn to avoid traps. Both of these types of
 responses can occur in most species depending on the type of encounter
 mechanisms being employed. Moreover, behavioral response can be either
-global \citep{gardner_etal:2010} or local \citep{royle_etal:2009} XXX wolverine paper? XXX).  The local response is a trap-specific response which likely makes more sense in most spatial situations. A global response suggests that initial capture provides a net increase or decrease (across all traps). 
+global \citep{gardner_etal:2010} or local \citep{royle_etal:2009jwm}.
+The local response is a trap-specific response which likely makes more
+sense in most spatial situations. A global response suggests that
+initial capture provides a net increase or decrease (across all
+traps).
 
-To describe such models we can create a binary matrix that indicates if an individual has been captured previously.  For the global behavioral response, define the $nind x k$ matrix, C where $C_i,k =1$ means that individual $i$ was captured at least once prior to session $k$, otherwise C = 0.  
-
-        \[
+To describe such models we can create a binary matrix that indicates
+if an individual has been captured previously.  For the global
+behavioral response, define the $nind x k$ matrix, C where $C_i,k =1$
+means that individual $i$ was captured at least once prior to session
+$k$, otherwise C = 0.
+\[
 	logit(p[i,j,k]) = alpha + \alpha_1 *||s[i]-x[j]|| + \alpha_2*C_i,k	[**]
-        \]
-
-For the local behavioral response, which is trap specific, we create an array, $C_i,j,k$, that indicates if an individual $i$ has been previously captured in trap $j$ at time $k$.  We then include this in the model in the exact same form as above:
+\]
+For the local behavioral response, which is trap specific, we create
+an array, $C_i,j,k$, that indicates if an individual $i$ has been
+previously captured in trap $j$ at time $k$.  We then include this in
+the model in the exact same form as above:
 
        \[
 	logit(p[i,j,k]) = \alpha + \alpha_1*||s[i]-x[j]|| + \alpha_2*C_i,j,k	[**]
