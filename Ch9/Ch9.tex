@@ -9,7 +9,18 @@ Modeling Encounter Probability
 
 \section{Introduction}
 
-In previous chapters we showed how to fit basic spatial capture-recapture models using Bayesian analysis (in WinBUGS; chapter 4) or by classical likelihood methods (Chapter 5). These basic models involved only constant parameter values that did not vary in response to covariates of any type.  However, in practice, investigators are invariably concerned with explicit factors or covariates that might influence variation in parameters. Traditionally, in the non-spatial capture recaptures literature, such models were called as ``model $M_t$'', ``model $M_h$'', or ``model $M_b$'', identifying models that account for variation in detection probability as a function of time, ``individual heterogeneity'' or ``behavior'', where behavior often describes whether or not an individual had been previously captured.   
+In previous chapters we showed how to fit basic spatial capture-recapture 
+models using Bayesian analysis (in {\bf WinBUGS}; Chapt. \ref{chapt.scr0}) 
+or by classical  likelihood methods (Chapt. \ref{chapt.mle}). 
+These basic models involved only constant parameter values that did not 
+vary in response to covariates of any type.  However, in practice, 
+investigators are invariably concerned with explicit factors or covariates 
+that might influence variation in parameters. Traditionally, in the 
+non-spatial capture recaptures literature, such models were called as 
+``model $M_t$'', ``model $M_h$'', or ``model $M_b$'', identifying models 
+that account for variation in detection probability as a function of 
+time, ``individual heterogeneity'' or ``behavior'', where behavior often 
+describes whether or not an individual had been previously captured.   
 
 Until this point, we have covered how to use only the basic model in various software packages and the suite of possible encounter models (e.g., the Binomial, Poisson, and Multinomial encounter models) for dealing with different types of sampling.  However, we have not considered different detection functions or covariates that my affect the parameters of the detection function, including those that may arise from the individual or the trap device.  In general, we can consider that most detection functions include a baseline encounter rate termed $\lambda_0$ (or $g_0$ for the detection probability when we use a logit link for the detection function) and a shape parameter termed $\sigma$, which takes on different interpretations depending on the selected function.  For example, the most commonly used detection functions are also those used in the distance sampling literature: the half-normal, the hazard, and the negative exponential.  The R package secr allows the user to access 12 different detection models, of which some are only used for simulating data (see Table 1).   These detection functions can be also be coded in R, BUGS, jags, etc.   We will quickly demonstrate how to model different detection functions, but then will focus on the fitting covariates to the baseline encounter rate and the shape parameter of half-normal detection function.  Such covariates include time (e.g., day of year, or season), behavior (e.g., has the individual been previously captured), sex of the individual, and trap type (e.g., various camera types, or different constructions for hair snares). 
 
@@ -67,7 +78,7 @@ demonstrate how to fit different distance functions under the Bayesian
 and likelihood sections below.
 
 
-\section{Types of Covariates}
+\section{Covariate Models}
 
 
 Broadly speaking, we recognize (here) 2 types of covariates: Fixed
@@ -86,6 +97,9 @@ covariate. We do not get to observe the activity center for any
 individuals, but for individuals that are encountered we get to
 observe some information about it in the form of which traps the
 individual was encountered in.
+
+\section{Models with Fixed Covariates}
+
 
 To begin, we will again assume a standard sampling design in which an
 array of $J$ traps is operated for $K$ time periods, which produces
@@ -171,6 +185,7 @@ road, we would have $type[j] = 1$ if trap j is on a road and $type[j]
 say if 3 or 4 different camera models were used.
 
 
+
 \subsection{Behavior or Trap Response by Individual}
 
 One of the most basic of encounter models is that which accommodates a
@@ -204,6 +219,10 @@ the model in the exact same form as above:
        \[
 	logit(p[i,j,k]) = \alpha + \alpha_1*||s[i]-x[j]|| + \alpha_2*C_i,j,k	[**]
         \]
+
+
+
+\section{Individual Effects}
 
 
 \subsection{Sex}
@@ -362,9 +381,9 @@ better).
 
 Here, we see that density is estimated at 0.17 and is effectively the
 same as under the half-normal distance function model above.  In this
-case with the exponential distance function, \sigma is defined
+case with the exponential distance function, $\sigma$ is defined
 differently, so here we see the posterior mean estimate of sigma is
-1.14 (0.95, 1.32), which is entirely distinct from our estimate of \sigma under the half normal model.  This highlights that it is important for the user to know what distance function is used and what the interpretation of sigma might be.  There is not a clear way (that we know of) for sigma from the exponential model to be related to home range radius.   
+1.14 (0.95, 1.32), which is entirely distinct from our estimate of $\sigma$ under the half normal model.  This highlights that it is important for the user to know what distance function is used and what the interpretation of sigma might be.  There is not a clear way (that we know of) for sigma from the exponential model to be related to home range radius.   
 
 We leave the detection functions for now and move onto incorporating covariates into the model using the BUGS language.  For this part, we will stick with the half-normal distance model shown in the SCR0.txt model file above. 
 
@@ -597,9 +616,9 @@ Density is estimated similar to the half-normal, although the mean estimate is s
 
 \begin{comment} BETH: Put this table up in Section 1? \end{comment}
 
+\begin{verbatim}
 Table 1: Distance functions fit by secr.  (Table taken from the secr
 help files).
-
 
 Code Name Parameters Function 
 0  halfnormal g0, sigma g(d) = g0 * exp{--d^2 / (2 sigma^2) } 
@@ -614,7 +633,7 @@ Code Name Parameters Function
 9 binary signal strength b0, b1 g(d) = 1 -- F {-- (b0 + b1 * d) } 
 10signal strength beta0, beta1, sdS g(d) = 1 -- F[ {c -- (beta0 + beta1 * d)} / sdS] 
 11signal strength spherical beta0, beta1, sdS g(d) = 1 -- F[{c -- (beta0 + beta1 * (d--1) -- 10 * log10 ( d^2 ) ) } / sdS ]
-
+\end{verbatim}
 
 
 \subsection{Time}
@@ -871,7 +890,7 @@ heterogeneity).
 This model is a model of heterogeneity in home range area. For example if we assume that $\beta_{i} \sim \mbox{Normal}(\beta_0,\tau^{2})$ with $\beta_{0} = 2$ and $\tau = 0.50$. Then the population distribution of $\sigma$ in this case is given in Figure \ref{fig.one}. The motivating point of this model is that  we expect such variability in natural populations. Thus we suggest this biologically sensible model of heterogeneity, which fills a methodological gap in the literature in the sense that SCR models have all been homogeneous with respect to their explicit treatment of home range morphology.
 
 \begin{figure}[ht]
-\centerline{\psfig{figure=fig1.ps,height=4in,width=4in}}
+%%\centerline{\psfig{figure=fig1.ps,height=4in,width=4in}}
 \caption{
 Population distribution of $\sigma$ if $(1/\sigma^{2}) \sim \mbox{Normal}(2, 0.50)$.
 }
