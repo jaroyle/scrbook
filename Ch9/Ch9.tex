@@ -595,4 +595,235 @@ $(t1)$.   We can back calculate each of the values using:
 .
 \end{verbatim}
 
-These results suggest the same as we saw in section 8.3.1, that there are differences in detection by time.  Interestingly, the estimate of density remains similar to our basic model with D = 0.167 individuals / $km ^2$.   One might have expected the density to change given how small the baseline detection probability was in the first session.  However, the increased detection in other time periods clearly balances that initial low detection probability.
+These results suggest the same as we saw in section 8.3.1, that there
+are differences in detection by time.  Interestingly, the estimate of
+density remains similar to our basic model with D = 0.167 individuals
+/ $km ^2$.   One might have expected the density to change given how
+small the baseline detection probability was in the first session.
+However, the increased detection in other time periods clearly
+balances that initial low detection probability.
+
+\subsection{Behavior}
+
+The secr package allows one to incorporate a simple trap response rather easily.  Not without reorganizing our data, we can just take the basic model and change the model call to:
+
+\begin{verbatim}
+bearb=secr.fit (bearcapt, model = list(D~1, g0~b, sigma~1), buffer = 20000)
+
+secr.fit( capthist = bearcapt, model = list(g0 ~ b), buffer = 20000 )
+secr 2.0.0, 18:39:38 14 Jul 2011
+
+[secr data and model summary output deleted ]
+
+Beta parameters (coefficients) 
+              beta    SE.beta        lcl       ucl
+D        -6.063824 0.20998468 -6.4753866 -5.652262
+g0       -2.962320 0.30193079 -3.5540936 -2.370547
+g0.bTRUE  1.069292 0.30169340  0.4779839  1.660600
+sigma     7.580269 0.06276493  7.4572522  7.703286
+
+Variance-covariance matrix of beta parameters 
+                    D           g0      g0.bTRUE         sigma
+D         0.044093568 -0.038995412  0.0406985508 -0.0024012404
+g0       -0.038995412  0.091162203 -0.0788400314 -0.0054049828
+g0.bTRUE  0.040698551 -0.078840031  0.0910189076 -0.0006804517
+sigma    -0.002401240 -0.005404983 -0.0006804517  0.0039394367
+
+Fitted (real) parameters evaluated at base levels of covariates 
+       link     estimate  SE.estimate          lcl          ucl
+D       log 2.325491e-03 4.937501e-04 1.540903e-03 3.509570e-03
+g0    logit 4.915745e-02 1.411255e-02 2.781168e-02 8.544641e-02
+sigma   log 1.959156e+03 1.230875e+02 1.732381e+03 2.215617e+03
+\end{verbatim}
+
+Again, secr does not provide the ``fitted'' value for the detection probability of individuals that were not observed.  Here the baseline detection probability is 0.049 and for those individuals that have been previously captured, we see it is:
+\begin{verbatim}
+> plogis(-2.962+1.069)
+[1] 0.1309028
+
+\end{verbatim}
+
+This is almost 3 times greater than the detection of those individuals
+not previously captured.  It is also clear, as we saw before, that the
+density increases over the model with no behavioral effect ($0.23
+bears/km2$ versus $0.16 bears/km2$ in the SCR0 model).  Thus as we can
+see, it is very easy to incorporate a trap response; however, to
+incorporate a trap specific behavioral response (as in \citet{royle_etal:2009}) is not so straight forward.  ***B - figure this out**.
+
+Behavioral and time effects can be both incorporated by writing the standard linear regression type code within the model call:
+\[
+bearbt=secr.fit (bearcapt, model = list(D~1, g0~b + t, sigma~1), buffer = 20000)
+\]
+
+
+
+\subsection{Sex}
+
+Incorporating sex into secr can be done a few different ways, but none
+of these allow us to include partial observability.   Individuals that
+are of unknown sex must be removed from the dataset, which is
+different from the winbugs approach.  The most common way to include
+sex is to code it into ``session'', providing two sessions that
+represent males and females.  This is specified using the model list
+within secr.fit command as show below.
+\begin{verbatim}
+
+bearraw$Sex<-bearsex$Sex[pmatch(bearraw$Ind, bearsex$Bear, duplicates.ok=T)]
+bearraw$Session<-as.numeric(bearraw$Sex)
+
+captfile <- bearraw[ , c(6,1,3,2)] 
+colnames(captfile) <- c("Session", "ID", "Occasion", "trapID")
+
+bearcapt=make.capthist(captfile, trapfile, fmt = "trapID", noccasions = 8)
+
+bearsex=secr.fit (bearcapt, model = list(D~session, g0~session, sigma~session), buffer = 20000)
+
+Fitted (real) parameters evaluated at base levels of covariates 
+
+ session = 1 
+       link     estimate  SE.estimate          lcl          ucl
+D       log 1.192961e-03 2.400004e-04 8.073782e-04 1.762689e-03
+g0    logit 1.352143e-01 2.504984e-02 9.317268e-02 1.922053e-01
+sigma   log 1.513867e+03 1.276755e+02 1.283591e+03 1.785454e+03
+
+ session = 2 
+       link     estimate  SE.estimate          lcl          ucl
+D       log 5.376811e-04 1.081709e-04 3.638945e-04 7.944638e-04
+g0    logit 9.248494e-02 1.798037e-02 6.276472e-02 1.342622e-01
+sigma   log 2.522380e+03 2.127309e+02 2.138699e+03 2.974894e+03
+
+\end{verbatim}
+
+As you can see in the output, this provides two separate density estimates, which must then be combined into a total density.  The resulting estimates for sigma are on par with those from WinBUGS provided in section 8.XX.  
+
+Remarks:   1) We show only 1 way in which sex can be incorporated in secr, however, there are at least two other ways that one could specify the model (M. Efford, pers. comm).  One way is that we could list sex as a categorical individual covariate and then maximize the conditional likelihood.  The second way is that we could specify the model as $model = list(D~g, g0~g, \sigma~g)$ and list groups = 'sex' where we have specified sex as a 2-level individual covariate.   There is an issue with the AIC values for models with and without groups that has not been resolved so the reader should be cautious when using this latter option (M. Efford, pers. comm).  ***I'm not trusting the AIC for the sex model as session either*** 
+
+\subsection{Individual heterogeneity}
+
+Additionally, in secr,  individual heterogeneity can be incorporated
+into the detection parameters as either a 2-part or 3-part finite
+mixture model with the use of ``h2'' or ``h3'', respectively, in the
+model call.    This allows secr to assume that the population is
+comprised of 2 or more latent classes, with an unknown proportion in
+each class.  We discuss heterogeneity in more detail in the next
+section but provide just the basic model for secr here.  To fit a
+2-part finite mixture for baseline detection we use the following
+command call:''
+
+\begin{verbatim} 
+bearhh=secr.fit (bearcapt, model = list(g0~h2), buffer = 20000)
+\end{verbatim} 
+
+Remarks:  1) It is important to note that this specification of
+individual heterogeneity is different from that which we incorporate
+into WinBUGS.  Here, a finite mixture model is used, which effectively
+puts the individuals into one of two (or three) latent classes and
+then assigns each class a distribution for the specified detection
+parameter.  2) Incorporating 3 latent classes is as easy as using h3
+instead of h2.  For homework, the reader should incorporate
+heterogeneity in sigma and using 2 and 3 classes.   Take note of any
+warning messages or errors.
+
+\subsection{Model selection in secr with AIC}
+
+One practical advantage to using the secr package or likelihood
+inference in general is the convenience of model selection via AIC.
+After running our models above with various attributes (e.g., time,
+trap response), we can then use the AIC call to return the AIC values,
+delta AIC, and model weights.
+
+\begin{verbatim}
+
+AIC(bear, bearb, beart, bearbt, bearh)
+
+                           model   detectfn npar    logLik      AIC     AICc  dAICc AICwt
+bearh  D~1 g0~h2 sigma~1 pmix~h2 halfnormal    5 -570.4348 1150.870 1152.333  0.000     1
+bearb           D~1 g0~b sigma~1 halfnormal    4 -578.5361 1165.072 1166.025 13.692     0
+bearbt      D~1 g0~b + t sigma~1 halfnormal   11 -569.2231 1160.446 1167.989 15.656     0
+beart           D~1 g0~t sigma~1 halfnormal   10 -575.3320 1170.664 1176.775 24.442     0
+bear            D~1 g0~1 sigma~1 halfnormal    3 -587.1641 1180.328 1180.886 28.553     0
+\end{verbatim}
+
+The results from this AIC test are pretty easy to interpret; the model
+with individual heterogeneity model as a finite mixture for $g0$ has all
+the model weight.  Using the AIC provides a convenient mechanism for
+conducting model comparisons.  However, the user must be left a little
+frustrated with these results, which indicated that individuals have
+some unknown source of heterogeneity which we have not identified
+using time and behavior.  Naturally, since we found that the model
+with the most weight has two latent classes, we might try to explain
+this unknown heterogeneity by classifying the groups into sex. 
+
+\section{Individual heterogeneity.}
+
+Capture-recapture models with individual heterogeneity in detection probability have a long history in classical capture recapture models (see chapter 3.4). Also, their use has been called into question by \citet{link:2003} who noted that N may not be identifiable across arbitrary classes of mixture models.   One possible way to get around this problem is to identify explicit sources of heterogeneity in detection probability and model those directly. For example, we can do this by using individual covariate models (e.g., chapter 3).  Of course, spatial capture-recapture models are such a class of models which seek to explain heterogeneity in detection by describing the underlying mechanism explicitly. In particular, that mechanism is  the juxtaposition of individuals with traps and the resulting heterogeneity that is induced by heterogeneity in exposure to trapping.
+
+Model Mh has special historical relevance in the context of spatial capture-recapture models as we noted in chapter 3.4. Historically people have used Model Mh to get an estimate of N, thereby accounting for a vague sort of heterogeneity. Then they would buffer the trap array and convert Nhat under model Mh to a density estimate.   Formal developments in SCR models have rendered this technology obsolete - we can model space explicitly.  Despite this, it might still be desirable to accommodate individual heterogeneity of one form or another. In fact, in the context of SCR models a certain kind of heterogeneity makes eminent biological sense. 
+
+As we have stressed throughout this book, a fairly broad class of SCR models has a convenient representation as a generalized linear mixed model (GLMM) with ``s'' as an individual random effect \citep{royle_etal:2009}.  In particular, if the encounter rate of individuals in traps is Poisson with rate $lam0*g(x,s)$ where $g(x,s)$ is a bivariate normal density, then the SCR models are individual covariate models with:
+\[  
+ cloglog(p[i,j]) = \alpha + \alpha_1*||s_{i} - x_{j}||^2 
+\]
+where $\beta = (1/\sigma^{2})$.  We could as well use a logit link here which is customary in many contexts.  This GLM formulation reveals the essential connection of such models with other individual effects models including individual covariate models as well as heterogeneity models.
+
+In all applications of such models that we are aware of the scale parameter has been constant or a function of explicit covariates (e.g., sex; \citet{gardner_etal:2010}). Conversely, it is reasonable to expect in real biological populations that there exists heterogeneity in home range size.
+  
+Here we develop and evaluate a new class of spatial capture-recapture models which allow for individual heterogeneity in encounter probability.  In particular, one class of models we propose explicitly admits individual heterogeneity in home range {\it   size}. In addition, we consider a standard representation for heterogeneity in which an additive individual-specific random effect is included in the linear predictor for encounter probability.
+We evaluate the following questions concerning heterogeneity models: First, we evaluate the influence of ``variable home range area'' heterogeneity on estimates of density obtained under the misspecified model that does not contain such heterogeneity.  Second, we evaluate how much data is needed to fit the model with heterogeneous home range area using a limited simulation study -- limited because of
+computational considerations.  Most studies yield sparse data and it is clear that the SCR+Ah model requires sufficient spatial recaptures of individuals to gauge home range size.  Thirdly, we want to evaluate the extent to which Model SCR+Mh in some form or another yields a good approximation to heterogeneity in encounter probability that is due to heterogeneity in home range size.
+
+\subsection{Models of Heterogeneity}
+
+An obvious model extends the SCR model by including an additive individual effect, analogous to classical ``Model $M_{h}$''. We'll call this model ``SCR+Mh'': 
+\[  
+ cloglog(p) = \alpha + \beta*d(i,j)^2  + \eta_{i}
+\]
+where $\eta_{i}$ is an individual random effect having distribution
+$g(\eta|\theta)$.  A popular class of models arises by assuming
+$\eta_{i} \sim Normal(0,\tau^{2})$ (\citet{coull_agresti:1999};
+\citet{dorazio_royle:2003}; etc..).  Many other random effects
+distributions are possible. \citet{norris_pollock:1996} propose a
+finite mixture of point supports which has been addressed considerably
+in the literature \citep{pledger:2003; dorazio_royle:2003; link:2003}.  Our view is that such models are not very realistic, yet data hugry as they require many more parameters. Heterogeneity seems naturally continuous unless one expects the heterogeneity to be due to meaningful biological groupings in which case such information would normally be collected if possible.  Even so the more likely scenario is that heterogeneity is due to a lot of different sources contributing independent components of variation, and so the normal model seems sensible in that regard. We note that Efford (XXX) considered a finite-mixture type of representation for SCR models. These are fit in the R package secr() which we do in section XYZ below. 
+
+{\bf Heterogeneity Induced by Variation in Home Range Size} -- We suggest an alternative heterogeneity model, one that has more of a direct biological motivation and interpretation. Specifically , we suppose that there exists heterogeneity in home range size among individuals. This is manifest in the scale parameter of the detection function $\sigma^{2}$ or its inverse $\beta = 1/\sigma^{2}$. We might
+thus assume a distribution for either $\sigma^{2}$ or its inverse,
+$\beta$.  We thus propose ``Model SCR + Ah'' (Ah for area-induced
+heterogeneity).
+
+\[
+ cloglog(p) = \alpha + \beta_{i}*d(i,j)^2 
+\]  
+This model is a model of heterogeneity in home range area. For example if we assume that $\beta_{i} \sim \mbox{Normal}(\beta_0,\tau^{2})$ with $\beta_{0} = 2$ and $\tau = 0.50$. Then the population distribution of $\sigma$ in this case is given in Figure \ref{fig.one}. The motivating point of this model is that  we expect such variability in natural populations. Thus we suggest this biologically sensible model of heterogeneity, which fills a methodological gap in the literature in the sense that SCR models have all been homogeneous with respect to their explicit treatment of home range morphology.
+
+\begin{figure}[ht]
+\centerline{\psfig{figure=fig1.ps,height=4in,width=4in}}
+\caption{
+Population distribution of $\sigma$ if $(1/\sigma^{2}) \sim \mbox{Normal}(2, 0.50)$.
+}
+\label{fig.one}
+\end{figure}
+
+Interesting point: $\beta_{i}$ might have an Inverse-Gamma
+distribution so we need to parameterize the IG in terms of mean and
+variance.... but this is not conjugate in the present context and so
+there is no compelling reason to do that. Instead, we use a normal
+prior ..... Note: negative values are bad, but not nonsensical.
+
+One idea that needs to be explicit is that if A[i] is the home range area of individual i, which is the following function of sigma[i] ,  then we should be able to go back and forth between distributions for A[i], sigma[i], and beta[i]. Note I did all of this stuff long ago but will never find those notes, ever!
+
+
+{\bf Approximation: }
+Note that ``SCR + Mh'' might be a good approximation to ``SCR + Ah''.  If we write $beta_{i} =
+beta_{0} + \eta_{i}$ then
+we can take the expectation over  $\beta_{i}$ to arrive at 
+\[ 
+ cloglog(p_{ij} ) = \alpha + \beta_{0}*d(i,j)^2 +  \eta_{i}*d(I,j)^2
+\]
+Which has this additive individual effect that varies also by trap. It might be that approximating
+This by SCR+Mh is better than nothing.
+This could also be viewed as suggesting an over-dispersed count model for encounter frequencies.  
+  
+\subsection{Doing it in WinBUGS}
+Here we will simulate some data and fit SCR, SCR + Mh, SCR + Ah
+
