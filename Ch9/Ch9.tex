@@ -1,5 +1,5 @@
 \chapter{
-Model Selection and Checking 
+Modeling Covariate Effects in SCR Models
 }
 \markboth{Model Assessment}{}
 \label{chapt.gof}
@@ -8,3 +8,77 @@ Model Selection and Checking
 
 \section{Introduction}
 
+In previous chapters we showed how to fit basic spatial capture-recapture models using Bayesian analysis (in WinBUGS; chapter 4) or by classical likelihood methods (Chapter 5). These basic models involved only constant parameter values that did not vary in response to covariates of any type.  However, in practice, investigators are invariably concerned with explicit factors or covariates that might influence variation in parameters. Traditionally, in the non-spatial capture recaptures literature, such models were called as ``model $M_t$'', ``model $M_h$'', or ``model $M_b$'', identifying models that account for variation in detection probability as a function of time, ``individual heterogeneity'' or ``behavior'', where behavior often describes whether or not an individual had been previously captured.   
+Until this point, we have covered how to use only the basic model in various software packages and the suite of possible encounter models (e.g., the Binomial, Poisson, and Multinomial encounter models) for dealing with different types of sampling.  However, we have not considered different detection functions or covariates that my affect the parameters of the detection function, including those that may arise from the individual or the trap device.  In general, we can consider that most detection functions include a baseline encounter rate termed $\lambda_0$ (or $g_0$ for the detection probability when we use a logit link for the detection function) and a shape parameter termed $\sigma$, which takes on different interpretations depending on the selected function.  For example, the most commonly used detection functions are also those used in the distance sampling literature: the half-normal, the hazard, and the negative exponential.  The R package secr allows the user to access 12 different detection models, of which some are only used for simulating data (see Table 1).   These detection functions can be also be coded in R, BUGS, jags, etc.   We will quickly demonstrate how to model different detection functions, but then will focus on the fitting covariates to the baseline encounter rate and the shape parameter of half-normal detection function.  Such covariates include time (e.g., day of year, or season), behavior (e.g., has the individual been previously captured), sex of the individual, and trap type (e.g., various camera types, or different constructions for hair snares). 
+In this chapter, we describe extensions of SCR models to accommodate many different kinds of covariates. We focus on the Binomial encounter model used in chapter 4 and 5 and the half-normal detection function, but the extension to other encounter and detection models is straightforward.  Specifically, we consider three distinct types of covariates - those which are fixed, partially observed or completely unobserved (latent).  Fixed covariates are those that are fully observed; for example, the date of all sampling occasions.  Partially observed covariates are those which are not known for all observations; for example, the sex of an individual cannot always be determined from photos taken during camera trapping.  Even if we are able to observe the sex of all individuals sampled, we cannot know it for those individuals never observed during the study.  And finally, unobserved covariates are those which we cannot observe at all, for example, the home range size of individuals, or unstructured random ``individual effects''. 
+
+
+\footnote{Andy you put this here but I'm not sure about
+  it. What do you think?} 
+
+Another type of covariate is a covariate that varies spatially across the landscape and we know it for every ``pixel''. Such covariates might affect density. (but they could also affect encounter probability). We consider these covariates in the next chapter?  One interesting thing is that you might imagine that such covariates are incompletely observed and so a 2nd stage model is needed to describe variation across the landscape, at unobserved locations, since the activity centers would be defined conditional on that covariate. 
+
+We will see that models containing all of these different types of covariates are relatively easy to describe in the BUGS language, and therefore to analyze using Bayesian analysis of the joint likelihood based on data augmentation thus providing a coherent and flexible framework for inference for all classes of SCR models.   Throughout the chapter, we will continue to develop an analysis of the black bear study introduced in Chapter 3, using the bugs language.  We also consider likelihood analysis of many of these models, to do so, we will demonstrate the use of the R package 'secr' and how to do model comparison with AIC.  
+
+Before we  describe the types of covariates and demonstrate how to implement them, a brief note about the different inference approaches. In taking a Bayesian approach to analysis of covariate models, inference is always based on analysis of the ``joint likelihood'' based on data augmentation. That is, the conditional-on-N likelihood, with N removed by integration (as described in chapter 3 somewhere where we introduced data augmentation). However, likelihood analysis based on the conditional likelihood is often done in practice and, in particular, in the secr() package.  A variant of the conditional likelihood which is kind of distinct and relevant to the individual covariates is the ``Huggins-Alho'' idea which is based on thinking about Horwitz-Thompson estimators involving unequal probabilities of sampling.  This is not a very coherent approach in the sense that analysis of the joint likelihood is fully general and requires no modification to the manner in which the estimator is constructured. Conversely, different estimators are employed in secr() depending on which type of model is being considered. For latent covariates like finite-mixtures, you have a different estimator than if sex is the covariate (for which there are 2 or 3 estimators) and the basic null model is based on the plain old conditional estimator which integrates $s[i]$ from the likelihood. \footnote{ I'm bullshitting here but this is a point that we need to make somehow and I will come back to it after you finish this chapter.}
+
+\section{Detection Functions}
+
+Before we model covariates on the detection function parameters, we will briefly discuss a few of the common detection functions.  In Chapter 4, we presented the basic capture recapture model with a rather generic detection function using ``alpha1'' as the shape parameter on distance.   Considering the binomial encounter model, we can specify the model according to:
+\begin{equation}
+	\mbox{logit}(p_{ij}) = \alpha_{0} + \alpha_1 ||{\bf s}_{i}-{\bf x}_{j} ||
+\label{scr0.eq.logit}
+\end{equation}
+where, $||{\bf s}_{i}-{\bf x}_{j}||$ is the distance between ${\bf s}_{i}$ and ${\bf x}_{j}$. 
+
+We can also consider writing the detection function such that it more closely resembles the standard distance sampling functions with a half-normal model of the form:
+\[
+p_{ij} = p_{0}*\exp(-\alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||^2)
+\]
+
+where we can then describe $\alpha_1$ as a function of $\sigma$ such that
+\[
+\alpha_{1} = 1/(2*\sigma^2)
+\]
+
+If we wanted to use an exponential distance function instead of the half-normal, we can rewrite the detection function as
+
+\[
+p_{ij} = p_{0}*\exp(-\alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||)
+\]
+
+and modify the definition of $\alpha_1$ to just be the inverse of $\sigma$
+
+\[
+\alpha_{1} = 1/(\sigma)
+\]
+
+By changing the detection function and the specification of
+$\alpha_1$, we can basically create any distance function for the
+data.  It is important to note that sigma is not comparable under
+these different distance functions for detection.  Additionally, the
+relationship between sigma and home range radius does not have
+precision definition under alternative distance functions.  We demonstrate how to fit different distance functions under the Bayesian and likelihood sections below.
+
+
+\section{Types of Covariates}
+
+
+Broadly speaking, we recognize (here) 2 types of covariates: Fixed covariates which are observable and might vary by trap alone (e.g., type of trap, baited or not, disturbance regime, even habitat), sample occasion (e.g., day of season or weather conditions), or both (e.g., behavior, weather - if over a large region).  The other class of covariates are those which vary at the level of the individual (and possibly also over time).   As a technical matter, these are different than fixed covariates because we cannot see all of the individuals and the covariates are almost always incompletely observed (if at all).  The lone exception is the behavioral response which is known for all individuals, captured or not.  We noted in other chapters that space itself (i.e., the activity centers) is a type of individual covariate. We do not get to observe the activity center for any individuals, but for individuals that are encountered we get to observe some information about it in the form of which traps the individual was encountered in.
+
+To begin, we will again assume a standard sampling design in which an array of $J$ traps is operated for $K$ time periods, which produces encounter histories for $n$ individuals.  For the basic model, there are no time-varying covariates that influence encounter, there are no explicit individual-specific covariates, and there are no covariates that influence density. 
+For fixed effects, those which we observe fully, we can easily incorporate these into the encounter probability model, just as we would do in any standard GLM or GLMM. For example,
+	\[
+                    logit(p[i,j,k]) = \alpha_0 + \alpha_1*||s[i]-x[j]|| + \alpha_2*C[i,j,k][**]
+        \]            
+where $\alpha_2$ is a vector of coefficients and C is an array of covariates.  How we define these covariates (e.g., trap specific versus individual specific) will influence exactly how we include them in the model.  For example, the dimensions of C will be defined by individual, trap, or both.  We can also extend this to include session specific covariates such as time of day or season by incorporating the session $k$ information.
+
+
+\subsection{Date and Time}
+
+We might be interested in the effect of date on the detection probability, for example in a long term hair snare study, we may expect that seasonal shedding will influence our detection probabilities.   Or we may expect reproductive behaviors to influence the detection of certain species at certain times of year.   There are a number of ways to incorporate such information into the model; here we will describe two that seem most common.  The first is to allow detection probability to be different for each date, but not to be a parametric function of data.   In this case, we allow each sampling occasion, k, to have its own baseline detection probability, $\alpha_0$.  
+\[
+logit(p0[k]) = \alpha_0[k]			
+\]
+Thus, $p[i,j,k] = p0[k]*exp(- \alpha_1*||s[i]-x[j]||^z)$	
+This delineation of $\alpha_0[k]$ will return $k$ baseline detection probabilities.  Thus, if we had 4 sampling occasions, we will have 4 different baseline detection probabilities.  This is useful specification in situations where we have just a few sampling occasions or we do not expect a pattern in the timing of the occasions.  
