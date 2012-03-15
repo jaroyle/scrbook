@@ -9,32 +9,113 @@ Modeling Encounter Probability
 
 \section{Introduction}
 
-In previous chapters we showed how to fit basic spatial capture-recapture 
-models using Bayesian analysis (in {\bf WinBUGS}; Chapt. \ref{chapt.scr0}) 
-or by classical  likelihood methods (Chapt. \ref{chapt.mle}). 
-These basic models involved only constant parameter values that did not 
-vary in response to covariates of any type.  However, in practice, 
-investigators are invariably concerned with explicit factors or covariates 
-that might influence variation in parameters. Traditionally, in the 
-non-spatial capture recaptures literature, such models were called as 
-``model $M_t$'', ``model $M_h$'', or ``model $M_b$'', identifying models 
-that account for variation in detection probability as a function of 
-time, ``individual heterogeneity'' or ``behavior'', where behavior often 
-describes whether or not an individual had been previously captured.   
+In previous chapters we showed how to fit basic spatial
+capture-recapture models using Bayesian analysis (in {\bf WinBUGS};
+Chapt. \ref{chapt.scr0}) or by classical likelihood methods
+(Chapt. \ref{chapt.mle}).  These basic models involved only constant
+parameter values that did not vary in response to covariates of any
+type.  However, in practice, investigators are invariably concerned
+with explicit factors or covariates that might influence variation in
+parameters. Traditionally, in the non-spatial capture recaptures
+literature, such models were called as ``model $M_t$'', ``model
+$M_h$'', or ``model $M_b$'', identifying models that account for
+variation in detection probability as a function of time, ``individual
+heterogeneity'' or ``behavior'', where behavior often describes
+whether or not an individual had been previously captured.  In SCR
+models, more complex covariate models are possible because we might
+also have trap-specific covariates.
 
-Until this point, we have covered how to use only the basic model in various software packages and the suite of possible encounter models (e.g., the Binomial, Poisson, and Multinomial encounter models) for dealing with different types of sampling.  However, we have not considered different detection functions or covariates that my affect the parameters of the detection function, including those that may arise from the individual or the trap device.  In general, we can consider that most detection functions include a baseline encounter rate termed $\lambda_0$ (or $g_0$ for the detection probability when we use a logit link for the detection function) and a shape parameter termed $\sigma$, which takes on different interpretations depending on the selected function.  For example, the most commonly used detection functions are also those used in the distance sampling literature: the half-normal, the hazard, and the negative exponential.  The R package secr allows the user to access 12 different detection models, of which some are only used for simulating data (see Table 1).   These detection functions can be also be coded in R, BUGS, jags, etc.   We will quickly demonstrate how to model different detection functions, but then will focus on the fitting covariates to the baseline encounter rate and the shape parameter of half-normal detection function.  Such covariates include time (e.g., day of year, or season), behavior (e.g., has the individual been previously captured), sex of the individual, and trap type (e.g., various camera types, or different constructions for hair snares). 
+Until this point, we have covered how to use only the basic model in
+various software packages and the suite of possible encounter models
+(e.g., the Binomial, Poisson, and Multinomial encounter models) for
+dealing with different types of sampling.  However, we have not
+considered different detection functions or covariates that my affect
+the parameters of the detection function, including those that may
+arise from the individual or the trap device.  In general, we can
+consider that most detection functions include a baseline encounter
+rate termed $\lambda_0$ (or $g_0$ for the detection probability when
+we use a logit link for the detection function) and a shape parameter
+termed $\sigma$, which takes on different interpretations depending on
+the selected function.  For example, the most commonly used detection
+functions are also those used in the distance sampling literature: the
+half-normal, the hazard, and the negative exponential.  The R package
+secr allows the user to access 12 different detection models, of which
+some are only used for simulating data (see Table 1).  These detection
+functions can be also be coded in R, BUGS, jags, etc.  We will quickly
+demonstrate how to model different detection functions, but then will
+focus on the fitting covariates to the baseline encounter rate and the
+shape parameter of half-normal detection function.  Such covariates
+include time (e.g., day of year, or season), behavior (e.g., has the
+individual been previously captured), sex of the individual, and trap
+type (e.g., various camera types, or different constructions for hair
+snares).
 
-In this chapter, we describe extensions of SCR models to accommodate many different kinds of covariates. We focus on the Binomial encounter model used in chapter 4 and 5 and the half-normal detection function, but the extension to other encounter and detection models is straightforward.  Specifically, we consider three distinct types of covariates - those which are fixed, partially observed or completely unobserved (latent).  Fixed covariates are those that are fully observed; for example, the date of all sampling occasions.  Partially observed covariates are those which are not known for all observations; for example, the sex of an individual cannot always be determined from photos taken during camera trapping.  Even if we are able to observe the sex of all individuals sampled, we cannot know it for those individuals never observed during the study.  And finally, unobserved covariates are those which we cannot observe at all, for example, the home range size of individuals, or unstructured random ``individual effects''. 
+In this chapter, we describe extensions of SCR models to accommodate
+many different kinds of covariates. We focus on the Binomial encounter
+model used in chapter 4 and 5 and the half-normal detection function,
+but the extension to other encounter and detection models is
+straightforward.  Specifically, we consider three distinct types of
+covariates - those which are fixed, partially observed or completely
+unobserved (latent).  Fixed covariates are those that are fully
+observed; for example, the date of all sampling occasions.  Partially
+observed covariates are those which are not known for all
+observations; for example, the sex of an individual cannot always be
+determined from photos taken during camera trapping.  Even if we are
+able to observe the sex of all individuals sampled, we cannot know it
+for those individuals never observed during the study.  And finally,
+unobserved covariates are those which we cannot observe at all, for
+example, the home range size of individuals, or unstructured random
+``individual effects''.
 
 
 \footnote{Andy you put this here but I'm not sure about
   it. What do you think?} 
 
-Another type of covariate is a covariate that varies spatially across the landscape and we know it for every ``pixel''. Such covariates might affect density. (but they could also affect encounter probability). We consider these covariates in the next chapter?  One interesting thing is that you might imagine that such covariates are incompletely observed and so a 2nd stage model is needed to describe variation across the landscape, at unobserved locations, since the activity centers would be defined conditional on that covariate. 
+Another type of covariate is a covariate that varies spatially across
+the landscape and we know it for every ``pixel''. Such covariates
+might affect density. (but they could also affect encounter
+probability). We consider these covariates in the next chapter?  One
+interesting thing is that you might imagine that such covariates are
+incompletely observed and so a 2nd stage model is needed to describe
+variation across the landscape, at unobserved locations, since the
+activity centers would be defined conditional on that covariate.
 
-We will see that models containing all of these different types of covariates are relatively easy to describe in the BUGS language, and therefore to analyze using Bayesian analysis of the joint likelihood based on data augmentation thus providing a coherent and flexible framework for inference for all classes of SCR models.   Throughout the chapter, we will continue to develop an analysis of the black bear study introduced in Chapter 3, using the bugs language.  We also consider likelihood analysis of many of these models, to do so, we will demonstrate the use of the R package 'secr' and how to do model comparison with AIC.  
+Also distance covariates....
 
-Before we  describe the types of covariates and demonstrate how to implement them, a brief note about the different inference approaches. In taking a Bayesian approach to analysis of covariate models, inference is always based on analysis of the ``joint likelihood'' based on data augmentation. That is, the conditional-on-N likelihood, with N removed by integration (as described in chapter 3 somewhere where we introduced data augmentation). However, likelihood analysis based on the conditional likelihood is often done in practice and, in particular, in the secr() package.  A variant of the conditional likelihood which is kind of distinct and relevant to the individual covariates is the ``Huggins-Alho'' idea which is based on thinking about Horwitz-Thompson estimators involving unequal probabilities of sampling.  This is not a very coherent approach in the sense that analysis of the joint likelihood is fully general and requires no modification to the manner in which the estimator is constructured. Conversely, different estimators are employed in secr() depending on which type of model is being considered. For latent covariates like finite-mixtures, you have a different estimator than if sex is the covariate (for which there are 2 or 3 estimators) and the basic null model is based on the plain old conditional estimator which integrates $s[i]$ from the likelihood. \footnote{ I'm bullshitting here but this is a point that we need to make somehow and I will come back to it after you finish this chapter.}
+We will see that models containing all of these different types of
+covariates are relatively easy to describe in the BUGS language, and
+therefore to analyze using Bayesian analysis of the joint likelihood
+based on data augmentation thus providing a coherent and flexible
+framework for inference for all classes of SCR models.  Throughout the
+chapter, we will continue to develop an analysis of the black bear
+study introduced in Chapter 3, using the bugs language.  We also
+consider likelihood analysis of many of these models, to do so, we
+will demonstrate the use of the R package 'secr' and how to do model
+comparison with AIC.
+
+Before we describe the types of covariates and demonstrate how to
+implement them, a brief note about the different inference approaches.
+In taking a Bayesian approach to analysis of covariate models,
+inference is always based on analysis of the ``joint likelihood''
+based on data augmentation. That is, the conditional-on-N likelihood,
+with N removed by integration (as described in chapter 3 somewhere
+where we introduced data augmentation). However, likelihood analysis
+based on the conditional likelihood is often done in practice and, in
+particular, in the secr() package.  A variant of the conditional
+likelihood which is kind of distinct and relevant to the individual
+covariates is the ``Huggins-Alho'' idea which is based on thinking
+about Horwitz-Thompson estimators involving unequal probabilities of
+sampling.  This is not a very coherent approach in the sense that
+analysis of the joint likelihood is fully general and requires no
+modification to the manner in which the estimator is
+constructured. Conversely, different estimators are employed in secr()
+depending on which type of model is being considered.  For latent
+covariates like finite-mixtures, you have a different estimator than
+if sex is the covariate (for which there are 2 or 3 estimators) and
+the basic null model is based on the plain old conditional estimator
+which integrates $s[i]$ from the likelihood.  \footnote{ I'm
+  bullshitting here but this is a point that we need to make somehow
+  and I will come back to it after you finish this chapter.}
 
 
 \section{Detection Functions}
