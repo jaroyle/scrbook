@@ -6,13 +6,14 @@ Modeling Encounter Probability
 \label{chapt.covariates}
 
 \vspace{.3in}
-dddd
+
 \section{Introduction}
 
 In previous chapters we showed how to fit basic spatial
-capture-recapture models using Bayesian analysis (in {\bf WinBUGS};
+capture-recapture models using Bayesian analysis (in {\bf WinBUGS} or
+{\bf JAGS};
 Chapt. \ref{chapt.scr0}) or by classical likelihood methods
-(Chapt. \ref{chapt.mle}).  These basic models involved only constant
+(Chapt. \ref{chapt.mle} or using \mbox{\tt secr}).  These basic models involved only constant
 parameter values that did not vary in response to covariates of any
 type.  However, in practice, investigators are invariably concerned
 with explicit factors or covariates that might influence variation in
@@ -23,7 +24,8 @@ variation in detection probability as a function of time, ``individual
 heterogeneity'' or ``behavior'', where behavior often describes
 whether or not an individual had been previously captured.  In SCR
 models, more complex covariate models are possible because we might
-also have trap-specific covariates.
+also have trap-specific covariates, or covariates that vary spatially
+over the landscape.
 
 Until this point, we have covered how to use only the basic model in
 various software packages and the suite of possible encounter models
@@ -31,26 +33,21 @@ various software packages and the suite of possible encounter models
 dealing with different types of sampling.  However, we have not
 considered different detection functions or covariates that my affect
 the parameters of the detection function, including those that may
-arise from the individual or the trap device.  In general, we can
-consider that most detection functions include a baseline encounter
+arise from the individual or the trap device.  
+Most detection functions include a baseline encounter
 rate termed $\lambda_0$ (or $g_0$ for the detection probability when
 we use a logit link for the detection function) and a shape parameter
-termed $\sigma$, which takes on different interpretations depending on
-the selected function.  For example, the most commonly used detection
-functions are also those used in the distance sampling literature: the
-half-normal, the hazard, and the negative exponential.  The R package
-secr allows the user to access 12 different detection models, of which
-some are only used for simulating data (see Table 1).  These detection
-functions can be also be coded in R, BUGS, jags, etc.  We will quickly
-demonstrate how to model different detection functions, but then will
-focus on the fitting covariates to the baseline encounter rate and the
-shape parameter of half-normal detection function.  Such covariates
+labeled $\sigma$, which takes on different interpretations depending on
+the selected function.  
+
+ Such covariates
 include time (e.g., day of year, or season), behavior (e.g., has the
 individual been previously captured), sex of the individual, and trap
 type (e.g., various camera types, or different constructions for hair
 snares).
 
-In this chapter, we describe extensions of SCR models to accommodate
+In this chapter, we  generalize the encounter probability
+model to accommodate both alternative encounter models and also 
 many different kinds of covariates. We focus on the Binomial encounter
 model used in chapter 4 and 5 and the half-normal detection function,
 but the extension to other encounter and detection models is
@@ -68,20 +65,6 @@ example, the home range size of individuals, or unstructured random
 ``individual effects''.
 
 
-\footnote{Andy you put this here but I'm not sure about
-  it. What do you think?} 
-
-Another type of covariate is a covariate that varies spatially across
-the landscape and we know it for every ``pixel''. Such covariates
-might affect density. (but they could also affect encounter
-probability). We consider these covariates in the next chapter?  One
-interesting thing is that you might imagine that such covariates are
-incompletely observed and so a 2nd stage model is needed to describe
-variation across the landscape, at unobserved locations, since the
-activity centers would be defined conditional on that covariate.
-
-Also distance covariates....
-
 We will see that models containing all of these different types of
 covariates are relatively easy to describe in the BUGS language, and
 therefore to analyze using Bayesian analysis of the joint likelihood
@@ -92,62 +75,53 @@ study introduced in Chapter 3, using the bugs language.  We also
 consider likelihood analysis of many of these models, to do so, we
 will demonstrate the use of the R package 'secr' and how to do model
 comparison with AIC.
-
-Before we describe the types of covariates and demonstrate how to
-implement them, a brief note about the different inference approaches.
-In taking a Bayesian approach to analysis of covariate models,
-inference is always based on analysis of the ``joint likelihood''
-based on data augmentation. That is, the conditional-on-N likelihood,
-with N removed by integration (as described in chapter 3 somewhere
-where we introduced data augmentation). However, likelihood analysis
-based on the conditional likelihood is often done in practice and, in
-particular, in the secr() package.  A variant of the conditional
-likelihood which is kind of distinct and relevant to the individual
-covariates is the ``Huggins-Alho'' idea which is based on thinking
-about Horwitz-Thompson estimators involving unequal probabilities of
-sampling.  This is not a very coherent approach in the sense that
-analysis of the joint likelihood is fully general and requires no
-modification to the manner in which the estimator is
-constructured. Conversely, different estimators are employed in secr()
-depending on which type of model is being considered.  For latent
-covariates like finite-mixtures, you have a different estimator than
-if sex is the covariate (for which there are 2 or 3 estimators) and
-the basic null model is based on the plain old conditional estimator
-which integrates $s[i]$ from the likelihood.  \footnote{ I'm
-  bullshitting here but this is a point that we need to make somehow
-  and I will come back to it after you finish this chapter.}
+There are other types of covariates that we do {\it not} cover in this
+chapter. For example, there are covariates that vary across the 
+landscape, and these covariates 
+might affect density, and we consider this in
+Chapt. \ref{chapt.state-space}.
+Alternatively, these covariates might affect the way individuals use
+space. We consider developing more realistic models of encounter
+probability in which covariates affect space usage through  the distance
+function in Chapt. \ref{chapt.ecoldist}.
 
 
 \section{Detection Functions}
 
-Before we model covariates on the detection function parameters, we will briefly discuss a few of the common detection functions.  In Chapter 4, we presented the basic capture recapture model with a rather generic detection function using ``alpha1'' as the shape parameter on distance.   Considering the binomial encounter model, we can specify the model according to:
-\begin{equation}
-	\mbox{logit}(p_{ij}) = \alpha_{0} + \alpha_1 ||{\bf s}_{i}-{\bf x}_{j} ||
-\label{scr0.eq.logit}
-\end{equation}
-where, $||{\bf s}_{i}-{\bf x}_{j}||$ is the distance between ${\bf s}_{i}$ and ${\bf x}_{j}$. 
 
-We can also consider writing the detection function such that it more closely resembles the standard distance sampling functions with a half-normal model of the form:
+In Chapter 4, we developed the basic capture recapture model using  a
+standard distance function based on the kernel of a normal (Gaussian) probability
+distribution:
 \[
 p_{ij} = p_{0}*\exp(-\alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||^2)
 \]
-
-where we can then describe $\alpha_1$ as a function of $\sigma$ such that
+where $||{\bf s}_{i}-{\bf x}_{j}||$ is the distance between ${\bf
+  s}_{i}$ and ${\bf x}_{j}$ and
 \[
-\alpha_{1} = 1/(2*\sigma^2)
+\alpha_{1} = 1/(2*\sigma^2).
 \]
+We argued (section XXXX) that this model 
+corresponds to an explicit model of space usage -- namely, that
+individual locations are draws from a bivariate normal
+distribution. We also mentioned that other detection models are
+possible, including a logit model of the form:
+\begin{equation}
+	\mbox{logit}(p_{ij}) = \alpha_{0} + \alpha_1 ||{\bf s}_{i}-{\bf x}_{j} ||.
+\label{covariates.eq.logit}
+\end{equation}
 
-If we wanted to use an exponential distance function instead of the half-normal, we can rewrite the detection function as
-
+Evidently, there's nothing preventing us from constructing a myriad of
+other models for encounter probability.
+The exponential model is:
 \[
 p_{ij} = p_{0}*\exp(-\alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||)
 \]
-
-and modify the definition of $\alpha_1$ to just be the inverse of $\sigma$
-
+or we could use the general power model which includes both the
+Gaussian and exponential models (Russell et al. 2012):
 \[
-\alpha_{1} = 1/(\sigma)
+p_{ij} = p_{0}*\exp(-\alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||^{\theta} )
 \]
+
 
 By changing the detection function and the specification of
 $\alpha_1$, we can basically create any distance function for the
@@ -158,8 +132,57 @@ precision definition under alternative distance functions.  We
 demonstrate how to fit different distance functions under the Bayesian
 and likelihood sections below.
 
+For example, the most commonly used detection
+functions are also those used in the distance sampling literature: the
+half-normal, the hazard, and the negative exponential.  
+The {\bf R} package
+secr allows the user to access 12 different detection models, of which
+some are only used for simulating data (see Table 1).  These detection
+functions can be also be coded in R, BUGS, jags, etc.  
 
-\section{Covariate Models}
+Insofar as these are all symmetric and stationary, they are pretty
+lame descriptions of space usage by real animals. But this is not to
+say they are inadequate descriptions of the data (Gary: put that in
+your pipe and smoke it!).  We don't believe in doing too much
+selection among models because there is no biological basis for
+choosing any one of these models over any other. We do describe more
+realistic models in Chapter XXXXX.
+
+\begin{table}
+\caption{Distance functions available in secr.  (Table taken from the secr
+help files).
+}
+\begin{tabular}
+Code & Name & Parameters & Function  \\ \hline
+0 & halfnormal &g0, sigma                 &g(d) = g0 * exp{--d^2 / (2
+  sigma^2) }  \\
+1 &hazard rate &g0, sigma, z              &g(d) = g0 * (1 -- exp(-- (d / sigma) ^(--z) )) \\
+2 &exponential              &g0, sigma    & g(d) = g0 * exp(-- d / sigma) \\
+3 &compound halfnormal      & g0, sigma, z &g(d) = g0 * [1 -- {1 -- exp(--d^2 / (2 sigma^2))]^z} \\
+4 &uniform                  &g0, sigma     &g(d) = g0, d<=sigma; g(d)
+= 0, otherwise  \\
+5 &w exponential            & g0, sigma, w & g(d) = g0, d < w; g(d) = g0 * exp(-- (d -- w) / sigma), otherwise \\
+6 &annular normal           & g0, sigma, w &g(d) = g0 * exp(--(d-w)^2 / (2 sigma^2)) \\
+7 &cumulative lognormal     & g0, sigma, z &g(d) = g0 [1 --
+F{(d--mu)/s)}]  \\
+8 &cumulative gamma         &g0, sigma, z  &g(d) = g0 { 1 -- G (d; k,
+  theta) }  \\
+9 &binary signal strength   & b0, b1       &g(d) = 1 -- F {-- (b0 + b1 * d) } \\
+10&signal strength          & beta0, beta1, sdS  & g(d) = 1 -- F[ {c
+  -- (beta0 + beta1 * d)} / sdS]  \\
+11&signal strength spherical&  beta0, beta1, sdS &g(d) = 1 -- F[{c -- (beta0 + beta1 * (d--1) -- 10 * log10 ( d^2 ) ) } / sdS ]
+\end{tabular}
+\label{covariates.tab.detmodels}
+\end{table}
+
+
+
+\section{Modeling Covariate Effects}
+
+
+The basic strategy  for modeling covariate effects is to include them
+on the baseline parameter $p_{0}$ or the scale parameter
+$\sigma$......................
 
 
 Broadly speaking, we recognize (here) 2 types of covariates: Fixed
@@ -178,8 +201,6 @@ covariate. We do not get to observe the activity center for any
 individuals, but for individuals that are encountered we get to
 observe some information about it in the form of which traps the
 individual was encountered in.
-
-\section{Models with Fixed Covariates}
 
 
 To begin, we will again assume a standard sampling design in which an
@@ -247,24 +268,26 @@ It is easy to see that we could model the quadratic effect of day of years as:
 \]
 
 
-\subsection{Trap-specific covariate:}
+\subsection{Trap-specific covariates}
 
 There are a variety reasons that traps may have a different baseline
 detection probability including if the trap is baited or not, if trap
 type varies (e.g., different camera models are used in a camera
 trapping study), or because of the habitat type (e.g., if the trap is
-located on a road/trail).  For example, \citet{sollmann_etal:2011} found a large difference in the detection probability due to traps being located on roads which the animals were using to travel along as opposed to traps placed off roads.  In each of these cases, the trap type is a binary or categorical variable - on/off road, baited/non-baited, and camera model.   We write this such that:  
+located on a road/trail).  For example, \citet{sollmann_etal:2011}
+found a large difference in the detection probability due to traps
+being located on roads which the animals were using to travel along as
+opposed to traps placed off roads.  In each of these cases, the trap
+type is a binary or categorical variable - on/off road,
+baited/non-baited, and camera model.  We write this such that:
 \[
-                                  logit(p[i,j,k]) = alpha[type[j]] +
-                                  \alpha_1*||s[i]-x[j]||
-                                  [**]
+logit(p[i,j,k]) = alpha[type[j]] + \alpha_1*||s[i]-x[j]||
 \]
 Here, we use an indicator variable, ``type'', that will be a numeric
 value for the trap-specific covariate.  Thus for our example of on/off
 road, we would have $type[j] = 1$ if trap j is on a road and $type[j]
 = 2$ otherwise.  This general set up allows for multiple categories,
 say if 3 or 4 different camera models were used.
-
 
 
 \subsection{Behavior or Trap Response by Individual}
@@ -290,40 +313,58 @@ behavioral response, define the $nind x k$ matrix, C where $C_i,k =1$
 means that individual $i$ was captured at least once prior to session
 $k$, otherwise C = 0.
 \[
-	logit(p[i,j,k]) = alpha + \alpha_1 *||s[i]-x[j]|| + \alpha_2*C_i,k	[**]
+	logit(p[i,j,k]) = alpha + \alpha_1 *||s[i]-x[j]|| + \alpha_2*C_i,k	
 \]
 For the local behavioral response, which is trap specific, we create
 an array, $C_i,j,k$, that indicates if an individual $i$ has been
 previously captured in trap $j$ at time $k$.  We then include this in
 the model in the exact same form as above:
-
-       \[
-	logit(p[i,j,k]) = \alpha + \alpha_1*||s[i]-x[j]|| + \alpha_2*C_i,j,k	[**]
-        \]
-
+\[
+	logit(p[i,j,k]) = \alpha + \alpha_1*||s[i]-x[j]|| + \alpha_2*C_i,j,k	
+\]
 
 
-\section{Individual Effects}
+\subsection{Individual Covariates}
 
+Individual covariates we observe on the captured guys......
 
-\subsection{Sex}
-
-Sex is a special kind of covariate because we can observe it for those individuals we encounter, but sometimes it might be missing because frequently in practice we only imperfectly determine gender of many species. We can imagine that sex impacts both the baseline encounter probability ``alpha'' and also it might affect the typical home range size, which should cause ``alpha1'' to vary by sex.  The model structure could generally look like this:
-       \[
-	logit(p[i,j,k]) = \alpha[sex[i]] + \alpha_1[sex[i]]*||s[i]-x[j]|| + \alpha_2*C_i,j,k	[**]
-        \]
+Sex is a special kind of covariate because we can observe it for those
+individuals we encounter, but sometimes it might be missing because
+frequently in practice we only imperfectly determine gender of many
+species. We can imagine that sex impacts both the baseline encounter
+probability ``alpha'' and also it might affect the typical home range
+size, which should cause ``alpha1'' to vary by sex.  The model
+structure could generally look like this:
+\[
+logit(p[i,j,k]) = \alpha[sex[i]] + \alpha_1[sex[i]]*||s[i]-x[j]|| + \alpha_2*C_i,j,k	[**]
+\]
 where $sex[i]$ is a vector of 1 or 2 indicator variables that say if individual i is male or female.  However, we do not know the sex of individuals that are not observed or may not have been identifiable, making this a partially observed covariate.  We deal with slightly differently based on the framework that we select (Bayesian or likelihood] and we discuss this in detail below for each modeling framework in sections 8.3.3 and 8.4.3.
- 
 
+Sex is often missing ..... we can easily deal with this in a Bayesian
+estimation framework. See Ch. 7 and Gardner et al. 2010JWM and
+elsewhere....
 
 
 \subsection{Heterogeneity} 
-Heterogeneity is a covariate that is completely latent.   This can include many things such as an additive individual effect or an individual-specific effect of distance.  We address these models separately in Section 8.5 below and show a simple example of a finite mixture model carried out in secr in Section 8.4.4.
+
+Heterogeneity is a covariate that is completely latent.  This can
+include many things such as an additive individual effect or an
+individual-specific effect of distance.  We address these models
+separately in Section 8.5 below and show a simple example of a finite
+mixture model carried out in secr in Section 8.4.4.
 
 
 \section{Bayesian Analysis of covariates}
 
-To demonstrate how to incorporate various types of covariates using {\bf BUGS}, we will again return to the data collected during the Ft. Drum bear study.    This data set was first introduced in Chapter 3, but to refresh your memory, there 38 baited hair snared that were run between June and July 2006.  The snares were checked each week for a total for $K=8$ sample occasions and $n=47$ individual bears were ``captured'' at least once.  The data are provided in the {\bf R} package \mbox{\tt scrbook} and the analysis can be set up and run as we will show throughout the chapter.
+To demonstrate how to incorporate various types of covariates using
+{\bf BUGS}, we will again return to the data collected during the
+Ft. Drum bear study.  This data set was first introduced in Chapter 3,
+but to refresh your memory, there 38 baited hair snared that were run
+between June and July 2006.  The snares were checked each week for a
+total for $K=8$ sample occasions and $n=47$ individual bears were
+``captured'' at least once.  The data are provided in the {\bf R}
+package \mbox{\tt scrbook} and the analysis can be set up and run as
+we will show throughout the chapter.
 
 \subsection{Detection functions}
 
@@ -604,6 +645,36 @@ WAITING FOR THE RESULTS HERE.
 
 \section{Likelihood analysis in SECR}
 
+Before we describe the types of covariates and demonstrate how to
+implement them, a brief note about the different inference approaches.
+In taking a Bayesian approach to analysis of covariate models,
+inference is always based on analysis of the ``joint likelihood''
+based on data augmentation. That is, the conditional-on-N likelihood,
+with N removed by integration (as described in chapter 3 somewhere
+where we introduced data augmentation). However, likelihood analysis
+based on the conditional likelihood is often done in practice and, in
+particular, in the secr() package.  A variant of the conditional
+likelihood which is kind of distinct and relevant to the individual
+covariates is the ``Huggins-Alho'' idea which is based on thinking
+about Horwitz-Thompson estimators involving unequal probabilities of
+sampling.  This is not a very coherent approach in the sense that
+analysis of the joint likelihood is fully general and requires no
+modification to the manner in which the estimator is
+constructured. Conversely, different estimators are employed in secr()
+depending on which type of model is being considered.  For latent
+covariates like finite-mixtures, you have a different estimator than
+if sex is the covariate (for which there are 2 or 3 estimators) and
+the basic null model is based on the plain old conditional estimator
+which integrates $s[i]$ from the likelihood. 
+
+
+
+
+
+
+
+
+
 SECR allows the user to simulate data and fit a suite of models with various detection functions and covariate responses.  As we saw in Chapter 5, secr uses the standard R model specification framework, defining the dependent and independent variable relationship using tildes (e.g., y ~ x). Thus, in secr we might have g0 ~ behavior or sigma ~ time; when left unspecified or set to 1 (e.g., g0 ~ 1), this will default to a model with no covariates that is constant.  .  Additionally, we can specify covariates in secr on density, which are set for example as D ~ habitat.
 To demonstrate a suite of models with various types of covariates using secr, we continue using the data collected on black bears in Ft. Drum, NY, USA.  It should be easy for the reader to take this example and generalize it for his or her own use.   First we need to read in the raw data and the trap file so that we can build the capture history and trap files required by secr.  After doing this, similar to the wolverine example shown in Chapter *5*, we then call the command secr.fit to run the model.  All of the following models should take somewhere between 30 seconds and 5 minutes to run on your computer (possibly a little longer or shorter given the specifics of your machine).    To refresh your memory here how to read in and format the data and run the basic model with no covariates and a half normal distance function in secr for the Ft. Drum bear study:
 {\small
@@ -695,26 +766,12 @@ sigma   log 1.103882e+03 9.272586e+01 9.365855e+02 1.301061e+03
 
 Density is estimated similar to the half-normal, although the mean estimate is slightly larger.  As we saw in the above sections, sigma = 1.1 which is very different from the half normal where sigma was 1.97.  These results are consistent with the what we saw in the Bayesian analysis of the model.
 
-\begin{comment} BETH: Put this table up in Section 1? \end{comment}
 
-\begin{verbatim}
-Table 1: Distance functions fit by secr.  (Table taken from the secr
-help files).
 
-Code Name Parameters Function 
-0  halfnormal g0, sigma g(d) = g0 * exp{--d^2 / (2 sigma^2) } 
-1 hazard rate g0, sigma, z g(d) = g0 * (1 -- exp(-- (d / sigma) ^(--z) )) 
-2 exponential g0, sigma g(d) = g0 * exp(-- d / sigma) 
-3 compound halfnormal g0, sigma, z g(d) = g0 * [1 -- {1 -- exp(--d^2 / (2 sigma^2))]^z} 
-4 uniform g0, sigma g(d) = g0, d<=sigma; g(d) = 0, otherwise 
-5 w exponential g0, sigma, w g(d) = g0, d < w; g(d) = g0 * exp(-- (d -- w) / sigma), otherwise 
-6 annular normal g0, sigma, w g(d) = g0 * exp(--(d-w)^2 / (2 sigma^2)) 
-7 cumulative lognormal g0, sigma, z g(d) = g0 [1 -- F{(d--mu)/s)}] 
-8 cumulative gamma g0, sigma, z g(d) = g0 { 1 -- G (d; k, theta) } 
-9 binary signal strength b0, b1 g(d) = 1 -- F {-- (b0 + b1 * d) } 
-10signal strength beta0, beta1, sdS g(d) = 1 -- F[ {c -- (beta0 + beta1 * d)} / sdS] 
-11signal strength spherical beta0, beta1, sdS g(d) = 1 -- F[{c -- (beta0 + beta1 * (d--1) -- 10 * log10 ( d^2 ) ) } / sdS ]
-\end{verbatim}
+
+
+
+
 
 
 \subsection{Time}
