@@ -289,9 +289,9 @@ g({\bf x}_{j},{\bf s}_{i}) = exp( -||{\bf x}_{j} - {\bf
 \]
 In this case, note that 
 \[
-log( \lambda_{ij})  =\alpha_{0} - \beta ||{\bf x}_{j} - {\bf s}_{i}||^2
+log( \lambda_{ij})  =\alpha_{0} - \alpha_{1} ||{\bf x}_{j} - {\bf s}_{i}||^2
 \]
-where $\alpha_{0} = log(\lambda_{0})$ and $\beta = 1/(2\sigma^2)$.
+where $\alpha_{0} = log(\lambda_{0})$ and $\alpha_1 = 1/(2\sigma^2)$.
 
 
 As usual, we approach Bayesian analysis of these
@@ -328,9 +328,9 @@ D<- e2dist(S,traplocs)
 
 alpha0<- -2.5
 sigma<- 0.5
-beta<- 1/(2*sigma*sigma)
+alpha1<- 1/(2*sigma*sigma)
 
-muy <-  exp(alpha0)*exp(-beta*D*D)
+muy <-  exp(alpha0)*exp(-alpha1*D*D)
 # now generate the encounters of every individual in every trap
 Y<-matrix(NA,nrow=N,ncol=ntraps)
 for(i in 1:nrow(Y)){
@@ -388,14 +388,14 @@ sst[i,2]<- mean( X[y[i,]>0,2] )
 sst<-sst + runif(nrow(sst)*2,0,1)/8
 data <- list (y=y,X=X,K=K,M=M,J=J,Xl=Xl,Yl=Yl,Xu=Xu,Yu=Yu)
 inits <- function(){
-  list (alpha0=rnorm(1,-2,.4),beta=runif(1,1,2),s=sst,z=z,psi=.5)
+  list (alpha0=rnorm(1,-2,.4),alpha1=runif(1,1,2),s=sst,z=z,psi=.5)
 }
-parameters <- c("alpha0","beta","N","D")
+parameters <- c("alpha0","alpha1","N","D")
 
 cat("
 model {
 alpha0~dnorm(0,.1)
-beta~dnorm(0,.1)
+alpha1~dnorm(0,.1)
 psi~dunif(0,1)
 
 for(i in 1:M){
@@ -405,7 +405,7 @@ for(i in 1:M){
 for(j in 1:J){
 d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
 y[i,j] ~ dpois(lam[i,j])
-lam[i,j]<- z[i]*K*exp(alpha0)*exp(- beta*d[i,j]*d[i,j])
+lam[i,j]<- z[i]*K*exp(alpha0)*exp(- alpha1*d[i,j]*d[i,j])
 }
 }
 N<-sum(z[])
@@ -442,7 +442,7 @@ Inference for Bugs model at "SCR-Poisson.txt", fit using WinBUGS,
  n.sims = 3000 iterations saved
            mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
 alpha0    -2.57  0.19  -2.95  -2.69  -2.57  -2.44  -2.19 1.00  2600
-beta       2.34  0.36   1.69   2.08   2.32   2.57   3.12 1.00  3000
+alpha1     2.34  0.36   1.69   2.08   2.32   2.57   3.12 1.00  3000
 N        114.13 15.25  87.97 103.00 113.00 124.00 147.00 1.01   370
 D          1.78  0.24   1.37   1.61   1.77   1.94   2.30 1.01   370
 deviance 329.95 21.92 290.00 314.20 329.50 344.40 375.80 1.00  1700
