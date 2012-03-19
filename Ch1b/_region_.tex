@@ -1,5 +1,7 @@
+\message{ !name(Ch1b.tex)}
+\message{ !name(Ch1b.tex) !offset(-2) }
 \chapter{
-Statistical Inference
+Models for Spatial Capture-Recapture Data
 }
 \markboth{Modeling}{}
 \label{chapt.modeling}
@@ -9,122 +11,92 @@ Statistical Inference
 
 In the previous chapter we described basic concepts of
 capture-recapture methods, and explained the limitations of
-non-spatial models. We emphasized the conceptual advantages of
-spatial capture-recapture methods, but we assumed very little
-knowledge of statistics. Although it is critical to understand the
-non-technical motivation for this broad class of models, it is
-impossible to fully appreciate them, and apply them to real data,
-without a solid foundation in the fundamentals of statistical
-inference.
-
-In this chapter, we present a brief primer on key
-statistical concepts that referenenced throughout the remainder of
-this book. For many readers, this material will be familiar, even
-perhaps elementary, and thus some may want to skip to the next
-chapter. However, our experience is that many basic statistics courses
-taken by ecologists do not emphasize the important subjects covered in
-this chapter Instead, there seems to be much attention paid to
+non-spatial models. In this
+chapter we lay out our approach to modeling spatial capture-recapture
+data, but first we introduce notation and basic statistical
+concepts. We focus on concepts that are simple but critical to an
+understanding of the material presented in the remainder of this
+book. Some of these are concepts
+are so elemetary that we fear some might take offense, but our
+experience is that many introductory statistics
+courses offered to ecologists do not adequately impart these
+fundamentals. Instead, there seems to be much attention paid to
 minor details such as computing the number of degrees of freedom in
-various $F$-tests, which, although useful in some contexts, does not
-provide the basis for moving about freely in the land of statistical
-inference.
-
-In addition to being basic, all of the material in the
-beginning of this chapter is explained in numerous other
-texts. Excellent technical treatments that emphasize ecological
-problems are given by
+various $F$-tests. In addition to being basic, all of the material in the
+beginning of this chapter is explained in numerous other texts, but we present it here
+using examples relevant to SCR. Futhermore, we emphasize the use of
+\R~as a hands-on teaching tool. We encourage readers that seek a deeper and more
+technical treatment of these ideas to consult
 \citet{williams_etal:2002}, \citet{royle_dorazio:2008} and
-\citet{link_barker:2010}. A very accessible introduction to these
-materials is presented in Chapter XX of
-\citet{mackenzie_etal:2005}. With all these excellent references, one
-may wonder why we bother rehashing them here. Our motivation is
-two-fold: first, we wish to develop this material using examples
-relevant to spatial capture-recapture, and second, we find that most
-introductory texts are not accompanied by code that can
-assist the novice. We therefore attempt to present simple \R~code
-throughout this chapter so that those that struggle with equations and
-mathmatical notation can learn using more hands-on methods.
-
-Following our introduction to statistical concepts, we lay out our
-philosophy of modeling ecological data, including spatial
-capture-recapture data. We also introduce hierarchical
-models, and why they are relevant to so many problems in
-ecology. Finally, we address the common concerns levied against the
-hierarchical modeler, \emph{e.g.} assumptions are bad.
+\citet{link_barker:2010}. \citet{mackenzie_etal:2005} is another
+slightly less technical reference with ecological examples.
 
 \section{Random Variables and Probability Distributions}
 
 A random variable is what its name implies---a variable whose
 value is the outcome of some stochasitic process. One source
 of stochasticity inherent to virtually all ecological data
-results from sampling a population. A sample can be
-regarded as a random variable because the data will typically differ
-among samples unless the sample size is close to the population size or the
-variance of the population is negligible. Statistical inference is all
-about drawing conclusions about population parameters
-using the attributes of our observed sample of
-data. To do so, we need to link the statistical sample to the
-population of interest, \emph{i.e.} we need a model describing how
-the data were generated. At the root of all statistical models
-described in this book are probability density (or mass) functions
-that describe the probability of observing a particular value $x$ given a
-possibly vector-valued parameter $\bold \theta$. We often write this
-last statement as $Pr(x | \theta) = f(x)$, where $f(x)$ is some
-probability density/mass function such as the normal, binomial or Poisson.
+results from sampling a population. A sample of data can be
+regarded as a random variable because the data will typically differ from
+other samples unless the sample size is close to the population size or the
+variance of the population is negligible.
+Because the estimates sample data are random variables, sample
+statistics are also random variables.
+Sampling variation is
+often regarded as a nuicance. We might wish it were otherwise.
 
-As an extremely simplistic example, imagine that we are fishing for
-American shad (\emph{Alosa sapidissima}) at the secret shad
-hole on Deerfield River in Massachusetts during early June when the
-shadberry (\emph{Amelanchier arborea}) is in bloom and the hole is ripe
-with fish. If we cast a line 20 times, and the probability of
-catching a fish is 0.5\footnote{highly unlikely}, then we would expect
-to catch 10 shad. However, in this example, we only catch 7 fish, and
-we don't know the actual probability of catching a fish. If we ignore
-the Bayesian perspective for a moment, the random variable $x$ in our
-example is the
-number of fish caught, and the fixed but known population
-parameter of interest $\theta$ is the probability of
-capture. If $x$ were not random, then, based upon our sample, we would be
-certain that the true population parameter $p$ is equal to the
-estimator $\hat{p}$, $p = \hat{p} = x/N = 7/20 = 0.35$, and
-we would expect that every
-time we cast our rod 20 times, we would catch 7 fish. This is of
-course not true, and thus we need a model. The natural
-choice in this case is the familiar binomial model with parameters
-$N$, the number of trials (casts in this example), and $p$, the
-probability of success. We may therefore describe our model as
-\[
-x \sim \mbox{Binomial}(N, p).
-\]
-We will use this notation throughout this book because it is a simple
-and concise way to represent a model, and it closely resembles the
-syntax of the \bugs~language, which we will use to fit models using
-Bayesian methods. In \R, we can generate a single quasi-random outcome from this
-model, using using the command \verb+rbinom(1, 20, 0.5)+.
-
-Now that we have specified our model, we need to use it to make
-probability statments. If we are a frequentist, the only source of
-variability that we are concerned with is attributable to
-sampling. That is, we imagine that life is heavenly and
-can we can repeat our 20 casts an infinite number of times. If we were
-to do so, we would end up with a distribution for our estimates, and
-the law of large numbers tells us that the mean of this sampling
-distribution will be equal to the population parameter. As an
-exercise, execute the following
-\R~code to convince yourself that indeed, the mean of the sampling
-distribution of $\hat{p}=x/N$ is close to $p$ when the
-number of replicate samples is very large (10000).
-\begin{verbatim}
-set.seed(3923)
-N <- 20
-p <- 0.5
-x <- rbinom(10000, N, p)
-p.hat <- x/N
-hist(p.hat) # sampling distribution of p.hat
-mean(p.hat) # expected value of the sampling distribution
-\end{verbatim}
+To adequately characterize how our data arise, we need a hypothesis
+written in mathmatical terms---we need a statistical
+model.
 
 
+To characterize both the uncertainty in our data and in our estimates
+of population parameters, we need a model.
+
+To describe our understanding of how the data arose, we need a
+model. A model simply embodies our hypotheses about the system in some
+quantitative way. For example, a simple model for our shad length data
+is to assume that they arose from a normal distribution whose mean and
+variance correspond to the mean and variance of the population. If
+mean shad length is $\mu$=60cm with variance $\sigma^2$=10cm, the
+
+As an extremely simplistic
+example, imagine that we
+caught 50 American shad (\emph{Alosa sapidissima}) from the secret shad
+hole on Deerfield River in Massachusetts and we
+measure the length of each individual. When the shadberry (\emph{Amelanchier
+  arborea} is in bloom, the shad are so bountiful and
+variable that it is very unlikely that a second sample
+of fish will have the same lengths as the first.
+For example, suppose we caught
+our 50 shad because we wanted to estimate the average length of shad in
+the pool. The average fish length of the entire population is a
+parameter, and the average fish length in our sample is a statistic
+that can regarded as an estimate of that parameter. If we repeatedly
+sample the population, the sample statistic will vary but the
+population parameter will not, assuming the fish aren't growing during
+the sampling period.
+
+
+
+
+Most
+random variables can be regarded as continuous or discrete. Shad length is an
+example of a continuous random variable.
+
+For example, if we wish to know
+the average length of fish in the sea, we might catch 100 of them and
+record their lengths. If we throw them back and
+collect a new sample the next day, our second sample will almost
+certainly differ from the first
+
+If $y$ is the length of a fish captured in a river, we
+would expect this value to differ with each new sample from the
+population inhabiting the river. Fish length is an example of a
+continuous random variable.
+
+
+\section{Models for Random Variables}
 
 
 
@@ -812,3 +784,5 @@ testing for departures from this assumption, and even evaluating
 hypotheses that may explain why animals move the way they do.
 
 
+
+\message{ !name(Ch1b.tex) !offset(-788) }
