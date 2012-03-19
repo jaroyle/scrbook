@@ -3,6 +3,13 @@
 
 N <- 20
 p <- 0.5
+x <- rbinom(100000, 20, 0.5)
+p.hat <- x/20
+hist(p.hat) # sampling distribution of p.hat
+mean(p.hat) # expected value of the sampling distribution
+
+
+
 y <- 3
 (p^y * (1-p)^(N-y))*120
 dbinom(y, N, p)
@@ -13,10 +20,7 @@ plot(0:N, dbinom(0:N, N, p), type="h", lwd=3, #ylim=c(0, 0.5),
 abline(h=0, col=gray(0.5))
 
 
-set.seed(3923)
-p.hat <- rbinom(10000, 20, 0.5)/20
-hist(p.hat) # sampling distribution of p.hat
-mean(p.hat) # expected value of the sampling distribution
+
 
 
 
