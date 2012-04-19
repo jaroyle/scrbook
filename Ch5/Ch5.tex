@@ -201,8 +201,7 @@ Poisson model is more easy to compute in some cases.
 \end{figure}
 
 
-
-Even in wuch cases where we're not in the range where the Poisson and
+Even in such cases where we're not in the range where the Poisson and
 Bernoulli models are nearly equivalent, 
 we might choose to truncate  individual encounter frequencies
 to binary observations anyhow (``quantize'').
@@ -469,9 +468,9 @@ DIC is an estimate of expected predictive error (lower deviance is better).
 }
 
 
-We don't provide a real example of a Poisson SCR model here although we use this observation
-model for an analysis of some data in Chapt. 
- \ref{chapt.searchencounter}.
+We don't provide a real example of a Poisson SCR model here although
+we use this observation model for an analysis of some data in Chapt.
+\ref{chapt.searchencounter}.
 
 \begin{comment}
 \subsection{Exercise}
@@ -562,9 +561,10 @@ Analogous to our previous Bernoulli and Poisson models, we seek to
 construct the multinomial cell probabilities for each individual, as a
 function of {\it where} that individual lives, through its center of
 activity ${\bf s}$. Thus we suppose that
-\[
+\begin{equation}
  {\bf y}_{ik} \sim \mbox{Multinom}(1, {\bm \pi}({\bf s}_{i}) )
-\]
+\label{poisson-mn.eq.mn}
+\end{equation}
 where ${\bm \pi}({\bf s}_{i})$ is a vector of length $J+1$, which, by
 convention here, we define $\pi_{i,J+1}$, the last cell, or the ``zero
 cell'', to correspond to the event ``not captured''.  Now we have to
@@ -584,11 +584,12 @@ In the context of SCR models the categorical version of the
 multinomial trial corresponds to the {\it trap of capture}.  Using our
 example above with 6 traps then ${\bf y}_{i1} = (0,1,0,0,0,0)$ then we
 could as well say $y_{ik}$ is a categorical random variable with
-possible outcomes $(1,2,3,4,5,6,7)$ where outcome $y=7$ corresponds to
+state-space (possible outcomes) $(1,2,3,4,5,6,7)$ where outcome $y=7$ corresponds to
 ``not captured'' (obviously how this is organized or labeled is
 completely irrelevant, although it is convenient to use the integers
-$1:(J+1)$).  Therefore, $y_{i1} = 2$, $y_{i2} = 7$, $y_{i3} = 4$ and
-so on.
+$1:(J+1)$) where $J+1$ is the event not captured.  Therefore, for our
+illustration in the previous table, 
+$y_{i1} = 2$, $y_{i2} = 7$, $y_{i3} = 4$ and so on.
 
 For simulating and fitting data in the {\bf BUGS} engines we will typically use
 the categorical representation of the model because it is somewhat
@@ -597,93 +598,68 @@ more convenient.  We have found that fitting multinomial models in
 typically performs much better. In the examples here, we use {\bf
   JAGS} exclusively.
 
-\subsection{Multinomial Relationship to Poisson}
-
-The multinomial is related directly to the Poisson encounter rate
-model in the following sense. Let $y_{ij}$ be the number of
-encounters for individual $i$ in trap $j$. Then, the trap frequencies
-(excluding the last cell now), if we condition on the {\it total}
-number of captures, $y_{i} = \sum_{j} y_{ij}$, are multinomial with
-probabilities
-\[
- \pi_{ij} =  \frac{ \lambda_{ij} } { \sum_{j} \lambda_{ij} } 
-\]
-for $j=1,2,\ldots,J$.
-Or equivalently the {\it trap of
-  capture} is categorical with probabilities
-\[
- \pi_{ij} =  \frac{ \lambda_{ij} } { \sum_{j} \lambda_{ij} } 
-\]
-which is precsely, under the Gaussian model, 
-\begin{equation} 
-\pi_{ij} =  \frac{ \exp( - \beta \! dist({\bf x},{\bf s})^2 ) }  {
-   \sum_{j} \exp(-\beta \! dist({\bf x},{\bf s})^2)}
-\label{poisson-mn.eq.mnprobs}
-\end{equation}
-This is a multinomial inverse-logit transform of a model having
-quadratic distance term and readers might recognize it
-also as the ``maximum entropy distribution'' from MAXENT
-species distribution modeling, and also resource selection functions
-from telemetry studies.
-So we can think of this multinomial model as arising naturally 
-by having Poiosson encounters and then conditioning on the total. 
-It is a sensible model to have anyhow, as it just allocates captures
-to traps in proportion to the square of distance.  We could try other
-models here too (Note: What do Borchers and Efford 2008 do?).
-
-%People might think this multinomioal model is somehow more general
-%than assuming Poisson encounter frequencies since we might cook up the
-%multinomioal without having to specify a distribution for
-%$y_{i}$. That said, we note that it arises under 
-%If we now uncondition on the total..... 
-%$y_{ij}$ is Poisson with mean $\sum_{j}$ stuff... we have a product of
-%Poissons, i.e., the model we started with. 
-
-The interpretation of this model merits some discussion. That is, 
-{\it given that an individual is captured}, the probabilities given by
-Eq. \ref{poisson-mn.eq.mnprobs} determine 
-the probability distribution of ``trap of capture''. 
-The probability that individual i is captured in trap j is the product of two components
-\[
-p_{ij} = pr(individual i captured in trap j) = 
- pr(captured in trap j | captured at all)pr(captured at all)
-\]
-To fully specify the model, we have to
-model the probability that an individual is captured at all, say $p_i$.
-It is natural to think that total probability of capture should be related
-to the average distance to traps. 
-\[
- p_{i} = p0 exp(-\beta \sum_{j} d_{ij}^2)
-\]
-the argument to justify this is that the total hazard to capture
-is the sum of that due to each trap, i.e.,
-\[
- h_{i} = \sum_{j} h_{ij}
-\]
-so we set $h_{ij} = \propto d_{ij}^{2}$ which I think is the Gompertz hazard model.  Then
-the the survival function $S=exp(-H)$ so we equate $p$ to ``survival'' (hardly makes sense
-but, hey, thats the model that people use). 
-
-Anyhow, under this model we have the marginal probability of capture in trap $j$ is
-(multiplying $p_{i}$ with $\pi_{ij}$):
-\[
- p_{ij} =   p_{0}  \exp(-\beta d_{ij}^2)
-\]
-and then the probability of not being captured at all is 
-\[
- \pi\_{i,J+1} =  1-p_i 
-\]
 
 
-In summary, there is a coherent linkage between the Poisson, multinomial, and the Binomial
-model. If trap-level encounter historieis are $iid$ Poisson random variables with 
-$\lambda_{ij} = \lambda_{0}exp(-\alpha_{1} d^{2})$, then
-the trap-of-capture, conditional on the total number of captures,
- has a multinomial distribution with cell probabilities 
- $\pi_{ij} = \lambda_{ij}/(\sum_{j} \lambda_{ij})$ and then if the hazard
- to capture is proportion to $d^{2}$, and the traps are independent, 
-then $p_{ij} = p_{0} exp(-\alpha_{1} d_{ij}^{2})$.  So those models are all equivalent to
-some extent, for their appropriate observation model. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -717,21 +693,22 @@ Ycat[i,k]<- sample(1:(ntraps+1),1,prob=cp)
 \end{verbatim}
 }
 The resulting data matrix in this case has the maximal dimension $N$
-and so, for analysis, to mimic a real situation, we would have to discard the uncaptured
-individuals. 
-\mbox{\tt sim.mnSCR} will also simulate data that includes a
-behavioral response, which will be the typical situation in
-small-mammal trapping problems, which we first developed this code to
-deal with \citep[see][for details]{converse_royle:2012}.
+and so, for analysis, to mimic a real situation, we would have to
+discard the uncaptured individuals.  \mbox{\tt sim.mnSCR} will also
+simulate data that includes a behavioral response, which will be the
+typical situation in small-mammal trapping problems, which we first
+developed this code to deal with \citep[see][for
+details]{converse_royle:2012}.
 
 Here we use our function \mbox{\tt sim.mnSCR} to simulate a data set
-with $K=7$ periods, etc.. We'll run the model using {\bf JAGS} which we
-have found is much more effective for this class of models.
-We get the data set-up for analysis by augmenting the size of the data
-set to $M=200$. In addition we choose starting values for ${\bf s}$ and the
-data augmentation variables $z$.  For ${\bf s}$ here we cheat a little bit
-and use the true values for the obseved individuals and then augment
-the matrix ${\bf S}$ with $M-n$ randomly selected activity centers.
+with $K=7$ periods, etc.. We'll run the model using {\bf JAGS} which
+we have found is much more effective for this class of models.  We get
+the data set-up for analysis by augmenting the size of the data set to
+$M=200$. In addition we choose starting values for ${\bf s}$ and the
+data augmentation variables $z$.  For ${\bf s}$ here we cheat a little
+bit and use the true values for the obseved individuals and then
+augment the matrix ${\bf S}$ with $M-n$ randomly selected activity
+centers.
 
 {\small 
 \begin{verbatim}
@@ -753,9 +730,8 @@ or Poisson models given previously. The main consideration is that we
 define the cell probabilities for each trap $j=1,2,\dots,J$ and then
 define the last cell probability, $J+1$, for ``not captured'', to be
 the complement of the sum of the others. The code is shown in Panel
-\ref{poisson-mn.panel.mn}.
-In the last lines of code here we
-specify $N$ and density, $D$, as  derived parameters.
+\ref{poisson-mn.panel.mn}.  In the last lines of code here we specify
+$N$ and density, $D$, as derived parameters.
 
 
 \begin{panel}[htp]
@@ -827,19 +803,147 @@ Summary of analysis for the simulated data set here.....  ...........
 
 
 
+
+
+
+
+
+\subsection{Multinomial Relationship to Poisson}
+
+The multinomial is related directly to the Poisson encounter rate
+model in the following sense. Let $y_{ij}$ be the number of
+encounters for individual $i$ in trap $j$. Then, the trap frequencies
+(excluding the last cell now), if we condition on the {\it total}
+number of captures, $y_{i} = \sum_{j} y_{ij}$, are multinomial with
+probabilities
+\[
+ \pi_{ij} =  \frac{ \lambda_{ij} } { \sum_{j} \lambda_{ij} } 
+\]
+for $j=1,2,\ldots,J$.
+Or equivalently the {\it trap of
+  capture} is categorical with probabilities
+\[
+ \pi_{ij} =  \frac{ \lambda_{ij} } { \sum_{j} \lambda_{ij} } 
+\]
+which is precsely, under the Gaussian model, 
+\begin{equation} 
+\pi_{ij} =  \frac{ \exp( - \beta \! dist({\bf x},{\bf s})^2 ) }  {
+   \sum_{j} \exp(-\beta \! dist({\bf x},{\bf s})^2)}
+\label{poisson-mn.eq.mnprobs}
+\end{equation}
+
+This is a multinomial inverse-logit transform of a model having
+quadratic distance term and readers might recognize it
+also as the ``maximum entropy distribution'' from MAXENT
+species distribution modeling, and also resource selection functions
+from telemetry studies. This suggests therefore how we might model
+landscape or habitat covariates using such methods -- i.e., by
+including them as explicit covariates in this model (See Section XXXXX
+where we do this).  
+
+The model is not completely specified, however, absent a model for the
+probability of encouter or the frequency of captures. For example, if
+we assume $y_{i}$ has a Poisson distribution then by randomizing
+Eq. \ref{poisson-mn.eq.mn}
+over the Poisson marginal for 
+$y_{i}$ produces the original set of $iid$ Poisson frequencies. In
+general, i.e., for other distributions for $y_{i}$, the trap-specific
+counts are not Poisson.
+%So we can think of this multinomial model as arising naturally 
+%by having Poiosson encounters and then conditioning on the total. 
+%It is a sensible model to have anyhow, as it just allocates captures
+%to traps in proportion to the square of distance.  We could try other
+%models here too (Note: What do Borchers and Efford 2008 do?).
+
+%People might think this multinomioal model is somehow more general
+%than assuming Poisson encounter frequencies since we might cook up the
+%multinomioal without having to specify a distribution for
+%$y_{i}$. That said, we note that it arises under 
+%If we now uncondition on the total..... 
+%$y_{ij}$ is Poisson with mean $\sum_{j}$ stuff... we have a product of
+%Poissons, i.e., the model we started with. 
+
+The interpretation of this model merits some discussion. That is, {\it
+  given that an individual is captured}, the probabilities given by
+Eq. \ref{poisson-mn.eq.mnprobs} determine the probability distribution
+of ``trap of capture''.  The probability that individual $i$ is
+captured in trap $j$ is the product of two components
+\[
+\pi_{ij} = \Pr(\mbox{individual} i \mbox{captured in trap} j) = 
+ \Pr(\mbox{captured in trap} j | \mbox{captured at all})\Pr(\mbox{captured at all})
+\]
+To fully specify the model, we have to
+model the probability that an individual is captured at all, say
+$p_0$. Then the unconditional multinomial probabilities are
+$p_{0} \pi_{ij}$ for $j=1,\ldots,J$ and $\pi_{i,J+1} = (1-p_{0})$.
+It hardly makes sense that $p_{0}$ should be constant.
+Instead, it is natural to think that total probability of capture should be related
+to the average distance to traps like this:
+\[
+ p_{i} = p_{0} \exp(-\beta \sum_{j} d_{ij}^2)
+\]
+the argument to justify this is that the total hazard to capture, if
+traps function independently, is the sum of that due to each trap, i.e.,
+\[
+ h_{i} = \sum_{j} h_{ij}
+\]
+so we set $h_{ij} = \propto d_{ij}^{2}$ which I think is the Gompertz
+hazard model.  
+%Then
+%the the survival function $S=exp(-H)$ so we equate $p$ to ``survival'' (hardly makes sense
+%but, hey, thats the model that people use). 
+Then we have the marginal probability of capture in trap $j$ is
+(multiplying $p_{i}$ with $\pi_{ij}$):
+\[
+\pi_{ij} =   p_{0}  \exp(-\beta d_{ij}^2)
+\]
+and then the probability of not being captured at all is 
+\[
+ \pi_{i,J+1} =  1-p_i 
+\]
+Therefore the multinomial vector ${\bf y}_{i}$ of length  $(J+1)
+\times 1$ has those probabilities.  One issue: This induces a
+constraint on $p_{0}$ because the sum of the multinomial probaiblities
+has to be 1 and therefore 
+\[
+p_{0} \sum_{j} p_{ij} \le 1.
+\]
+References to Royle et al. 2009a and Gardner et al. 2010 need to go
+here because those papers used this type of model. (misspecified
+multinomial). 
+
+This is not the ``multivariate logit'' that
+we use in the BUGS model above which more naturally admits the
+restriction on the cell probabilities, see Eq. XXXX above.  
+
+In summary, there is a coherent linkage between the Poisson,
+multinomial, and the Binomial model. If trap-level encounter
+historieis are $iid$ Poisson random variables with $\lambda_{ij} =
+\lambda_{0}exp(-\alpha_{1} d^{2})$, then the trap-of-capture,
+conditional on the total number of captures, has a multinomial
+distribution with cell probabilities $\pi_{ij} =
+\lambda_{ij}/(\sum_{j} \lambda_{ij})$ and then if the hazard to
+capture is proportion to $d^{2}$, and the traps are independent, then
+$\pi_{ij} = p_{0} exp(-\alpha_{1} d_{ij}^{2})$ with a restriction on
+$p_{0}$.  So those models are all
+equivalent to some extent, for their appropriate observation model.
+
+
+
+
+
 \section{Mist-netting example}
 
 Here we do an analysis of a real data set using the multinomial model.
-the data are for 
-adult Arctic Warblers ({\it Phylloscopus borealis}) banded 
- along the Colville River near Umiat, Alaska in 2006. The data are from 
- 5 MAPS (REF) stations located in close proximity of one another, as
- well as 
- birds target (netids starting with "UMIA") or passive (netids starting 
- with "PASS") netted in the general area (a couple of nets, 
- netid == 'PASS01' and 'UMIAB3' are pretty far away though...). In total, 
- there are 258 captures of 179 individual birds. This is is really a 
- large number of birds of a single species for MAPS stations. 
+the data are for adult Arctic Warblers ({\it Phylloscopus borealis})
+banded along the Colville River near Umiat, Alaska in 2006. The data
+are from 5 MAPS (REF) stations located in close proximity of one
+another, as well as birds target (netids starting with "UMIA") or
+passive (netids starting with "PASS") netted in the general area (a
+couple of nets, netid == 'PASS01' and 'UMIAB3' are pretty far away
+though...). In total, there are 258 captures of 179 individual
+birds. This is is really a large number of birds of a single species
+for MAPS stations.
  
 Each of these MAPS stations has 12-15 nets.
 
@@ -862,61 +966,72 @@ probabilities are a function of distance -- or something like that.
 
 The multinomial observation model 
 suggests that SCR models are closely related to 
-classical multi-state models \citep[][Chapt. 9]{kery_schaub:2011}
-but where the state variable is static and represents a
-geographic location. 
-Multi-state models are extremely useful for
-modeling movements among geographic states and indeed this type of
-problem motivated their early developments by
-\citet{arnason:1972,arnason:1973} and 
+classical multi-state models \citep[][Chapt. 9]{kery_schaub:2011}.
+%but where the state variable is static and represents a
+%geographic location. 
+Multi-state models are extremely useful for modeling movements among
+geographic states and indeed this type of problem motivated their
+early developments by \citet{arnason:1972,arnason:1973} and
 \citet{hestbeck_etal:1991} albeit in the context of a dynamic state
-variable.  In the context of the simple SCR models, the state-variable,
-corresponding to trap identity, is a static variable,
-which individuals either belong to or not, and therefore 
-we can formulate SCR models as multi-state models
-with spatially structured transition probabilities.
+variable.  In the context of the simple SCR models, the
+state-variable, corresponding to trap identity, which individuals
+either belong to or not, and therefore we can formulate SCR models as
+multi-state models with spatially structured transition probabilities.
 
+This is ok for the multi-catch case where an individual can only be in
+one trap at a time but, in general, with SCR models, an individual can
+appear in $>1$ states, simultaneously, and therefore the analogy is
+not complete.
 
-\subsection{SCR as a Dynamic multi-state model}
+\subsection{Dynamic multi-state model}
 
-Having a static state variable is not that interesting in the grand
-scheme of multi-state models which most of the time consider a dynamic
-state variable. Such models will arise frequently in spatial
-capture-recapture settings. Let s denote the individual activity
-center and suppose its state-space is discrete.  Now let $u[i,t]$ be
+We think about this relationship in the context of classical
+multi-state models where we model movements among discrete patches.
+Let ${\bf s}$ denote the individual activity
+center and suppose its state-space is discrete. In this case ${\bf s}$
+could index one of the patches, but need not.
+Now let $u_{i,t}$ be
 the patch in which individual $i$ was observed during sample $t$. Then
 a simplistic movement model is that the successive movement outcomes
 are $iid$
 \[
 u[i,t] \sim  dcat( {\bm \Psi}({\bf s}_{i}) )
 \]
-
-We can reformulate the basic SCR0 model as a dynamic multi-state model
-as follows.  First lets grid up the state-space into “survey strata”
-which we might define here has .5 unit squares so that the whole
-state-space has 16*16 such squares. [actually do this so they are
-centered on traps].We retain our assumption
+Now, conditional on the patch in which individual $i$ is located, we
+observe that individual with probability $p_{0}$. That is:
 \[
- s_{i} \sim Uniform(S)
+ \Pr(y_{i,t} = 1| u_{i,t} )  = p_{0}
 \]
-Secondly we define a movement model in which
+Or, if some patches are not surveyed, let ${\cal X}$ denote the set of
+surveyed patches ${\cal X} = ({\cal X}_{1},\ldots,{\cal X}_{n})$, 
+then we might modify this to be
 \[
-u[i,t] \sim dcat(pi)
+ \Pr(y_{i,t} = 1| u_{i,t} )  = p_{0}1(u_{i,t} \in {\cal X}).
 \]
-where
+This is the observation model of a standard multi-state model construction with a type of
+temporary emigration -- if the individual is unavailable, i.e., not in
+the surveyed patches, then its probability of detection is 0. 
+
+We wrote the state-model above in which the state-transition
+probabilitties are constant, conditional on ${\bf s}$. 
+It might be reasonable to imagine them as being Markovian, so that
+they depend on the immediately prior state, such as:
 \[
- pi_{k} = exp(-dist(x,s)/sigma2)/sum[that]
+u_{i,t} \sim  dcat( {\bm \Psi}({\bf u}_{i,t-1}) )
 \]
 
-detection model....
-given movement outcome, detected....
-
-
-think about what this means -- this u variable is the outcome of movement,
+these have different biological interpretations but might be
+equivalent over short time periods..........
+Interpretation: this u variable is the outcome of movement,
 we're saying that a guy's movement outcome is proportional to distance
 from x to s. 
 
-De facto states: traps or ``none''
+So in the context of SCR we can write the joint distribution of y {\it
+  and} u as the product
+\[
+p_{0} [u]
+\]
+multinomial probs, or Gaussian?
 
 
 This is a familiar looking function -- it is ``the MAXENT
@@ -925,8 +1040,13 @@ for characterizing space usage of individuals from telemetry data (REF XXXX).
 Here we're asserting that it is a sensible model for movement to use in 
 the context of SCR. In fact, these similarities suggest also that we might
 expand the model of movement, here just a function of distance, to include
-other covariates of geography. [NOTE to ALL: This is an alternative
-formulation fo models of space usage]. 
+other covariates of geography.
+
+Clearly this dcat model arises by thinking about a discrete
+approximation to a continuous space
+gaussian movement model.
+
+
 Another point that is worht noting here is that this is equivalent to saying
 that the {\it frequency} of capture over some time interval is a Poisson
 random variable with mean
@@ -937,7 +1057,7 @@ underlying movement process.
 
 Now define
 \[
- p|u[i,t] = p0*if(u[i,t] \in trap grid cell)
+ p|u_{i,t} = p_{0}*if(u_{i,t} \in grid cell)
 \]
 
 Multi-state model with a ``random movement'' process
@@ -951,7 +1071,6 @@ So we see that SCR models are exactly a type of multi-state model when
 the states are naturally discrete.  Another naturally discrete
 state-space is ``nest sites''. Goncalo’s study and Florent’s
 study. Schaub’s study on woopoos.
-
 
 
 
@@ -983,14 +1102,14 @@ was the original situation considered by \citet{efford:2004}.
 The single-catch model is basically a multinomial model but one in
 which the number of available traps is reduced as each individual is
 captured. As such, the constraints on the likelihood for each
-individual are latent and shit is complicated beyond belief.
-As a result, at the time of this writing, there has not been a formal
-development of either likelihood  or Bayesian analysis of this model.
+individual are latent and shit is complicated beyond belief.  As a
+result, at the time of this writing, there has not been a formal
+development of either likelihood or Bayesian analysis of this model.
 
 Nevertheless, it is not too difficult to describe the basic model
-formally. In particular, there is a nice conditional structure resulting from a ``removal
-process'' operating on the traps.  The first guy captured has the 
-multinomial observation model:
+formally. In particular, there is a nice conditional structure
+resulting from a ``removal process'' operating on the traps.  The
+first guy captured has the multinomial observation model:
 \[
 {\bf y}_{i} \sim \mbox{Multinom}({\bm \pi}_{i})
 \]
@@ -998,19 +1117,19 @@ whereas the 2nd guy captured has one cell removed:
 \[
 {\bf y}_{i} \sim \mbox{Multinom}({\bm \pi}_{i}(1-{\bf y}_{i})    )
 \]
-and so on.
-Evidently, the {\bf order of capture} is relevant to the construction of these
-multinomial cell probabilities. More generally, the {\it time} of capture of an individual
-in any trapping
-interval will affect
-the encounter probability of subsequently captured individuals, but we think that maybe
-order of capture might lead to a practical approximation to the single-catch process
-(this is how we simulate the data in our function XXXXXXX)\footnote{actually order of
-capture might be more realistic because individuals aren't continually exposed to traps -- they
-wander about their home range and if they encounter a trap they have some chance of being
-captured in it or not, depending on if the trap happens to be full. }. 
-If we define a latent variable ${\bf o}_{i}$ being 
-the order of capture of individual $i$.... 
+and so on.  Evidently, the {\bf order of capture} is relevant to the
+construction of these multinomial cell probabilities. More generally,
+the {\it time} of capture of an individual in any trapping interval
+will affect the encounter probability of subsequently captured
+individuals, but we think that maybe order of capture might lead to a
+practical approximation to the single-catch process (this is how we
+simulate the data in our function XXXXXXX)\footnote{actually order of
+  capture might be more realistic because individuals aren't
+  continually exposed to traps -- they wander about their home range
+  and if they encounter a trap they have some chance of being captured
+  in it or not, depending on if the trap happens to be full. }.  If we
+define a latent variable ${\bf o}_{i}$ being the order of capture of
+individual $i$....
 
 Thus the observations each have a multinomial model, but the
 multinomial observations have a unique kind of conditional dependence
@@ -1019,44 +1138,142 @@ structure among them.
 \subsection{Inference for single-catch systems}
 
 Competitation for single-catch traps renders the independence
-assumptions for the multinomial model discussed above invalid. 
-As \citet{efford_etal:2009euring}
-noted, 
-we expect ``bias to be small when trap
-saturation (the proportion of traps occupied) is low.
-Trap saturation will be higher when population density is high...'',
+assumptions for the multinomial model discussed above invalid.  As
+\citet{efford_etal:2009euring} noted, we expect ``bias to be small
+when trap saturation (the proportion of traps occupied) is low.  Trap
+saturation will be higher when population density is high...'',
 relative to trap density, or when net encounter probability is high.
 Efford et al. did a limited simulation study and found essentially no
-effective bias and concluded that estimators of density from the misspecified
-independent multinomial model are robust to the mild dependence induced
-when trap saturation is low. 
-Naturally then, the Poisson model should be an effective approximation
-under the same set of circumstances. 
+effective bias and concluded that estimators of density from the
+misspecified independent multinomial model are robust to the mild
+dependence induced when trap saturation is low.  Naturally then, the
+Poisson model should be an effective approximation under the same set
+of circumstances.
 
 In the {\bf R} package \mbox{\tt scrbook} we provide a function for
-simulating data from a single-catch system (function \mbox{\tt singlecatch})
-and fitting the misspecified model (\mbox{\tt example(singlecatch)})
-in {\bf JAGS}
-so that the 
-interested reader can evaluate situations relevant to their own
-situation.
+simulating data from a single-catch system (function \mbox{\tt
+  singlecatch}) and fitting the misspecified model (\mbox{\tt
+  example(singlecatch)}) in {\bf JAGS} so that the interested reader
+can evaluate situations relevant to their own situation.
 
 
-\section{Other Topics}
+\subsection{Analysis of Efford's possum trapping data}
 
+
+We provide an analysis here of data from a study of bushtail possums
+in New Zealand. The data come from Efford's package \mbox{\tt secr}
+where he does some analysis -- see the helpf file ?possum for secr,
+look at chapter XXX for info on secr, and so on.
+To load the data we have to load secr first
+\begin{verbatim}
+library("secr")
+data(possum)
+\end{verbatim}
+From the help file Efford says this:
+``Brushtail possums (Trichosurus vulpecula) are an unwanted invasive species in New Zealand. Although most abundant in forests, where they occasionally exceed densities of 15 / ha, possums live wherever there are palatable food plants and shelter.''.
+Originally the data were analyzed in Efford et al. (2005) and the
+study area encompases approximately 300 ha.  
+
+An interesting feature -- 5 trapping grids -- look at plot....... what
+do we do about this?   
+
+Efford et al. (2005) reported a live-trapping study of possums in
+Pinus radiata plantation on coastal sand dunes. The 300-ha site at
+Waitarere in the North Island of New Zealand was a peninsula, bounded
+on one side by the sea and on two other sides by the Manawatu
+river. Cage traps were set in groups of 36 at 20-m spacing around the
+perimeter of five squares, each 180 m on a side. The squares (‘hollow
+grids’) were centred at random points within the 300-ha area. Animals
+were tagged and released daily for 5 days in April 2002. Subsequently,
+leg-hold trapping was conducted on a trapping web centred on each
+square (data not reported here), and strenuous efforts were made to
+remove all possums by cyanide poisoning and further leghold trapping
+across the entire area. This yielded a density estimate of 2.26
+possums / ha.
+
+Traps could catch at most one animal per day. The live-trapped animals
+comprised 46 adult females, 33 adult males, 10 immature females and 11
+immature males; sex and/or age were not recorded for 4 individuals
+(M. Coleman unpubl. data). One female possum was twice captured at two
+sites on one day, having entered a second trap after being released;
+one record in each pair was selected arbitrarily and discarded.
+
+The data are provided as a single-session capthist object
+‘possumCH’. ‘possummask’ is a matching mask object - see
+Examples. Several fitted models are provided for illustration.
+
+The dataframe possumarea contains boundary coordinates of a habitat
+polygon that is used to clip possummask at the shore (from secr
+1.5). possumarea comprises a single polygon representing the extent of
+terrestrial vegetation to the west, north and east, and an arbitrary
+straight southern boundary. The boundary is also included as a
+shapefile and as a text file (‘possumarea.shp’ etc. and
+‘possumarea.txt’ in the package ‘extdata’ folder). See Examples in
+make.mask.
+
+The dataframe possumremovalarea contains boundary coordinates of
+another polygon, the nominal removal area of Efford et al. (2005
+Fig. 1) (from secr 2.3).
+
+Object  Description  
+possumCH  capthist object  
+possummask  mask object  
+possumarea  habitat perimeter  
+possumremovalarea  nominal boundary of removal region  
+possum.model.0  fitted secr model -- null  
+possum.model.b  fitted secr model -- trap response g0  
+possum.model.h2  fitted secr model -- heterogeneity g0, sigma 
+possum.model.Dh2  fitted secr model -- quadratic surface  
+possum.model.Dsh2  fitted secr model -- distance to shore  
+
+
+References
+Borchers, D.L. and Efford, M.G. (2008) Spatially explicit maximum likelihood methods for capture-recapture studies. Biometrics 64, 377–385. 
+
+Efford, M. G., Dawson, D. K. and Robbins C. S. (2004) DENSITY: software for analysing capture-recapture data from passive detector arrays. Animal Biodiversity and Conservation 27, 217–228. 
+
+Efford, M. G., Warburton, B., Coleman, M. C. and Barker, R. J. (2005) A field test of two methods for density estimation. Wildlife Society Bulletin 33, 731–738. 
+
+See Also
+capthist 
+
+Examples
+
+plot(possummask)
+plot(possumCH, tracks = TRUE, add = TRUE)
+plot(traps(possumCH), add = TRUE)
+lines(possumarea)
+summary(possumCH)
+
+## compare & average pre-fitted models
+AIC(possum.model.0, possum.model.b, possum.model.h2)
+model.average(possum.model.0, possum.model.b, possum.model.h2)
+
+Do some analysis
+
+NEED A MAKE.STATESPACE   function
+
+y<-as.matrix(possumCH)
+
+x<-as.matrix( traps(possumCH))
+
+
+
+
+\section{Summary and Outlook}
+
+The binomial/Poisson/multinomial system will get you pretty far. It
+provides a framework for modeling the 3 main data types: binary
+encounters, multinomial trials, and encounter frequency data.
+
+There are other types of encounter models.......
 Removal systems. Sometimes traps kill individuals and SCR models can handle
-that. That is a kind of open model, a limited case, and we handle that
+that. That is a kind of open model, a limited case, (mortality only) and we handle that
 in Section XXXX.
 
 Trapping webs:
 
 Acoustic surveys:
-
-
-\section{Summary and Outlook}
-
-There are other types of encounter models.......
-
 Efford adapts SCR models to acoustic detection devices.... a few words
 on that here.....
 
