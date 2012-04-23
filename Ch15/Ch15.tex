@@ -363,13 +363,13 @@ and
 Under the standard mark-resight assumption that marked individuals are a representative sample of the population, the estimate of $\sigma$ can be applied for the entire population. For the unmarked individuals ${\bf s}_{i}$ are estimated as described before conditional on the latent encounter histories. 
 
 {\bf R} makes it easy to implement the update of $\sigma$ and ${\bf s}_i$ based on telemetry data and the above described full conditionals within our existing MCMC algorithm. We simply replace the current updating step for $\sigma$ with: 
-XXXXXXXXXX I might still polish this code a little XXXXXXXXXXXXXXXXXXX
+
 \begin{verbatim}
 #ntot = number of telemetry-tagged individuals
 #locs = list of length ntot; each element is a matrix 
 #with telemetry locations
-#Sk, lamk, Dk = activity centers, encounter rate matrix 
-#and distance matrix of telemetry-tagged individuals 
+#telID = vector with identifier for telemetry-tagged
+#individuals
 
 sigma.cand <- rnorm(1, sigma, tune[1])
 if (sigma.cand > 0) {
@@ -377,18 +377,16 @@ if (sigma.cand > 0) {
 llsig<-llsig.cand<-rep(NA, ntot) 
 
 for (x in 1:ntot) {
-lls[x]<-sum(dmvnorm(x=locs[[x]],mean=c(Sk[x,1],Sk[x,2]), 
+lls[x]<-sum(dmvnorm(x=locs[[x]],mean=c(S[telID[x],1],S[telID[x],2]), 
 			sigma=cbind(c(sigma^2,0), c(0,sigma^2)), log=T))   
-lls.cand[x]<-sum(dmvnorm(x=locs[[x]],mean=c(Sk[x,1],Sk[x,2]), 
+lls.cand[x]<-sum(dmvnorm(x=locs[[x]],mean=c(S[telID[x],1],S[telID[x],2]), 
 	sigma=cbind(c(sigma.cand^2,0), c(0,sigma.cand^2)), log=T))   
 	}
    if(runif(1) < exp( sum(lls.cand)  - sum(lls) ) ){
     sigma<-sigma.cand
     lam <- lam0*exp(-(D*D)/(2*sigma.cand*sigma.cand))
-    lamk <- lam0*exp(-(Dk*Dk)/(2*sigma.cand*sigma.cand))
 					}
 			}
-}
 \end{verbatim} 
 For ${\bf s}$ we use an analogous updater for the telemetry-tagged individuals and the regular updater for individuals without associated telemetry location information. A full example code can be found in the {\bf R} package {\tt scrbook}, by calling {\tt scrPID.telemetry}. Note that not all marked individuals need to be telemetry-tagged. This approach of incorporating telemetry data into a spatial mark-resight model can easily be extended to update $\sigma$ and ${\bf s}$ conditional on both resighting and telemetry data and applies equally to regular SCR models where all individuals are identifiable. 
 
