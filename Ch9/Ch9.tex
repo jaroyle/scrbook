@@ -515,7 +515,9 @@ XXXXX probably worth checking that..... can you included that here? XXXXXXX
 Now, we can use the same data setup, but fit a model having a
 different distance function in the encounter probability model. Here
 we use the negative exponential distance function, and the new 
- {\bf BUGS} model is:
+ {\bf BUGS} model is:  XXXX BETH: include this in your scrbook
+ function too and maybe allow the user to specify which model file
+ they want to use with an if statement or something XXXXXXXXXXXXXXXXXXXXXXXXXX
 {\small
 \begin{verbatim}
 cat("
@@ -576,20 +578,52 @@ better).
 
 
 
-XXXX ANDY STOPPED HERE XXXXXX
+Here, we see that posterior mean density is approximately 0.17,
+effectively the same as under the half-normal distance function model
+above.  The posterior mean (percentiles) of $\sigma$ for the negative
+exponential model are $1.14 (0.95, 1.32)$, entirely distinct from our
+estimate of $\sigma$ under the half normal model. The interpretation
+of $\sigma$ in the two models is really quite distinct. In the normal
+model it can be interpreted as the standard deviation of a bivariate
+normal movement model whereas the manner in which $\sigma$ relates to
+``area used'' for the negative exponential model has nothing to do
+with a bivariate normal model of movement.  This highlights that it is
+important for the user to know what distance function is used and what
+the interpretation of $\sigma$ might be.  There is not a clear way XXX
+actually I have some material for Ch. 4 that addresses this XXXXXX
+(that we know of) for $\sigma$ from the exponential model to be
+related to home range radius.
 
-Here, we see that density is estimated at 0.17 and is effectively the
-same as under the half-normal distance function model above.  In this
-case with the exponential distance function, $\sigma$ is defined
-differently, so here we see the posterior mean estimate of sigma is
-1.14 (0.95, 1.32), which is entirely distinct from our estimate of $\sigma$ under the half normal model.  This highlights that it is important for the user to know what distance function is used and what the interpretation of sigma might be.  There is not a clear way (that we know of) for sigma from the exponential model to be related to home range radius.   
-
-We leave the detection functions for now and move onto incorporating covariates into the model using the BUGS language.  For this part, we will stick with the half-normal distance model shown in the SCR0.txt model file above. 
+We leave the detection functions for now and move onto incorporating
+covariates into the model using the \bugs 
+language.  For this part, we will stick with the half-normal distance
+model shown in the \mbox{\tt SCR0.txt} model file above. 
 
 \subsection{Time}
 
 
-There are a number of ways in which we can incorporate time into our models.  As we demonstrated above, we can easily fit a ``time effect'' where each occasion has its own detection probability in WinBUGS. Again, we can use the same data set up as in the previous section and just modify our WinBUGS code to now allow $\alpha_0$ to be estimated for each time period $k$.  In order to estimate time specific baseline detection, we need to use the 3-d data array which has nind x ntraps x nreps.  Thus, in our list of data, we now use Yaug instead of y (the 2-d version of the data).  We also update our initial values so that there are $k=8$ values generated. This ultimately means that we have put in another nested for loop in our code and the computation time will increase quite a bit (this model may take up to 20 hours or more on your machine).   
+
+There are a number of ways in which we can incorporate time into our
+models.  As we demonstrated above XXXX I didn't see this demonstrated
+anywhere XXXXXXX, we can easily fit a ``time effect'' model in \winbugs
+where each occasion has its own detection probability.
+For this, we can use the same data set up as in the previous
+section and modify our \winbugs code to now allow $\alpha_0$ to be
+estimated for each time period $k$ either using an index vector or
+dummy variables XXXXX index variables and dummy variables need defined
+somewhere XXXXXXXX.  In order to estimate time
+specific baseline detection, we need to use the 3-d data array which
+has dimension
+$\mbox{\tt nind} \times \mbox{\tt ntraps} \times \mbox{\tt nreps}$.
+Thus, in our list of data, we now use 
+XXXX BETH: I'm not understanding this sentence XXXXXXXX
+\mbox{\tt Yaug}
+instead of \mbox{\tt y} (the 2-d version of the data).  We also update our
+initial values so that there are $K=8$ values generated. This
+ultimately means that we have put in another nested for loop in our
+code and the computation time will increase quite a bit (this model
+may take up to 20 hours or more on your machine to obtain a sufficient
+posterior sample). XXXX BETH: Is JAGS any faster? XXXXXXXX
 
 {\small
 \begin{verbatim}
@@ -630,7 +664,12 @@ zst=as.vector(rbinom(M, 1, .5))
 inits =  function() {list(z=zst,psi=runif(1), sigma=runif(1),alpha0=runif(8)) }
 fitt = bugs(data0, inits, params0, model.file="SCR0t.txt",working.directory=getwd(),    
        debug=T, n.chains=3, n.iter=20000, n.burnin=10000, n.thin=2)
+\end{verbatim}
+}
 
+Executing this code produces the fullowing summary output:
+{\small 
+\begin{verbatim}
 > print(fitt, digits=3)
 Inference for Bugs model at "SCR0t.txt", fit using WinBUGS,
  3 chains, each with 20 iterations (first 10 discarded), n.thin = 2
@@ -649,8 +688,16 @@ N          54.600  3.795   49.691   52.000   54.000   57.498   61.570  0.987    
 D           0.018  0.001    0.016    0.017    0.018    0.019    0.020  0.987    15
 sigma       8.282  0.364    7.660    8.066    8.362    8.521    8.819  1.258     9
 deviance 1498.133 40.440 1444.144 1465.999 1492.000 1526.440 1564.546  1.507     6
+...
+[some output deleted]
+...
 \end{verbatim}
 }
+
+
+XXXX ANDY STOPPED HERE XXXXXX
+
+
 
 The results from this model are very similar to those from the basic
 model, but now we can examine the difference in detection across time.
