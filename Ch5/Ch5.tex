@@ -610,13 +610,13 @@ D<- e2dist(S,traplocs)
 # paramter values
 sigma<- 0.5
 alpha0<- -1
-theta<- 1/(2*sigma*sigma)
+alpha1<- 1/(2*sigma*sigma)
 
 # make an empty data matrix and fill it up
 Ycat<-matrix(NA,nrow=N,ncol=K)
 for(i in 1:N){
 for(k in 1:K){
-lp<- alpha0 - theta*D[i,]*D[i,]
+lp<- alpha0 - alpha1*D[i,]*D[i,]
 cp<- exp(c(lp,0))
 cp<- cp/sum(cp)
 Ycat[i,k]<- sample(1:(ntraps+1),1,prob=cp)
@@ -676,7 +676,7 @@ model {
 psi ~ dunif(0,1)
 alpha0 ~ dnorm(0,10)
 sigma ~dunif(0,10)
-theta<- 1/(2*sigma*sigma)
+alpha1<- 1/(2*sigma*sigma)
 
 for(i in 1:M){
   z[i] ~ dbern(psi)
@@ -688,7 +688,7 @@ for(i in 1:M){
   }
   for(k in 1:K){
     for(j in 1:ntraps){
-      lp[i,k,j] <- exp(alpha0 - theta*d[i,j])*z[i]            
+      lp[i,k,j] <- exp(alpha0 - alpha1*d[i,j])*z[i]            
       cp[i,k,j] <- lp[i,k,j]/(1+sum(lp[i,k,]))
     }
     cp[i,k,ntraps+1] <- 1-sum(cp[i,k,1:ntraps])  # last cell = not captured
@@ -698,7 +698,7 @@ for(i in 1:M){
 
 N <- sum(z[1:M]) 
 A <- ((xlim[2]-xlim[1])*trap.space)*((ylim[2]-ylim[1])*trap.space)
-D <- N.tot/A
+D <- N/A
 }
 ",file="model.txt")
 
@@ -721,8 +721,8 @@ executed in the help file for \mbox{\tt simMnSCR.fn}):
 \begin{verbatim}
 library("rjags")
 
-inits <- function(){list (z=zst,sigma=runif(1,.5,1) ,S=Sst) }              
-parameters <- c("psi","alpha0","theta","sigma","N","D")
+inits <- function(){list (z=zst,sigma=runif(1,.5,1), S=Sst) }              
+parameters <- c("psi","alpha0","alpha1","sigma","N","D")
 data <- list (X=data$X,K=data$K,trap.space=1,Ycat=Ycat,M=M,
               ntraps=nrow(data$X),ylim=data$ylim,xlim=data$xlim)         
 
@@ -730,25 +730,36 @@ out1 <- jags.model("model.txt", data, inits, n.chains=3, n.adapt=500)
 out2 <- coda.samples(out1,parameters,n.iter=1000)
 \end{verbatim}
 }
+This produces the following posterior summaries:
+{\small
+\begin{verbatim}
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
 
+           Mean       SD  Naive SE Time-series SE
+D        1.8642  0.18359 0.0023701       0.008635
+N      119.3118 11.74965 0.1516873       0.552662
+alpha0  -0.4425  0.14827 0.0019142       0.005060
+psi      0.5961  0.06800 0.0008779       0.002962
+sigma    0.4812  0.02869 0.0003704       0.001507
+alpha2   2.1824  0.25874 0.0033403       0.013425
 
-XXXXXX
-Summary of analysis for the simulated data set here.....  ...........
-XXXXXX
-
-
-
-
-
-
+[.... some output deleted ....]
+\end{verbatim}
+}
+We see that these posterior summaries are generally 
+consistent with the data-generating parameter values of  
+$N=100$, $\alpha_{0}= -.40$, and $\sigma=0.5$.
 
 \subsection{Multinomial Relationship to Poisson}
 
 The multinomial is related directly to the Poisson encounter rate
 model in the following sense. Let $y_{ij}$ be the number of
-encounters for individual $i$ in trap $j$. Then, the trap frequencies
-(excluding the last cell now), if we condition on the {\it total}
-number of captures, $y_{i} = \sum_{j} y_{ij}$, are multinomial with
+encounters for individual $i$ in trap $j$. If $y_{ij} \sim
+Poisson(\lambda_{ij})$,
+then, 
+conditional on the {\it total}
+number of captures, $y_{i} = \sum_{j} y_{ij}$, the trap frequencies are multinomial with
 probabilities
 \[
  \pi_{ij} =  \frac{ \lambda_{ij} } { \sum_{j} \lambda_{ij} } 
@@ -861,8 +872,6 @@ capture is proportion to $d^{2}$, and the traps are independent, then
 $\pi_{ij} = p_{0} exp(-\alpha_{1} d_{ij}^{2})$ with a restriction on
 $p_{0}$.  So those models are all
 equivalent to some extent, for their appropriate observation model.
-
-
 
 
 
@@ -1030,8 +1039,13 @@ This is also a good open population example
 The classical animal trapping experiment is based on a physical trap
 which captures a single animal and holds that individual until
 subsequent molestation by a biologist. 
-This type of observation model -- the ``single catch'' trap -- 
-was the original situation considered by \citet{efford:2004}.
+This type of observation model -- the ``single-catch'' trap -- 
+was the original situation considered by
+\citet{efford:2004}. Nowadayws, capture-recapture data are more often
+obtained by other methods (DNA from hair snares, or scat sampling,
+camera traps etc...) but nevertheless the single-catch traps are still
+widely used in small mammal studies \citep{converse_1996,
+  converse_royle:2012, converse_royle:2013}.
 
 The single-catch model is basically a multinomial model but one in
 which the number of available traps is reduced as each individual is
@@ -1090,19 +1104,21 @@ simulating data from a single-catch system (function \mbox{\tt
   example(singlecatch)}) in {\bf JAGS} so that the interested reader
 can evaluate situations relevant to their own situation.
 
-
 \subsection{Analysis of Efford's possum trapping data}
 
 
 We provide an analysis here of data from a study of bushtail possums
 in New Zealand. The data come from Efford's package \mbox{\tt secr}
-where he does some analysis -- see the helpf file ?possum for secr,
-look at chapter XXX for info on secr, and so on.
+where he does some analysis -- see the help file \mbox{\tt ?possum}
+for \mbox{\tt secr},
+look at Chapt. \ref{chapt.mle} for more information on \mbox{\tt secr}
+where we also do a likelihood analysis of these data.
 To load the data we have to load secr first
 \begin{verbatim}
 library("secr")
 data(possum)
 \end{verbatim}
+
 From the help file Efford says this:
 ``Brushtail possums (Trichosurus vulpecula) are an unwanted invasive species in New Zealand. Although most abundant in forests, where they occasionally exceed densities of 15 / ha, possums live wherever there are palatable food plants and shelter.''.
 Originally the data were analyzed in Efford et al. (2005) and the
@@ -1160,19 +1176,11 @@ possum.model.h2  fitted secr model -- heterogeneity g0, sigma
 possum.model.Dh2  fitted secr model -- quadratic surface  
 possum.model.Dsh2  fitted secr model -- distance to shore  
 
-
-References
-Borchers, D.L. and Efford, M.G. (2008) Spatially explicit maximum likelihood methods for capture-recapture studies. Biometrics 64, 377–385. 
-
-Efford, M. G., Dawson, D. K. and Robbins C. S. (2004) DENSITY: software for analysing capture-recapture data from passive detector arrays. Animal Biodiversity and Conservation 27, 217–228. 
-
-Efford, M. G., Warburton, B., Coleman, M. C. and Barker, R. J. (2005) A field test of two methods for density estimation. Wildlife Society Bulletin 33, 731–738. 
-
 See Also
 capthist 
 
 Examples
-
+\begin{verbatim}
 plot(possummask)
 plot(possumCH, tracks = TRUE, add = TRUE)
 plot(traps(possumCH), add = TRUE)
@@ -1191,6 +1199,7 @@ y<-as.matrix(possumCH)
 
 x<-as.matrix( traps(possumCH))
 
+\end{verbatim}
 
 
 
@@ -1206,6 +1215,11 @@ that. That is a kind of open model, a limited case, (mortality only) and we hand
 in Section XXXX.
 
 Trapping webs:
+would be possible to formulate trapping webs as a hierarchical model
+but we haven't pursued this because trapping webs are simply not used
+in practice, or their use is extremely rare.  Idea is that competition
+among traps .... dividing constant density of individuals into a
+variable density of traps.... 
 
 Acoustic surveys:
 Efford adapts SCR models to acoustic detection devices.... a few words
