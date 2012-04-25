@@ -431,20 +431,15 @@ out1 <- bugs (data, inits, parameters, "SCR-Poisson.txt", n.thin=nthin,n.chains=
  n.burnin=nb,n.iter=ni,working.dir=getwd(),debug=TRUE)
 \end{verbatim}
 }
-
-
 Or using {\bf JAGS} we do this instead:
 {\small
 \begin{verbatim}
 library(rjags)
-jm <- jags.model("SCR-Poisson.txt", data=data, inits=inits, n.chains=nc,
-                 n.adapt=100)
-fm <- coda.samples(jm, parameters, n.iter=ni, thin=nthin)
+fm <- jags.model("SCR-Poisson.txt", data=data, inits=inits, n.chains=nc, n.adapt=nb)
+out2 <- coda.samples(jm, parameters, n.iter=ni, thin=nthin)
 \end{verbatim}
 }
-
-Summarizing the output from the {\bf WinBUGS} run produces the following output:
-
+Summarizing the output from the \winbugs run produces the following output:
 {\small
 \begin{verbatim}
 > print(out1,digits=2)
@@ -458,15 +453,11 @@ N        114.13 15.25  87.97 103.00 113.00 124.00 147.00 1.01   370
 D          1.78  0.24   1.37   1.61   1.77   1.94   2.30 1.01   370
 deviance 329.95 21.92 290.00 314.20 329.50 344.40 375.80 1.00  1700
 
-For each parameter, n.eff is a crude measure of effective sample size,
-and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
-
-DIC info (using the rule, pD = var(deviance)/2)
-pD = 240.2 and DIC = 570.2
-DIC is an estimate of expected predictive error (lower deviance is better).
+...
+[..some output deleted..]
+...
 \end{verbatim}
 }
-
 
 We don't provide a real example of a Poisson SCR model here although
 we use this observation model for an analysis of some data in Chapt.
@@ -515,8 +506,11 @@ Several types of encounter devices yield multinomial observations in
 which an individual can be caught in a single trap during a particular
 encounter occasion.  Mist nettting is the prime example -- these are
 ``multi-catch'' traps \citep{efford_etal:2009euring}. Also some kinds of
-bird or mammal traps hold multiples of animals and can be thought of
-similarly. Another one is area-searches of reptiles where we think of
+bird or mammal traps hold multiples of animals,
+and pit-fall traps are commonly used for many types of
+herptiles. These sampling methods are multi-catch devices. 
+Another important multi-catch method is area-searches of reptiles (or
+any animal scat) where we think of
 a small polygon as the ``trap'' -- we could get multiple individuals
 (turtles, lizards) in the same plot but not, in the same sample
 session, at different plots.  The key feature is that capture of an
@@ -543,7 +537,7 @@ which consists of a sequence of 0's and at most a single 1 indiciating
 the trap of capture. For example, if we capture an individual in trap
 2 during a 6 sample period study then ${\bf y}_{i} = (0,1,0,0,0,0)$.
 If we sample for 5 periods in all and the individual is also caught
-in trap 4 during sample 3, then the 5 encounter observations for that
+in trap 4 during sample 3, but otherwise uncaptured, then the 5 encounter observations for that
 individual are as follows:
 \begin{verbatim}
 sample |---- trap ---------|
@@ -571,11 +565,10 @@ cell'', to correspond to the event ``not captured''.  Now we have to
 construct these cell probabilities in some meaningful way that depends
 on each individuals' ${\bf s}$, which we do shortly.
 
-A statistically equivalent distribution is the {\it categorical} distribution.
-If ${\bf y}$ is a multinomial trial with probabilities
-${\bm \pi}$ than the {\it position} of the non-zero
-elemment of ${\bf y}$ is a categorical random variable with probabilities
-${\bm \pi}$.
+A statistically equivalent distribution is the {\it categorical}
+distribution.  If ${\bf y}$ is a multinomial trial with probabilities
+${\bm \pi}$ than the {\it position} of the non-zero elemment of ${\bf
+  y}$ is a categorical random variable with probabilities ${\bm \pi}$.
 We express this as
 \[
 {\bf y} \sim \mbox{Categorical}( {\bm \pi} )
@@ -584,80 +577,19 @@ In the context of SCR models the categorical version of the
 multinomial trial corresponds to the {\it trap of capture}.  Using our
 example above with 6 traps then ${\bf y}_{i1} = (0,1,0,0,0,0)$ then we
 could as well say $y_{ik}$ is a categorical random variable with
-state-space (possible outcomes) $(1,2,3,4,5,6,7)$ where outcome $y=7$ corresponds to
-``not captured'' (obviously how this is organized or labeled is
-completely irrelevant, although it is convenient to use the integers
-$1:(J+1)$) where $J+1$ is the event not captured.  Therefore, for our
-illustration in the previous table, 
-$y_{i1} = 2$, $y_{i2} = 7$, $y_{i3} = 4$ and so on.
+state-space (possible outcomes) $(1,2,3,4,5,6,7)$ where outcome $y=7$
+corresponds to ``not captured.'' Obviously, how this is organized or
+labeled is completely irrelevant, although it is convenient to use the
+integers $1:(J+1)$) where $J+1$ is the event not captured.  Therefore,
+for our illustration in the previous table, $y_{i1} = 2$, $y_{i2} =
+7$, $y_{i3} = 4$ and so on.
 
-For simulating and fitting data in the {\bf BUGS} engines we will typically use
+For simulating and fitting data in the \bugs engines we will typically use
 the categorical representation of the model because it is somewhat
 more convenient.  We have found that fitting multinomial models in
-{\bf WinBUGS} can be extremely inefficient whereas {\bf JAGS}
-typically performs much better. In the examples here, we use {\bf
-  JAGS} exclusively.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+\winbugs can be extremely inefficient whereas \jags
+typically performs much better \citep{converse_royle:2013}. In the examples here, we use \jags
+ exclusively.
 
 
 
@@ -694,14 +626,14 @@ Ycat[i,k]<- sample(1:(ntraps+1),1,prob=cp)
 }
 The resulting data matrix in this case has the maximal dimension $N$
 and so, for analysis, to mimic a real situation, we would have to
-discard the uncaptured individuals.  \mbox{\tt sim.mnSCR} will also
+discard the uncaptured individuals.  \mbox{\tt simMnSCR.fn} will also
 simulate data that includes a behavioral response, which will be the
 typical situation in small-mammal trapping problems, which we first
 developed this code to deal with \citep[see][for
 details]{converse_royle:2012}.
 
-Here we use our function \mbox{\tt sim.mnSCR} to simulate a data set
-with $K=7$ periods, etc.. We'll run the model using {\bf JAGS} which
+Here we use our function \mbox{\tt simMnSCR.fn} to simulate a data set
+with $K=7$ periods, etc.. We'll run the model using \jags which 
 we have found is much more effective for this class of models.  We get
 the data set-up for analysis by augmenting the size of the data set to
 $M=200$. In addition we choose starting values for ${\bf s}$ and the
