@@ -599,7 +599,7 @@ covariates into the model using the \bugs
 language.  For this part, we will stick with the half-normal distance
 model shown in the \mbox{\tt SCR0.txt} model file above. 
 
-\subsection{Time}
+\subsection{Time-Varying Encounter Probability}
 
 
 
@@ -812,55 +812,46 @@ covariates is the ``Huggins-Alho'' idea which is based on thinking
 about Horwitz-Thompson estimators involving unequal probabilities of
 sampling. 
 
-XXXX ANDY STOPPED HERE XXXXXX
 
 
-\DefineShortVerb{\|}
- We can simply write \Verb+_verbatim_+
- material using a single |_delimiter_|
- \UndefineShortVerb{\|}
-
-\begin{comment}
- \DefineShortVerb{\+}
- And we can +_change_+ the character.
-\end{comment}
+XXX we nee to figure out this verbatim stuff to center the tilde XXXX
 
 The package \mbox{\tt secr} allows the user to simulate data and fit a
 suite of models with various detection functions and covariate
 responses.  As we saw in Chapt. \ref{chapt.mle}, \secr uses the standard \R model
 specification framework, defining the dependent and independent
 variable relationship using tildes
-(e.g., \Verb+y \mytilde x+).
+(e.g., \Verb+y ~ x+).
 Thus, in \secr we
-might have g0 ~ behavior or sigma ~ time; when left unspecified or set
-to 1 (e.g., g0 ~ 1), this will default to a model with no covariates
-that is constant.  .  Additionally, we can specify covariates in secr
-on density, which are set for example as D ~ habitat.  To demonstrate
-a suite of models with various types of covariates using secr, we
-continue using the data collected on black bears in Ft. Drum, NY, USA.
+might have \verb+g0 ~ behavior+ or \verb+sigma ~ time+; 
+when left unspecified or set
+to 1 (e.g., \verb+g0 ~ 1+), this will default to a model with no
+covariates
+(i.e., constant parameter values).
+Additionally, we can specify covariates in \secr
+on density (see Chapt. \ref{chapt.ipp}), 
+which are set for example as \verb+D ~ habitat+.  
+
+To demonstrate
+a suite of models with various types of covariates using \secr, we
+continue using the data collected on black bears in Ft. Drum, NY, USA
+which we previously analyzed in Chapt. \ref{chapt.closed}.
 It should be easy for the reader to take this example and generalize
 it for his or her own use.  First we need to read in the raw data and
 the trap file so that we can build the capture history and trap files
-required by secr.  After doing this, similar to the wolverine example
-shown in Chapter *5*, we then call the command secr.fit to run the
-model.  All of the following models should take somewhere between 30
+required by \secr.  After doing this, similar to the wolverine example
+shown in Chapt. \ref{chapt.mle}, we then call the command \mbox{\tt
+  secr.fit} 
+to fit the model by the method of maximum likelihood.
+ All of the following models should take somewhere between 30
 seconds and 5 minutes to run on your computer (possibly a little
 longer or shorter given the specifics of your machine).  To refresh
-your memory here how to read in and format the data and run the basic
-model with no covariates and a half normal distance function in secr
-for the Ft. Drum bear study: {\small
+your memory, we being by fitting a basic 
+model with no covariates and a bivariate normal detection model in
+\secr to the Ft. Drum bear study data: 
 
-
-
-
-
-
-
-
+{\small
 \begin{verbatim}
-
-
-
 trapmat<-read.csv("FDtrapmat.csv")
 trapmat[,2:3] = trapmat[,2:3]*1000
 colnames(trapmat)<- c("trapID","x", "y")
@@ -908,28 +899,33 @@ Fitted (real) parameters evaluated at base levels of covariates
 D       log 1.663791e-03 2.594918e-04 1.227831e-03 2.254545e-03
 g0    logit 1.058476e-01 1.388370e-02 8.155599e-02 1.363008e-01
 sigma   log 1.972951e+03 1.275652e+02 1.738351e+03 2.239211e+03
-
 \end{verbatim}
 }
 
-Just as a reminder, \mbox{\tt secr} returns density in terms of individuals per
-hectare, so we must multiply this D by 100 to see the estimate as
-individuals per $km2$.  In doing so, the resulting density is 0.166
-individuals / $km ^2$, which very similar to that found in section 8.3
-using {\bf WinBUGS} for the basic model with a half-normal distance function
-on detection.
 
-In the \mbox{\tt secr} package, the detection functions are specified
+
+Just as a reminder XXXX lets use the word and phrases involving
+``reminder'' less XXXXXX, \mbox{\tt secr} returns density in terms of 
+individuals per
+hectare, so we must multiply this $D$ by 100 to see the estimate as
+individuals per $km^2$.  In doing so, the resulting density is 0.166
+individuals / $km^2$, which very similar to that found in sec. XXXXX
+latex tag here XXXX
+using \winbugs for the equivalent detection model. XXXX how different
+is it? be precise here so the reader doesn't have to go back there XXXXX
+
+In the \secr package, the detection functions are specified
 by changing the ``\mbox{\tt detectfn}'' option (an integer code)
 within the \mbox{\tt secr.fit} command.  Table
 \ref{covariates.tab.detmodels} shows the possible detection functions
-that \mbox{\tt secr} will fit; the default is the half-normal and the
-exponential is \mbox{\tt detectfn = 2}. Therefore, to fit the
+that \mbox{\tt secr} will fit; the default is that based on the kernel
+of a bivariate normal 
+(``half-normal'') model and the
+(negative) exponential is \mbox{\tt detectfn = 2}. Therefore, to fit the
 exponential distance function, we use the following commands:
 
 {\small
 \begin{verbatim}
-
 bearexp = secr.fit (bearcapt, buffer = 20000, detectfn=2)
 
 [secr data and model summary output deleted ]
@@ -951,18 +947,27 @@ Fitted (real) parameters evaluated at base levels of covariates
 D       log 1.698694e-03 2.693439e-04 1.247344e-03 2.313366e-03
 g0    logit 3.443479e-01 5.500169e-02 2.457414e-01 4.584709e-01
 sigma   log 1.103882e+03 9.272586e+01 9.365855e+02 1.301061e+03
-
 \end{verbatim}
 }
 
-Density is estimated similar to the half-normal, although the mean
-estimate is slightly larger.  As we saw in the above sections, sigma =
-1.1 which is very different from the half normal where sigma was 1.97.
+Density is estimated similar to the bivariate normal model, 
+although the mean
+estimate is slightly larger. The 
+posterior mean of 
+$\sigma$ is about $1.1$
+ which is very different from the bivariate normal where the
+posterior mean of $\sigma$ was $1.97$.
 These results are consistent with the what we saw in the Bayesian
-analysis of the model.
+analysis of the model. XXXX requires further comment here....so reader
+doesn't have to look back and compare XXXXXXX
+
+XXX can you put the secr commands in an R help file for a relevant
+function in scrbook? XXXXXX
 
 
-\subsection{Time}
+XXXX ANDY STOPPED HERE XXXXXX
+
+\subsection{Time-Varying Encounter Probability}
 
 The \mbox{\tt secr} package easily fits a ``time effect'' where each
 occasion has its own detection probability. This is reasonable when
