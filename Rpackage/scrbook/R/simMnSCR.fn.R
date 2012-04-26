@@ -23,13 +23,14 @@ sigma<-parms$sigma
 alpha0<-parms$alpha0
 ###alpha1<-parms$alpha1
 alpha1<- 1/(2*sigma*sigma)
+alpha2<-parms$alpha2
 
 Ycat<-matrix(NA,nrow=N,ncol=K)
 Xlag<-matrix(0,nrow=N,ncol=K+1)
 Xlag[,1]<-rep(0,N)
 for(i in 1:N){
 for(k in 1:K){
-lp<- alpha0 + alpha1*Xlag[i,k] - theta*D[i,]*D[i,]
+lp<- alpha0 + alpha2*Xlag[i,k] - alpha1*D[i,]*D[i,]
 cp<- exp(c(lp,0))
 cp<- cp/sum(cp)
 Ycat[i,k]<- sample(1:(ntraps+1),1,prob=cp)
