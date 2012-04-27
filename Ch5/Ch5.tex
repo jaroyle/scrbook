@@ -595,7 +595,7 @@ typically performs much better \citep{converse_royle:2013}. In the examples here
 
 
 
-\subsection{Simulating data and fitting in WinBUGS}
+\subsection{Simulating data and analysis using JAGS}
 
 We're going to show the nugget of a simulation function which is
 used in the function \mbox{\tt sim.mnSCR} found in the {\bf R} package
@@ -780,11 +780,12 @@ which is precsely, under the Gaussian model,
 This is a multinomial inverse-logit transform of a model having
 quadratic distance term and readers might recognize it
 also as the ``maximum entropy distribution'' from MAXENT
-species distribution modeling, and also resource selection functions
-from telemetry studies. This suggests therefore how we might model
+species distribution modeling (REF XXXXX), and also resource selection functions
+from telemetry studies (REF XXXXX). This suggests therefore how we might model
 landscape or habitat covariates using such methods -- i.e., by
-including them as explicit covariates in this model (See Section XXXXX
-where we do this).  
+including them as explicit covariates in this model, and include
+RSF data from telemetry studies (See Section XXXXX
+where we do this XXXXXX).  
 
 The model is not completely specified, however, absent a model for the
 probability of encouter or the frequency of captures. For example, if
@@ -808,22 +809,23 @@ counts are not Poisson.
 %$y_{ij}$ is Poisson with mean $\sum_{j}$ stuff... we have a product of
 %Poissons, i.e., the model we started with. 
 
-The interpretation of this model merits some discussion. That is, {\it
-  given that an individual is captured}, the probabilities given by
-Eq. \ref{poisson-mn.eq.mnprobs} determine the probability distribution
-of ``trap of capture''.  The probability that individual $i$ is
-captured in trap $j$ is the product of two components
+The interpretation of this formulation of the multinomial model merits
+some discussion. That is, {\it given that an individual is captured},
+the probabilities given by Eq. \ref{poisson-mn.eq.mnprobs} determine
+the probability distribution of ``trap of capture''.  The probability
+that individual $i$ is captured in trap $j$ is the product of two
+components
 \[
 \pi_{ij} = \Pr(\mbox{individual} i \mbox{captured in trap} j) = 
  \Pr(\mbox{captured in trap} j | \mbox{captured at all})\Pr(\mbox{captured at all})
 \]
-To fully specify the model, we have to
-model the probability that an individual is captured at all, say
-$p_0$. Then the unconditional multinomial probabilities are
-$p_{0} \pi_{ij}$ for $j=1,\ldots,J$ and $\pi_{i,J+1} = (1-p_{0})$.
-It hardly makes sense that $p_{0}$ should be constant.
-Instead, it is natural to think that total probability of capture should be related
-to the average distance to traps like this:
+To fully specify the model, we have to model the probability that an
+individual is captured at all, say $p_0$. Then the unconditional
+multinomial probabilities are $p_{0} \pi_{ij}$ for $j=1,\ldots,J$ and
+$\pi_{i,J+1} = (1-p_{0})$.  It hardly makes sense that $p_{0}$ should
+be constant.  Instead, it is natural to think that total probability
+of capture should be related to the average distance to traps like
+this:
 \[
  p_{i} = p_{0} \exp(-\beta \sum_{j} d_{ij}^2)
 \]
@@ -846,7 +848,8 @@ and then the probability of not being captured at all is
 \[
  \pi_{i,J+1} =  1-p_i 
 \]
-Therefore the multinomial vector ${\bf y}_{i}$ of length  $(J+1)
+Therefore the multinomial trial ${\bf y}_{i}$ of length  $(J+1)
+XXXX problem here -- do those add up to 1? XXXXX
 \times 1$ has those probabilities.  One issue: This induces a
 constraint on $p_{0}$ because the sum of the multinomial probaiblities
 has to be 1 and therefore 
@@ -856,7 +859,6 @@ p_{0} \sum_{j} p_{ij} \le 1.
 References to Royle et al. 2009a and Gardner et al. 2010 need to go
 here because those papers used this type of model. (misspecified
 multinomial). 
-
 This is not the ``multivariate logit'' that
 we use in the BUGS model above which more naturally admits the
 restriction on the cell probabilities, see Eq. XXXX above.  
@@ -1096,6 +1098,8 @@ dependence induced when trap saturation is low.  Naturally then, the
 Poisson model should be an effective approximation under the same set
 of circumstances.
 
+XXXX This function needs added? XXXXX
+
 In the {\bf R} package \mbox{\tt scrbook} we provide a function for
 simulating data from a single-catch system (function \mbox{\tt
   singlecatch}) and fitting the misspecified model (\mbox{\tt
@@ -1114,20 +1118,39 @@ where we also do a likelihood analysis of these data.
 Originally the data were analyzed by \citet{efford_etal:2005}, and 
 a detailed description of the data set is available in the help file
 from which we summarize:
-``Brushtail possums (Trichosurus vulpecula) are an unwanted invasive
+``{\it Brushtail possums (Trichosurus vulpecula) are an unwanted invasive
 species in New Zealand. Although most abundant in forests, where they
 occasionally exceed densities of 15 / ha, possums live wherever there
-are palatable food plants and shelter.''
+are palatable food plants and shelter}.''
 
 The study area encompases approximately 300 ha, and 180 live traps
-organized in 5 distinct grids see Fig. XXXXXXX. 
+organized in 5 distinct grids see Fig. \ref{poisson-mn.fig.possum}
+which shows the spiderplot (see \mbox{\tt ?spiderplot} in the \R
+package \mbox{\tt scrbook}) for the possum data. The black lines
+connect recaptures of the same individual (trap locations in black)
+with the mean location of capture (red dots) of each individual).
+
+
 What do we do about this?
 Each grid (Efford uses
 the term ``hollow grid'') of traps was
 36 traps with a spacing of 20 meters. Thus the grids are 180 m on a
 side. 
 Individuals were captured, tagged, and released over 5 days during
-April, 2002.
+April, 2002. An interesting aspect of this study is that something
+close to ``truth'' exists based on an extensive removal study
+conducted after the live-trapping study \citep{Efford_etal:2005}. This
+produced a density estimate of 2.26 possums/ha.
+
+\begin{figure}
+\centering
+\includegraphics[width=5in,height=3.2in]{Ch5/figs/possum.png}
+\caption{Trapping grids used in possum study from
+  \citet{efford_etal:2005}, data from the package \mbox{\tt secr}
+  (Efford XXXXX).}
+\label{poisson-mn.fig.possum}
+\end{figure}
+
 
 
 To load the data we have to load \mbox{\tt secr} first
@@ -1137,24 +1160,12 @@ data(possum)
 \end{verbatim}
 
 
-``Subsequently
-leg-hold trapping was conducted on a trapping web centred on each
-square (data not reported here), and strenuous efforts were made to
-remove all possums by cyanide poisoning and further leghold trapping
-across the entire area. This yielded a density estimate of 2.26
-possums / ha.''
-
-
 Trapping produced 
 46 adult females, 33 adult males, 10 immature females and 11
 immature males; sex and/or age were not recorded for 4 individuals
 (M. Coleman unpubl. data). One female possum was twice captured at two
 sites on one day, having entered a second trap after being released;
 one record in each pair was selected arbitrarily and discarded.
-
-The data are provided as a single-session capthist object
-‘possumCH’. ‘possummask’ is a matching mask object - see
-Examples. Several fitted models are provided for illustration.
 
 The dataframe possumarea contains boundary coordinates of a habitat
 polygon that is used to clip possummask at the shore (from secr
@@ -1165,17 +1176,62 @@ shapefile and as a text file (‘possumarea.shp’ etc. and
 ‘possumarea.txt’ in the package ‘extdata’ folder). See Examples in
 make.mask.
 
+For our analysis we just tossed up a rectangular state-space which
+doesn't account for any geographic boundaries of the survey region.
+This is probably immaterial as long as we understand the predictions of $N$ or
+$D$ over the ocean don't mean anything biological and we probably
+wouldn't want to report such predictions.
+The estimated density (posterior mean) is about 1.54 possums/ha.
 
+{\small 
+\begin{verbatim}
+> summary(out2)
+
+Iterations = 501:1500
+Thinning interval = 1 
+Number of chains = 3 
+Sample size per chain = 1000 
+
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
+
+             Mean        SD  Naive SE Time-series SE
+D       1.543e-04 1.195e-05 2.182e-07      7.112e-07
+N       2.344e+02 1.816e+01 3.316e-01      1.081e+00
+alpha0 -7.376e-01 1.501e-01 2.740e-03      8.319e-03
+alpha1  1.962e-04 2.026e-05 3.699e-07      1.534e-06
+psi     4.685e-01 4.245e-02 7.750e-04      2.362e-03
+sigma   5.069e+01 2.648e+00 4.834e-02      2.023e-01
+
+2. Quantiles for each variable:
+
+             2.5%        25%        50%        75%      97.5%
+D       1.336e-04  1.461e-04  1.534e-04  1.619e-04   0.000179
+N       2.030e+02  2.220e+02  2.330e+02  2.460e+02 272.000000
+alpha0 -1.029e+00 -8.399e-01 -7.376e-01 -6.344e-01  -0.446544
+alpha1  1.586e-04  1.820e-04  1.966e-04  2.092e-04   0.000238
+psi     3.902e-01  4.380e-01  4.668e-01  4.964e-01   0.556137
+sigma   4.584e+01  4.889e+01  5.043e+01  5.241e+01  56.141155
+\end{verbatim}
+}
 
 
 
 \section{Summary and Outlook}
 
-The binomial/Poisson/multinomial system will get you pretty far. It
-provides a framework for modeling the 3 main data types: binary
-encounters, multinomial trials, and encounter frequency data.
-
-There are other types of encounter models.......
+In this chapter we extended the basic SCR model structure to
+accommodate alternative observation models, including Poisson and
+multinomial observation models.
+Along with the binomial model described in Chapt. \ref{chapt.scr0},
+this sequence of models will accommodate the vast majority of
+contemporary spatial capture-recapture problems. These models provide
+the general framework for modeling the 3 main types of encounter data:
+binary encounters, multinomial trials from ``multi-catch'' or
+``single-catch'' (Efford XXXX) trap systems, and encounter frequency
+data from devices that can record multiple encounters of the same
+individual at a device. 
+ 
+Yet, there are other types of encounter models.......
 Removal systems. Sometimes traps kill individuals and SCR models can handle
 that. That is a kind of open model, a limited case, (mortality only) and we handle that
 in Section XXXX.
@@ -1196,7 +1252,9 @@ only specific summary statistics are observable (Chandler and Royle
 2011, etc..) which we cover in chapter XYZ.  We consider other models
 for detection probability in some prior or later chapter. 
 
-
+The single-catch system, as a sequence of dependent multinomial trials
+(essentially a removal process operating on traps) we only did a ad
+hoc analysis of this. 
 Figuring out the formal analysis of the single catch system would be
 a nice research project for a grad student or something. 
 Seems like order of capture needs to be integrated into the model somehow.
