@@ -1,11 +1,31 @@
 
 
 
-(x <- rbinom(3, size=10, prob=0.5))
+set.seed(666)
+(n <- rbinom(3, size=10, prob=0.5))
+
+
+dbinom(5, 10, 0.5)
+N <- 10
+n <- 5
+p <- 0.5
+factorial(N)/(factorial(n)*factorial(N-n))*p^n*(1-p)^(N-n)
+exp(lgamma(N+1) - (lgamma(n+1) + lgamma(N-n+1)))*p^n*(1-p)^(N-n)
+choose(N, n)*p^n*(1-p)^(N-n)
 
 
 
 
+plot(0:15, dbinom(0:15, 10, 0.5), type="h", lwd=10, lend="butt",
+     col=gray(0.5), xlab="n", ylab="Pr(x=n|N,p)")
+
+
+set.seed(334)
+
+
+plot(0:15, dbinom(0:15, 10, 0.5), type="h", lwd=10, lend="butt",
+     col=gray(0.5), xlab="n", ylab="Pr(x=n|N,p)")
+hist(rbinom(10000, 10, 0.5), freq=FALSE, add=TRUE)
 
 
 
