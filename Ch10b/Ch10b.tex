@@ -12,11 +12,20 @@ Spatial Capture-Recapture
 
 Up to this point we have developed many specific variations of
 relatively simple SCR models. They included various observation
-models, and various types of covariates including behvioral responses
+models, encounter probability models, and different types of covariates including behvioral responses
 and other things that should affect detection probability.
 That said, the models remain pretty basic in the sense that they imply
 relative simple models of how individuals use space (section XXXXXX) and how
-individuals are distributed in space.
+individuals are distributed in space.  In the following several
+chapters we generalize some of the core SCR assumptions ..........
+
+BTW: ``the core SCR assumptions'' should be laid out
+somewhere. Uniformity, isotropic/stationary space usage, independence
+of individuals and of encounters.......  We expect a fair amount of
+robustness to these for good reasons but, importantly, we can extend
+these assumptions in many different ways and we do that to varying
+extents in tis book, but more work remains to be done. We can also
+evaluate the reasonableness of the assumptions formally in some cases.
 
 SCR is the shit
 
@@ -49,40 +58,99 @@ history. So they don't contribute to information about baseline
 encounter probability, just to estimates of the other encounter model
 parameters. 
 
+A key conceptual thing is we need to formulate both the SCR model and
+the RSF model in terms of a common latent variable so that we can make
+them consistent with respect to some underlying space utilization process.
 
 
 \section{Model Formulation}
 
-No landscape on your computer is continuous.
+We devevlop the model here strictly in terms of a discrete
+landscape purely for computational expediency. That said, 
+essentially no landscape on your computer is continuous, so get over
+it. The one exception is if the landscape is defined strictly in terms
+of variables that themselves are inherently continuous -- e.g.,
+``distance to road'' or something like that. 
 
-RSF model:
- telemetry fixes produces n(i,j) = number of fixes for individual i in
- pixel j.  The standard RSF model is that, conditional on the total
- number of fixes, these are multinomial random variables with
- probabilities
+Let  $x_{1},\ldots,x_{nG}$ identify the center coordinates of a set of
+$nG$ pixels that define a landscape. ({\bf consistent with other
+  notation?}) We organize them into a matrix ${\bf X}_{nG \times 2}$.
+
+\subsection*{Modeling Resource Selection}
+
+We suppose that a population of individuals wanders around space in
+some manner (to be described shortly) and their locations accumulate
+in pixels by some omnipotent accounting mechanism. For most
+individuals we never get to observe individual locations but, for a
+small number, we suppose they have telemetry collars which produce a
+location fix by some set interval. For these telemetered individuals
+we accumulate individual- and pixel-specific frequencies $n_{ij} = $
+the number of fixes for individual$ $i in pixel $j$.  The standard RSF
+model XXXX REFS XXXXXX is that, conditional on the total number of
+fixes, these are multinomial random variables with probabilities
 \[
- \pi_{i,j} = \frac{ exp( -\beta z(x) ) }{ \sum_{x} exp(-\beta z(x))} 
+ \pi_{i,j} = \frac{ exp( -\alpha_{2} z(x) ) }{ \sum_{x} exp(-\alpha_{2} z(x))} 
 \]
-this is the same as saying
+where $z(x)$ is some landscape covariate defined at every point in our
+landscape. We could have multiple such covariates but we focus on a
+single covariate here for clarity. 
+
+We note that a natural way to movitate this specific model is to
+assume that individuals make a sequence of random resource selection
+decisions so that the outcome of $n_{ij}$ are marginally {\it
+  independent}, having a Poisson distribution:
 \[
- n(i,j) \sim Poisson( \lambda_{ij})
+ n_{ij} \sim Poisson( \lambda_{ij})
 \]
 where
 \[
- log(\lambda_{ij}) = \beta_{0}  + \beta_{1} z(x)
+ log(\lambda_{ij}) = a_{0}  + \alpha_{2} z(x)
 \]
-Intercept here is completely fixed. We decide on that. How many fixes
-do we wish to have?
+Therefore, the number of visits to any particular cell is affected by
+the covariate $z(x)$ but has a baseline rate ($exp(a_{0})$) related to the amount
+of movement, or number of selection decisions which is,
+in a sense,
+``up to the animal''. As such, the total sample size, among all
+pixels, is a matter of how many choices , how much  space, the
+individual is using over some time interval.
+
+In telemetry studies, the total sample size isn't ``up to the animal'' but, rather, up to
+the guy collecting telemetry data. Therefore, conditioning on the
+total sample size, yields the multinomial model above. This is a
+classical distribution theory result: if we have a sequence of
+independent Poisson random variables and we condition on their total,
+i.e., regard it as fixed, then we have the multinomial. In the
+multinomial we lose information about the intercept which in this case
+is ok because we only care about the interpretation of the resource
+selection model as a probability distribution and don't care about the
+basic rate of detection. Indeed, by our method of data observation
+this sampling rate is not a meaningful parameter. 
 
 
+We conduct a telemetry study and observe ${\bf n}_{i}$, the $nG \times
+1$ vector of pixel-counts for each individual $i=1,\ldots,N_{tel}$.
+We declare these data to be ``resource-selection data'' which are
+typical of the type used to estimate resource-selection functions
+(RSF). Sometimes in RSF modeling activities people make believe they
+have  continuous covariates and so the denominator in XXXX involves
+some kind of integration over a distribution for the
+covariate. However, in a discrete landscape, entertaining pdfs for the
+covariates isn't necessary \citep{royle_etal:2012mee}. 
 
-So the key to combing RSF data with SCR data is to think about this
-Poisson model. In SCR data the total encounter frequency is a random
-variable and, in fact, we only observe the event $n_{ij}>0$ but it
-should have the same mean, just a different intercept. Thus when we
-observe $y_{ijk} = 1$ this occurs if the individual visited the pixel
-containing a trap, i.e.,  $m_{ij}>0$, and we detected it. in this
-construction $m_{ij}$ is a ``detectable'' visit to a pixel, say of an
+
+The key to combing RSF data with SCR data is to 
+work with this underlying resource utilization process and formulate SCR
+models in terms of that process. For SCR models it will serve as a
+intermediate latent that we don't get to observe. 
+
+
+In SCR data, for the Bernoulli model, 
+ we only observe a random variable 
+$y_{ijk} = 1$  if the individual $i$ visited the pixel
+containing a trap and was detected. 
+We introduce this latent variable say  $m_{ij}>0$ which is something
+like the intensity of use by the individual that is
+  ``detectable'' visits to a pixel, say of an
 individual wandering in the vicinity of a trap or a trail that is
 sampled. 
 We imagine a hierarchy like this:
@@ -182,8 +250,20 @@ computed as $D({\cal S}) = N/||{\cal S}||$. In our simulation study
 below we report $N$ as the two are equivalent summaries of the data
 set once ${\cal S}$ is defined.
 
+\section{Precision improvement}
 
-\section{Illustration}
+simulation study -- ordinary SCR data with intense resource selection,
+
+(1) how bad is the ordinary SCR model?
+
+(2) how much does having 5 or 10 telemetered individuals provide?
+
+
+\section{Illustration: Made up data}
+
+Using patchy landscape covariate.
+Would be cool to use ``distance to road'' also
+
 
 In this section we provide examples that we think are typical of how
 cost-weighted distance models can be used in real capture-recapture
