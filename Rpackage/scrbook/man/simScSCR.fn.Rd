@@ -2,7 +2,7 @@
 \alias{simScSCR.fn}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
+bleen
 }
 \description{
 Simulates single catch data. Simulates data on a 10 x 10 grid, unit spacing.
