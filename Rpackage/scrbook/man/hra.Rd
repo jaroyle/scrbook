@@ -55,11 +55,12 @@ hra(func, parms, plot = TRUE, xlim, ylim)
 }
 \examples{
 
-# parameter estimates from section XXX of the book
+# to produce results from Chapter 4:
 
-parms<-matrix( c(
- -2.533220 ,-2.616647, -1.535056 ,-1.06383,
-  2.579877 , 2.487691,  3.569499 , 2.66797),nrow=2,byrow=TRUE)
+parms<-matrix(c(
+ -2.565099, -2.598714, -1.514959, -0.4701133,
+  2.462154,  2.558201,  3.590701,  3.8634103),nrow=2,byrow=TRUE)
+
 
 pcloglog<-function(parms,D){
 lp<-  parms[1] -parms[2]*D*D
@@ -85,7 +86,7 @@ p
 
 hra(pGauss,parms[,1],xlim=c(-1,7),ylim=c(-1,7))
 
-hra(pGauss,parms[,2],xlim=c(-1,7),ylim=c(-1,7))
+hra(pcloglog,parms[,2],xlim=c(-1,7),ylim=c(-1,7))
 
 hra(pexp,parms[,3],xlim=c(-1,7),ylim=c(-1,7))
 
