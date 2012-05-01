@@ -2,7 +2,7 @@
 \alias{simScSCR.fn}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
+bleen
 }
 \description{
 Simulates single catch data. Simulates data on a 10 x 10 grid, unit spacing.
@@ -16,7 +16,7 @@ simScSCR.fn(parms, K = 7, ssbuff = 2)
 %%     ~~Describe \code{parms} here~~
 }
   \item{K}{
-number of replicate samples 
+number of replicate samples
 }
   \item{ssbuff}{
 %%     ~~Describe \code{ssbuff} here~~
@@ -67,9 +67,9 @@ Sst<-rbind(data$S[1:nind,],cbind(runif(M-nind,data$xlim[1],data$xlim[2]),
                         runif(M-nind,data$ylim[1],data$ylim[2])))
 zst<-c(rep(1,M*.6),rep(0,M*.4))
 # starting values and bundle data
-inits <- function(){list (z=zst,sigma=runif(1,.5,1) ,S=Sst,psi=.5) }              
+inits <- function(){list (z=zst,sigma=runif(1,.5,1) ,S=Sst,psi=.5) }
 data <- list (X=data$X,K=data$K,
-Ycat=Ycat,M=M,ntraps=nrow(data$X),ylim=data$ylim,xlim=data$xlim)         
+Ycat=Ycat,M=M,ntraps=nrow(data$X),ylim=data$ylim,xlim=data$xlim)
 
 # write out the model
 
@@ -90,14 +90,14 @@ for(i in 1:M){
   }
   for(k in 1:K){
     for(j in 1:ntraps){
-      lp[i,k,j] <- exp(alpha0 - alpha1*d[i,j])*z[i]            
+      lp[i,k,j] <- exp(alpha0 - alpha1*d[i,j])*z[i]
       cp[i,k,j] <- lp[i,k,j]/(1+sum(lp[i,k,]))
     }
     cp[i,k,ntraps+1] <- 1-sum(cp[i,k,1:ntraps])  # last cell = not captured
     Ycat[i,k] ~ dcat(cp[i,k,])
-  }  
-}   
-N <- sum(z[1:M]) 
+  }
+}
+N <- sum(z[1:M])
 A <- ((xlim[2]-xlim[1]))*((ylim[2]-ylim[1]))
 D <- N/A
 }

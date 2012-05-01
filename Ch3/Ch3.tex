@@ -6,7 +6,7 @@
 
 \vspace{.3in}
 
-Having covered the basics of hierarchical models and their implementation in BUGS software, 
+Having covered some basics of standard models and their implementation in BUGS software, 
 in this chapter we will consider ordinary capture-recapture (CR)
 models for estimating population size in closed populations. We will
 see that such models are closely related to binomial (or logistic)
@@ -32,11 +32,14 @@ relatively minor variations of so-called ``individual covariate
 models'' (of the \citet{huggins:1989} and \citet{alho:1990}
 variety). In a sense, the point of this chapter is to establish that
 linkage  between non-spatial and spatial capture-recapture models 
- in a direct and concise manner beginning with the basic
-``model $M_0$'' xxxxx $ought to explain such a thing at first place where it occurs or give a reference$ xxxxx and extensions of that model to include individual
+ in a direct and concise manner beginning with the most basic
+ capture-recapture model colloquially referred to as ``model $M_0$''
+ \citep{otis_etal:1978} in which encounter probability is strictly
+ constant in all respects (across individuals, and replicates), and 
+ extensions of that model to include individual
 heterogeneity and individual covariates. A special type of
 individual covariate models is distance sampling, which could be
-thought of as the most primitive spatial capture-recapture model. Xxxx $they will love you in St-Andrews for this$ xxxx In
+thought of as the most primitive spatial capture-recapture model. In
 later chapters we further develop and extend ideas introduced in this
 chapter.
 
@@ -520,7 +523,14 @@ probability is $p$. This is useful in describing the model in the {\bf
 language, as shown in Panel \ref{closed.panel.da4m0}.
  Note the last line of the model
 specification  provides the expression for computing $N$ from the
-data augmentation variables $z_{i}$.
+data augmentation variables $z_{i}$. To improve readability of code
+snippets (especially of large ones) we will sometimes deviate from our
+standard notation a bit. In this case we use \mbox{\tt nind} for $n$
+(the number of encountered individuals), and \mbox{\tt M = nind + nz}
+is the total size of the augmented data set. In other cases we might
+also use \mbox{\tt nperiods} in place of $K$ and \mbox{\tt ntraps} in
+place of $J$. We find that word definitions make code easier to
+understand, especially without having to read surrounding text.
 
 \begin{panel}[htp]
 \centering
@@ -624,7 +634,7 @@ analyzed \citep[see][]{royle_etal:2007}.
 
 \subsection{Remarks on Data Augmentation}
 
-xxxxxxxxx$Somewhere here could emphasize that DA is trivial to implement in the BUGS language$xxxxxxxxxxxxxxxxxx
+
 Data augmentation may seem like a strange and mysterious black-box,
 and likely it is unfamiliar to most people, even to many of those with substantial
 experience with capture-recapture models. However, it really is just a
@@ -633,36 +643,45 @@ removed from the ordinary (conditional-on-$N$) model by integration.
 In the case of model $M_0$, data augmentation produces the zero-inflated
 binomial which is distinct from the original model, but
 only in the sense that it embodies, explicitly, the $\mbox{Unif}(0,M)$
-prior for $N$.  Choice of $M$ might be cause for some concern related
-to potential sensitivity to choice of $M$. The guiding principle is
-that it should be chosen large enough so that the posterior for $N$ is
-not truncated, but no larger because large values entail a greater 
-computational burden. It seems likely that the properties of the
-Markov chains should be affected by $M$ and so some optimality might
-exist \citep{gopalaswamy_etal:2012}, xxxxx$don?t understand this$xxxxxx as in occupancy models
-\citep{mackenzie_royle:2005}. Formal analysis of this is needed.
+prior for $N$.  
+
 
 
 We emphasize the motivation for data augmentation being that it
 produces a data set of fixed size, so that the parameter dimension in
 any capture-recapture model is also fixed.  As a result, MCMC is a
-relatively simple proposition using standard Gibbs Sampling.  Consider
+relatively simple proposition using standard Gibbs Sampling.  And, in
+particular, capture-recapture models become trivial to implement in
+\bugs. 
+Consider
 the simplest context - analyzing model $M_0$ using the occupancy-type
 model. In this case, DA converts model $M_0$ to a basic occupancy model
 and the parameters $p$ and $\psi$ have known full-conditional
 distributions (in fact, beta distributions) that can be sampled from
-directly.  Furthermore, the data augmentation variables - i.e., the collection 
-of $z$'s - xxxxx $must by a hyphen, or else two commas$ can be sampled from Bernoulli full
+directly.  Furthermore, the data augmentation variables, i.e., the collection 
+of $z$'s, can be sampled from Bernoulli full
 conditionals. MCMC is not much more difficult for complicated
 models - sometimes the hyperparameters need to be sampled using a
 Metropolis-Hastings step (e.g., Chapt. \ref{chapt.mcmc}), but nothing more sophisticated than that is
 required.
 
+Choice of $M$ might be cause for some concern related
+to potential sensitivity to choice of $M$. The guiding principle is
+that it should be chosen large enough so that the posterior for $N$ is
+not truncated, but no larger because large values entail a greater 
+computational burden. It seems likely that the properties of the
+Markov chains should be affected by $M$ and so some optimal choice of
+$M$ might 
+exist \citep{gopalaswamy_etal:2012}.
+Formal analysis of this is needed.
+
+
 There are other approaches to analyzing models with unknown $N$, using
 reversible jump MCMC (RJMCMC) or other so-called ``trans-dimensional''
 (TD) algorithms
- \citep{durban_elston:2005, king_brooks:2001, king_etal:2008,
-schofield_barker:2008, wright_etal:2009}. xxxx$cite chrono, not alpha$ xxxx What distinguishes DA from RJMCMC and
+ \citep{king_brooks:2001, durban_elston:2005,
+king_etal:2008,
+schofield_barker:2008, wright_etal:2009}.  What distinguishes DA from RJMCMC and
 related TD methods is that DA is used to create a distinctly new model
 that is unconditional on $N$ and we (usually) analyze the
 unconditional model. The various TD/RJMCMC approaches seek to analyze
@@ -672,7 +691,7 @@ to have the advantage that one can model $N$ explicitly or consider
 alternative priors for $N$. However, despite that $N$ is removed as an
 explicit parameter in DA, it is possible to develop hierarchical
 models that involve structure on $N$ \citep{converse_royle:2010,
-  royle_etal:2011ms} xxxxx$C&R is out ?$xxxxxx which we consider in Chapt. \ref{chapt.hscr}.
+  royle_etal:2011ms} which we consider in Chapt. \ref{chapt.hscr}.
 
 
 \subsection{Example: Black Bear Study on Fort Drum}
@@ -784,15 +803,14 @@ We see that the posterior mean of $N$ under this
 model is $49.94$ and a 95\% posterior interval is $(48,54)$.  We
 revisit these data later in the context of more complex models.
 
-
 In order to obtain an estimate of density, $D$, we need an area to
-associate with the estimate of $N$,  and in Chapt. Xxx $make chap/Chap/Chapt. consistent$ \ref{chapt.intro} we already 
-went through a number of commonly used procedures to
-conjure up such an area, including buffering the trap array by the home
-range radius, often estimated by the mean maximum distance moved
-(MMDM) \citep{parmenter_etal:2003},
-$1/2$ MMDM \citep{dice:1938} or
-directly from telemetry data \citep{wallace_etal:2003}
+associate with the estimate of $N$, and in Chapt. 
+\ref{chapt.intro} we already went through
+a number of commonly used procedures to conjure up such an area,
+including buffering the trap array by the home range radius, often
+estimated by the mean maximum distance moved (MMDM)
+\citep{parmenter_etal:2003}, $1/2$ MMDM \citep{dice:1938} or directly
+from telemetry data \citep{wallace_etal:2003}
 \begin{comment}
 I HAVE SEEN 2 PAPERS CITING OTIS ET AL 1978 IN THIS CONTEXT 
 BUT I ONLY FOUND THE SECITON WHERE THEY SUGGEST USING INFORMATION ON ANIMAL HOME RANGE AS 

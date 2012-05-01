@@ -2,7 +2,7 @@
 \alias{simMnSCR.fn}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
+bleen
 }
 \description{
 Simulate some independent multinomial SCR data..... %%  ~~ A concise (1-5 lines) description of what the function does. ~~
@@ -66,13 +66,13 @@ Sst<-rbind(data$S,cbind(runif(M-nind,data$xlim[1],data$xlim[2]),
 
 # starting values
 zst<-c(rep(1,160),rep(0,40))
-inits <- function(){list (z=zst,sigma=runif(1,.5,1) ,S=Sst) }              
+inits <- function(){list (z=zst,sigma=runif(1,.5,1) ,S=Sst) }
 
 # parameters to monitor
 parameters <- c("psi","alpha0","alpha1","sigma","N","D")
 
-# bundle the data. Note this reuses "data"                                                                 
-data <- list (X=data$X,K=data$K, trap.space=1,Ycat=Ycat,M=M,ntraps=nrow(data$X),ylim=data$ylim,xlim=data$xlim)         
+# bundle the data. Note this reuses "data"
+data <- list (X=data$X,K=data$K, trap.space=1,Ycat=Ycat,M=M,ntraps=nrow(data$X),ylim=data$ylim,xlim=data$xlim)
 
 # commands to use WinBUGS or OpenBUGS
 #library("R2WinBUGS")
@@ -90,3 +90,4 @@ out2 <- coda.samples(out1,parameters,n.iter=2000)
 % R documentation directory.
 \keyword{ ~kwd1 }
 \keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+
