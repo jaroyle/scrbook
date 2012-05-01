@@ -920,14 +920,19 @@ where $x_{ik}$ is a covariate indicator variable of previous capture
 (i.e., $x_{ik} = 1$ if captured in any previous period). Therefore,
 encounter probability changes depending on whether an individual was
 captured in the immediate previous period (ephemeral behavioral
-response XXX described by the term $\alpha_{1}*y_{i,k-1}$) or in any previous period (persistent behavioral
-response). The former probably models a behavioral response due to
-individuals moving around their territory relatively slowly over time
-and the latter probably accommodates trap happiness due to baiting or
-shyness due to trauma.  Spatial capture-recapture models allow us to 
-include trap-specific covariates, and in such models it makes
-sense to consider a local behavioral response that is trap-specific
-\citep{royle_etal:2011jwm} - that is, the encounter probability is
+response; \citep{yang_chao:2005}), described by the term
+$\alpha_{1}*y_{i,k-1}$) or in any previous period (persistent behavioral
+response). 
+%The former probably models a behavioral response due to
+%individuals moving around their territory relatively slowly over time
+%and the latter probably accommodates trap happiness due to baiting or
+%shyness due to trauma.  
+Because spatial capture-recapture models allow us to 
+include trap-specific covariates, we can describe a 3rd type of
+behavioral response -- 
+a local behavioral response that is trap-specific
+\citep{royle_etal:2011jwm}. In this local behavioral response,
+the encounter probability is
 modified for an individual trap depending on previous capture in
 that trap.
 
@@ -1087,16 +1092,20 @@ prescribe a distribution for $p_{i}$. Here we assume
 \[
 \mathrm{logit}(p_{i}) \sim \mbox{Normal}(\mu,\sigma^2)
 \]
-The basic {\bf BUGS} description for this model, assuming a
-$\mbox{Unif}(0,1)$ prior for $p_{0} = \mbox{logit}^{-1}(\mu)$, is given
-as follows:
+For prior distributions we assume 
+$p_{0} = \mbox{logit}^{-1}(\mu)$ \sim 
+$\mbox{Unif}(0,1)$ and, for the variance component
+$\sigma \sum \mbox{Unif}(0,B)$ for some large $B$.
+\begin{comment}
+The basic {\bf BUGS} description for this model is given as follows:
 {\small
 \begin{verbatim}
 model{
 
 p0 ~ dunif(0,1)       # prior distributions
 mup<- log(p0/(1-p0))
-taup~dgamma(.1,.1)
+sigmap ~ dunif(0,10)
+taup<- 1/(sigmap*sigmap)
 psi~dunif(0,1)
 
 for(i in 1:(nind+nz)){
@@ -1111,6 +1120,11 @@ N<-sum(z[1:(nind+nz)])  # N is a derived parameter
 }
 \end{verbatim}
 }
+\end{comment}
+Another common default prior is to assume 
+$\tau = 1/\sigma^{2} \sim \mbox{Gamma}(.1,.1)$, although we usually
+choose the $\sigma \sim \mbox{Unif}(0,B)$.
+
 
 
 \subsection{Analysis of the Fort Drum data}
@@ -1132,8 +1146,6 @@ mup<- log(p0/(1-p0))
 sigmap ~ dunif(0,10)
 taup<- 1/(sigmap*sigmap)
 psi~dunif(0,1)
-
-xxxxxx It might confuse people if you use the gamma prior on the precision in the immediately preceding example and here a uniform for the SD. make the same or else briefly comment on it.xxxxx
 
 for(i in 1:(nind+nz)){
   z[i]~dbern(psi)     # zero inflation variables
@@ -1163,7 +1175,7 @@ in Fig. \ref{closed.fig.bearMh}. Posterior summaries of parameters are
 given as follows:
 {\small
 \begin{verbatim}
-> summary(jout)
+summary(jout)
 
 [... output deleted ...]
 Iterations = 500001:1e+06
@@ -1489,9 +1501,11 @@ although they too can be updated directly from their full-conditional.
 \label{closed.sec.indcov}
 
 
-A standard situation in capture-recapture models is when an individual
-covariate is measured, and this covariate is thought to influence
-encounter probability.  As with other closed population models, we
+A standard situation in capture-recapture models is when a
+covariate which is thought 
+ to influence
+encounter probability is measured for each individual.  
+As with other closed population models, we
 begin with the basic binomial observation model:
 \[
 y_{i} \sim \mbox{Bin}(K, p_{i})
@@ -1524,8 +1538,10 @@ of individual recaptures.
 
 Traditionally, estimation of $N$ in individual covariate models is
 achieved using methods based on ideas of unequal probability sampling
-(i.e., Horwitz-Thompson estimation; see \citet{huggins:1989} and
-\citet{alho:1990}). An estimator of $N$ is xxxx$I think it?s Horvitz$xxxx
+(i.e., Horvitz-Thompson estimation\footnote{For a  quick summary of
+  the idea see: \url{
+http://en.wikipedia.org/wiki/Horvitz%E2%80%93Thompson_estimator}}; see \citet{huggins:1989} and
+\citet{alho:1990}). An estimator of $N$ is 
 \[
 \hat{N} = \sum_{i}^{n} \frac{1}{\tilde{p}_{i}}
 \]
@@ -1577,11 +1593,13 @@ priors for the parameters of that distribution.
 
 \subsection{Example: Location of capture as a covariate.}
 
-If we had a regular grid of traps over some closed geographic system
+Here we consider a special type of individual covariate model that is
+especially relevant to SCR.
+If we had a regular grid of traps over some geographic region,
 then we imagine that the average location of capture would be a decent
 estimate (heuristically) of an individual's home range center.
-Intuitively some measure of typical distance from home range center to
-traps for an individual should be a decent covariate to explain
+Intuitively, some measure of typical distance from home range center to
+traps for an individual should therefore be a reasonable  covariate to explain
 heterogeneity in encounter probability, i.e., individuals with more
 exposure to traps should have higher encounter probabilities and vice
 versa.  A version of this idea was put forth by
@@ -1593,7 +1611,7 @@ is fundamentally ill-defined, nor does it readily accommodate the
 inherent and heterogeneous variation in this measured covariate.
 
 Here, we provide an example of this type of heuristically motivated
-approach using the fully model-based individual covariate model
+approach using a fully model-based individual covariate model
 described above analyzed by data augmentation. We take a slightly
 different approach than that adopted by
 \citet{boulanger_mclellan:2001}. By analyzing the full likelihood and
@@ -2104,6 +2122,9 @@ accommodate data from virtually all animal survey designs.
 
 
 \subsection{Example: Muntjac deer survey from Nagarahole, India }
+
+XXX Note could use desert tortoise data which is a really nice data
+set XXXXXXXX
 
 Here we fit distance sampling models to distance sampling data on the
 muntjac deer (Muntiakus muntjak) collected in the year 2004 from
