@@ -56,6 +56,9 @@ capture-recapture studies generating one data set for each trap, and
 applying the individual covariate model with random activity centers,
 and that is all the basic SCR model is.
 
+SPACE USAGE? XXXX
+
+
 In the following sections of this chapter we investigate the basic
 spatial capture-recapture model, which we refer to as ``model SCR0'',  and address some important
 considerations related to its analysis in {\bf WinBUGS}. We also demonstrate
@@ -317,9 +320,10 @@ have used the term ``home range'' and other jargon (territory,
 activity center, etc..) almost interchangeably, what we really mean to
 imply is something that would be more more clearly identified as
 ``space usage'' which we view in a manner equivalent to what is
-normally called resource selection. If the resource is only space,
+normally called resource selection. If the resource is only
+homogeneous space,
 i.e., with no explicit covariates, then space usage is a more
-descriptive term but, otherwise (Chapt. XXXX) we take the term as
+descriptive term but, otherwise (Chapt. \ref{chapt.rsf}) we take the term as
 being analogous to ``resource selection''.
 
 We believe that thinking about detection models as models of
@@ -329,12 +333,13 @@ of space usage -- amount and extent of area used some prescribed
 percentage of the time -- i.e., 95\% of animal movements are within
 some distance from an individual's activity center. 
 In that sense, i.e., if we equate that area to ``home
-range'', then the detection model implies a model of home range. In
+range'', then the detection model implies a model of home range size
+and geometry. In
 other words, there is an implicit home range model underlying a given
-detection probability model. 
-
-i.e., ``how much space encompases 95\% of the movement outcomes of an
-individual -- or the space used.''
+detection probability model --
+ the area that encloses
+ 95\% of the movement outcomes or space used of an
+individual.
 
 Intuitively, the detection function of SCR models is related to home
 range area or space usage of individuals.  Indeed, it is natural
@@ -351,63 +356,65 @@ to (all things conditional on ${\bf s}$ here):
 \]
 In practice it might make sense to think about the first component,
 i.e., $\Pr(\mbox{encounter} | \mbox{usage of} {\bf x}, {\bf s})$ as
-being a constant (e.g., if traps are approximately randomly located within small
-grid cells). 
-
-So, then, 
-how do we chararacterize $\Pr(usage)$?  First of all we note that it is
-not a proability distribution on $x$ like a classical RSF because it
-need not integrate to 1. For example, evern pixel within an
-individuals home range could have $\Pr(usage) = 1$ if we consider a
-long enough period of time.  The best way to think about explaining 
-$\Pr(usage)$ is based on a purely phenomonological construction.
-Think of an animal using space for some period of time and accuulating
-a history of space usage (a set of values $x$) based on movement outcomes over set
-intervals, and we 
-randomly sample a single value. Define $\pi(x|s)$ to be the probability
-distribution of that value. In this case, $\pi(x|s)$ {\it is} a probability
-distribution of $x$. 
-Following standard notions of this stuff we
-use this function here:
-\[
+being a constant (e.g., if traps are located within arbitrarily small
+grid cells).  But lets think about this in a perfect world, where our
+detection devices were absolutely perfect and so $Pr(encounter|use) =
+1$. Imagine we record perfectly every time an individual moves into a
+pixel so that after a long period of time we observe an enormous
+sample size of $x$ values. We tally those up into each pixel, $m(x,s)$
+and this forms an estimate of the use distribution of individual ${\bf
+  s}$.
+So Pr(usage) is just the standardized version of those counts.
+In other words, we regard the counts m(x) as a multinomial observation
+with probabilities $\pi(x|s)$. What kind of models for $\pi(x|s)$?
+Well they should have lower probability as $x$ gets far away from $s$.
+Following standard notions of this stuff we use a model like this:
+\begin{equation}
 \pi({\bf x}|{\bf s}) =  
 \frac{ k(s,x) }
 { \sum_{x} k(s,x) }
-\]
-therefore clearly the space used by an individual will be proportional
+\label{scr0.eq.ud}
+\end{equation}
+where $k(s,x)$ is some kernel function that decays monotonically.
+Therefore clearly the space used by an individual will be proportional
 to whatever kernel we stick in for the numerator. The customary
 choice, in RSF literature, is to use the negative exponential function
 but here we have the Gaussian kernel because we like that, i.e.,
 \[
  k(s,x)= exp(  -d({\bf s},{\bf x})^{2}/(2\sigma^{2})) }
 \]
+Evidently this is exactly a bivariate normal model for space usage
+and, if detection is perfect, 
+it is exactly our encounter probability mnodel if we put traps
+somewhere. Note that even though detection was assumed perfect,
+conditional on use, this is definitely not 1 everywhere because it
+decays as a function of distance from ${\bf s}$. 
 
-
-Clearly then whether or not a pixel x is used at all 
-depends on how much time has elapsed -- how much movement the
-individual did during a particular period.  Its really i mpossible to
-know or model that so in SCR models we just absorb that into an
-intercept [see later]. 
-
-
-This is a pdf of $x$ and in sampling a populationi of individuals
-using traps or other devices we set them out and they accumulate
-potential detections over a period of time. Thus whether or not a
+Whether or not a 
 point $x$ is {\it used} (at all) depends on some unknown rate of use
 by the individual over whatever period of time the devices are
 active. This is something we can't hope to estimate or model in most
 cases but we imagine that over a period of time usage is characterized
-by a rate of usage $\lambda_{0}$ so that amount of usage of $x$ is
+by a rate of usage $\lambda_{0}$ so that amount of usage -- the number
+of times individual $s$ enters $x$, is:
 \[
 m({\bf x},{\bf s}) = Poisson(\lambda_{0} \pi(x|s) ) 
 \]
 which isn't really an important assumption because note that by
 conditioning on the total again it retains the (natural) multionomial
-distribution. So we ask ``if a guy uses space 100 times, where is that
-space being used?'' and the histogram of usage is proportional to
-$\pi(x|s)$. But over time timee intrval we expect this amount to be
-random and then whether we detect a guy or not at $x$ occurs if
-$m(x|s)>0$. That is
+distribution.
+Moreover, if our detection devices are {\it imperfect} then all this
+does is introduce another constant into the above expression that we
+might as well confound with $\lambda_{0}$. Thus a background use or
+movement rate, and a time interval over which use accumulates, is
+completely confounded with efficacy of our sampling devices that
+measures space usage. 
+
+If our sampling devices do not record total visits during a period but
+rather just ``whether or not'' an individual visits, 
+then observe a binary observation $y$ which we can think of as being
+related to the {\it latent} counts $m(x,s)$ by $Pr(y=1) = Pr(m(x,s)>0)$
+which occurs with probability:
 \begin{equation}
 \Pr(y=1) = 1-exp(-\lambda_{0} \pi(x|s))
 \label{scr0.eq.hazard}
@@ -418,27 +425,20 @@ This is why we like the cloglog link function in \citep{royle_etal:2009ecol}.
 So this all comes about by introducing a latent process of ``usage''
 accumulating over time.    
 We could just as well say $Pr(y=1) \propto \pi(x|s)$ which is the
-half-normal model. 
+half-normal model (See Chapt. \ref{chapt.poisson-mn}). 
 
-Ok back to this thing: 
-\[
- \Pr(encounter at x|s) = Pr(encounter | usge of x,s) Pr(usage of x|s).
-\]
-Therefore, if we imagine that encounter probability was perfect,
-everywhere, and animals moved around according to some bivariate
-distribution $\Pr(movement to x | s) = g(x,s)$ then a sensible summary
-of home range (or space usage) is the area that contains 95\% of the
-mass of $g(x,s)$. i.e., 95\% of all animal locations.  In SCR models it
-is not always so clear how to compute this because (1) most detection
-functions do not correspond to a specific bivariate movement
-distribution g(x,s) and (2) we only get to observe ``movement outcomes''
-where we happen to have traps, and even then we don't observe those
-perfectly (just when the movement outcome is near a trap).
-
+Anyhow, the point of this is that whether or not encounter probability
+conditional on usage is perfect, 
+the {\it kernel} we use in the encounter probability model 
+equates to some utilization distribution
+as in Eq. \ref{scr0.eq.ud} which we can use to compute effective home
+range area, i.e., 
+the area that contains 95\% of the
+mass of $k(x,s)$. i.e., 95\% of all space used. 
 
 \subsection{Bivariate normal case}  
 
-There is (at least) one encounter model that allows direct computation
+There is (at least) one encounter model that allows direct analytic computation
 of home range area, the 
  Gaussian kernel model:
 \[
