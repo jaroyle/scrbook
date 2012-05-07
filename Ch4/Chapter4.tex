@@ -55,14 +55,20 @@ which we regard ${\bf s}$ as a latent variable and impose a prior
 distribution on it.  
 
 
-SPACE USAGE? XXXX
-
 
 In the following sections of this chapter we investigate the basic
 spatial capture-recapture model, which we refer to as ``model SCR0'',  and address some important
-considerations related to its analysis in {\bf WinBUGS}. We also demonstrate
+considerations related to its analysis in {\bf BUGS}. 
+We also discuss how encounter probability models are related to
+explicit models of space usage or ``home range area.'' Understanding
+this allows us to compute, for example, the area used by an individual
+some prescribed percent of the time. 
+We also demonstrate
 how to summarize posterior output for the purposes of producing
 density maps or spatial predictions of density.
+
+
+
 
 \section{Sampling Design and Data Structure}
 
@@ -565,95 +571,57 @@ p<-  expit(parms[1])*exp( -(1/(2*parms[2]*parms[2]))*D*D )
 p
 }
 
-parms<- c(-2, .396)
 xlim<-c(0,6)
 ylim<-c(0,6)
 
-> hra(pGauss1,c(-2,.396),plot=FALSE,xlim,ylim,ng=300)
-[1] 0.9730349
-radius to achieve 95% of area:  0.9730349
-home range area:  2.97445
-[1] 2.97445
-> hra(pGauss2,c(-2,.396),plot=FALSE,xlim,ylim,ng=300)
-[1] 0.9827653
-radius to achieve 95% of area:  0.9827653
-home range area:  3.034237
-[1] 3.034237
-
+> # execute hra with sigma = .3993
+> hra(pGauss1,c(-2,.3993),plot=FALSE,xlim,ylim,ng=500,tol=.0005)
+[1] 0.9784019
+radius to achieve 95% of area:  0.9784019
+home range area:  3.007353
+[1] 3.007353
+>
+> 
 > ##  analytic solution
-> .396*sqrt(5.99)
-[1] 0.9691893
-
+> # true sigma to produce area of 3
+> sqrt(3/pi)/sqrt(5.99)
+[1] 0.3992751
 \end{verbatim}
 }
 
-What this means is that $B(\alpha) = 0.973$ is the radius that
+What this means is that $B(\alpha) = 0.978$ is the radius that
 encloses about 95\% of all movements under the standard bivariate
-normal encounter model.  Therefore, the area is about $\pi*.973*.973 =
-2.97$ spatial units.  You can change the intercept of the model and
+normal encounter model.  Therefore, the area is about $\pi*.978*.978 =
+3.007$ spatial units.  You can change the intercept of the model and
 find that it has no affect.\footnote{ note: I don't know if that works
   out across all classes of models or not. Note that the intercept
   never affects $p$ multiplicatively and so its not obvious (to me)
   that it shouldn't have an affect (except somewhat intuitively
-  perhaps).}  The radius of 0.973 compares well with the actual
-(analytic) solution of 0.969 which we could improve upon if we
-increase the resolution of our spatial grid (increase the \mbox{\tt
-  ng} argument).
+  perhaps).}  The actual
+(analytic) value of $\sigma$ that produces a home range area of 3.0 is
+$0.3993$ which is the value we initially plugged in to \mbox{\tt
+  hra}. We can improve on the numerical approximation to home range
+area (get it closer to $3.0$) by increasing 
+the resolution of our spatial grid (increase the \mbox{\tt
+  ng} argument) along with the \mbox{\tt tol} argument. XXX note: tol
+and ng are redundant to some extent XXXX
 
 We can also reverse this process, and find, for any detection model,
 the parameter values that produce a certain $(1-\alpha)$\% home range
 area, which we imagine would be useful for doing simulation studies.
-To demonstrate how to do this, we first define an objective function
-that computes the difference between implied home range area under
-some model and the desired target value. Then we find the root of that
-function.
-
-XXX need to fix this func to accept ``parms'' and pfunc
-XXX change x0 to be ``Balpha''
+The function \mbox{\tt hra} will compute the value of the scale parameter 
+that achieves a certain target $(1-\alpha)\%$ home range area, by
+simply providing a non-null value of the variable \mbox{\tt
+  target.area}. Here we use \mbox{\tt target.area = 3.00735} (from
+above) to obtain a close approximation to the value $\sigma$ we
+started with:
+{\small
 \begin{verbatim}
-obj<-function(sigma,target= 3 ){
-a<-1/(2*sigma*sigma)
-lp<- -2 -a*D*D
-p<- 1-exp(-exp(lp))
-
-pi.probs<- p/sum(p)
-x0<-.1
-repeat{
-in.hr<- D<=k
-total<- sum(pi.probs[in.hr])  
-#cat("Total area: ",total,fill=TRUE)
-if(total>=.95) {
-print(x0)
-break
-}
-x0<-x0*1.01
-}
-hr.area<- pi*x0*x0
-print(hr.area)
-ss<-  (hr.area - target)^2
-ss
-}
+> hra(pGauss1,c(-2,.3993),plot=FALSE,xlim,ylim,ng=500,target.area=3.00735,tol=.0005)
+Value of parm[2] to achieve 95% home range area of  3.00735  :  0.3993674
+[1] 0.3993674
 \end{verbatim}
-
-
-
-XXX Change numbers, make consistent with hra() call above
-XXXXXXXXXXXXXXXXXXXX 
-
-
-Now we use the {\bf R} function optimize to locate the optimal value
-of $\sigma$ - optimal here being the value of $\sigma$  that makes
-home range area minus ``target''  equal to 0:
-\begin{verbatim}
-tmp<-optimize(obj,interval=c(.1,5),target=3)
-sigma.best<- tmp$minimum
-
-> sigma.best
-[1] 0.3957799
-\end{verbatim}
-We see this is equal to 0.396 which is the value we simulated data
-from above - so things seem to be working in an orderly manner.
-
+}
 
 \subsection{Relevance of Understanding Space Usage}
 
@@ -1037,7 +1005,7 @@ are often not practical in many situations, e.g. when studying
 carnivores such as bears or large cats. Furthermore, SCR models allow us to relax many of the
 assumptions made in classical distance sampling, such as perfect detection at distance zero, and SCR models allow
 for estimates of quantities other than density, such as home range
-size, and space usage (see Chapts. XXXXX And \ref{chapt.ecoldist}).
+size, and space usage (see Chapts. \ref{chapt.rsf} and \ref{chapt.ecoldist}).
 
 
 \section{Simulating SCR Data}

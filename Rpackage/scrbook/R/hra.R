@@ -1,15 +1,18 @@
 hra <-
-function(func,parms,plot=TRUE,xlim,ylim,ng=100,target.area=NULL){
+function(func,parms,plot=TRUE,xlim,ylim,ng=100,target.area=NULL,tol=.001){
 
 # individual centered at (3,3) with 10000 "potential trap" locations
 s<-c( (xlim[2]-xlim[1])/2, (ylim[2]-ylim[1])/2 )
 x1<- rep(seq(xlim[1],xlim[2],,ng),ng)
 x2<- sort(rep(seq(ylim[1],ylim[2],,ng),ng))
 delta<- min(diff(x1[1:10]))
-#area<- ( (6+delta/2)^2)/(ng*ng)
-# plot those traps
+
+x1<-rep(seq(xlim[1]-delta/2,xlim[2]+delta/2,delta),ng)
+x2<-sort(rep(seq(ylim[1]-delta/2,ylim[2]+delta/2,delta),ng))
+
 X<-cbind(x1,x2)
-#plot(X,pch=".")
+
+
 # compute distances and encounter probabilities
 # under some model
 
@@ -48,7 +51,7 @@ if(total>=.95) {
 print(x0)    # if condition is met, break
 break
 }
-x0<-x0*1.01  # otherwise increase x0
+x0<-x0*(1+tol)  # otherwise increase x0
 }
 radius<-x0
 
@@ -78,7 +81,7 @@ if(total>=.95) {
 #print(x0)
 break
 }
-x0<-x0*1.01
+x0<-x0*(1+tol)
 }
 hr.area<- pi*x0*x0
 #print(hr.area)
