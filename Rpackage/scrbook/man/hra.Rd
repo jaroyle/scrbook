@@ -5,10 +5,12 @@
 home range area
 }
 \description{
-computes implied home range area model 
+  computes implied home range area for specified model, or computes
+  the value of parms[2] required to produce prescribed 95\% home range
+  area of target.area
 }
 \usage{
-hra(func, parms, plot = TRUE, xlim, ylim)
+hra(func, parms, plot = TRUE, xlim, ylim,target.area)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -25,6 +27,9 @@ hra(func, parms, plot = TRUE, xlim, ylim)
 %%     ~~Describe \code{xlim} here~~
 }
   \item{ylim}{
+%%     ~~Describe \code{ylim} here~~
+}
+  \item{target.area}{
 %%     ~~Describe \code{ylim} here~~
 }
 }
