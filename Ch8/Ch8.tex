@@ -227,58 +227,135 @@ science by doing model selection on detection functions.
 
 \subsection{Model selection using posterior model probabilities}
 
-Idea here is to expand the model to include every model in some set as
-specific rejections. We can do this by introducing a set of latent
-variables that pre-multiply covariates, or we can also introduce a
-categorical model variable that allows the Markov chain to switch from
-one model to the next.   This kind of stuff has been covered in
-various places -- e.g., sec. 3.xxx in Royle and Dorazio XXXXX and
-maybe in the Kery and Schaub book?  Other historical material..... 
+A convenient way to deal with model selection problems in Bayesian
+analysis by MCMC is 
+to expand the model to include the set of prescribed models as 
+specific sub-models with ``model identity'' is itself a parameter
+of the model.  
+For a model set in which all models are nested subsets of one larger
+model, such as for models containing explicit covariates, 
+we expand the model to include the latent 
+variables say $w_{l}$ for each variable in the model that pre-multiply
+covariates. 
+ The latent indicator variables
+are:
+\begin{eqnarray*}
+w_{l} = \left\{ \begin{array} 1 \mbox{linear predictor includesn  covariable k} \\
+                              0 \mbox{linear predictor does not
+                                include covariable k}
+ \end{array}
+\right.
+\end{eqnarray*}
+being mutually independent with priors
+\[
+w_k \sim Bernoulli(0.5).
+\]
+The 
+ expanded model has the linear predictor:
+\[
+logit(p_{ij}) = α0 + α1w1x1,ij + α2w2yi,j−1 + α3w3x2,i.
+\]
+In this case, model identity is the sequence of $w$ variables
+defining unique models. 
+
+Model selection by this method was covered in 
+various places -- e.g., sec. 3.xxx in \citep{royle_dorazio:2008} and 
+maybe in the Kery and Schaub book? This
+notion was suggested by Kuo and Mallick (1998). 
+Conceptually, analysis of this expanded model within the data augmentation
+framework does not pose anyadditional difficulty. One
+broader, technical consideration is that posterior model probabilities
+are well known to be sensitive to priors on parameters
+(e.g., Aitkin, 1991; Link and Barker, 2006) and vague priors
+are not usuallyinno cuous or “uninformative” when evaluating
+posterior model probabilities. The use of Akaike’s information
+criterion seems to avoid this problem largely by imposing a
+specific and perhaps undesirable prior that is a function of
+the sample size (Kadane and Lazar, 2004). One solution to
+this problem is to compute posterior model probabilities under
+a model in which the prior for parameters is fixed at the
+posterior distribution under the full model (Aitkin, 1991).
 
 
+[example with made up data]
 
+[reference to some chapter with example -- perhaps the overnbird data]
+
+
+The other way is to introduce a categorical model identity variable
+which, depending on its value, the nature of the model in a more
+fundamental way.  For example, for
+ different basic encounter probability models, we cannot specify the
+linear predictor of some general model in a manner that reduces to the
+various alternative models simply by switching binary variables on and
+off. For this case we do something like this:
+\begin{verbatim}
+ mod \sim dcat(probs[])
+\end{verbatim}
+where \mbox{\tt probs[l] = 1/(# models)}. Then we can fill in a bigger
+array of $p$ instead of $p[i,j]$ we build $p[i,j,l]$ for each of
+$l=1,2,\ldots,L$ models and we define our data component like so:
+\begin{verbatim}
+pi[i,j]<- bigpi[i,j,mod]
+y[i,j] ~ dbern(pi[i,j])
+\end{verbatim}
+(or something like that).
+
+As before the posterior probabilities can be highly sensitive to
+priors on the different model parameters and sometimes convergence
+really sucks. But we give a JAGS script in the {\bf R} package 
+\mbox{\tt scrbook} which has an example that works. For that we
+estimated each parameter in the models one-at-a-time and used the
+estimated posterior mean and variance as the prior distributions in
+the model-selection analysis. 
+
+This can all be very  tedious to implement but
+produces posterior model probabilities which have a direct
+interpretation that is desireable. 
 
 
 
 \section{Evaluating Goodness-of-Fit}
 
 Using classical inference methods, it is sometimes possible to
-identify a test
-statistic, with known asymptotic distribution, to evaluate
-goodness-of-fit using a chi-square statistic. Examples from the closed
-capture-recapture setting includes XXXXXX XXXXXXXX.
-When this is not the case, 
-goodness-of-fit is ususally assessed using 
+identify a test statistic, with known asymptotic distribution, to
+evaluate goodness-of-fit using a chi-square statistic. Examples from
+the closed capture-recapture setting includes XXXXXX XXXXXXXX.  When
+this is not the case, goodness-of-fit is ususally assessed using
 bootstrap methods. Using a bootstrap method we identify a fit
-statistic and we compute the value for  which is more or less the standard
-approach, in general.
+statistic and we compute the value for which is more or less the
+standard approach, in general.  To date, we are unaware of any
+goodness-of-fit applications based on likelihood analysis of SCR
+models (XXX WE NEED TO DO SOME RESEARCH ON THIS XXXXX).  We give some
+ideas in sec. xxxxxx below.
 
-
-The basic idea is to come up with a fit statistic that depends on the
-parameters and the data set, 
-$T({\bf y}, \theta)$ and then
- we compute this for the data set and then for simulated data sets
- using the MLES.
-We provide an example here. 
-A problem with SCR models is  coming up with good fit statistics. 
-Bayesian model assessment is similar -- we come up with a fit
-statistic and compare it to values for simulated data. The thing is
-that this happens using posterior simulated values so we ask is the
-value of the fit statistic, given a particular value of $\theta$ from
-the posterior, similar to values of the fit statistic for that value
-of $\theta$, but for perfect data sets?
-So both Bayesian and classical methods of assessing goodness-of-fit
-require that we identify fit statistics and then do some kind of a
-simulation evaluation. 
+For either Bayesian or classical inference, 
+the basic strategy is to come up with a fit statistic that depends on the
+parameters and the data set, which we denote by
+$T({\bf y}, \theta)$, and then
+ we compute this for the observed data set, and then compare its value
+ to that computed for perfect data sets simulated under the correct
+ model.  In the case of classical inference, we use a parametric
+ bootstrap where we simulate data sets conditional on the MLE
+ $\hat{\theta}$. For Bayesian analysis we use the Bayesian p-value
+ (REF) in which data sets are simulated for a posterior sample of
+ $\theta$. 
 
 
 For SCR
 models it is usually possible to devise such an evaluation using the 
 so-called Bayesian p-value (Gelman XYZ.XYZ) approach (see section 2.XYZ). 
-However, to the best of our knowledge there has not been a definitive or 
+However, there has not been a definitive or 
 general proposal for a fit statistic for use in computing the Bayesian 
 p-value although a few specialized implementations of Bayesian p-values 
-have been provided (Royle 2009; Gardner et al. 2010 ???).  
+have been provided (Royle 2009; Gardner et al. 2010 ???).   
+As a general matter, we recommend use of Bayesian p-values but caution
+that there is not general expectation to support how well they should
+do, in general. As such, one should expect to do some kind of custom
+evaluation for every use of such methods if the ability to reject
+under specific departures from the model is of paramount interest.
+This is not a weakness of a Bayesian approach because the same issue
+applies in doing parametric bootstrapping. 
 
 For SCR models, 
 there are at least two components to model fit for most models,
@@ -300,9 +377,7 @@ the context of a Bayesian p-value.
 We propose analyzing the separate elements of fit individually.  
 To evaluate fit of the detection component of the model, we consider
 two distinct fit statistics based on the individual encounter
-frequencies and also the trap encounter frequencies
-
-DETAILS HERE
+frequencies and also the trap encounter frequencies.
 
 I think inference about Density is going to be insensitive to
 departures from CSR but probably somewhat sensitive to bad models for
@@ -314,7 +389,7 @@ known to be highly sensitive to the observation model (Dorazio and
 Royle 2003; Link 2003).
 
 
-\section{Testing Complete Spatial Randomness (CSR)}
+\section{Testing Uniformity or Spatial Randomness}
 
 Historically, especially in ecology, there has been a huge amount of
 interest in whether a realization of a point process indicates
