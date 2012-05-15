@@ -31,9 +31,9 @@ Ntel<-nrow(s)
 
 nsim<-100
 
-simout0<-matrix(NA,nrow=nsim,ncol=5)
+simout0<-matrix(NA,nrow=nsim,ncol=6)
 
-for(sim in 1:nsim){
+for(sim in 32:nsim){
 
 # we combine distance and a covariate into a model for space usage
 # individuals use each pixel in proportion to exp( distance + covariate)
@@ -117,7 +117,7 @@ tmp<-nlm(intlik3rsf.v2,c(-3,log(3),1,0,1),y=y,K=K,X=X,ztrap=z[raster.point],G=gr
 #tmp<-nlm(intlik3rsf.v2,c(-3,log(3),1,0,1),y=y,K=K,X=X,ztrap=z[raster.point],G=gr,ntel=n,zall=as.vector(z))
 
 
-simout0[sim,]<-tmp$estimate
+simout0[sim,]<-c(nrow(y),tmp$estimate)
 
 }
 
