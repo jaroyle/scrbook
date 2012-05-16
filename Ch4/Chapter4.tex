@@ -45,22 +45,30 @@ area'' and not being able to accommodate trap-specific
 effects or trap-specific missing values.
 In this chapter we resolve these issues by developing 
 our first fully spatial capture-recapture
-model which turns out to be precisely the model considered in sec. \ref{closed.sec.indcov},
- but instead of defining the individual covariate to be distance
+model. This model is not too different from
+that considered in sec. \ref{closed.sec.indcov} but, 
+instead of defining the individual covariate to be distance
 to the centroid of the array we define $J$ individual covariates - the
 distance to {\it each} trap. And, instead of using estimates of
 individual locations ${\bf s}$, we consider a fully hierarchical model in
 which we regard ${\bf s}$ as a latent variable and impose a prior
-distribution on it.  We can think of having $J$ independent
-capture-recapture studies generating one data set for each trap, and
-applying the individual covariate model with random activity centers,
-and that is all the basic SCR model is.
+distribution on it.  
+
+
 
 In the following sections of this chapter we investigate the basic
 spatial capture-recapture model, which we refer to as ``model SCR0'',  and address some important
-considerations related to its analysis in {\bf WinBUGS}. We also demonstrate
+considerations related to its analysis in {\bf BUGS}. 
+We also discuss how encounter probability models are related to
+explicit models of space usage or ``home range area.'' Understanding
+this allows us to compute, for example, the area used by an individual
+some prescribed percent of the time. 
+We also demonstrate
 how to summarize posterior output for the purposes of producing
 density maps or spatial predictions of density.
+
+
+
 
 \section{Sampling Design and Data Structure}
 
@@ -128,7 +136,7 @@ common to
 reasons discussed later in Chapt. \ref{chapt.poisson-mn}.
 
 
-\section{The binomial observation model }
+\section{The binomial encounter model}
 
 If sampling devices are operated over $K$ time periods or sampling
 occasions (e.g., in practice,
@@ -169,14 +177,13 @@ regression, we think about specifying the model according to:
 where, here, $||{\bf s}_{i}-{\bf x}_{j}||$ is the distance between
 ${\bf s}_{i}$ and ${\bf x}_{j}$. We sometimes write $||{\bf
   s}_{i}-{\bf x}_{j}|| = dist({\bf s}_{i},{\bf x}_{j}) =
-d_{ij}$. Alternatively, if we think about distance sampling then we
-might use the a model of the form:
+d_{ij}$. Alternatively, a popular model in distance sampling is:
 \begin{equation}
 p_{ij} = p_{0}*\exp(-\alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||^2)
 \label{scr0.eq.norm}
 \end{equation}
-which is usually referred to as the ``half-normal'' model in distance
-sampling literature, with $\alpha_{1} = 1/(2\sigma^{2})$.  Because it
+which is usually referred to as the ``half-normal'' model,
+with $\alpha_{1} = 1/(2\sigma^{2})$.  Because it
 is the kernel of a bivariate normal or Gaussian probability density
 function we will refer to it as the ``(bivariate) normal'' or
 ``Gaussian'' model.  There are a large number of standard detection
@@ -276,39 +283,112 @@ but augmented with a set of ``individual effects'', ${\bf s}_{i}$,
 which relate some sense of individual location to encounter
 probability. 
 
+\subsection{The Core SCR Assumptions}
 
+XXXX {\bf Andy is just babbling here mostly} XXXX
 
+Its always a good idea to sit down and reflect on the meaning of any
+particular model, its various assumptions, and what they mean in a
+specific context. 
+From the statisticians point of view, 
+the basic assumption, the omnibus assumption, as in all of statistics, and for every
+statistical model, is  that ``the model is
+correctly specified''. So, naturally, that precludes everything that
+isn't in the model. That said, biologists get their little hamster
+wheels spinning and this sort of omnibus assumption starts causing
+some level of anxiety. We try to head that off here by identifying
+what we think are the core assumptions of any SCR model, which we
+enumerate here:
+
+\begin{itemize} 
+\item[$\bullet$] Demographic closure. 
+ No recruitment or entry into the sampled population.
+ No mortality or exit from the sampled population.
+\item[$\bullet$] Geographic closure.
+ Strictly speaking this is not assumed -- animals may move around in
+ space and sometimes be exposed to trapping and sometimes not. The
+ whole point of SCR models is to accommodate this dynamic. In ordinary
+ C-R models we have to assume geographic closure to interpret $N$ in a
+ meaningful way.
+\item[$\bullet$] Uniformity and independence of the underlying point
+  process ${\bf s}_{1},\ldots, {\bf s}_{N}$.
+\item[$\bullet$] A detection model that provides a phenomonological
+  description of how encounter probability varies as a function of distance.
+ We are not making an explicit assumption about home range geometry or
+ size, although a certain view leads naturally to such an
+ interpretation. See the next section. 
+\item[$\bullet$] independence of encounters among individuals
+\item[$\bullet$] independen of encounters of the same individual
+\end{itemize}
+
+Its easy to get worried and question some of these assumptions just on
+the grounds that they're so outrageously simple. But its worth
+emphasizing here that you don't have inherently fewer assumptions by using an
+ordinary capture-recapture problem but, rather, you have to make more
+extravagent claims about what your data represent to discregard
+certain aspects of the problem. 
+For one, we're not assuming 
+that $p$ is constant for all individuals but rather that $p$ varies
+substantially as a matter of spatial juxtaposition of individuals with
+traps. So maybe the manner in which $p$ varies isn't quite right, but
+whether or not we have that right, that is not an argument for
+assuming $p$ to be constant or that, instead, it must vary according
+to a 2-point finite mixture.  Fundamentally a distance-based model for
+$p$ has some basic biological justification for virtually all species
+that we study. 
+
+We also note that having made these assumptions we shouldn't regard
+them as completely definitive and necessary. For example, {\it your} inability to relax these
+assumptions by generalizing the model should not be interpreted as
+an an inability that applies to {\it everyone}. This is a common
+misstake that referees make.
+
+Finally, we return back to our sentiment about the omnibus assumptions
+which is that the model is properly specified. This precludes
+everything that isn't in the model. As a result of this,  you
+sometimes see in historical capture-recapture literature things like 
+we assume ``no marks are lost'', we assume that ``marks are correctly
+identified'' and so forth. We might as well also assume that, a
+shopping mall is not built in our study area, a meteor
+does not crash down into our study area,  
+the sun does not go super-nova, and things like that. Our point is
+that we should seperate statistical assumptions about model parameters
+from what are essentially logistical or operational assumptions about
+how we interpret our data based on our ability to collect data. It is
+pointless to enumerate all of the possible explanations for apparent
+removals from the population, or non-independence, or what have you
+and, instead, just give the statistical basics. 
+
+For some of these core assumptions, uniformity, isotropic/stationary space usage, independence
+of individuals and of encounters, we expect a fair amount of 
+robustness to departures,  for good reasons but, importantly, we can extend
+these assumptions in many different ways and we do that to varying
+extents in tis book, but more work remains to be done. We can also
+evaluate the reasonableness of the assumptions formally in some cases.
 
 \section{The Implied Model of Space Usage}
 \label{sec.scr0.implied}
 
-We developed our basic SCR model in terms of a latent variable ${\bf
-  s}$ which we call a home range center.  Surely, then, the encounter
-probability model which relates encounter of individuals in specific
-traps to ${\bf s}$ must somehow imply a certain model for home range
-geometry and size.  Here we explore the nature of that relationship.  While we
-have used the term ``home range'' and other jargon (territory,
-activity center, etc..) almost interchangeably, what we really mean to
-imply is something that would be more more clearly identified as
-``space usage'' which we view in a manner equivalent to what is
-normally called resource selection. If the resource is only space,
-i.e., with no explicit covariates, then space usage is a more
-descriptive term but, otherwise (Chapt. XXXX) we take the term as
-being analogous to ``resource selection''.
-
-We believe that thinking about detection models as models of
-space usage of animals is more sensible and interpretable in the manner
-that we describe here.  A given detection model will imply a a model
-of space usage -- amount and extent of area used some prescribed
-percentage of the time -- i.e., 95\% of animal movements are within
+We developed the basic SCR model in terms of a latent variable, ${\bf
+  s}$, which we called a home range center.  Surely, then, the
+encounter probability model which relates encounter of individuals in
+specific traps to ${\bf s}$ must somehow imply a certain model for
+home range geometry and size.  Here we explore the nature of that
+relationship. In particular, 
+a given detection model implies a model 
+of space usage -- i.e., the amount and extent of area used some prescribed
+percentage of the time. So we might say , for example, 95\% of animal movements are within
 some distance from an individual's activity center. 
-In that sense, i.e., if we equate that area to ``home
-range'', then the detection model implies a model of home range. In
-other words, there is an implicit home range model underlying a given
-detection probability model. 
+ While we have used the term ``home range'' and other
+jargon (territory, activity center, etc..) almost interchangeably,
+what we really mean to imply is something that would be more more
+clearly identified as ``space usage'' which we view in a manner
+equivalent to what is normally called resource selection. If the
+resource is only homogeneous space, then space usage is a more
+descriptive term but, otherwise (Chapt. \ref{chapt.rsf}) we take on
+the more genereal probleem of modeling
+ ``resource selection''.
 
-i.e., ``how much space encompases 95\% of the movement outcomes of an
-individual -- or the space used.''
 
 Intuitively, the detection function of SCR models is related to home
 range area or space usage of individuals.  Indeed, it is natural
@@ -325,236 +405,225 @@ to (all things conditional on ${\bf s}$ here):
 \]
 In practice it might make sense to think about the first component,
 i.e., $\Pr(\mbox{encounter} | \mbox{usage of} {\bf x}, {\bf s})$ as
-being a constant (e.g., if traps are approximately randomly located within small
-grid cells). So, then, 
-how do we chararacterize $\Pr(usage)$?  First of all we note that it is
-not a proability distribution on $x$ like a classical RSF. Instead,
-think of an animal using space for some period of time and accuulating
-a history of space usage (being a bunch of values of $x$) and we
-random sample a single value. Define $\pi(x|s)$ to be a probability
-distribution of that value, i.e., $\pi(x|s)$ {\it is} a probability
-distribution of $x$. following standard notions of this stuff we
-use this function here:
+being a constant (e.g., if traps are located within arbitrarily small
+grid cells) and then, in that case, the encounter probability model is
+directly proportional to this model for space use.
+
+To motivate a specific model for space usage, imagine some kind of
+perfect observation device (e.g., continuous telemetry) so that we
+observe every time an individual moves into a pixel. After a long
+period of time we observe an enormous sample size of ${\bf x}$
+values. We tally those up into each pixel, producing the frequency
+$m(x,s)$, so then the usage model should be regarded as a probability
+mass function for these counts. Naturally, we regard the counts m(x)
+as a multinomial observation with probabilities $\pi(x|s)$ and
+prescribe a suitable model for $\pi(x|s)$ that describes how use
+events should accumulate over time. A natural null model for
+$\pi(x|s)$ has a decreasing probability of use as $x$ gets far away
+from $s$.  Following standard notions of this stuff, i.e., the
+resulting points are point process with conditional intensity:
 \[
-\pi({\bf x}|{\bf s}) =  
-\frac{ exp(  -d({\bf s},{\bf x})^{2}/(2\sigma^{2})) }
-{ \sum_{x} exp(  -d(s,x)^{2}/(2\sigma^{2})) }
+\pi({\bf x}|{\bf s}) =  \frac{ g({\bf x},{\bf s}) }{ \int g({\bf
+    x},{\bf s}) dx }
 \]
-therefore clearly the space used by an individual will be proportional
+or, if we represent our landscape by discrete pixels, 
+\begin{equation}
+\pi({\bf x}|{\bf s}) =  \frac{ g({\bf x},{\bf s}) }{ \sum_{x} g({\bf
+    x},{\bf s}) }
+\label{scr0.eq.ud}
+\end{equation}
+where $g({\bf x},{\bf s})$ is any positive function.
+Therefore clearly the space used by an individual will be proportional
 to whatever kernel we stick in for the numerator. The customary
 choice, in RSF literature, is to use the negative exponential function
-but here we have the Gaussian kernel because we like that.
+but here we have the Gaussian kernel because we like that, i.e.,
+\[
+ g({\bf x},{\bf s})= exp(  -d({\bf x},{\bf s})^{2}/(2\sigma^{2})) 
+\]
+so that space usage occurs according to a a bivariate normal model.
+The main take-away point here is that underlying every SCR model is
+some kind of model of space-usage Eq. (\ref{scr0.eq.ud}) based on the
+specific choice of $g({\bf x},{\bf s})$.  More specifically, to apply
+this model of space-usage to SCR problems we just allow for imperfect
+detection by introducing a constant encounter rate $<1$, then this
+yields, precisely, our bivariate normal encounter probability model.
+Whether or not we have perfect sampling devices, the function we use
+in the encounter probability model equates to some conditional
+distribution of points, or utilization distribution, as in
+Eq. \ref{scr0.eq.ud}, from which we can compute effective home range
+area, i.e., the area that contains 95\% of the mass of $g({\bf x},{\bf
+  s})$, or 95\% of all space used.
 
-This is a pdf of $x$ and in sampling a populationi of individuals
-using traps or other devices we set them out and they accumulate
-potential detections over a period of time. Thus whether or not a
+\begin{comment}
+Whether or not a 
 point $x$ is {\it used} (at all) depends on some unknown rate of use
 by the individual over whatever period of time the devices are
 active. This is something we can't hope to estimate or model in most
 cases but we imagine that over a period of time usage is characterized
-by a rate of usage $\lambda_{0}$ so that amount of usage of $x$ is
+by a rate of usage $\lambda_{0}$ so that amount of usage -- the number
+of times individual $s$ enters $x$, is:
 \[
 m({\bf x},{\bf s}) = Poisson(\lambda_{0} \pi(x|s) ) 
 \]
 which isn't really an important assumption because note that by
 conditioning on the total again it retains the (natural) multionomial
-distribution. So we ask ``if a guy uses space 100 times, where is that
-space being used?'' and the histogram of usage is proportional to
-$\pi(x|s)$. But over time timee intrval we expect this amount to be
-random and then whether we detect a guy or not at $x$ occurs if
-$m(x|s)>0$. That is
+distribution.
+Moreover, if our detection devices are {\it imperfect} then all this
+does is introduce another constant into the above expression that we
+might as well confound with $\lambda_{0}$. Thus a background use or
+movement rate, and a time interval over which use accumulates, is
+completely confounded with efficacy of our sampling devices that
+measures space usage. 
+
+If our sampling devices do not record total visits during a period but
+rather just ``whether or not'' an individual visits, 
+then observe a binary observation $y$ which we can think of as being
+related to the {\it latent} counts $m(x,s)$ by $Pr(y=1) = Pr(m(x,s)>0)$
+which occurs with probability:
 \begin{equation}
 \Pr(y=1) = 1-exp(-\lambda_{0} \pi(x|s))
 \label{scr0.eq.hazard}
 \end{equation}
 which is called the ``hazard model'' in classical distance sampling
 applications \citep{buckland_etal:2002}. 
-This is why we like the cloglog
-link function in XXXXX (royle et al. 2009ecol).
+This is why we like the cloglog link function in \citep{royle_etal:2009ecol}.
 So this all comes about by introducing a latent process of ``usage''
 accumulating over time.    
 We could just as well say $Pr(y=1) \propto \pi(x|s)$ which is the
-half-normal model. 
+half-normal model (See Chapt. \ref{chapt.poisson-mn}). 
+\end{comment}
 
-Ok back to this thing: 
-\[
- \Pr(encounter at x|s) = Pr(encounter | usge of x,s) Pr(usage of x|s).
-\]
-Therefore, if we imagine that encounter probability was perfect,
-everywhere, and animals moved around according to some bivariate
-distribution $\Pr(movement to x | s) = g(x,s)$ then a sensible summary
-of home range (or space usage) is the area that contains 95\% of the
-mass of $g(x,s)$. i.e., 95\% of all animal locations.  In SCR models it
-is not always so clear how to compute this because (1) most detection
-functions do not correspond to a specific bivariate movement
-distribution g(x,s) and (2) we only get to observe ``movement outcomes''
-where we happen to have traps, and even then we don't observe those
-perfectly (just when the movement outcome is near a trap).
 
 
 \subsection{Bivariate normal case}  
 
-There is (at least) one encounter model that allows direct computation
-of home range area, the 
- Gaussian kernel model:
+One encounter model that allows direct analytic computation
+of home range area is the Gaussian encounter probability model 
 \[
-p({\bf x},{\bf s}) = \lambda_{0} \exp(-\theta*||{\bf x}-{\bf s}||^2)         
+p({\bf x},{\bf s}) = \lambda_{0} \exp(-\alpha_{1}*||{\bf x}-{\bf s}||^2)         
 \]
-Thinking about this under our decomposition mentioned above, i.e., 
-\[
-\Pr(\mbox{detection at } {\bf x} | {\bf s}) = \Pr(\mbox{detection } |
-{\bf x} \mbox{used})\Pr({\bf x} \mbox{ used } | {\bf s})
-\]
-It seems reasonable to imagine that the conditional probability of
-detection is constant or at least not dependent on ${\bf s}$ (but it
-might depend on ${\bf x}$, the trap location, and that would be ok,
-see chapt. \ref{chapt.covariates}) in which case the Gaussian model is
-explicitly one of space usage:
-\[
-\Pr(detection at x | s) = \lambda_{0}*const*exp(- (1/(2*sigma*sigma))*dist(x,s)^2)
-		            =  p0*exp(- (1/(2*sigma*sigma))*dist(x,s)^2)
-\]
-with the relevant normalizer required to have the ``use distribution''
-integrated to 1 absorbed into the constant out front. 
-Therefore the effective (baseline) encounter rate is
-the product of the conditional probability of detection $\lambda_{0}$
-and this normalizing constant.
-
-Under this model we can compute precisely the effectively home range
-area. In particular, if ``use'' outcomes are bivariate
-normal, then $||{\bf x}-{\bf s}||^2$ has a chi-square distribution with
-2 d.f. and so we need to find the constant $B(\alpha)$ such that
-$\Pr(d\le B(\alpha)) = 1-\alpha$, i.e, the constant $B(\alpha)$ that
-encloses 95\% of all realized distances. The constant $B(\alpha) =
-\sigma*\sqrt{q(2,\alpha)}$. For $\alpha=.05$, $q(2,\alpha) = 5.99$ so
-as an example for $\sigma=1$, $B(\alpha) = 1*\sqrt{5.99} = 2.447$ and
-therefore 95\% of the points used 
- will be within 2.447 units of
-the home range center. So the basic idea is that we can estimate
-$\sigma$
- by fitting the encounter model, 
-and then plugging it into this expression for $B(\alpha)$ to obtain the home
-range radius that contains 95\% of movement outcomes.
-
-\begin{comment}
-\subsection{Hazard formulation of Gaussian model}
+which corresponds to a bivariate normal model of space usage with
+standard deviation $\sigma = \sqrt(1/2\alpha_{1})$.  Under this model
+we can compute precisely the effective home range area. In
+particular, if use outcomes are bivariate normal, then 
+$||{\bf x}-{\bf  s}||^2$ has a chi-square distribution with 2 d.f. and the constant
+$B(\alpha)$ that encloses 95\% of all realized distances i.e.,
+$\Pr(d\le B(\alpha)) = 1-\alpha$, is $B(\alpha) =
+\sigma*\sqrt{q(2,\alpha)}$.  To illustrate, for $\alpha=.05$,
+$q(2,\alpha) = 5.99$, and 
+for $\sigma=1$, $B(\alpha) = 1*\sqrt{5.99} = 2.447$. 
+Therefore 95\% of the points used will be within 2.447 units of the
+home range center. So the basic idea is that we can estimate $\sigma$
+by fitting the encounter model, and then plug it into this
+expression for $B(\alpha)$ to obtain the home range radius that
+contains 95\% of space used.
 
 An alternative bivariate normal model is based on a bivariate normal hazard rate:
 \begin{equation}
 p(x,s) = 1-exp(-\lambda_{0}*exp(-\alpha_{1}*||{\bf x}-{\bf s}||^2))
 \label{scr0.eq.hazard}
 \end{equation}
-
-This arises by assuming a latent count $m(x,s)$ which is a Poisson
-with intensity $lam0 g(x,s)$. Whereas the half normal just asserts
-that
-$p = lam0 g(x,s)$
-We saw in chapter XXXXX (or we sEE?) that for lam0 small 
-it is the case that $Pr(y>0) \approx E[y]$ so this explains the
-effective quivalence of these two. 
-\end{comment}
-
+This arises by assuming a latent ``use frequency'' $m({\bf x},{\bf
+  s})$ which is a Poisson with intensity $\lambda_0 g({\bf x},{\bf
+  s})$. Whereas the half normal asserts that $p({\bf x},{\bf s}) =
+\lambda_0 g({\bf x},{\bf s})$.  We discuss these two models further in
+Chapt. \ref{chapt.poisson-mn}.
 
 \subsection{Empirical analysis}
 
-For many detection models we can compute the 95\% area empirically
-by taking a fine grid of points and 
-either simulating movement outcomes with probabilities proportional to
-$p(x,s)$ and accumulating area around ${\bf s}$ or else we can do this precisely
-by finding the distance $||x-s||$ within which 95\% of all movements are
-concentrated. 
-Under any detection model, movement outcomes will occur
-in proportion to $p(x,s)$ and so we can define probabilities according
-to:
+For any encountere model we can compute space usage quantiles
+empirically by taking a fine grid of points and either simulating
+movement outcomes with probabilities proportional to $p(x,s)$ and
+accumulating area around ${\bf s}$, or else we can do this precisely
+by varying $B(\alpha)$ to find that value within which 95\% of all
+movements are concentrated, i.e., the set of all ${\bf x}$ such that
+$||{\bf x}-{\bf s}|| \le B(\alpha)$.  Under any detection model,
+  movement outcomes will occur in proportion to $p({\bf x},{\bf s})$,
+  as long as the probability of encounter is constant, {\it
+    conditional on use}, and so we can define our utilization
+  distribution according to:
 \[
- \pi(x|s) =\frac{p(x,s)}{\sum_{x} p(x,s) }
+ \pi({\bf x}|{\bf s}) =\frac{p({\bf x},{\bf s})}{\sum_{x} p({\bf
+     x},{\bf s}) }
 \]
-i.e., under the 2-part decomposition noted above, the use 
-distribution has to have probabilities $\pi({\bf x}|{\bf s})$. In
-other words, $\pi({\bf x}|{\bf s})$ is a discrete representation of
-this movement distribution.  Given the probabilities $\pi({\bf
-  x},{\bf s})$ for all ${\bf x}$ we can find the value of ${\bf x}_{0}$ such that
-$\sum_{{\bf x}_0 s.t. ||x0-s||} \pi({\bf x},{\bf s}) \le 0.95$.
-We have a function called \mbox{\tt hra} in our \mbox{\tt scrbook}
-package. The help file for \mbox{\tt hra} has an example of simulating
-some data. 
+Given the probabilities $\pi({\bf x},{\bf s})$ for all ${\bf x}$ we
+can find the value of $B(\alpha)$ such that $\sum_{{\bf x}
+  s.t. ||x-s|| \le B(\alpha) } \pi({\bf x},{\bf s}) \le 1-\alpha$ (or
+for any other prescribed value of $\alpha$).  We have a function
+called \mbox{\tt hra} in our \mbox{\tt scrbook} package. The help file
+for \mbox{\tt hra} has an example of simulating some data.
 
-Sample execute of this function hra 
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-
-
-XXXX CHAnGE NUMBERS 
-
-What this means is that ${\bf x}_0 = 0.973$ is the radius that
-encloses about 95\% of all movements under the model above. Therefore
-the area is about $\pi*.973*.973 = 2.97 \approx 3.0$.  You can change
-the intercept of the model and find that it has no affect. I don't
-know if that works out across all classes of models or not. Note that
-the intercept never affects $p$ multiplicatively and so its not
-obvious (to me) that it shouldn't have an affect (except somewhat
-intuitively perhaps).
-
-
-The point of doing this is that we can now apply this process of
-simulating data to find the 95\% home range area for any detection
-model with prescribed parameter values.  Similarly, we can also work
-backwards. That is: For any desired 95\% home range area, we can find
-the coefficient on distance that produces that home range area
-(assuming intercept to have no affect) which we imagine would be
-useful for doing simulation studies. 
-To demonstrate how to do this, 
-we first 
-define an objective function that computes the difference between 
-implied home range area
-under some model and the desired target value. Then we find the root
-of that function.
-
+Here is an analysis of the two bivariate normal models of space usage:
+{\small 
 \begin{verbatim}
-obj<-function(sigma,target= 3 ){
-a<-1/(2*sigma*sigma)
-lp<- -2 -a*D*D
+pGauss2<-function(parms,D){
+a0<-parms[1]
+sigma<-parms[2]
+lp<-  parms[1] -(1/(2*parms[2]*parms[2]))*D*D
 p<- 1-exp(-exp(lp))
+p
+}
 
-pi.probs<- p/sum(p)
-x0<-.1
-repeat{
-in.hr<- D<=k
-total<- sum(pi.probs[in.hr])  
-#cat("Total area: ",total,fill=TRUE)
-if(total>=.95) {
-print(x0)
-break
+pGauss1<-function(parms,D){
+a0<-parms[1]
+sigma<-parms[2]
+p<-  expit(parms[1])*exp( -(1/(2*parms[2]*parms[2]))*D*D )
+p
 }
-x0<-x0*1.01
-}
-hr.area<- pi*x0*x0
-print(hr.area)
-ss<-  (hr.area - target)^2
-ss
-}
+
+xlim<-c(0,6)
+ylim<-c(0,6)
+
+> # execute hra with sigma = .3993
+> hra(pGauss1,c(-2,.3993),plot=FALSE,xlim,ylim,ng=500,tol=.0005)
+[1] 0.9784019
+radius to achieve 95% of area:  0.9784019
+home range area:  3.007353
+[1] 3.007353
+>
+> 
+> ##  analytic solution
+> # true sigma to produce area of 3
+> sqrt(3/pi)/sqrt(5.99)
+[1] 0.3992751
 \end{verbatim}
+}
 
+What this means is that $B(\alpha) = 0.978$ is the radius that
+encloses about 95\% of all movements under the standard bivariate
+normal encounter model.  Therefore, the area is about $\pi*.978*.978 =
+3.007$ spatial units.  You can change the intercept of the model and
+find that it has no affect.\footnote{ note: I don't know if that works
+  out across all classes of models or not. Note that the intercept
+  never affects $p$ multiplicatively and so its not obvious (to me)
+  that it shouldn't have an affect (except somewhat intuitively
+  perhaps).}  The actual
+(analytic) value of $\sigma$ that produces a home range area of 3.0 is
+$0.3993$ which is the value we initially plugged in to \mbox{\tt
+  hra}. We can improve on the numerical approximation to home range
+area (get it closer to $3.0$) by increasing 
+the resolution of our spatial grid (increase the \mbox{\tt
+  ng} argument) along with the \mbox{\tt tol} argument. XXX note: tol
+and ng are redundant to some extent XXXX
 
-
-XXX Change numbers, make consistent with hra() call above
-XXXXXXXXXXXXXXXXXXXX 
-
-
-Now we use the {\bf R} function optimize to locate the optimal value
-of $\sigma$ - optimal here being the value of $\sigma$  that makes
-home range area minus ``target''  equal to 0:
+We can also reverse this process, and find, for any detection model,
+the parameter values that produce a certain $(1-\alpha)$\% home range
+area, which we imagine would be useful for doing simulation studies.
+The function \mbox{\tt hra} will compute the value of the scale parameter 
+that achieves a certain target $(1-\alpha)\%$ home range area, by
+simply providing a non-null value of the variable \mbox{\tt
+  target.area}. Here we use \mbox{\tt target.area = 3.00735} (from
+above) to obtain a close approximation to the value $\sigma$ we
+started with:
+{\small
 \begin{verbatim}
-tmp<-optimize(obj,interval=c(.1,5),target=3)
-sigma.best<- tmp$minimum
-
-> sigma.best
-[1] 0.3957799
+> hra(pGauss1,c(-2,.3993),plot=FALSE,xlim,ylim,ng=500,target.area=3.00735,tol=.0005)
+Value of parm[2] to achieve 95% home range area of  3.00735  :  0.3993674
+[1] 0.3993674
 \end{verbatim}
+}
 
-We see this is equal to 0.396 which is the value we simulated data from above - so things seem to be working in an orderly manner. 
-
-
-\subsection{Relevance of Space Usage Model}
+\subsection{Relevance of Understanding Space Usage}
 
 One important reason that we need to be able to deduce ``home range
 area'' from a detection model is so that we can compare different
@@ -566,24 +635,34 @@ same currency. Unfortunately, we have found that many people take
 estimates of $\sigma$ under any model of encounter probability and
 interpret them as being directly related to home range size and this
 should not be done. (note:
-some models don't even have natural ``scale'' parameters, e.g., the
+some models don't even have a natural ``scale'' parameter, e.g., the
 logistic model considered previously.)
 
 Another reason to understand the relationship beteween models of
 encounter probability and space usage is that it opens the door to
 combining traditiona resource selection data from telemetry with
-spatial capture-recapture data. 
-In Chapt. XXXXX 
- we consider this for the case in which a
-sample of individuals produces encounter history data suitable for SCR
-models and, in addition, we have telemetry relocations on a sample of 
-individuals.
+spatial capture-recapture data.  In Chapt. \ref{chapt.rsf} we consider
+this problem, for the case in which a sample of individuals produces
+encounter history data suitable for SCR models and, in addition, we
+have telemetry relocations on a sample of individuals. This is
+achieved by regarding the two sources of data as resulting from the
+same underlying process of space usage but telemetry data produce
+``perfect'' observations, like always-on camera traps blaneting a
+landscape.  We use this idea to model the effect of a measured
+covariate at each pixel, say $z(x)$, on home range size and geometry
+and, hence, the probability of encounter in traps.  One final point:
+This is different than Chapt. \ref{chapt.ipp} because we are thinking
+here of modeling variation {\it within} a home-range, not variatoin in
+the density of home range centers across the landscape.
+
+
+
 \begin{comment}  We assume the telemetry fixes are made sufficiently far apart
 so that the locations represent independent movement outcomes of
 individuals within their home range [note: otherwise we need to devise
 a model for correlated outcomes which is difficult, except in the
 bivariate normal situation].
-\end{comment}
+
 Conceptually we regard these two data sets as independent. Let $y_{i}$
 denote the individual encounter history data for individual $i$ and let
 $u_{m,t}; t=1,\ldots,T]$ denote the telemetry locations for individual $m$. If
@@ -599,12 +678,7 @@ function
 \pi(x,s) = p(x,s)/[ \int_{x} p(x,s) ]
 \]
 Which allows us to analyze models with auxiliary data by MCMC or directly by likelihood.
-
-Modeling space usage. We imagine that each pixel $x$ has a covariate
-associated with it and the probability of an individual going there
-should be a function of that covariate..... this is different than
-Chapt. \ref{chapt.ipp} because we are thinking here of modeling
-variation {\it within} a home-range. 
+\end{comment}
 
 
 
@@ -931,7 +1005,7 @@ are often not practical in many situations, e.g. when studying
 carnivores such as bears or large cats. Furthermore, SCR models allow us to relax many of the
 assumptions made in classical distance sampling, such as perfect detection at distance zero, and SCR models allow
 for estimates of quantities other than density, such as home range
-size, and space usage (see Chapts. XXXXX And \ref{chapt.ecoldist}).
+size, and space usage (see Chapts. \ref{chapt.rsf} and \ref{chapt.ecoldist}).
 
 
 \section{Simulating SCR Data}
@@ -1544,9 +1618,12 @@ jm<- jags.model("SCR0a.txt", data=data, inits=inits, n.chains=nc,
                  n.adapt=nb))
 jm<- coda.samples(jm, parameters, n.iter=ni-nb, thin=nthin)
 \end{verbatim}
-We find that {\bf JAGS} seems to be 20-30\% faster for the basic SCR
+We find that {\bf JAGS} seems to be 20-30\% faster (and often more) 
+for the basic SCR
 model which you can evaluate using the function \mbox{\tt
-  SCR0bayes} in the {\bf R} package \mbox{\tt scrbook}.
+  SCR0bayes} in the {\bf R} package \mbox{\tt
+  scrbook}. \citet{hobbs:2011} provides a good introduction to
+ecological modeling with {\bf JAGS} which we recommend. 
 
 
 
@@ -1827,8 +1904,7 @@ All based on 3 chains, 12k iters, 2k burn, 30k total
 \begin{tabular}{cllrllrllrllr}
 Buffer &\multicolumn{3}{c}{sigma} & \multicolumn{3}{c}{psi} &
 \multicolumn{3}{c}{N} & \multicolumn{3}{c}{D} \\
-   & mean &	sd	&n.eff&	mean&	sd	&n.eff&	mean&	sd
-   &n.eff&	mean&	sd&	n.eff \\
+   & mean &	sd	&n.eff&	mean&	sd	&n.eff&	mean&	sd   &n.eff&	mean&	sd&	n.eff \\
 10&	0.65&	0.06&	1800&	0.13&	0.03&	10000&	39.63&	6.70& 7100&	5.97&	1.00&	7100 \\
 15&	0.64&	0.06&	510&	0.16&	0.04&	3800&	48.77&	9.19&	3300&	5.78&	1.09&	3300\\
 20&	0.64&	0.06&	1200&	0.20&	0.05&	16000&	59.84&	11.89&	20000&	5.77&	1.15&	20000\\
@@ -1839,8 +1915,8 @@ Buffer &\multicolumn{3}{c}{sigma} & \multicolumn{3}{c}{psi} &
 45&	0.64&	0.05&	10000&	0.45&	0.10&	3600&	134.43&	28.68&	3300&	5.83&	1.24&	3300\\
 50&	0.63&	0.05&	4700&	0.51&	0.11&	3200&	151.61&	31.65&	3400&	5.79&	1.21&	3400\\
 55&	0.64&	0.05&	1600&	0.56&	0.12&	260&	169.28&	35.81&	260&	5.73&	1.21&	260\\
-}
 \end{tabular}
+}
 \end{table}
 
 
@@ -2616,7 +2692,8 @@ therefore a type of individual covariate model (as introduced in
 chapter \ref{chapt.closed}) -- but with imperfect information about the
 individual covariate. In other words, they are GLMM-type of models.
  Another class of capture-recapture models
-that SCR models are closely related to is the so-called ``model $M_{h}$.'' xxxxx$You do have to introduce the Otis et al. catalogue somewhere in the book, since you refer to prominently to some if its members$xxxxxx
+that SCR models are closely related to is the so-called ``model
+$M_{h}$'' \citep{otis_etal:1878, dorazio_royle:2002}.
 The effect of introducing a spatial location for individuals is that
 it induces heterogeneity in detection probability, as in model
 $M_{h}$. However, unlike model $M_{h}$, we obtain some information
@@ -2633,6 +2710,11 @@ find that they are really quite easy to analyze using standard MCMC
 methods encased in black boxes such as {\bf WinBUGS} or {\bf JAGS} and
 no doubt other packages. They are also easy to analyze using classical
 likelihood methods, which we address in Chapt. \ref{chapt.mle}.
+
+One of the things we've introduced in this chapter which has not
+previously been discussed explicitly in the literatre on SCR models,
+is the manner in which the encounter probability model relates to
+space usage of individuals. Thats kind of a BFD. XXX SPACE USAGE XXXX
 
 xxxxxx$In the next I find hard to understand the difference between the uniformity of the prior for the activity center locations and the non-uniformity of their posterior. What excatly is the relevance of that ? What is the difference between this and any other Bayesian analysis, where we have also usually an assumption like ?uniformity? about where something (typically a parameter value) sits and then after incorporating the information in the data, this ?space? (the posterior) is no longer uniform. Not sure whether this makes sense ... ?$ xxxxxxFormal consideration of the collection of individual locations $({\bf
   s}_{1}, \ldots, {\bf s}_{N})$ in the model is fundamental to all of
@@ -2679,6 +2761,7 @@ compute K-functions xxxx$need references for such things$ xxxxxxand test for ``c
 (CSR) which we develop in Chapt.  \ref{chapt.gof}. 
 
 
+\begin{comment}
 xxxxx$I would tone down the next paragraph. Also, after having read this chapter (and understood at least the main things in it), this question does not strike me as very obvious anymore$ xxxxxAn obvious question that might be floating around in your mind is why
 should we ever go through all of this trouble when we could just use
 {\bf MARK} or {\bf CAPTURE} xxx$this bold face is intrusive on the eye$ xxxxxto get an estimate of $N$ and apply $1/2$
@@ -2692,9 +2775,9 @@ should not be using models that are not even plausible data-generating
 models -- even if the plausible ones don't fit!  Perhaps more
 charitably, these ordinary non-spatial models are models of the wrong
 system. They do not account for trap identity. They don't account for
-spatial organization or ``clustering''xxx $why quotes ?$xxxx of individual encounters in
-space. And, ``density'' xxxx$why quotes ? And note that density is not a parameter in SCR models either, but a derived quantity$ xxxxis not a parameter of those models because
-density has no meaning absent an explicit representation of space. If
+spatial organization or clustering of individual encounters in
+space. And, density is not estimable from such models because 
+it has no meaning absent an explicit representation of space. If
 we do define space explicitly, e.g., as a buffered minimum convex
 hull, then the normal models ($M_{0}$, $M_{h}$, etc..) assume that
 individual capture-probability is not related to space, no matter how
@@ -2705,8 +2788,7 @@ inference about density or population size and also, because of the
 formality of their derivation, can be extended and generalized to a
 large variety of different situations, as we demonstrate in subsequent
 chapters.
-
-xxxx$General comment again: add more pertinent references, especially at places like introductions and summaries like here$xxxxxx
+\end{comment}
 
 In the next few chapters we continue to work with this basic SCR
 design and model but consider some important extensions of the basic
