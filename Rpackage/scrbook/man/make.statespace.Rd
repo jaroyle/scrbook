@@ -1,5 +1,5 @@
-\name{make.grid}
-\alias{make.grid}
+\name{make.statespace}
+\alias{make.statespace}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Create a grid of points over some prescribed region
@@ -8,7 +8,7 @@ Create a grid of points over some prescribed region
 Makes a grid of points of a certain size, density, and so forth. %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-make.grid(ll = NA, minx = NA, maxx = NA, miny = NA, maxy = NA, nx = 40, ny = NULL, buffer = 0)
+make.statespace(ll = NA, minx = NA, maxx = NA, miny = NA, maxy = NA, nx = 40, ny = NULL, buffer = 0)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -65,7 +65,7 @@ make.grid(ll = NA, minx = NA, maxx = NA, miny = NA, maxy = NA, nx = 40, ny = NUL
 \examples{
 # This example is from Chapter XXXX on modeling space usage
 set.seed(1234)
-gr<-make.grid(minx=1,maxx=40,miny=1,maxy=40,nx=40,ny=40)
+gr<-make.statespace(minx=1,maxx=40,miny=1,maxy=40,nx=40,ny=40)
 Dmat<-as.matrix(dist(gr))
 V<-exp(-Dmat/5)
 z<-t(chol(V))%*%rnorm(1600)

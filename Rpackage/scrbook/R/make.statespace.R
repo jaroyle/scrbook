@@ -1,8 +1,8 @@
-make.grid <-
-function (ll = NA, minx = NA, maxx = NA, miny = NA, maxy = NA, 
-    nx = 40, ny = NULL, buffer = 0) 
+make.statespace <-
+function (ll = NA, minx = NA, maxx = NA, miny = NA, maxy = NA,
+    nx = 40, ny = NULL, buffer = 0)
 {
-    if (is.null(ny)) 
+    if (is.null(ny))
         ny <- nx
     if (!is.na(ll)) {
         minx <- min(ll[, 1])
