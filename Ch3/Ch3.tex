@@ -2047,12 +2047,12 @@ detection probability, normally imposed as the assumption that
 detection probability is $1.0$ when distance equals 0.  A standard
 model is the ``half-normal'' model:
 \[
-\log(p_{i}) = \beta x_{i}^{2}
+\log(p_{i}) = \alpha_{1} x_{i}^{2}
 \]
-for $\beta < 0$, where $x_i$ denotes the distance at which the $i$th
+for $\alpha_{1} < 0$, where $x_i$ denotes the distance at which the $i$th
 individual is detected relative to some reference location where
 perfect detectability ($p=1$) is assumed. This function corresponds to
-the ``half-normal'' detection function (i.e., with $\beta =
+the ``half-normal'' detection function (i.e., with $\alpha_{1} =
 1/\sigma^{2}$).  If $K>1$ then an intercept in this model is
 identifiable and such models are usually called ``capture-recapture
 distance sampling''\citep{alpizar_pollock:1996,borchers_etal:1998}.
@@ -2075,14 +2075,14 @@ shown in Panel \ref{closed.panel.distance} from \citet{royle_dorazio:2008}.
 \rule[0.15in]{\textwidth}{.03in}
 \begin{minipage}{5in}
 \begin{verbatim}
-beta~dunif(0,10)
+alpha1~dunif(0,10)
 psi~dunif(0,1)
 
 for(i in 1:(nind+nz)){
    z[i]~dbern(psi)    # DA Variables
    x[i]~dunif(0,B)    # B=strip width
    p[i]<-exp(logp[i])   # DETECTION MODEL
-   logp[i]<-   - beta*(x[i]*x[i])
+   logp[i]<-   - alpha1*(x[i]*x[i])
    mu[i]<-z[i]*p[i]
    y[i]~dbern(mu[i])  # OBSERVATION MODEL
  }
@@ -2103,7 +2103,7 @@ prior distribution on individual {\it location} instead of distance
 between individual and observation point (or transect).  Thus we can
 write the general distance sampling model as
 \[
-p_{i} = f(\beta,||{\bf u}_{i} - {\bf x}_0||)
+p_{i} = f(\alpha_{1},||{\bf u}_{i} - {\bf x}_0||)
 \]
 along with
 \[
@@ -2178,8 +2178,7 @@ Could use a picture of the beast to put side-by-side?
 \begin{figure}
 \centering
 \includegraphics[height=3.35in,width=3.35in]{Ch3/figs/tortoise.png}
-\caption{Tortoise detection data.........
-}
+\caption{Histogram of desert tortoise detections.}
 \label{closed.fig.tortoise}
 \end{figure}
 
@@ -2189,34 +2188,39 @@ for reading in and organizing the data for analysis by {\bf WinBUGS}, followed b
 writing the model to a text file, are given below. Note that the total sampled area of
 the transects is fed in as ``striparea'' which is $120$ (transects)
 multiplied by the strip length ($1000$ m) and width ($B=50$ m)
-multiplied by 2 and then divided by 10000 to make everything in units
-of individuals per ha.
+multiplied by 2 and then divided by $10000$ to make everything in units
+of individuals {\it per} ha. The full script, provided with the
+\mbox{\tt scrbook} {\bf R} package, we also give some commands for
+analyzing the data using \mbox{\tt unmarked}
+\citep{fiske_chandler:2012} using hierarchical distance sampling
+models \citep{royle_etal:2004}. 
 {\small 
 \begin{verbatim}
-library("R2WinBUGS")
-data<- read.csv("Muntjac.csv")
-hist(data[,3],30)
-nind<-nrow(data)
+data(toroise)
+
+x<-data[,"Dist"]
+nind<-sum(!is.na(x))
 y<-rep(1,nind)
-nz<-400
+nz<-700
 y<-c(y,rep(0,nz))
-x<-data[,3]
 x<-c(x,rep(NA,nz))
 z<-y
 
 cat("
 model{
-beta~dunif(0,10)
+alpha1~dunif(0,10)
+sigma<- sqrt(1/(2*alpha1))
 psi~dunif(0,1)
 
 for(i in 1:(nind+nz)){
    z[i]~dbern(psi)    # DA Variables
    x[i]~dunif(0,B)    # B=strip width
    p[i]<-exp(logp[i])   # DETECTION MODEL
-   logp[i]<-   -beta*(x[i]*x[i])
+   logp[i]<-   -alpha1*(x[i]*x[i])
    mu[i]<-z[i]*p[i]
    y[i]~dbern(mu[i])  # OBSERVATION MODEL
  }
+
 N<-sum(z[1:(nind+nz)])
 D<- N/striparea  # area of transects
 }
@@ -2227,39 +2231,41 @@ Next, we provide inits, indicate which parameters to monitor, and then
 pass those things to {\bf WinBUGS}:
 {\small
 \begin{verbatim}
-data<-list(y=y,x=x,nz=nz,nind=nind,B=120,striparea=(708*2*.120))
-params<-list('beta','N','D','psi')
-inits =  function() {list(z=z, psi=runif(1), beta=runif(1,0,.02) )}
+library("R2WinBUGS")
+
+# density to be reported in units of ind/ha
+data<-list(y=y,x=x,nz=nz,nind=nind,B=40,striparea=(120*1000*40*2/10000))
+params<-list('alpha1','sigma','N','D','psi')
+inits =  function() {list(z=z, psi=runif(1), alpha1=runif(1,0,.02) )}
 fit = bugs(data, inits, params, model.file="dsamp.txt",working.directory=getwd(),    
-       debug=T, n.chains=3, n.iter=11000, n.burnin=1000, n.thin=2)
+       debug=T, n.chains=3, n.iter=3000, n.burnin=1000, n.thin=2)
 \end{verbatim}
 }
-Posterior summaries are provided in the following table. Estimated
-density is pretty low, 1.1 individuals per sq. km.\footnote{ This is much
-  lower than Samba's estimate produced from WinBUGS accounting for group
-  size. Reason unknown. }
+Posterior summaries are provided in the following summary table. Estimated
+density (posterior mean) is $0.54$ individuals {\it per} ha and the estimated scale
+parameter of the distance function (posterior mean) is $\sigma=9.12$
+meters.
+The Rhat statistics of around $1.02$ suggest that slightly longer MCMC
+simulations might be useful. The posterior mass of the data
+augmentation parameter $\psi$ is located away from the upper-bound
+$\psi=1$ and so the degree of data augmentation appears sufficient. 
 {\small
 \begin{verbatim}
+> print(fit,digits=2)
 Inference for Bugs model at "dsamp.txt", fit using WinBUGS,
- 3 chains, each with 11000 iterations (first 1000 discarded), n.thin = 2
- n.sims = 15000 iterations saved
+ 3 chains, each with 3000 iterations (first 1000 discarded), n.thin = 2
+ n.sims = 3000 iterations saved
            mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
-beta       0.00  0.00   0.00   0.00   0.00   0.00   0.00    1  1100
-N        185.73 26.53 138.00 167.00 184.00 203.00 242.00    1   570
-D          1.09  0.16   0.81   0.98   1.08   1.20   1.42    1   570
-psi        0.41  0.06   0.30   0.36   0.40   0.45   0.54    1   670
-deviance 655.74 16.26 626.00 644.50 655.10 666.40 689.80    1  1300
-
-xxxxxxx$Is the first line (beta) reasonable?$xxxxxxxxxx
+alpha1     0.01  0.00   0.00   0.01   0.01   0.01   0.01 1.02   130
+sigma      9.12  0.77   7.77   8.57   9.07   9.62  10.77 1.02   130
+N        516.67 54.71 415.00 478.00 516.00 552.00 632.00 1.02   100
+D          0.54  0.06   0.43   0.50   0.54   0.57   0.66 1.02   100
+psi        0.61  0.07   0.49   0.56   0.61   0.66   0.75 1.02    96
 
 [.... some output deleted .... ]
+
 \end{verbatim}
 }
-
-
-
-
-
 
 
 
@@ -2377,7 +2383,7 @@ parameter $N$ (corresponding also to the size of a hypothetical
 consideration in the analysis of capture-recapture models. The
 classical approach to inference recognizes that the observations don't
 have a standard binomial distribution but, rather, a truncated
-binomial (from which which the so-called ``conditional likelihood''
+binomial (from which which the so-called {\it conditional likelihood}
 derives) since we only have encounter frequency data on observed
 individuals. If instead we analyze the models using data augmentation,
 the observations can be modeled using a zero-inflated binomial
@@ -2394,7 +2400,7 @@ models arise by defining individual covariates based on observed
 locations of individuals -- we can think of using some function of
 mean encounter location as an individual covariate. We did this in a
 novel way, by using distance to the centroid of the trapping array as
-a covariate. We analyzed the ``full likelihood'' using data
+a covariate. We analyzed the {\it full likelihood} using data
 augmentation, and placed a prior distribution on the individual
 covariate which was derived from an assumption that individual
 locations are, a priori, uniformly distributed in space. This
@@ -2409,7 +2415,7 @@ still not completely general because it does not make use of
 the fully spatial encounter histories, which provide direct
 information about the locations and density of individuals.  A
 specific individual covariate model that is in widespread use is
-classical ``distance sampling.'' The model underlying distance
+classical distance sampling. The model underlying distance
 sampling is precisely a special kind of SCR model - but one without
 replicate samples. Understanding distance sampling and individual
 covariate models more broadly provides a solid basis for understanding
