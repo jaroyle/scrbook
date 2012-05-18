@@ -1,6 +1,17 @@
 (TeX-add-style-hook "AndyRefs_alphabetized"
  (lambda ()
     (LaTeX-add-bibitems
+     "maclulich:1951"
+     "bondrup-nielsen:1983"
+     "dillon_kelly:2007"
+     "marques_etal:2011"
+     "belant_etal:2005"
+     "koehler_pierce:2003"
+     "maffei_noss:2008"
+     "sollmann_etal:2012"
+     "sollmann_etal:2011"
+     "sollmann_etal:inprep"
+     "zylstra_etal:2010"
      "gopalaswamy:2012"
      "hobbs:2011"
      "converse_etal:2006fem"
