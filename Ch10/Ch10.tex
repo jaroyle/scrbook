@@ -395,7 +395,6 @@ along with 16 trap locations. }
 \end{figure}
 
 
-
 When distance is defined by the cost-weighted distance metric given
 by Eq. \ref{eq.lcp} then individual space-usage varies
 spatially in response to the landscape covariate(s) used in the
@@ -424,57 +423,55 @@ that pixel.
 \label{fig.homeranges}
 \end{figure}
 
-
-
-We begin by simulating some data... we have to load the \mbox{\tt
-scrbook} library, use the function \mbox{\tt make.EDcovariates} to generate
-our raster covariates, process that into a least-cost path distance
+To simulate data, 
+ we have to load the \mbox{\tt
+scrbook} package and call the function \mbox{\tt make.EDcovariates} to generate
+our raster covariates (see the help file for how that is done). We
+then process the covariate into a least-cost path distance
 matrix, and then simulate observed encounter data using standard methods
 which we have used many times previously in this book. The complete set
 of {\bf R} commands is:
 
 {\small
 \begin{verbatim}
-xxxxx
- make code as readable as possible by adding comments and layout it
-xxxx
+### Grab a covariate
 library("scrbook")
 out<-make.EDcovariates()
 covariate<-out$covariate.patchy
 set.seed(2013)
 
+### prescribe some settings
 N<-200
 alpha0<- -2
 sigma<- .5
-K<- 5
-
 alpha1<- 1/(2*sigma*sigma)
-r<-raster(nrows=20,ncols=20)
-projection(r)<- "+proj=utm +zone=12 +datum=WGS84"
-extent(r)<-c(.5,4.5,.5,4.5)
 alpha2<-1
-cost<- exp(alpha2*covariate)
-tr1<-transition(cost,transitionFunction=function(x) 1/mean(x),directions=8)
-tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
+K<- 5
+S<-cbind(runif(N,.5,4.5),runif(N,.5,4.5))
 
 # make up some trap locations
 xg<-seq(1,4,1); yg<-4:1
-pts<-cbind( sort(rep(xg,4)),rep(yg,4))
-
-traplocs<-pts
+traplocs<-cbind( sort(rep(xg,4)),rep(yg,4))
 points(traplocs,pch=20,col="red")
 ntraps<-nrow(traplocs)
 
-S<-cbind(runif(N,.5,4.5),runif(N,.5,4.5))
+### make a raster and fill it up with the "cost"
+r<-raster(nrows=20,ncols=20)
+projection(r)<- "+proj=utm +zone=12 +datum=WGS84"
+extent(r)<-c(.5,4.5,.5,4.5)
+cost<- exp(alpha2*covariate)
+### compute 
+tr1<-transition(cost,transitionFunction=function(x) 1/mean(x),directions=8)
+tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
 D<-costDistance(tr1CorrC,S,traplocs)
 probcap<-plogis(alpha0)*exp(-alpha1*D*D)
+
 # now generate the encounters of every individual in every trap
 Y<-matrix(NA,nrow=N,ncol=ntraps)
 for(i in 1:nrow(Y)){
  Y[i,]<-rbinom(ntraps,K,probcap[i,])
 }
 Y<-Y[apply(Y,1,sum)>0,]
-
 \end{verbatim}
 }
 
@@ -487,7 +484,7 @@ Y<-Y[apply(Y,1,sum)>0,]
 
 
 
-\section{Fitting Models of Space Usage by MLE}
+\section{Fitting Ecological Distance Models by MLE}
 \label{ecoldist.sec.mle}
 
 Throughout much of this book we rely on Bayesian analysis by MCMC
@@ -658,11 +655,9 @@ frog2<-nlm(intlik3ed,c(alpha0,alpha1,3,-.3),hessian=TRUE,y=Y,K=K,X=traplocs,
 \end{verbatim}
 }
 
+XXXXX show results as if this was real data and discuss ....
 Show nlm() output for each and comment .......................XXXX
-
-
-
-
+XXXXXX
 
 
 
@@ -680,39 +675,6 @@ Alternatively, it would be possible to write a custom MCMC routine
 using the methods we present in Chapt. \ref{chapt.mcmc}, although we
 have not yet developed our own MCMC implementation of SCR models with
 ecological distance metrics. 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1155,12 +1117,14 @@ that the distance between individuals and traps that they are likely
 to be captured in is well-approximated by normal Euclidean distance.
 
 
+\begin{comment}
 \section{A stream network}
 
 Later we might add a 3rd prototype situation involving a stream network.
 
 We could use ``distance from stream'' to model effects of habitat
 and corridors or whatever
+\end{comment}
 
 
 \section{Summary and Outlook}

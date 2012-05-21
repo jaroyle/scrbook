@@ -14,7 +14,7 @@ intlik3edv2(start,y,K,X,S,D,inpoly)
 \arguments{
   \item{start}{
     values of parameters to evaluate likelihood with.
-    order is intercept (alpha0) distance coefficent (theta) and log(n0)
+    order is intercept (alpha0) distance coefficent (alpha1) and log(n0)
 }
   \item{y}{
     Data....
@@ -121,11 +121,11 @@ Deuclid<-e2dist(pts[trap.id,],pts)
 
 alpha0<- -1.5
 sigma<- 1.5
-beta<- 1/(2*sigma*sigma)
+alpha1<- 1/(2*sigma*sigma)
 K<-10
 
-probcap<-plogis(alpha0)*exp(-beta*D*D)
-probcapE<-plogis(alpha0)*exp(-beta*eD*eD)
+probcap<-plogis(alpha0)*exp(-alpha1*D*D)
+probcapE<-plogis(alpha0)*exp(-alpha1*eD*eD)
 
 Y<-matrix(NA,nrow=N,ncol=ntraps)
 Ye<-Y
