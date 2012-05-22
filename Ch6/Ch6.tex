@@ -7,6 +7,8 @@ Likelihood Analysis of Spatial Capture-Recapture Models
 %%%% TO-DO LIST
 % 1. comparison of Bayes with MLE for wolverine data (need to rerun WinBUGS)
 % 2. Beth clean up a couple things in SECR analysis.
+%  Beth:  I've cleaned up most of the ??s, but I'll look it over again to make sure I 
+%  got everything. 
 % 3. Need to finish MLE for restricted state-space
 %%   requires code from Rahel
 % 4. draft up intlik3 wrapper "scr()"
@@ -1013,17 +1015,17 @@ command is \mbox{\tt secr.fit} and is generally written as
 \begin{verbatim}
  secr.fit(capturedata, model = list(D~1, g0~1, sigma~1), buffer = 20000)
 \end{verbatim}
-where \mbox{\tt capturedata} is something XXX BETH ? XXXXX and
+where \mbox{\tt capturedata} is the \mbox{\tt secr} created object containing the encounter history data and 
+and the trap information and 
 the model expression \verb#g0~1# indicates the intercept-only (i.e., constant) model. 
  Possible predictors for detection probability include both
 pre-defined variables (e.g., \mbox{\tt t} and \mbox{\tt b}
 corresponding to ``time'' and 
 ``behavior''), and user-defined covariates of several kinds. 
-For example, to include a behavioral response, this would be written
-as \verb#g0~b#.
-The discussion of covariates is developed more in Chapt. \ref{chapt.covariates}\footnote{Beth:
-  does secr fit a local trap-specific response or just a global
-  behavioral response?}
+For example, to include a global behavioral response, this would be written
+as \verb#g0~b#.   
+The discussion of this (global versus local trap-specific behavioral response) and other covariates 
+is developed more in Chapt. \ref{chapt.covariates}.
 
 Before we can fit the models, the data must first be packaged properly
 for 
@@ -1031,23 +1033,23 @@ for
 identification information for each trap) and capture data (e.g.,
 sampling session, animal identification, trap day, and trap location).
 \mbox{\tt secr} requires that you specify the trap type, the two most common for
-camera trapping/hair snares are ‘proximity’ detectors and ‘count’
+camera trapping/hair snares are `proximity' detectors and `count'
 detectors.  The `proximity' detector type allows, at most, one
 detection of each individual at a particular detector on any occasion
 (i.e., it is equivalent to the Bernoulli or binomial encounter process
 model).
-The ‘count’ detector designation allows repeat encounters of each
+The `count' detector designation allows repeat encounters of each
 individual at a particular detector on any occasion.  There are other
 detector types that one can select such as: `polygon' detector type
 which allows for a trap to be a sampled polygon, e.g., scat surveys,
 and 'signal' detector which allows for traps that have a strength
-indicator, e.g., acoustic arrays.  The detector types ‘single’ and
-‘multi’ can be confusing as ‘multi’ seems like it would appropriate
+indicator, e.g., acoustic arrays.  The detector types `single' and
+'multi' can be confusing as 'multi' seems like it would appropriate
 for something like a camera trap, but instead these two designations
 refer to traps that retain individuals, thus precluding the ability
 for animals to be captured in other traps during the sampling
-occasion.  The ‘single’ type indicates trap that can only catch one
-animal at a time, while ‘multi’ indicates traps that may catch more
+occasion.  The 'single' type indicates trap that can only catch one
+animal at a time, while 'multi' indicates traps that may catch more
 than one animal at a time.  For a full review of the detector types,
 one should look at the help manual, which can be accessed in {\bf R} after
 installing the \mbox{\tt secr} package by using the command:
@@ -1096,9 +1098,23 @@ To demonstrate the use of the \mbox{\tt secr} package, we will show how to do th
 same analysis on the wolverine study as shown in
 sec. \ref{scr0.sec.wolverine}. To use 
 the \mbox{\tt secr} package, the data need to be formatted in a similar but
-slightly different manner than we use in {\bf
-  WinBUGS}\footnote{BETH: Elaborate on this point -- and how is this
-  different than introduced in chapter 4?}.  After installing
+slightly different manner than we use in {\bf WinBUGS}.  
+
+For example, in sec. \ref{scr0.sec.wolverine} we had a "flat file" with 3 columns
+representing trap identity,
+the individual identity and the sample occasion index (sample).  We will use that same file
+here but reorder the columns and add a "Session" column so that \mbox{\tt secr} can properly format 
+the encounter array. The "Session" column in our case is all 1s, representing a single primary 
+sampling occasion.   The use of this column allows \mbox{\tt secr} flexibility should there be more than
+one primary sampling occasion.   Additionally, we must tell \mbox{\tt secr} information about the traps 
+so that the correct likelihood is used in the analysis.  Instead of telling \mbox{\tt secr} exactly which likelihood
+to use for the encounter (e.g., Bernoulli or Poisson), we provide it with the type of 
+detector used (such as "proximity", "multi", etc.) when reading in the trap location information.   
+We demonstrate these differences now by walking through
+the wolverine example in \mbox{\tt secr}.
+
+
+After installing
 the \mbox{\tt secr} package, we first have to read in the trap locations and
 other related information, such as if the trap is operational during a
 sampling occasion.  The \mbox{\tt secr} package reads in the trap data through a
@@ -1126,7 +1142,7 @@ data but we do {\it not} standardize them here. This is because
 \mbox{\tt secr} defaults to coordinate scaling of meters which is the
 standard scaling for the wolverine data. 
 
-After reading in the data, we now need to create the encounter matrix
+After reading in the trap data, we now need to create the encounter matrix
 or array.  The \mbox{\tt secr} package does this through the use of the
 \mbox{\tt make.capthist} command, where we provide the capture histories in raw
 data format (each line contains the session, identification number,
