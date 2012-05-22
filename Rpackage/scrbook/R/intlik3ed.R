@@ -1,5 +1,5 @@
 intlik3ed <-
-function(start=NULL,y=y,K=NULL,X=traplocs,distmet="ecol",covariate,theta2=NA){
+function(start=NULL,y=y,K=NULL,X=traplocs,distmet="ecol",covariate,alpha2=NA){
 if(is.null(K)) return("need sample size")
 if(class(covariate)!="RasterLayer") {
  cat("make a raster out of this",fill=TRUE)
@@ -32,22 +32,22 @@ if(distmet=="euclid")
 D<- e2dist(X,G)
 
 if(distmet=="ecol"){
-if(is.na(theta2))
-theta2<-exp(start[4])
+if(is.na(alpha2))
+alpha2<-exp(start[4])
 
-cost<- exp(theta2*covariate)
+cost<- exp(alpha2*covariate)
 tr1<-transition(cost,transitionFunction=function(x) 1/mean(x),directions=8)
 tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
 D<-costDistance(tr1CorrC,X,G)
 }
 
 if(is.null(start)) start<-c(0,0,0,0)
-theta0<-start[1]
-theta1<-start[2]
+alpha0<-start[1]
+alpha1<-start[2]
 n0<-exp(start[3])
 
 
-probcap<- (exp(theta0)/(1+exp(theta0)))*exp(-theta1*D*D)
+probcap<- (exp(alpha0)/(1+exp(alpha0)))*exp(-alpha1*D*D)
 Pm<-matrix(NA,nrow=nrow(probcap),ncol=ncol(probcap))
 ymat<-y
 ymat<-rbind(y,rep(0,ncol(y)))
