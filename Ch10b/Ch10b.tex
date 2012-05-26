@@ -148,16 +148,18 @@ frequencies:
 \]
 where
 \[
- \pi_{ij} = \frac{ exp( \alpha_{2} z({\bf x}) ) }{ \sum_{x}
-   exp(\alpha_{2} z({\bf x}))}
+ \pi_{ij} = \frac{ \exp( \alpha_{2} z({\bf x}) ) }{ \sum_{x}
+   \exp(\alpha_{2} z({\bf x}))}
 \]
 This is the standard RSF model \citep{manly_etal:2002} used to model
 telemetry data.  The parameter $\alpha_2$ is the effect of the
 landscape covariate $z({\bf x})$ on the relative probability of
 use. Thus, if $\alpha_2$ is positive, the relative probability of use
-decreases as the covariate increases. In practice, we don't get to
+increases as the covariate increases. In practice, we don't get to
 observe $n_{ij}$ for all individuals but, instead, only for a small
-subset which we capture and install telemetry devices on.  For these
+subset which we capture and install telemetry devices on. 
+\begin{comment}
+ For these
 telemetered individuals we accumulate individual- and pixel-specific
 frequencies, at a lower sampling rate than actual individual use. For
 example, we might choose to record the location of an individual every
@@ -169,11 +171,12 @@ we suppose that the observed frequencies are a binomial sample with
 sample size $n_{ij}$ and sampling intensity $\phi_{0}$ lets say, and
 we see that the constant $\phi_{0}$ cancels from the expression for
 the multinomial cell probabilities above. 
-Therefore, for the
-telemetered individuals, we adopt the standard RSF model which has
-probabilities as above:
+\end{comment}
+For the 
+telemetered individuals, we assume their behavior is according to the
+same RSF model as the population as a whole, with probabilities:
 \[
- \pi_{ij} = \frac{ exp( \alpha_{2} z({\bf x}_{j}) ) }{ \sum_{x}   exp(\alpha_{2} z({\bf x}_{j}))}
+ \pi_{ij} = \frac{ \exp( \alpha_{2} z({\bf x}_{j}) ) }{ \sum_{x}   \exp(\alpha_{2} z({\bf x}_{j}))}
 \]
 We extend this model slightly to make it more realistic spatially. Let
 ${\bf s}$ denote the centroid of an individuals home range and let
@@ -205,8 +208,11 @@ equivalent model of space usage (sec. \ref{scr0.sec.implied})
 when used in SCR models. In particular, for whatever model we choose
 for $p_{ij}$ in an ordinary SCR model, we can modify the distance
 component in the RSF function
-in Eq. \ref{rsf.eq.rsf} accordingly to be consistent with that model.
-XXXX but how to integrate this in the likelihood? XXXXX
+in Eq. \ref{rsf.eq.rsf} accordingly to be consistent with that model,
+ by using whatever function $p_{ij}$ we choose according to
+\[
+\pi_{ij} \propto \exp( log(p_{ij)) + \alpha_{2} z({\bf x}_{j}) )
+\]
 One difference between this observation model
 and those that we have considered in previous chapters is that it
 includes the 
@@ -232,7 +238,7 @@ This was simulated by using a
 kriging interpolator with the following {\bf R} commands:
 \begin{verbatim}
 set.seed(1234)
-gr<-make.statespace(minx=1,maxx=40,miny=1,maxy=40,nx=40,ny=40)
+gr<-expand.grid(1:40,1:40)
 Dmat<-as.matrix(dist(gr))
 V<-exp(-Dmat/5)
 z<-t(chol(V))%*%rnorm(1600)
@@ -294,7 +300,8 @@ distribution with probabilities
 \[
  \pi_{ij} = \frac{\lambda_{ij}}{ \sum_{j} \lambda_{ij}}
 \]
-as we discussed in Chapt. \ref{chapt.poisson-mn}.  We see that the
+which is the same as Eq. \ref{rsf.eq.rsf} (see also 
+Chapt. \ref{chapt.poisson-mn}).  We see that the
 intensity parameter $a_{0}$ is not relevant for understanding
 patterns of space usage. In particular, it cancels from the numerator
 and denominator of the multinomial cell probabilities, analogous to
@@ -337,12 +344,14 @@ thinned counts $m_{ij}$ is the same as the space-usage model for the
 original variables $n_{ij}$.  This is because if we remove $n_{ij}$
 from the conditional
  model by summing over its possible values, then the vector of
-${\bf m}_{i}$ is multinomial with cell probabilities
+${\bf m}_{i}$ is {\it also}  multinomial with cell probabilities
 \[
-\frac{\phi_{0}\lambda_{ij}}{\sum_{j} \phi_{0} \lambda_{ij}}
+\pi_{ij} = \frac{\phi_{0}\lambda_{ij}}{\sum_{j} \phi_{0} \lambda_{ij}}
 \]
-and we see that $\phi_{0}$ cancels from the numerator and
-denominator. XXXX not really elucidating here XXXXXXX
+and so the nuisance parameter $\phi_{0}$ cancels from the numerator and
+denominator. Thus, the underlying RSF model applies to the true
+unobserved count frequencies ${\bf n}_{i}$ and also those produced
+from thinning or sampling, ${\bf m}_{i}$. 
 
 %That is,
 %given our sequence of
@@ -400,7 +409,11 @@ containing a trap and was detected.
 We imagine that $y_{ij}$ is related to the latent variable $m_{ij}$ being the
 event $m_{ij}>0$, which occurs with probability
 \[
- p_{ij} = 1-exp(- \lambda_{ij})
+ p_{ij} = 1-\exp(- \lambda_{ij})
+\]
+or, equivalently,
+\[
+ cloglog(p_{ij}) = log(\lambda_{ij})
 \]
 where 
 \[
@@ -411,11 +424,6 @@ a_{0}$ is the
  baseline encounter rate which includes
 the constant intensity of use by the individual and also the baseline
 rate of detection, conditional on use.
-XXX One issue here is that if we pick any old model for $p_{ij}$ it is
-not consistent with the Poisson use model. We can use any p(i,j) as
-long as we have that the RSF reduces to p(i,j) when the habitat part
-is not in there.
-XXXXX
 
 
 \section{The Joint RSF/SCR Likelihood}
@@ -464,15 +472,16 @@ from sampling over $K$ encounter periods, is:
 \]
 where
 \[
- p_{ij} = 1-exp(- \lambda_{ij} )
+ p_{ij} = 1-\exp(- \lambda_{ij} )
 \]
 and
 \[
- \lambda_{ij} = \lambda_{0} exp(- \alpha_{1} D_{ij}^{2} + \alpha_{2}  z(x_{j}) )
+ \lambda_{ij} = \lambda_{0} \exp(- \alpha_{1} D_{ij}^{2} + \alpha_{2}
+ z({\bf x}_{j}) )
 \]
 A compact expression of these model components is:
 \begin{equation}
-y_{ij}| {\bf s}_{i} \sim \mbox{Bin}(K, p_{\alpha}(D_{ij}; {\bm \alpha}))
+y_{ij}| {\bf s}_{i} \sim \mbox{Bin}(K, p(D_{ij}; {\bm \alpha}))
 \label{rsf.mle.eq.cond-on-s}
 \end{equation}
 We emphasize that this is conditional on the latent variables ${\bf
@@ -483,7 +492,7 @@ individual $i$, conditional on ${\bf s}_{i}$, is the product of $J$
 binomial terms (i.e., the contributions from each of $J$ traps):
 \[
   [{\bf y}_{i} | {\bf s}_{i} , {\bm \alpha}] =
-  \prod_{j=1}^{J} \mbox{Bin}(K, p_{\alpha}({\bf x}_{j},{\bf s}_{i}) )
+  \prod_{j=1}^{J} \mbox{Bin}(K, p({\bf x}_{j},{\bf s}_{i}) )
 \]
 The so-called marginal likelihood \citep{borchers_efford:2008} is
 computed by removing ${\bf s}_{i}$, by integration, from the
@@ -501,10 +510,10 @@ is the product of $N$ such terms:
 {\cal L}_{scr}({\bm \alpha} | {\bf y}_{1},{\bf y}_{2},\ldots, {\bf y}_{N}) = \prod_{i=1}^{N}
 [{\bf y}_{i}|{\bm \alpha}]
 \]
-Now, in practice, we don't know $N$ and so we can't just compute the
+In practice, we don't know $N$ and so we can't just compute the
 SCR likelihood in this manner. Following our development in
 Chapt. \ref{chapt.mle},
-we can compute the contributions of the
+we compute the contributions of the
 $n$ observed individuals, but then we have to compute the likelihood
 contribution for the ``all 0'' encounter history, i.e., that
 corresponding to unobserved individuals. The mechanics of computing
@@ -522,13 +531,13 @@ where these counts are derived from a telemetry study or similar.
 Their likelihood contribution is
 proportional to
 \[
- {\cal L}_{rsf}({\bm \alpha}, {\bf m}_{rsf})
+ {\cal L}_{rsf}({\bm \alpha}| {\bf m}_{rsf})
  = \prod_{g=1}^{G}  \pi_{ij} ^{m_{ij}}
 \]
 where
 \[
- \pi_{ij} =  = \frac{ exp( -\alpha_{1} D_{ij}^{2} -\alpha_{2} z({\bf x}_{j}) ) }
-{ \sum_{g} exp(-\alpha_{1} D_{ij}^{2} -\alpha_{2} z({\bf x}_{j}))}
+ \pi_{ij}  = \frac{ \exp( -\alpha_{1} D_{ij}^{2} +\alpha_{2} z({\bf x}_{j}) ) }
+{ \sum_{g} \exp(-\alpha_{1} D_{ij}^{2} +\alpha_{2} z({\bf x}_{j}))}
 \]
 
 Technical details for computing the likelihood and obtaining the MLEs
@@ -564,7 +573,7 @@ to sampling over $K=10$ sampling periods, using a $7 \times 7$ array
 of trapping devices located on the the integer coordinates $(u*5,v*5)$
 for $u,v = 1,2,3,4,5,6,7$. The model parameters were
 \[
- cloglog(p_{ij}) = -2 -xyz -xyz....
+ cloglog(p_{ij}) = -2 -\frac{1}{2\sigma^{2}} D_{ij}^{2} + 1 z({\bf x}_{j})
 \]
 and these settings yielded an average of $n=61$ individuals captured.
 In addition to simulating data from this capture-recapture study, we
@@ -613,125 +622,70 @@ RSF only     --    --    1.00  0.10  1.99  0.061
 
 
 N=200, 500 iters
-
 n=2
-> smy(simout0)
-[1] 198.85390928  14.24184730   0.98995451   0.09543590   2.00043491   0.09089229
-> smy(simout2.20)
-[1] 199.37198869  12.79746783   0.99378620   0.09061918   1.99887864   0.07799177
-> smy(simout2.20b)
-[1] 197.87183580  13.94175724   0.95904852   0.10064418   1.98520993   0.07959088
-> smy(simout2.20c)
-[1]        NA        NA 1.0414395 0.3296453 1.9891289 0.1687969
-> 
+SCR only 198.85  14.24   0.99   0.10   2.00   0.091
+SCR/RSF  199.37  12.80   0.99   0.09   2.00   0.078
+sbar     197.87  13.94   0.96   0.10   1.99   0.080
+RSF only   NA      NA    1.04   0.33   1.99   0.169
+
 n=4
-> smy(simout0)
-[1] 200.05661032  15.33623011   0.99971166   0.08762496   2.00326615   0.09209990
-> smy(simout4.20)
-[1] 200.24657682  14.36109287   1.00365074   0.08126881   2.00686071   0.07347687
-> smy(simout4.20b)
-[1] 198.14314929  14.31320615   0.94330585   0.09826389   1.98436687   0.07467029
-> smy(simout4.20c)
-[1]        NA        NA 1.0224800 0.2138706 2.0109941 0.1221526
+SCR only 200.06  15.34   1.00   0.09   2.00   0.092
+SCR/RSF  200.25  14.36   1.00   0.08   2.01   0.073
+sbar     198.14  14.31   0.94   0.10   1.98   0.075
+RSF only   NA     NA     1.02   0.21   2.01   0.122
 
 n=8
- 
-> smy(simout0)
-[1] 200.85301885  14.05721801   1.00134733   0.09174733   1.99605973   0.08704000
-> smy(simout8.20)
-[1] 200.29065618  13.97732581   0.99891444   0.07887735   1.99845584   0.06148107
-> smy(simout8.20b)
-[1] 196.46248735  14.59313355   0.89807526   0.12983463   1.96685750   0.06889141
-> smy(simout8.20c)
-[1]         NA         NA 0.99457141 0.16161673 1.99882194 0.08407524
-> 
-
+SCR only 200.85  14.06   1.00   0.09   2.00   0.087
+SCR/RSF  200.29  13.98   1.00   0.08   2.00   0.061
+sbar     196.46  14.59   0.90   0.13   1.97   0.069
+RSF only   NA     NA     0.99   0.16   2.00   0.084
 
 n=12 
-}
-> smy(simout0)
-[1] 198.75847405  14.47455240   0.99182678   0.09501925   2.00202827   0.09139179
-> smy(simout12.20)
-[1] 198.72092012  14.14465708   0.99766111   0.07779879   2.00332052   0.05419406
-> smy(simout12.20b)
-[1] 193.83117342  15.14115031   0.86868167   0.15241688   1.96667788   0.06267706
-> smy(simout12.20c)
-[1]         NA         NA 1.00808309 0.12674046 2.00248179 0.06889238
-> 
+SCR only 198.76  14.47   0.99   0.10   2.00   0.091
+SCR/RSF  198.72  14.14   1.00   0.08   2.00   0.054
+sbar     193.83  15.14   0.87   0.15   1.97   0.063
+RSF only    NA     NA    1.01   0.13   2.00   0.069
 
 n=16
-> smy(simout0)
-[1] 200.04338193  14.08657550   0.99319768   0.09621922   2.00768326   0.08825265
-> smy(simout16.20)
-[1] 200.25099200  13.40480742   0.99602345   0.07264249   2.00228344   0.04683035
-> smy(simout16.20b)
-[1] 194.37801134  14.26214794   0.84793746   0.16745759   1.96234312   0.05926945
-> smy(simout16.20c)
-[1]         NA         NA 0.99972339 0.11020448 1.99956105 0.05509825
-> 
-> 
-
-
+SCR only 200.04  14.09   0.99   0.10   2.00768326   0.08825265
+SCR/RSF  200.25  13.40   1.00   0.07   2.00228344   0.04683035
+sbar     194.38  14.26   0.85   0.17   1.96234312   0.05926945
+RSF only   NA     NA     1.00   0.11   1.99956105 0.05509825
 
 
 
 
 N=100, low p, 500 iterations 
 n=2,
-> smy(simout0)
-[1] 103.8513238  22.8791623   0.9962866   0.1940393   2.0205241   0.2608123
-> smy(simout2.20)
-[1] 102.9034059  20.9845544   0.9984216   0.1688337   2.0019577   0.1359075
-> smy(simout2.20b)
-[1] 101.5501954  20.9124210   0.8992282   0.1928518   1.9614228   0.1364145
-> smy(simout2.20c)
-[1]        NA        NA 1.0165209 0.3038897 1.9901667 0.1631160
-> 
+SCR only 103.8513238  22.8791623   0.9962866   0.1940393   2.0205241   0.2608123
+SCR/RSF  102.9034059  20.9845544   0.9984216   0.1688337   2.0019577   0.1359075
+sbar     101.5501954  20.9124210   0.8992282   0.1928518   1.9614228   0.1364145
+RSF only       NA        NA        1.0165209 0.3038897 1.9901667 0.1631160
 
 n=4
-> dump(c("simout0","simout4.20","simout4.20b","simout4.20c"),file="simout.ntel4.nfix20.lowp.N100.R")
-> smy(simout0)
-[1] 105.6530040  26.5166307   1.0136068   0.1974798   2.0078321   0.2582460
-> smy(simout4.20)
-[1] 103.5533085  22.9180442   1.0092455   0.1418108   1.9980961   0.1040671
-> smy(simout4.20b)
-[1] 100.8616567  22.5655964   0.8596447   0.1975644   1.9515830   0.1125628
-> smy(simout4.20c)
-[1]        NA        NA 1.0076910 0.2066376 1.9945259 0.1136238
-> 
+SCR only 105.6530040  26.5166307   1.0136068   0.1974798   2.0078321   0.2582460
+SCR/RSF  103.5533085  22.9180442   1.0092455   0.1418108   1.9980961   0.1040671
+sbar     100.8616567  22.5655964   0.8596447   0.1975644   1.9515830   0.1125628
+RSF only       NA        NA 1.0076910 0.2066376 1.9945259 0.1136238
 
 n=8
-> smy(simout0)
-[1] 107.4097385  45.0525252   0.9919720   0.1881662   2.0064100   0.2539959
-> smy(simout8.20)
-[1] 104.27709838  22.12748974   1.00307946   0.11994579   1.99575655   0.07603329
-> smy(simout8.20b)
-[1] 99.82422722 21.55070225  0.79584478  0.23136886  1.94690686  0.09140869
-> smy(simout8.20c)
-[1]         NA         NA 1.01035300 0.14668410 1.99323702 0.08139059
-> 
+SCR only 107.4097385  45.0525252   0.9919720   0.1881662   2.0064100   0.2539959
+SCR/RSF  104.27709838  22.12748974   1.00307946   0.11994579   1.99575655   0.07603329
+sbar      99.82422722 21.55070225  0.79584478  0.23136886  1.94690686  0.09140869
+RSF only       NA         NA 1.01035300 0.14668410 1.99323702 0.08139059
 
 n=12
-> smy(simout0)
-[1] 106.3536323  27.3199348   0.9927179   0.1885168   2.0038619   0.2553424
-> smy(simout12.20)
-[1] 104.10537865  21.81160925   1.00293707   0.10277525   2.00318306   0.06284267
-> smy(simout12.20b)
-[1] 99.20849886 20.85809130  0.77492703  0.24438214  1.95378264  0.07732114
-> smy(simout12.20c)
-[1]         NA         NA 1.00761630 0.12251182 2.00278702 0.06491165
-> 
+SCR only 106.3536323  27.3199348   0.9927179   0.1885168   2.0038619   0.2553424
+SCR/RSF  104.10537865  21.81160925   1.00293707   0.10277525   2.00318306   0.06284267
+sbar      99.20849886 20.85809130  0.77492703  0.24438214  1.95378264  0.07732114
+RSF only      NA         NA 1.00761630 0.12251182 2.00278702 0.06491165
 
 n=16
-> smy(simout0)
-[1] 104.0517334  31.4142189   0.9865872   0.1879892   2.0174824   0.2520125
-> smy(simout16.20)
-[1] 101.97580008  20.78462702   0.99837440   0.08611209   2.00372910   0.05481877
-> smy(simout16.20b)
-[1] 96.7795388 20.2471854  0.7560947  0.2568525  1.9548986  0.0698101
-> smy(simout16.20c)
-[1]         NA         NA 1.00210731 0.09869541 2.00260447 0.05623347
-> 
+SCR only 104.0517334  31.4142189   0.9865872   0.1879892   2.0174824   0.2520125
+SCR/RSF  101.97580008  20.78462702   0.99837440   0.08611209   2.00372910   0.05481877
+sbar      96.7795388 20.2471854  0.7560947  0.2568525  1.9548986  0.0698101
+RSF only      NA         NA 1.00210731 0.09869541 2.00260447 0.05623347
+
 
 
 
@@ -754,8 +708,11 @@ average location of an individual would be unbiased for ${\bf s}$ only
 if the individual is moving according to a stationary isotropic
 kernel. Under the model of space usage with covariate $z({\bf x})$,
 then the average location is biased to favor good values of $z({\bf
-  x})$ and so $\bar{\bf s}$ is really biased for ${\bf s}$. \hl{again,
-  is there an unbiased estimator available?}
+  x})$ and so $\bar{\bf s}$ is really biased for ${\bf s}$. 
+%%%% XXXX \hl{again,  is there an unbiased estimator available?}
+%%%% Good question -- probably
+%%% Let us put that on the "to do" list
+
 
 In terms of total precision, generally there is about a 5\% reduction
 in RMSE when we have at least 2 telemtered individuals, and, although
@@ -764,10 +721,12 @@ as a 10\% reduction (tops) as $n$ increases. This makes sense because
 we nail down the parameters and still don't know where guys are, and
 get info about mean p, $\alpha_{0}$ only from the SCR data. Thus
 estimating $N$ only benefits slightly from the addition of telemetry
-data.  \hl{I don't understand how this could be true. It seems like
-  there should be a tight relationship between the uncertainty about
-  $sigma$ and that of $N$?? That is what we found when we used the
-  informative prior in our AOAS paper.} The key benefit of our model, therefore, is its ability to
+data.  
+%\hl{I don't understand how this could be true. It seems like
+%  there should be a tight relationship between the uncertainty about
+%  $sigma$ and that of $N$?? That is what we found when we used the
+%  informative prior in our AOAS paper.} 
+The key benefit of our model, therefore, is its ability to
 integrate realistic patterns of space usage directly into SCR models.
 
 Estimating the RSF parameter $\alpha_{2}$ exhibits negligible or no
