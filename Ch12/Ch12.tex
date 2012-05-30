@@ -482,10 +482,8 @@ time specific).  We demonstrate in the code how to calculate the
 number of recruits to the population each year.
 
 \begin{verbatim}
-
 library("secr")
-library("scrbook")
-library("rjags")
+library(scrbook)
 data(ovenbird)
 
 X<-traps<-traps(ovenCH)
@@ -498,7 +496,9 @@ M<-200 # do constant data augmentation to all years
 Sst<-cbind(runif(M,xlim[1],xlim[2]),runif(M,ylim[1],ylim[2]))
 Sst<-array(Sst,dim=c(M,2,5))
 
-birds<- unique(c(unlist(dimnames(Y[[1]])[1]), unlist(dimnames(Y[[2]])[1]), unlist(dimnames(Y[[3]])[1]), unlist(dimnames(Y[[4]])[1]), unlist(dimnames(Y[[5]])[1])))
+
+
+hold<- unique(c(unlist(dimnames(Y[[1]])[1]), unlist(dimnames(Y[[2]])[1]), unlist(dimnames(Y[[3]])[1]), unlist(dimnames(Y[[4]])[1]), unlist(dimnames(Y[[5]])[1])))
 
 Yarr<-array(ntraps+1,dim=c(M,K,5))
 for(i in 1:5){
@@ -508,14 +508,14 @@ tmp[tmp==0]<-ntraps+1
 nind<-nrow(tmp)
 nrep<-ncol(tmp)
 tmp2<-matrix(ntraps+1,nrow=M,ncol=10)  # pad last col with NA for year 1
-tmp2[pmatch(unlist(dimnames(Y[[i]])[1]), birds),1:nrep]<-tmp
+tmp2[pmatch(unlist(dimnames(Y[[i]])[1]), hold),1:nrep]<-tmp
 Stmp<-Sst[,,i]
-Stmp[pmatch(unlist(dimnames(Y[[i]])[1]), birds),1:2]<-spiderplot(tmp2[pmatch(unlist(dimnames(Y[[i]])[1]), birds),1:nrep],as.matrix(X[[i]]))$avg.s   #$
+Stmp[pmatch(unlist(dimnames(Y[[i]])[1]), hold),1:2]<-spiderplot(tmp2[pmatch(unlist(dimnames(Y[[i]])[1]), hold),1:nrep],as.matrix(X[[i]]))$avg.s   #$ 
 Sst[,,i]<-Stmp
 Yarr[,,i]<-tmp2
 }
 
-
+ 
 cat("
 model {
 #PRIORS
@@ -537,13 +537,14 @@ gamma[t] ~ dunif(0,1)
 
 for(i in 1:M){
   z[i,1] ~ dbern(psi)
-    #to estimate the number of recruits, we need a few derivations 
+    
+  #to estimate the number of recruits, we need a few derivations 
   R[i,1]<- z[i,1]
   R[i,2]<-(1-z[i,1])*z[i,2]
   R[i,3]<- (1-z[i,1])*(1-z[i,2])*z[i,3]
   R[i,4] <-(1-z[i,1])*(1-z[i,2])*(1-z[i,3])*(1-z[i,4])*z[i,5]
   R[i,5] <-(1-z[i,1])*(1-z[i,2])*(1-z[i,3])*(1-z[i,4])*z[i,5]
-}
+
 
   for(t in 1:5){
 
@@ -584,65 +585,64 @@ R5<-sum(R[1:M,5])
 
 ",file="modelJS.txt")
 ###
+###
+###
+###
 
+ 
 
 zst<-c(rep(1,M/2),rep(0,M/2))
 zst<-cbind(zst,zst,zst,zst,zst)
-inits <- function(){list (z=zst,sigma=runif(1,25,100), gamma=runif(5, 0, 1) ,S=Sst,alpha0=runif(1,-2,-1) ) }             
-parameters <- c("psi","alpha0","alpha1","sigma","N","D", "phi", "gamma")  
-                                                           
+
+inits <- function(){list (z=zst,sigma=runif(1,25,100), gamma=runif(5,0,1) ,S=Sst,alpha0=runif(1,-2,-1) ) }             
+
+parameters <- c("psi","alpha0","alpha1","sigma","N","D", "phi", "gamma", "R2", "R3", "R4", "R5")
+                                                                  
 data <- list (X=as.matrix(X[[1]]),K=10,Ycat=Yarr,M=M,ntraps=ntraps,ylim=ylim,xlim=xlim)        
 
+
+library("rjags")
+
 out1 <- jags.model("modelJS.txt", data, inits, n.chains=3, n.adapt=500)
-out2JS <- coda.samples(out1,parameters,n.iter=2000)
+out2JS <- coda.samples(out1,parameters,n.iter=10000)
 
-> summary(out2JS)
+> print(summary(out2JS), digits=2)
 
-Iterations = 2501:22500
+Iterations = 501:10500
 Thinning interval = 1 
 Number of chains = 3 
-Sample size per chain = 20000 
+Sample size per chain = 10000 
 
 1. Empirical mean and standard deviation for each variable,
    plus standard error of the mean:
 
-             Mean        SD  Naive SE Time-series SE
-D[1]    9.135e-05 1.260e-05 5.144e-08      1.082e-07
-D[2]    1.047e-04 1.064e-05 4.345e-08      8.867e-08
-D[3]    1.108e-04 1.059e-05 4.323e-08      9.387e-08
-D[4]    9.694e-05 1.079e-05 4.405e-08      9.948e-08
-D[5]    8.095e-05 1.132e-05 4.620e-08      1.060e-07
-N[1]    3.171e+01 4.374e+00 1.786e-02      3.754e-02
-N[2]    3.636e+01 3.695e+00 1.508e-02      3.078e-02
-N[3]    3.846e+01 3.676e+00 1.501e-02      3.259e-02
-N[4]    3.365e+01 3.745e+00 1.529e-02      3.453e-02
-N[5]    2.810e+01 3.928e+00 1.604e-02      3.680e-02
-alpha0 -2.891e+00 1.363e-01 5.564e-04      1.733e-03
-alpha1  1.217e-04 1.408e-05 5.749e-08      2.183e-07
-gamma   1.100e-01 1.812e-02 7.396e-05      1.590e-04
-phi     5.310e-01 5.925e-02 2.419e-04      5.815e-04
-psi     1.619e-01 3.367e-02 1.375e-04      2.487e-04
-sigma   6.443e+01 3.765e+00 1.537e-02      5.833e-02
+             Mean      SD Naive SE Time-series SE
+D[1]      9.6e-05 1.4e-05  8.4e-08        2.3e-07
+D[2]      1.0e-04 1.2e-05  7.1e-08        1.8e-07
+D[3]      1.1e-04 1.3e-05  7.6e-08        2.0e-07
+D[4]      1.1e-04 1.4e-05  8.2e-08        2.2e-07
+D[5]      7.9e-05 1.2e-05  7.0e-08        2.1e-07
+N[1]      3.3e+01 5.0e+00  2.9e-02        7.8e-02
+N[2]      3.6e+01 4.3e+00  2.5e-02        6.4e-02
+N[3]      3.9e+01 4.6e+00  2.6e-02        6.8e-02
+N[4]      3.7e+01 5.0e+00  2.9e-02        7.8e-02
+N[5]      2.8e+01 4.2e+00  2.4e-02        7.3e-02
+R2        1.5e+01 5.0e+00  2.9e-02        8.0e-02
+R3        1.9e+01 4.7e+00  2.7e-02        6.9e-02
+R4        8.3e+00 3.9e+00  2.3e-02        6.3e-02
+R5        8.3e+00 3.9e+00  2.3e-02        6.3e-02
+alpha0   -2.9e+00 1.4e-01  7.8e-04        2.3e-03
+alpha1    1.2e-04 1.4e-05  8.3e-08        3.7e-07
+gamma[1]  5.0e-01 2.9e-01  1.7e-03        1.5e-03
+gamma[2]  9.4e-02 3.6e-02  2.1e-04        5.8e-04
+gamma[3]  1.3e-01 4.0e-02  2.3e-04        5.6e-04
+gamma[4]  1.6e-01 4.6e-02  2.7e-04        6.6e-04
+gamma[5]  8.1e-02 4.2e-02  2.4e-04        6.8e-04
+phi       5.3e-01 5.9e-02  3.4e-04        9.8e-04
+psi       1.7e-01 3.6e-02  2.1e-04        4.6e-04
+sigma     6.4e+01 3.7e+00  2.2e-02        9.7e-02
 
-2. Quantiles for each variable:
 
-             2.5%        25%        50%        75%      97.5%
-D[1]    6.914e-05  8.354e-05  8.930e-05  9.795e-05  0.0001181
-D[2]    8.642e-05  9.795e-05  1.037e-04  1.123e-04  0.0001268
-D[3]    9.218e-05  1.037e-04  1.095e-04  1.181e-04  0.0001325
-D[4]    7.778e-05  8.930e-05  9.507e-05  1.037e-04  0.0001210
-D[5]    6.050e-05  7.202e-05  8.066e-05  8.930e-05  0.0001037
-N[1]    2.400e+01  2.900e+01  3.100e+01  3.400e+01 41.0000000
-N[2]    3.000e+01  3.400e+01  3.600e+01  3.900e+01 44.0000000
-N[3]    3.200e+01  3.600e+01  3.800e+01  4.100e+01 46.0000000
-N[4]    2.700e+01  3.100e+01  3.300e+01  3.600e+01 42.0000000
-N[5]    2.100e+01  2.500e+01  2.800e+01  3.100e+01 36.0000000
-alpha0 -3.159e+00 -2.982e+00 -2.890e+00 -2.800e+00 -2.6229336
-alpha1  9.560e-05  1.119e-04  1.212e-04  1.309e-04  0.0001506
-gamma   7.801e-02  9.732e-02  1.089e-01  1.214e-01  0.1486346
-phi     4.148e-01  4.909e-01  5.312e-01  5.713e-01  0.6466406
-psi     1.019e-01  1.381e-01  1.596e-01  1.834e-01  0.2336442
-sigma   5.762e+01  6.180e+01  6.424e+01  6.684e+01 72.3179358
 \end{verbatim}
 XXXXX BETH: Can you summarize results maybe to 2 or 3 sig digits only?
 (will that work?  Also maybe leave out the ``Quantiles'' summary just
