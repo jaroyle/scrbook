@@ -87,7 +87,7 @@ ll[se]<-sum(dbinom(Z[sex==se,,],1, lam.arr[sex==se,,], log=TRUE))
         # update theta
 
 	for (se in 1:2){
-        theta.cand <- rnorm(1, theta[se], tune$sig[se])
+        theta.cand <- rnorm(1, theta[se], delta$sig[se])
        
         if(theta.cand>0){
 
@@ -108,7 +108,7 @@ ll[se]<-sum(dbinom(Z[sex==se,,],1, lam.arr[sex==se,,], log=TRUE))
 	} #end sex loop
 
         # update lam0
-        lam0.cand <- rnorm(1, lam0, tune$lam0)
+        lam0.cand <- rnorm(1, lam0, delta$lam0)
         if(lam0.cand>0 & lam0.cand<1) {
             
             lam.cand1 <- lam0.cand*exp(-(D*D)/(2*theta[1]*theta[1]))
@@ -215,8 +215,8 @@ lam.mat.cand<- matrix(lam[i,,sex.cand], nrow=R, ncol=T) * Eff[i,,]
         # update S
         Sups <- 0
         for(i in 1:M) {   # note this is "M" in general
-            Scand <- c(rnorm(1, S[i,1], tune$S),
-                       rnorm(1, S[i,2], tune$S))
+            Scand <- c(rnorm(1, S[i,1], delta$S),
+                       rnorm(1, S[i,2], delta$S))
             inbox <- Scand[1]>=xl & Scand[1]<=xu &
                      Scand[2]>=yl & Scand[2]<=yu
             if(inbox) {
