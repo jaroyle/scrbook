@@ -7,7 +7,7 @@ MCMC algorithm for analyzing Canada geese data set (Ruthledge 2012) from Chapter
 Runs the MCMC algorithm for the Canada geese example presented in Chapter 15 (spatial mark-resight model)
 }
 \usage{
-SCR0pois(y, X, Zknown, M, Eff, niter,xl,xu,yl,yu,inits, Sex, delta)
+pIDgeese(y, X, Zknown, M, Eff, niters,xl,xu,yl,yu,inits, Sex, delta)
 }
 \arguments{
   \item{y}{
@@ -25,7 +25,7 @@ SCR0pois(y, X, Zknown, M, Eff, niter,xl,xu,yl,yu,inits, Sex, delta)
   \item{Eff}{
     3-dimensional array coding if a given site was sampled on a given occasion (1) or not (0) (individual by site by occasion)
 }
-  \item{niter}{
+  \item{niters}{
     Number of iterations to run the algorithm for
 }
   \item{xl,xu,yl,yu}{
@@ -43,7 +43,7 @@ SCR0pois(y, X, Zknown, M, Eff, niter,xl,xu,yl,yu,inits, Sex, delta)
 
 }
 \value{
-  A matrix with one row per iteration and fsix columns, for sigma female, sigma male, lam0, psi, phi and N.
+  A matrix with one row per iteration and six columns, for sigma female, sigma male, lam0, psi, phi and N.
 }
 
 \author{
@@ -64,7 +64,8 @@ initS<-function(){list(theta=runif(2, 0.7,1.2), lam0=runif(1,0.3,0.8), w=rbinom(
 S=cbind( runif( M, min(trapmat[,1]),max(trapmat[,1] ) ), runif( M,min(trapmat[,2]),max(trapmat[,2]) ) ))}
 
 # run model
-mod<-pIDgeese (y=y, X=X, Zknown=Zknown, M=M, EffAr=EffAr, niters=5000, xl=xl,xu=xu,yl=yl,yu=yu, inits=initS(), Sex=Sex, delta=list(sig=c(0.015, 0.02), lam0=0.02, S=2))
+mod<-pIDgeese (y=gd$y, X=gd$X, Zknown=gd$Zknown, M=M, Eff=gd$EffAr, niters=5000, xl=gd$xl,xu=gd$xu,yl=gd$yl,
+yu=gd$yu, inits=initS(), Sex=gd$Sex, delta=list(sig=c(0.015, 0.02), lam0=0.02, S=2))
 
 #look at output
 library(coda)
