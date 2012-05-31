@@ -64,7 +64,7 @@ initS<-function(){list(theta=runif(2, 0.7,1.2), lam0=runif(1,0.3,0.8), w=rbinom(
 S=cbind( runif( M, min(trapmat[,1]),max(trapmat[,1] ) ), runif( M,min(trapmat[,2]),max(trapmat[,2]) ) ))}
 
 # run model
-mod<-pIDgeese (y=gd$y, X=gd$X, Zknown=gd$Zknown, M=M, Eff=gd$EffAr, niter=2, xl=gd$xl,xu=gd$xu,yl=gd$yl,
+mod<-pIDgeese (y=gd$y, X=gd$X, Zknown=gd$Zknown, M=M, Eff=gd$EffAr, niters=5000, xl=gd$xl,xu=gd$xu,yl=gd$yl,
 yu=gd$yu, inits=initS(), Sex=gd$Sex, delta=list(sig=c(0.015, 0.02), lam0=0.02, S=2))
 
 #look at output
