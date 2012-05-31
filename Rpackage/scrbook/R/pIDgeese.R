@@ -2,7 +2,7 @@
 
 # MCMC with Z partially observed
 
-pIDgeese <- function(y, X, Zknown, M,Eff, niter, xl,xu,yl,yu, inits,Sex, delta) {
+pIDgeese <- function(y, X, Zknown, M,Eff, niters, xl,xu,yl,yu, inits,Sex, delta) {
 M<-M
     SEX<-c(Sex, rep(NA, M-nrow(Zknown)))
  knownS<-!is.na(SEX)
