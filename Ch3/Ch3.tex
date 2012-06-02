@@ -1685,18 +1685,6 @@ make sense of.
 
 \subsection{Fort Drum Bear Study}
 
-\begin{figure}
-\centering
-\includegraphics[height=3.5in,width=3.5in]{Ch3/figs/bear_spiderplot.png}
-\caption{Spider plot of the Fort Drum study data.
-The black dots represent the 47 trap locations with larger red dots
-being the average capture location of each bear. i.e., its estimated home
-range center. All traps in which a bear was captured are connected to
-its estimated home range center with a line. 
-XXX note change one of the dots to an X or something XXXXX
-}
-\label{closed.fig.spiderplot}
-\end{figure}
 
 We have to do a little bit of data processing to fit this individual
 covariate model to the Fort Drum data.  We need to compute the
@@ -1713,6 +1701,18 @@ data("beardata")
 toad<- spiderplot(beardata$bearArray,beardata$trapmat)
 xcent<-toad$xcent
 \end{verbatim}
+\begin{figure}
+\centering
+\includegraphics[height=3.5in,width=3.5in]{Ch3/figs/bear_spiderplot.png}
+\caption{Spider plot of the Fort Drum study data.
+The black dots represent the 47 trap locations with larger red dots
+being the average capture location of each bear. i.e., its estimated home
+range center. All traps in which a bear was captured are connected to
+its estimated home range center with a line. 
+XXX note change one of the dots to an X or something XXXXX
+}
+\label{closed.fig.spiderplot}
+\end{figure}
 
 For the analysis of these data using the individual covariate
 "distance from centroid" we used $x_{i} \sim \mbox{Unif}(0,D_{max})$
@@ -2014,7 +2014,7 @@ by adding a prior distribution for ${\bf s}_{i}$. The reader should
 contemplate how to do this in {\bf BUGS}.
 
 
-\section{Distance Sampling: A primitive Spatial Capture-Recapture Model}
+\section{Distance Sampling: A Primitive SCR Model}
 
 Distance sampling is one of the most popular methods for estimating
 animal abundance \citep{burnham_etal:1980, buckland_etal:2001,
@@ -2161,21 +2161,32 @@ density. Thus, SCR models are much more general and versatile than
 distance sampling models (which clearly are a special case), and can
 accommodate data from virtually all animal survey designs.
 
-\subsection{Example: Desert Tortoise Data}
+\subsection{Example: Sonoran Desert Tortoise Study}
 
 We illustrate the application of distance sampling models using data
-on the desert tortoise ({\it turtle xxxxxx}) collected along transects
-in XXXXXX (see \citet{zylstra_etal:2010} for
+on the Sonoran desert tortoise ({\it Gopherus agassizii}), shown in
+Fig. \ref{closed.fig.tortoise}, collected along transects
+in southern Arizona (see \citet{zylstra_etal:2010} for
 details). The data are from 120 square transects having 4 250 m sides, 
- although we ignore this detail in our analysis here and think
-about it as a 1 km transect, and we pooled the detection data from all
-120 transects. The detection distance histogram is shown  in Fig. \ref{closed.fig.tortoise}
+ although we ignore this detail in our analysis here and regard 
+them as 1 km transects, and we pooled the detection data from all
+120 transects. The histogram of encounter distances from the 65
+encounter individuals is
+shown in Fig. \ref{closed.fig.tortoisehist}
+\begin{figure}
+\centering
+\includegraphics[height=3in,width=4in]{Ch3/figs/Erin_Zylstra_2.jpg}
+\caption{Desert tortoise in its native habitat ({\it Photo credit: Erin
+  Zylstra, Univ. of Arizona}.}
+\label{closed.fig.tortoise}
+\end{figure}
 
 \begin{figure}
 \centering
 \includegraphics[height=3.35in,width=3.35in]{Ch3/figs/tortoise.png}
-\caption{Histogram of desert tortoise detections.}
-\label{closed.fig.tortoise}
+\caption{Histogram of Sonoran desert tortoise detections on 120 km of 
+transects.}
+\label{closed.fig.tortoisehist}
 \end{figure}
 
 Commands
@@ -2188,19 +2199,19 @@ multiplied by 2, and then divided by $10000$ to make everything in units
 of individuals {\it per} ha. The full script, provided with the
 \mbox{\tt scrbook} {\bf R} package, we also give some commands for
 analyzing the data using \mbox{\tt unmarked}
-\citep{fiske_chandler:2012} using hierarchical distance sampling
+\citep{fiske_chandler:2011} using hierarchical distance sampling
 models \citep{royle_etal:2004}. 
 {\small 
 \begin{verbatim}
 data(toroise)
-
 x<-tortoise[,"Dist"]
 nind<-sum(!is.na(x))
-y<-rep(1,nind)
-nz<-700
-y<-c(y,rep(0,nz))
-x<-c(x,rep(NA,nz))
-z<-y
+
+y<-rep(1,nind)        # create encounter vector
+nz<-700               # data augmentation
+y<-c(y,rep(0,nz))     # add 0s to the encounter vector
+x<-c(x,rep(NA,nz))    # pad distance vector with NA
+z<-y                  # starting vals for data augmentation variables
 
 cat("
 model{
@@ -2223,7 +2234,9 @@ D<- N/striparea  # area of transects
 ",file="dsamp.txt")
 \end{verbatim}
 }
-Next, we provide inits, indicate which parameters to monitor, and then
+
+Next, we bundle the data,
+provide initial values, indicate which parameters to monitor, and then
 pass those things to {\bf WinBUGS}:
 {\small
 \begin{verbatim}
@@ -2234,17 +2247,17 @@ data<-list(y=y,x=x,nz=nz,nind=nind,B=40,striparea=(120*1000*40*2/10000))
 params<-list('alpha1','sigma','N','D','psi')
 inits =  function() {list(z=z, psi=runif(1), alpha1=runif(1,0,.02) )}
 fit = bugs(data, inits, params, model.file="dsamp.txt",working.directory=getwd(),    
-       debug=T, n.chains=3, n.iter=3000, n.burnin=1000, n.thin=2)
+       debug=FALSE, n.chains=3, n.iter=3000, n.burnin=1000, n.thin=2)
 \end{verbatim}
-}
-Posterior summaries are provided in the following summary table. Estimated
-density (posterior mean) is $0.54$ individuals {\it per} ha and the estimated scale
-parameter of the distance function (posterior mean) is $\sigma=9.12$
-meters.
-The Rhat statistics of around $1.02$ suggest that slightly longer MCMC
-simulations might be useful. The posterior mass of the data
-augmentation parameter $\psi$ is located away from the upper-bound
-$\psi=1$ and so the degree of data augmentation appears sufficient. 
+} 
+Posterior summaries are provided in the following summary
+table. Estimated density (posterior mean) is $0.54$ individuals {\it
+  per} ha and the estimated scale parameter of the distance function
+(posterior mean) is $\sigma=9.12$ meters.  The Rhat statistics of
+around $1.02$ suggest that slightly longer MCMC simulations might be
+useful. The posterior mass of the data augmentation parameter $\psi$
+is located away from the upper-bound $\psi=1$ and so the degree of
+data augmentation appears sufficient.  
 {\small
 \begin{verbatim}
 > print(fit,digits=2)
