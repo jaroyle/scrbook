@@ -382,24 +382,32 @@ logit(p_{ijk}) = \alpha_{0} + \alpha_1*||s[i]-x[j]|| + \alpha_2*C_i,j,k
 
 Individual covariates are those which are measured or measurable on
 individuals, so we get to observed them only for the captured
-individuals. 
-
-Sex is a simple example of an individual covariate but it is often the
+individuals. Sex is a simple example of an individual covariate but it is often the
 case that it is missing for some captured individuals because 
 frequently, in practice, we only imperfectly determine gender of many
-species. We can imagine that sex impacts both the baseline encounter
-probability $\alpha_{0}$ and also it might affect the typical home range
-size, and therefore  $\alpha_{1}$ might be sex-specific
-also. Therefore, a fully sex-specific model is:
+species.  The sex of an individual can influence its home range size, this is
+common in studies of carnivores where females are known to have smaller home range sizes than
+males \citep{gardner_etal:2010jwm, sollmann_etal:2011}.  Additionally, we may find differences in
+the baseline detection between males and females because XXXX 
+
+
+Thus, we can imagine that sex may impact both the baseline encounter
+probability $\alpha_{0}$ and the typical home range
+size, and therefore  
+$\alpha_{1}$ might be sex-specific also.  Thus, a fully sex-specific model is:
 \[
 logit(p_{ijk}) = \alpha_{0,sex_{i}} + \alpha_{1, sex_{i}}*||s[i]-x[j]|| + \alpha_2*C_{i,j,k}
 \]
 where $sex_{i}$ is a vector  having two values indicating the sex of
-each individual (1 = male, 2 = female).  However, we do not know the
-sex of individuals that are not observed or may not have been
-determined, resulting in missing values even for some observed
-individuals \citep{gardner_etal:2010jwm} XXX check tag XXXX. 
-We deal with this slightly differently based on the framework
+each individual (1 = male, 2 = female).  While we might know the sex of all
+individuals observed in the study, we will never know the
+sex of individuals that are not observed, 
+resulting in missing values \citep{gardner_etal:2010jwm} XXX check tag XXXX. 
+It is also possible that we may not be able to determine the sex of 
+individuals that are observed in during the study, for example photographic 
+captures do not necessary result in pictures that allow the sex to be absolutely
+determined, thus sometimes resulting in missing values of this covariate for animals
+captured in the study.   We deal with this slightly differently based on the framework
 that we select (Bayesian or likelihood) and we discuss this in detail
 below in sections XXXXX latex TAG XXXX 8.3.3 and XXXX latex TAG XXXXX 8.4.3.
 
@@ -572,7 +580,6 @@ zst=as.vector(c(rep(1, nind), rep(0, M-nind)))
 toad<- spiderplot(beardata$bearArray,X)
 Sst<-matrix(cbind(runif(M, Xl, Xu), runif(M, Yl, Yu)), ncol=2)
 Sst[1:nind, ]<-toad$avg.s
-
 inits =  function() {list(z=zst,psi=runif(1), s=Sst, sigma=runif(1,2,3),alpha0=runif(1)) }
 
 out1 <- jags.model("SCR0exp.txt", data0, inits, n.chains=3, n.adapt=500)
@@ -592,21 +599,21 @@ Sample size per chain = 20000
 1. Empirical mean and standard deviation for each variable,
    plus standard error of the mean:
 
-        Mean     SD Naive SE Time-series SE
-D       0.17  0.022  9.0e-05        0.00096
-N     500.63 66.652  2.7e-01        2.91683
-p0      0.11  0.014  5.7e-05        0.00017
-psi     0.77  0.104  4.2e-04        0.00453
-sigma   1.99  0.131  5.3e-04        0.00252
+         Mean     SD Naive SE Time-series SE
+D        0.17  0.023  9.3e-05        0.00111
+N      511.55 68.730  2.8e-01        3.35478
+p0       0.34  0.055  2.2e-04        0.00088
+psi      0.79  0.107  4.4e-04        0.00520
+sigma    1.12  0.094  3.8e-04        0.00213
 
 \end{verbatim}
 }
 
 
-Here, we see that posterior mean density is approximately 0.17,
+Here, we see that posterior mean density is 0.17,
 effectively the same as under the half-normal distance function model
 above.  The posterior mean (percentiles) of $\sigma$ for the negative
-exponential model are $1.14 (0.95, 1.32)$, entirely distinct from our
+exponential model are $1.12 (0.95, 1.32)$, entirely distinct from our
 estimate of $\sigma$ under the half normal model. The interpretation
 of $\sigma$ in the two models is really quite distinct. In the normal
 model it can be interpreted as the standard deviation of a bivariate
@@ -651,8 +658,8 @@ We also update our
 initial values so that there are $K=8$ values generated for $\alpha0$. This
 ultimately means that we have put in another nested for loop in our
 code and the computation time will increase quite a bit (this model
-may take up to 20 hours or more on your machine to obtain a sufficient
-posterior sample). XXXX BETH: Is JAGS any faster? XXXXXXXX
+may take up to 10 hours or more on your machine to obtain a sufficient
+posterior sample).   XX JAGS was at 7 hours when I wrote that time, so I'll update XX
 
 {\small
 \begin{verbatim}
@@ -796,13 +803,7 @@ D<-N/area
 ",file = "SCRb.txt")
 
 
-
-datab<-list(y=Yaug,C=C, M=M,K=K, J=ntraps, Xl=Xl, Yl=Yl, Xu=Xu, Yu=Yu, X=X, area=areaX)
-params0<-list('psi','alpha0','alpha2', 'N', 'D', 'sigma')
-zst=as.vector(rbinom(M, 1, .5))
-inits =  function() {list(z=zst,psi=runif(1), sigma=runif(1),alpha0=runif(1),alpha2=runif(1)) }
-fitb = bugs(datab, inits, params0, model.file="SCRb.txt",working.directory=getwd(),    
-       debug=TRUE, n.chains=3, n.iter=20, n.burnin=10, n.thin=2)
+XXupdate with jags code XXXX
 
 \end{verbatim}
 }
@@ -810,11 +811,9 @@ fitb = bugs(datab, inits, params0, model.file="SCRb.txt",working.directory=getwd
 
 WAITING FOR THE RESULTS HERE.  
 
-XXXX  Still waiting.... XXXX
+XXX it is running in JAGS right now XXXX
 
-XXXX Does JAGS run faster? XXXXXX
-
-XXXX change n.iter etc.. in the bugs() call to reflect what you ran
+XXX Definitely faster, but not THAT fast XXX
 
 
 
@@ -935,9 +934,10 @@ individuals per
 hectare, so we must multiply this $D$ by 100 to see the estimate as
 individuals per $km^2$.  In doing so, the resulting density is 0.166
 individuals / $km^2$, which very similar to that found in sec. XXXXX
-latex tag here XXXX
-using {\bf JAGS}for the equivalent detection model. XXXX how different
-is it? be precise here so the reader doesn't have to go back there XXXXX
+latex tag here XXXX ($D = 0.167$)
+using {\bf JAGS} for the equivalent detection model. In fact, the difference 
+is only 0.001 suggesting that in this case the two frameworks provide consistent
+results.
 
 In the \secr package, the detection functions are specified
 by changing the ``\mbox{\tt detectfn}'' option (an integer code)
@@ -978,18 +978,17 @@ sigma   log 1.103882e+03 9.272586e+01 9.365855e+02 1.301061e+03
 Density is estimated similar to the bivariate normal model, 
 although the mean
 estimate is slightly larger. The 
-posterior mean of 
+mean of 
 $\sigma$ is about $1.1$
- which is very different from the bivariate normal where the
-posterior mean of $\sigma$ was $1.97$.
+ which is very different from the half-normal model where the
+ mean of $\sigma$ was $1.97$.
 These results are consistent with the what we saw in the Bayesian
-analysis of the model. XXXX requires further comment here....so reader
-doesn't have to look back and compare XXXXXXX
+analysis of the model where the poster mean of $\sigma$ under the negative
+exponential model was $1.12$ and under the half normal was $1.99$. 
+
 
 XXX can you put the secr commands in an R help file for a relevant
 function in scrbook? XXXXXX
-
-
 
 
 \subsection{Time-Varying Encounter Probability}
@@ -1001,21 +1000,15 @@ there are very few sampling occasions but becomes an unwieldy model
 with lots of parameters, in general, if sample occasions are very
 frequent (e.g., daily). In some cases it might make sense to have a
 smooth function of time to reflect season variation in encounter
-probability as show above. We saw previous that such models are easy
-to fit in {\bf JAGS}.  The package \secr only fits XXXX is this true?
-you can't have a covariate on p ??? XXXXXXX the classical
-time-effects type 
-of model with $K$ distinct parameters, unless an alternative approach is
-used such as ``groups'' or ``sessions''.
-
-XXXX this next paragraph seems redundant can you convert to 1 sentence
-or reword and then attached to the previous paragraph? XXXXXXX
-Time specific parameters are also easy to incorporate, we just include
-$t$ in our model fit call and \secr will automatically fit time
-specific encounter probability.  For example, if we allowed baseline detection to
-vary by time (as we did in eq. ** XXXXXX which equation is this?
-XXXXXXX), we simply use \verb+g0~t+ in our model expression.
-
+probability as shown above. We also saw previously that such models are easy
+to fit in {\bf JAGS}.  The package \secr fits the classical
+time-effects type of model with $K$ distinct parameters (\secr uses 't' to denote
+this in the command call) and a linear
+trend over occasions (\secr uses 'T' to denote this in the command call). 
+\secr will then automatically fit a time
+specific encounter probability (either factor based or linear) based on the use
+of lower or upper case 't'.  For example, we simply use \verb+g0~t+ in 
+our model expression to implement eq. XX   XXget eq. refXX
 
 
 {\small
@@ -1082,7 +1075,8 @@ balances that initial low detection probability.
 \subsection{Behavior}
 
 The secr package allows one to incorporate a simple trap response
-rather easily.  Without reorganizing our data, we can just take
+rather easily (we called this the 'global behavioral model' above). 
+Without reorganizing our data, we can just take
 the basic model and change the model call to:
 {\small
 \begin{verbatim}
@@ -1125,32 +1119,42 @@ been previously captured, we see it is $0.131$:
 [1] 0.1309028
 \end{verbatim}
 Thus, encounter probability for individuals previously captured is
-almost 3 times greater than that of individuals not 
- detection of those individuals
+almost 3 times greater than that of individuals 
 not previously captured.  We see that the 
 estimated density increases over the model with no behavioral effect
 (posterior mean $0.23
 bears/km2$ versus $0.16 bears/km2$ in model SCR0).
 
-
-
-While we have just seen that 
-it is very easy to incorporate a trap response; however, to
+It is not only easy to incorporate a global trap response model, but also just as simple to
 incorporate a trap specific behavioral response (as in
-\citet{royle_etal:2009}) is not so straight forward.  XXXX ***B - figure
-this out**. XXXXX 
-XXX I guess if secr() can handle general covariates then it should be
-possible right?
-
-
-To fit a trap specific behavioral response, we use just slightly modify the
+\citet{royle_etal:2009}).  To do so, we use just modify the
 the behavioral code from above from using a ``b" to ``bk".
 
-Behavioral and time effects can be both incorporated by writing the standard linear regression type code within the model call:
+XXX I might remove this part, but left it for reference right now XXX
+{\small
+\begin{verbatim}
+
+> bearbk=secr.fit (bearcapt, model = list(D~1, g0~bk, sigma~1), buffer = 20000)
+
+> bearbk
+
+Beta parameters (coefficients) 
+               beta    SE.beta       lcl       ucl
+D         -6.336352 0.17638162 -6.682053 -5.990650
+g0        -3.154732 0.20113222 -3.548944 -2.760520
+g0.bkTRUE  2.377687 0.25262813  1.882545  2.872829
+sigma      7.859917 0.09660444  7.670576  8.049258
+\end{verbatim}
+}
+
+Additionally, we can have additive effects within \secr.  For example, behavioral and time effects can be both incorporated by writing the standard linear regression type code within the model call:
 XXX we need to figure out how to center the tidles in the line XXXXX
 \[
 bearbt=secr.fit (bearcapt, model = list(D~1, g0~b + t, sigma~1), buffer = 20000)
 \]
+
+This particular code specifies a model with a global behavioral response and a factorial time trend in g0.
+
 
 \subsection{Sex Effects}
 
