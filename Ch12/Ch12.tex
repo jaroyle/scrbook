@@ -644,16 +644,19 @@ sigma     6.4e+01 3.7e+00  2.2e-02        9.7e-02
 
 
 \end{verbatim}
-XXXXX BETH: Can you summarize results maybe to 2 or 3 sig digits only?
-(will that work?  Also maybe leave out the ``Quantiles'' summary just
-to reduce ethe output. Sometimes we use 95\% confidence intervals
-though so if you want to summarize the 95 CIs for key parameters
-seperate thats ok too. XXXXX
 
-Our results for density, alpha0, and alpha1 are rather similar to those found in the multi-season analysis from Chapter 5   
-XXX Need to run chains longer XXX. Since all of our parameters including alpha0 and alpha1 are shared between seasons, we 
-would expect these results to be similar between the multi-season model and the JS model.  However, here we also estimate the 
- recruitment for each year (~XX, update when model finishes) and the posterior mean for survival (phi) to be 0.53.   These results for survival seem pretty 
+Our results for density, alpha0, and alpha1 are rather similar to those found in the multi-season analysis from Chapter 5. 
+Since all of our parameters including alpha0 and alpha1 are shared between seasons, we 
+would expect these results to be similar between the multi-season model and the JS model.  However, we also estimate the
+ recruitment for each year, and we can look at our derived values for recruitment (R2, R3, R4, and R5).  R2 is the number of new
+recruits from primary period 1 to 2; R3 is the number of new recruits from primary period 2 to 3; and so forth.   R2 and R3 are almost
+double that of R4 and R5, suggesting that less animals were recruited into the population in the latter years of the study.  The density in
+the last year of the study was lower than previous years.  It is good to check your results when you see a pattern like this -- the number
+of recruits declining each year -- because this could be an indication that the data augmentation was not large enough.  In this example, 
+we checked to make sure that M=200 was sufficiently large and determined that it was.   In addition to recruitment, we also estimated survival     
+and the posterior mean for $\phi$ was 0.53.  Although we did not do it here, 
+it should be easy to see that we could allow survival to vary by time, as we did with recruitment.
+ These results for survival seem pretty 
 reasonable when compared with the literature.  Some studies have found annual male ovenbird survival to be around 0.62 \citep
 {porneluzi_faaborg:1999, bayne_hobson:2002}; however, female ovenbird survival was much lower (0.21, \cite
 {bayne_hobson:2002}). With more individuals, we could run this model with survival estimated for each sex separately.  
@@ -693,20 +696,75 @@ them weekly for 6 weeks.  The study was conducted each summer for 3
 consecutive years, thus our secondary periods in this example are
 weeks and the primary period is years.
 
+\small{
 \begin{verbatim}
 
+library(reshape)
+library(scrbook)
+
+bearraw=read.csv("caphist.csv")
+bearraw$count=1
+a=which(bearraw$snare == "HS46")
+bearraw=bearraw[-a, ]
+
+junk.melt=melt(bearraw,id.var=c("bear.ID", "snare", "year", "session"), measure.var="count")
+bearArray=cast(junk.melt, bear.ID~snare~year, sum)
+
+locs=read.csv("locs.csv")
+locs2=locs[order(locs[,1]),]
+X<-cbind(locs2[,2:3]/1000)
+
+xlim<- c(min(X[,1] - mean(X[,1]))-20, max(X[,1] - mean(X[,1]))+20)
+ylim<-c(min(X[,2] - mean(X[,2]))-20, max(X[,2] - mean(X[,2]))+20)
+
+X[,1]=X[,1] - mean(X[,1])
+X[,2]=X[,2] - mean(X[,2])
+
+ntraps<-45
+T<-3
+n<-dim(bearArray)[1]
+M<-400 # do constant data augmentation to all years
+
+# flesh out the missing traps and created augmented dataset.
+Yarr<- array(0, dim=c(M,ntraps,T))
+a=pmatch(row.names(bearArray[1,,]), locs2[,1])
+Yarr[1:n,a,] <- bearArray[,,]
+Yarr2<-Yarr
+
+K<-4
+Sst<-cbind(runif(M,xlim[1],xlim[2]),runif(M,ylim[1],ylim[2]))
+Sst<-array(Sst,dim=c(M,2,T))
+
+#for(i in 1:T){
+#Stmp<-Sst[,,i]
+#Stmp[1:n,1:2]<-spiderplot(Yarr[1:n,,i], as.matrix(X))$avg.s
+#Sst[,,i]<-Stmp
+#Sst[Sst == "NaN"] <- 0
+
+Yarr[Yarr > 1] <-1
+
+for(i in 1:n){
+for(t in 1:T){
+Stmp<-colSums(Yarr[i,,t]*X)/sum(Yarr[i,,t])
+Sst[i,,t]<-Stmp
+}
+}
+Sst[Sst == "NaN"] <- 0
+
+
+
+cat("
 model {
 
-sigma~dunif(0, 10)
+sigma~dunif(0, 10) 
 sigma2 <- sigma*sigma      # set priors for sigma2, lam0 (encounter rate), gamma, and phi
-lam0 ~ dgamma(.1,.1)       
+lam0 ~ dgamma(.1,.1)        
 
 sigY~dunif(0,10)
 tauY <- 1/(sigY * sigY)
-
 sigX~dunif(0,10)
 tauX <- 1/(sigX * sigX)
-    
+
 for(jj in 1:T){             # T = 3 years
     gamma[jj]~dunif(0, 1)   #recruitment
     phi[jj]~dunif(0, 1)     #survival
@@ -715,47 +773,71 @@ for(jj in 1:T){             # T = 3 years
 
 for (i in 1:M){            #loop over M individuals (includes the augmented data)
       z[i,1] ~ dbin(gamma[1], 1)
-    S[i,1,t] ~ dunif(xlim[1],xlim[2])
-    S[i,2,t] ~ dunif(ylim[1],ylim[2])
+    S[i,1,1] ~ dunif(xlim[1],xlim[2])
+    S[i,2,1] ~ dunif(ylim[1],ylim[2])
 
    for(j in 1:J) {    #loop over all traps
        for(t in 1:T){
 
-            d[i,j,t] <- pow(S[i,1,t]-X[j,1],2) + pow(S[i,2,t]-X[j,2],2)
-            g[i,j,t] <- lam0*exp(-d[i,j,t]/sigma2)
-        pmean[i,j,t] <- 1- exp(-g[i,j,t])
+           D2[i,j,t] <- pow(S[i,1,t]-X[j,1], 2) + pow(S[i,2,t]-X[j,2],2)
+            g[i,j,t] <- lam0*exp(-D2[i,j,t]/sigma2)
+            pmean[i,j,t] <- 1- exp(-g[i,j,t])
           tmp[i,j,t] <- z[i,t]*pmean[i,j,t]
-            y[i,j,t] ~ dbin(tmp[i,j,t], K[j,t])    #K[j,t] is the number of occasions trap j was operational in year t
+            y[i,j,t] ~ dbin(tmp[i,j,t], 13)    
         }
      }
-   
-  a[i,1]<-(1-z[i,1])
+    
+a[i,1]<-(1-z[i,1]) 
 
   for(t in 2:T){
-     S[i,1,t] ~ dnorm(S[i,1,t], tauX)
-     S[i,2,t] ~ dnorm(S[i,2,t], tauY)
+       S[i,1,t] ~ dnorm(S[i,1,t-1], tauX)
+       S[i,2,t] ~ dnorm(S[i,2,t-1], tauY)
 
-      a1[i,t] <- sum(z[i, 1:t])
-       a[i,t] <- 1-step(a1[i,t] - 1)
+        a1[i,t] <- sum(z[i, 1:t])
+         a[i,t] <- 1-step(a1[i,t] - 1) 
 
-      mu[i,t]<- (phi[t]*z[i,t-1]) + (gamma[t]*a[i,t-1])
-       z[i,t]~dbern(mu[i,t])
+        mu[i,t] <- (phi[t]*z[i,t-1]) + (gamma[t]*a[i,t-1])
+         z[i,t] ~ dbern(mu[i,t])
           }
-
-
 
 R[i,1]<- z[i,1]
 R[i,2]<-(1-z[i,1])*z[i,2]
 R[i,3]<- (1-z[i,1])*(1-z[i,2])*z[i,3]
+
 }
 
 
 R1<-sum(R[1:M,1])
 R2<-sum(R[1:M,2])
 R3<-sum(R[1:M,3])
+}
+",file="modelJS.txt")
+
+###
+###
+
+ 
+library("rjags")
+
+zst<-c(rep(1,n),rep(0,M-n))
+zst<-cbind(zst,zst,zst)
+
+inits <- function(){list (z=zst,sigma=runif(1,1,9), gamma=runif(T,0,1) ,S=Sst ) }             
+
+parameters <- c("sigma","N", "phi", "gamma", "R2", "R3", "sigX", "sigY")
+                                                                  
+data <- list (X=as.matrix(X),y=Yarr2,M=M,T=T,J=ntraps,ylim=ylim,xlim=xlim)        
+
+
+out1 <- jags.model("modelJS.txt", data, inits, n.chains=3, n.adapt=500)
+out2JS <- coda.samples(out1,parameters,n.iter=1500)
+
+\end{verbatim}
+
 
 }
-\end{verbatim}
+
+
 
 
 \section{Summary and Outlook}
