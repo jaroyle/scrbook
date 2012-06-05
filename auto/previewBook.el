@@ -32,5 +32,6 @@
      "Ch3/Ch3"
      "Ch4/Chapter4"
      "Ch9/Ch9"
+     "Ch5/Ch5"
      "Ch7/Ch7")))
 
