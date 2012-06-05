@@ -2,6 +2,8 @@
  (lambda ()
     (LaTeX-add-bibliographies
      "AndyRefs_alphabetized")
+    (LaTeX-add-labels
+     "chapt.intro")
     (TeX-add-symbols
      "R"
      "winbugs"
@@ -28,10 +30,14 @@
      "latex2e"
      "bk10"
      "book"
+     "Ch1/Ch1"
      "Ch2/Ch2"
      "Ch3/Ch3"
      "Ch4/Chapter4"
+     "Ch6/Ch6"
      "Ch9/Ch9"
      "Ch5/Ch5"
-     "Ch7/Ch7")))
+     "Ch7/Ch7"
+     "Ch11/Ch11"
+     "Ch15/Ch15")))
 
