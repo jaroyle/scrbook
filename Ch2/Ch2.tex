@@ -13,8 +13,9 @@ Bayesian Analysis of GL(M)Ms Using R/WinBUGS
 %%% 7. FIX parameter notation! I have beta0 beta1 , alpha beta, and a,
 %%%     b in the same chapter!   Use alpha beta probably?
 %%% 8. spell check this document
+%%% Andy, add followind data/functions to REPO: 
 
-XXX Should DIC/selection/FIT material go into Chapter 8? XXXXXXX
+% XXX Should DIC/selection/FIT material go into Chapter 8? XXXXXXX
 
 
 A major theme of this book is that spatial capture-recapture models
@@ -37,7 +38,6 @@ the most generally useful models in all of Ecology and, as
 such, have received considerable attention in many introductory and
 advanced texts. We focus on them here in order to introduce the
 readers to the analysis of such models in {\bf R} and {\bf WinBUGS},
-%aren't we moving all to JAGS?
 which we will
 translate directly to the analysis of SCR models in subsequent
 chapters.
@@ -66,16 +66,16 @@ Bayesian analysis, MCMC, and their applications in Ecology including
 
 While this chapter is about Bayesian analysis of GLMMs, such models
 are routinely analyzed using likelihood methods too, as discussed by
-\citet{royle_dorazio:2008}, and \citet{kery:2010}. %cite the GLM book?
+\citet{royle_dorazio:2008} and \citet{kery:2010}. 
 Indeed, likelihood
 analysis of such models is the primary focus of many applied
-statistics texts, a good one being \citet{zuur_etal:2009}. Later in
+statistics texts, some good ones being \citet{mccullagh_nelder:1989} and \citet{zuur_etal:2009}. Later in
 this book, we will use likelihood methods to analyze SCR models but,
 for now, we concentrate on providing a basic introduction to Bayesian
 analysis because that is the approach we will use in a majority of
 cases in later chapters.
 
-
+%Richard will move this section to previous chapter
 \section{ Notation}
 
 We will sometimes use conventional ``bracket notation'' \index{bracket
@@ -130,7 +130,7 @@ and the marginal probability that $y=0$ is
 \[
 \Pr(y=0) = (1-p)*\psi + (1-\psi)
 \]
-
+%END of section Richard will move to previous chapter
 
 \section{
 GLMs and GLMMs}
@@ -138,10 +138,11 @@ We have asserted already that SCR models work out most of the time to
 be variations of GLMs and GLMMs. Some of you might therefore ask: What
 are GLMs and GLMMs, anyhow?   These models are covered extensively in
 many very good applied statistics books and we refer the reader
-elsewhere for a detailed introduction. We think \citet{kery:2010},
+elsewhere for a detailed introduction.  The
+classical reference for GLMs is \citet{nelder_wedderburn:1972} and
+also \citet{mccullagh_nelder:1989}. In addition, we think \citet{kery:2010},
 \citet{kery_schaub:2011}, and \citet{zuur_etal:2009} are all
-accessible treatments of considerable merit. %Again suggest citing the 
-%GLM book, and/or GAM book.  
+accessible treatments of considerable merit. 
 Here, we'll give the 1
 minute
 treatment of GLMMs, not trying to be complete but rather only
@@ -155,28 +156,44 @@ distributions (i.e., not just normal). This includes the normal
 distribution but also dozens of others such as the Poisson, binomial,
 gamma, exponential, and many more. In addition, GLMS allow the
 response variable to be related to the predictor variables (i.e.,
-covariates) using a
-link function, which is usually nonlinear.  Finally, GLMs typically
-accommodate a relationship between the mean and variance. The
-classical reference for GLMs is \citet{nelder_wedderburn:1972} and
-also \citet{mccullagh_nelder:1989}.
+covariates) using a link function, which is usually nonlinear.  
+%Finally, GLMs typically
+% accommodate a relationship between the mean and variance.
+% The GLM consists of three components:
+% \begin{itemize}
+% \item[1.] A probability distribution for the dependent variable $y$,
+% from the exponential family of probability distributions.
+%\item[2.] A ``linear predictor'' $\eta = {\bf x}'{\bm \beta}$  .
+% \item[2.] A ``linear predictor'' $\eta = \beta_0 + x \beta_1$, where $x$ is the predictor variable.
+% \item[3.] A link function $g$ that relates $E[y]$ to the linear predictor, $E[y] = \mu = g^{-1}(\eta)$. Therefore $g(E[y]) = \eta$.
+% \end{itemize}
+% XXXX ISNT THIS REDUNDANT? XXXXXXXXX
+% The dependent variable $y$ is assumed to be an outcome from a
+% distribution of the exponential family. The mean of the distribution of $y$ is assumed to depend on predictor variables $x$ according to
+% \[
+%  %g(E[y]) = {\bf x}'{\bm \beta}
+%  g(E[y]) =\beta_0 + x \beta_1
+% \]
+% where $E[y]$ is the expected value of $y$, and ${\bf x}'{\bm \beta}$
+% is termed the {\it linear predictor}, i.e., a linear function of the
+% predictor variables ${\bf x}$ with unknown parameters ${\bm \beta}$ to be
+% estimated.  
+% The function $g$ is the link function. In standard GLMs,
+% the variance of $y$ is a function $V$ of the mean of $y$: $Var(y) =
+% V(\mu)$ (see below for examples).
+% XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX SEEMS REDUNDANT UP TO HERE XXXXXXXXXXXXXXXX
+
 The GLM consists of three components:
 \begin{itemize}
 \item[1.] A probability distribution for the dependent variable $y$,
-from a class of probability distributions known as the exponential family.
-\item[2.] A ``linear predictor'' $\eta = {\bf x}'{\bm \beta}$  .
-\item[3.] A link function $g$ that relates $E[y]$ to the linear predictor, $E[y] = \mu = g^{-1}(\eta)$. Therefore $g(E[y]) = \eta$.
+from the exponential family of probability distributions.
+\item[2.] A ``linear predictor'' $\eta = \beta_0 + x \beta_1$, where $x$ is the predictor variable.
+\item[3.] A link function $g$ that relates the expected value of $y$, $E[y]$, to the linear predictor, $E[y] = \mu = g^{-1}(\eta)$. Therefore $g(E[y]) = \eta = \beta_0 + x \beta_1$ .
 \end{itemize}
 
-The dependent variable $y$ is assumed to be an outcome from a
-distribution of the exponential family. The mean of the distribution of $y$ is assumed to depend on predictor variables $x$ according to
-\[
- g(E[y]) = {\bf x}'{\bm \beta}
-\]
-where $E[y]$ is the expected value of $y$, and ${\bf x}'{\bm \beta}$
-is termed the {\it linear predictor}, i.e., a linear function of the
-predictor variables ${\bf x}$ with unknown parameters ${\bm \beta}$ to be
-estimated.  The function $g$ is the link function. In standard GLMs,
+So $g(E[y])$ is assumed to be a linear function of the
+predictor variable(s), here $x$, with unknown parameters, here $\beta_0$ and $\beta_1$, to be
+estimated. In standard GLMs,
 the variance of $y$ is a function $V$ of the mean of $y$: $Var(y) =
 V(\mu)$ (see below for examples).
 
@@ -184,19 +201,45 @@ As an example, a Poisson GLM posits that $y \sim \mbox{Poisson}(\lambda)$ with $
 =\lambda$ and usually the model for the mean is specified using the
 {\it log link function} by
 \[
-log(\lambda_{i}) = \beta_0 + \beta_{1}*x_{i}
+{\text log}(\lambda_{i}) = \beta_0 + \beta_{1} \times x_{i}
 \]
-The variance function is $\mbox{V}(y_{i}) = \lambda_{i}$.  The
+The variance function is $\mbox{V}(y_{i}) = \lambda_{i}$.  
+
+To vizualize how a (Poisson) GLM works, use the {\bf R} code below.
+\begin{verbatim}
+set.seed(13)
+n=100 #set sample size
+beta0<--2 # set intercept term
+beta1<- 1.5 #set coefficient
+x<-rnorm(n, 0,1) #generate a predictor variable, x
+linpred<-beta0+beta1*x # calculate the linear predictor of E[y]
+y<-rpois(n, exp(linpred), 1) # generate observations, y, from above model
+\end{verbatim} 
+
+Using the {\tt glm()} command fits a GLM to the data we just generated and returns estimates of $\beta_0$ and $\beta_1$, which are fairly close to the data generating values above:
+\begin{verbatim}
+glm(y~1+x, family='poisson') #fit model
+
+Call:  glm(formula = y ~ 1 + x, family = "poisson")
+
+Coefficients:
+(Intercept)            x  
+     -2.007        1.446  
+
+[... some output deleted ...]
+\end{verbatim}
+
+The
 binomial GLM posits that $y_{i} \sim \mbox{Binomial}(K,p)$ where $K$
 is the fixed sample size parameter and $E[y_{i}] = K*p_{i}$. Usually
 the model for the mean is specified using the {\it logit link
   function} according to
 \[
- logit(p_{i}) = \beta_{0} + \beta_{1}*x_{i}
+ \text {logit}(p_{i}) = \beta_{0} + \beta_{1} \times x_{i}
 \]
-Where $logit(u) = log(u/(1-u))$.  The inverse-logit function, $g^{-1}$ ,
-is a function we will refer to as ``expit'', so that $expit(u) =
-exp(u)/(1+exp(u))$.
+Where $\text {logit}(u) = \text {log}(u/(1-u))$.  The inverse-logit function,
+consequently, is $\text {logit}^{-1}(u) =
+\text {exp}(u)/(1+\text {exp}(u))$.
 
 A GLMM is the extension of GLMs to accommodate ``random
 effects''. Often this involves adding a normal random effect to the
@@ -232,7 +275,7 @@ older cohorts of ecologists were largely educated in the classical
 statistical paradigm of frequentist inference. But advances in
 technology and increasing exposure to benefits of Bayesian analysis
 are fast making Bayesians out of people or at least making Bayesian
-analysis an acceptable, general, alternative to classical, frequentist
+analysis an acceptable, general alternative to classical, frequentist
 inference.
 
 Conceptually, the main thing about Bayesian inference is that it uses
@@ -248,19 +291,18 @@ ways, but never to characterize uncertainty about
 parameters\footnote{To hear this will be shocking to some readers
   perhaps.} Instead, frequentists use probability to characterize the
 behavior of {\it procedures} such as estimators or confidence
-intervals (see below), which can lead to some inelegant or unnatural
-interpretations of things.  It is paradoxical that people readily
+intervals (see below). It is surprising that people readily
 adopt a philosophy of statistical inference in which the things you
 don't know (i.e., parameters) should {\it not} be regarded as random
 variables, so that, as a consequence, one cannot use probability to
 characterize ones state of knowledge about them.
 
 
-\subsection{Bayes Rule}
+\subsection{Bayes' Rule}
 
 As its name suggests, Bayesian analysis makes use of Bayes' rule in
 order to make direct probability statements about model
-parameters. Given two random variables $z$ and $y$, Bayes rule relates
+parameters. Given two random variables $z$ and $y$, Bayes' rule relates
 the two conditional probability distributions $[z|y]$ and $[y|z]$ by
 the relationship:
 \[
@@ -275,31 +317,31 @@ is the marginal distribution of $y$. In the context of Bayesian
 inference we usually associate specific meanings in which $[y|z]$ is
 thought of as ``the likelihood'', $[z]$ as the ``prior'' and so on. We
 leave this for later because here the focus is on this expression of
-Bayes rule as a basic fact of probability.
+Bayes' rule as a basic fact of probability.
 
-As an example of a simple application of Bayes rule,
+As an example of a simple application of Bayes' rule,
 consider the problem of determining species presence at a sample
 location based on imperfect survey information. Let $z$ be a binary
 random variable that denotes species presence $(z=1)$ or absence
 $(z=0)$, let $\Pr(z=1) = \psi$ where $\psi$ is usually called
 occurrence probability, ``occupancy'' \citep{mackenzie_etal:2002} or ``prevalence''.
 Let $y$ be the {\it observed} presence
-($y=1$) or absence ($y=0$), and let $p$ be the probability that a
+($y=1$) or absence ($y=0$) (or detection and non-detection, to be 100 \% correct), and let $p$ be the probability that a
 species is detected in a single survey at a site given that it is
 present. Thus, $\Pr(y=1|z=1)=p$. The interpretation of this is that,
-if the species is present, we will only observe presence with
+if the species is present, we will only observe it with
 probability $p$. In addition, we assume here that $\Pr(y=1|z=0) =
 0$. That is, the species cannot be detected if it is not present which
 is a conventional view adopted in most biological sampling problems (but
 see \citet{royle_link:2006}).
 If we survey a site $T$ times but never detect the species,
 then this clearly does not imply that the species is not present
-($z=0$) at this site. Rather, our degree of belief in $z=0$ should be
-made with a probabilistic statement
+($z=0$) at this site (we could just fail to observe it every single time). Rather, our degree of belief in $z=0$ should be
+made with a probabilistic statement,
 $\Pr(z=1|y_1=0,\ldots,y_{T}=0)$. If the $T$ surveys are independent so
 that we might regard $y_{t}$ as $iid$ Bernoulli trials, then the total
-number of detections, say $y$, is Binomial with probability $p$ then
-we can use Bayes rule to compute the probability that it is present
+number of detections, say $y$, is Binomial with probability $p$, and
+we can use Bayes' rule to compute the probability that the species is present
 given that it is not detected in $T$ samples. In words, the expression
 we seek is:
 \[
@@ -308,17 +350,15 @@ we seek is:
 \]
 Mathematically, this is
 \begin{eqnarray*}
-\Pr(z=1|y=0) &= &\Pr(y=0|z=1)\Pr(z=1)/\Pr(y=0)  \\
-             &= & [(1-p)^{T} \psi]/[ (1-p)^T \psi + (1-\psi) ].
+\Pr(z=1|y=0) &= &\frac{\Pr(y=0|z=1)\Pr(z=1)}{\Pr(y=0) } \\
+             &= & \frac{(1-p)^{T} \psi}{ (1-p)^T \psi + (1-\psi) }.
 \end{eqnarray*}
 To apply this,
 suppose that $T=2$ surveys are done at a wetland for a species of
 frog, and the species is not detected there. Suppose further that $\psi
 = .8$ and $p = .5$ are obtained from a prior study.  Then the
 probability that the species is present at this site is
-$.25*.8/(.25*.8 + .2) = 0.50$. 
-%maybe write this as:  $(1-.5)^2*.8/((1-.5)^2*.8 + (1-.8) = 0.50$. just
-%so the reader easily follows from the eqn.
+$(1-0.5)^2 \times.8/((1-0.5)^2 \times 0.8 + (1-0.8) = 0.5$. 
 That is, there seems to be about a
 50/50 chance that the site is occupied despite the fact that the
 species wasn't observed there.
@@ -330,9 +370,9 @@ one needs to deduce one from the other.
 \subsection{Bayesian Inference}
 
 Bayes' rule as a basic fact of probability is not disputed.
-What is controversial to some is the scope and manner in which Bayes
+What is controversial to some is the scope and manner in which Bayes'
 rule is applied by Bayesian analysts. Bayesian analysts assert that
-Bayes rule is relevant, in general, to all statistical problems by
+Bayes' rule is relevant, in general, to all statistical problems by
 regarding all unknown quantities of a model as realizations of random
 variables - this includes ``data'', latent variables, and also
 ``parameters''. Classical (non-Bayesian) analysts sometimes object to
@@ -347,7 +387,7 @@ distribution is necessary to carryout Bayesian analysis, but it is not
 required in classical frequentist inference.
 
 
-To see the general relevance of Bayes rule in the context of
+To see the general relevance of Bayes' rule in the context of
 statistical inference, let $y$ denote observations - i.e., ``data'' -
 and let $[y|\theta]$ be the observation model (often colloquially
 referred to as the ``likelihood'').  Suppose $[\theta]$ %remove brackets?
@@ -358,14 +398,14 @@ is:
 \[
  [\theta|y]= [y|\theta][\theta]/[y]
 \]
-Asserting the general relevance of Bayes rule to all statistical
+Asserting the general relevance of Bayes' rule to all statistical
 problems, we can conclude that the two main features of Bayesian
 inference are that: (1) ``parameters'', $\theta$, are regarded as realizations of
 a random variable and, as a result, (2) inference is based on the
 probability distribution of the parameters given the data,
 $[\theta|y]$,
 which is
-called the posterior distribution. This is the result of using Bayes
+called the posterior distribution. This is the result of using Bayes'
 rule to combine ``the likelihood'' and the prior distribution.  The
 key concept is regarding parameters as realizations of a random
 variable because, once you admit this conceptual view, this leads
@@ -376,7 +416,7 @@ probability distribution for $\theta$ and therefore we can make direct
 probability statements to characterize uncertainty about
 $\theta$.
 
-The denominator of our invocation of Bayes rule, $[y]$,
+The denominator of our invocation of Bayes' rule, $[y]$,
 is the marginal distribution of the data $y$.  We note without further
 remark right now that, in many practical problems, this can be an
 enormous pain to compute. The main reason that the Bayesian paradigm
@@ -405,7 +445,7 @@ permit direct probability statements to be made about parameter
 values -- because parameters are not random variables!
 
 While we can understand the conceptual basis of Bayesian inference
-merely by understanding Bayes rule -- that's really all there is to it
+merely by understanding Bayes' rule -- that's really all there is to it
 -- it is not so easy to understand the basis of classical
 ``frequentist'' inference which is mostly like
 \footnote{as characterized by Christopher A. Sims, winner of the 

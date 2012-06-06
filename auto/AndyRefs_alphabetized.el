@@ -98,6 +98,7 @@
      "carlin_louis:2000"
      "casella_berger:2002"
      "casella_george:1992"
+     "caswell:1989"
      "chambers:1998"
      "chandler_etal:2011"
      "chandler_royle:2012"

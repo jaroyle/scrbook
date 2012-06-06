@@ -137,6 +137,7 @@ familiar with (i.e., GLMs - see Chapt. \ref{chapt.glms}).
 \label{closed.tab.3.1}
 \end{table}
 
+
 \begin{comment}
 While the Bernoulli observation model is the fundamental model of the
 individual encounter process in all of capture-recapture, when we sum
@@ -156,20 +157,14 @@ incomplete summary or something$ xxxxxx \end{comment}
 Assuming individuals in the population are observed independently, the
 joint probability distribution of the observations is the product of
 $N$ binomials
-% I think this moves too fast
-%\begin{eqnarray*}
-%  \Pr(y_1, \ldots, y_N | p) &=& \prod_{i=1}^N  \mathrm{Bin}(y_i | K, p) \\
-%   &=& \prod_{k=0}^K  \pi(k)^{n_k}
-%\end{eqnarray*}
-\begin{equation*}
-  \Pr(y_1, \ldots, y_N | p) &=& \prod_{i=1}^N  \mathrm{Bin}(y_i | K, p).
-\end{equation*}
-
-
+\begin{eqnarray}
+  \Pr(y_1, \ldots, y_N | p) &=& \prod_{i=1}^N  \mathrm{Bin}(y_i | K, p) \\
+   &=& \prod_{k=0}^K  \pi(k)^{n_k}
+\label{closed.eq.binNknown}
+\end{eqnarray}
 where $\pi(k) = \mathrm{Bin}(k | K,p)$ and where $n_k = \sum_{i=1}^N
 I(y_i = k)$ denotes the number of individuals captured $k$ times in
 $K$ surveys.
-
 We emphasize that this expression is conditional on $N$, in which
 case we get to observe the $y_i=0$ observations and the resulting data
 are just $iid$ binomial counts. Because this is a binomial regression
@@ -178,14 +173,36 @@ a {\bf BUGS} engine poses no difficulty.
 
 
 The essential problem in capture-recapture, however, is that $N$ is
-{\it not} known because the number of uncaptured/missing individuals
-%(i.e., those in the zero cell that occur with probability $\pi_0$) is
-% unknown.
+{\it not} known because the number of uncaptured %/missing
+individuals
+%(i.e., those in the zero cell that occur with probability $\pi_0$)
+is unknown. % I added some text here, which is kind of clunky but this
+            % section was moving too fast I think.
+This makes it impossible to evaluate
+equations~\ref{closed.eq.binNknown}.
+For example, if we tried to format the data shown in
+Table~\ref{closed.tab.3.1}, the best we could do is shown in Table~\ref{closed.tab.3.1.nk}.
+\begin{table}
+\centering
+\caption{Data from Table~\ref{closed.tab.3.1} formatted as capture
+  frequencies. The number of individuals not detected ($k=0$) is unknown.}
+\begin{tabular}{lcccccc}
+\hline
+$k$ & 0  & 1 & 2 & 3 & 4 & 5 \\
+Number of individuals captured $k$ times ($n_k$) & -- & 2 & 3 & 1 & 0 & 0 \\
+\hline
+\end{tabular}
+\label{closed.tab.3.1.nk}
+\end{table}
+That is, we have no idea how many individuals were
+not detected at all ($k=0$).
 Consequently, the observed capture frequencies $n_k$ are no
-longer independent. Instead, their joint distribution is multinomial
+longer independent because $n_0$ is a function of the other
+frequencies (as well as $N$), $n_0 = N-\sum_{k=1}^K$. Hence, their joint distribution is multinomial
 (e.g., see \citet[][p. xyz]{illian_etal:2008}):
+%Andy, I changed this from n_1, n_2 to n_0, n_1. Isn't that right?
 \begin{equation}
-    n_1, n_2, \ldots, n_K \sim \mathrm{Multin}(N, \pi_1, \pi_2, \ldots, \pi_K)
+    n_0, n_1, \ldots, n_K \sim \mathrm{Multin}(N, \pi_0, \pi_1, \ldots, \pi_K)
 \label{closed.eq.multinomial4m0}
 \end{equation}
 We give a general overview of the multinomial distribution in
@@ -256,6 +273,14 @@ BUT I AM HAVING TROUBLE PUTTING THAT INTO A FEW WORDS RIGHT NOW XXXX
 \end{comment}
 
 \subsection{The Core Capture-Recapture Assumptions}
+
+\citet{otis_etal:1978} list the following assumptions of closed
+population capture-recapture models.
+\begin{enumerate}
+\item here's one
+\end{enumerate}
+
+
 
 Encounter events of the same individual are independent of one
 another. Usually this is not, but we can build models that contain
@@ -340,10 +365,13 @@ model $M_0$).
   augmentation which replaces $N$ with $\psi$. Each approach yields a
   distinct likelihood.}
 \begin{tabular}{ccc}
+\hline
 Mode of analysis & parameters in model & statistical model \\ \hline
 Joint likelihood                &	$p$, $N$	&	multinomial with index $N$\\
 Conditional likelihood 		&	$p$	&	zero-truncated binomial \\
-Data augmentation		&	$p$, $\psi$	&	zero-inflated binomial\\
+Data augmentation		&	$p$, $\psi$	&
+zero-inflated binomial\\
+\hline
 \end{tabular}
 \label{tab.3.modes}
 \end{table}
@@ -541,6 +569,7 @@ M  & 0   & 0   & 0   &     &     &   &      & . & 0 & 0 & 0 \\
    &     &     &     &     &     &   &      & . & . & . & . \\
    &     &     &     &     &     &   &      & . & . & . & . \\
    &     &     &     &     &     &   &      & M & 0 & 0 & 0 \\
+\hline
 \end{tabular}
 \label{closed.tab.occ}
 \end{table}
@@ -1943,14 +1972,15 @@ the trap array) on up to 20. The results are given in Table
   trap array'. ``Density'' is the posterior mean of density and SD is
   the posterior standard deviation.}
 \begin{tabular}{ccc}
-\hline \hline
+\hline %\hline
  $D_{max}$ & Density & SD \\ \hline
   12& 0.230 & 0.038 \\
   15& 0.244 &0.041 \\
   17& 0.249 &0.044 \\
   18& 0.249 &0.043\\
   19& 0.250 &0.043\\
-  20& 0.250 &0.044
+  20& 0.250 &0.044 \\
+\hline
 \end{tabular}
 \label{closed.tab.Dmax}
 \end{table}
