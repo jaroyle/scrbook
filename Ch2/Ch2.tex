@@ -16,8 +16,12 @@ Bayesian Analysis of GL(M)Ms Using R/WinBUGS
 
 %%% Andy, add followind data/functions to REPO: 
 %%% see question in sec. 3.4 (small sample size)
+%%% missing ref: link_barker:2009; could not find it in ref list
+%%% around line 1000 - which section in the closed pop chapter do you want to reference?
 % XXX Should DIC/selection/FIT material go into Chapter 8? XXXXXXX
 
+%%%NOTATION PROBLEM: IN MCMC CHAPTER WE GENERATE theta(t) from theta(t-1), here we generate theta(*) from theta(t) - which one do you prefer?
+%%% I think the footnote on one versus several chains is too much here; maybe move to MCMC chapter?
 
 A major theme of this book is that spatial capture-recapture models
 are, for the most part, just generalized linear models (GLMs) wherein
@@ -504,7 +508,7 @@ usually very subjective and thus the result can wind up being very
 contentious, e.g., different investigators might report different
 results based on subjective assessments of prior information. Thus it is usually
 better to ``let the data speak'' and use priors that reflect absence
-of information beyond the data set being analyzed. An example for an uninformative prior is a Uniform(0,1) for a probability, or a Uniform(-$\infty$, $\infty$) (also called a ``flat prior'') for an unbounded continuous parameter. Alternatively, people use ``vague prior''; these contain some information, but (ideally) not enough to actually influence the posterior. An example for a vague prior could be a Normal distribution with a large standard deviation.
+of information beyond the data set being analyzed. An example for an uninformative prior is a Uniform(0,1) for a probability, or a Uniform(-$\infty$, $\infty$) (also called a ``flat'' or ``improper'' prior) for an unbounded continuous parameter. Alternatively, people use ``diffuse prior''; these contain some information, but (ideally) not enough to actually influence the posterior. An example for a diffuse prior could be a Normal distribution with a large standard deviation.
 
 But still the need occasionally arises to embody prior information or
 beliefs about a parameter formally into the estimation scheme.
@@ -883,13 +887,13 @@ necessary if we decide instead to use the Metrpolis-Hastings algorithm
 as described below.
 
 In the context of our simple linear regression model that we've been 
-working with, to characterize $[\alpha|y,\beta]$ we first apply step 1
-and identify the model components as: $[y|\alpha, \beta]$, $[\alpha]$
-and $[\beta]$. Step 2 has us write $[\alpha|y,\beta] \propto
-[y|\alpha,\beta][\alpha][\beta]$.  Step 3: We note that $[\beta]$ is not a
-function of $\alpha$ and therefore we remove it to obtain $[\alpha|y,\beta]
-\propto [y|\alpha,\beta][\alpha]$. Similarly we obtain $[\beta|y,\alpha]
-\propto [y|\alpha,\beta][\beta]$. We apply step 4 and manipulate
+working with, to characterize $[\beta_0|y,\beta_1]$ we first apply step 1
+and identify the model components as: $[y|\beta_0, \beta_1]$, $[\beta_0]$
+and $[\beta_1]$. Step 2 has us write $[\beta_0|y,\beta_1] \propto
+[y|\beta_0,\beta_1][\beta_0][\beta_1]$.  Step 3: We note that $[\beta_1]$ is not a
+function of $\beta_0$ and therefore we remove it to obtain $[\beta_0|y,\beta_1]
+\propto [y|\beta_0,\beta_1][\beta_0]$. Similarly we obtain $[\beta_1|y,\beta_0]
+\propto [y|\beta_0,\beta_1][\beta_1]$. We apply step 4 and manipulate
 these algebraically to arrive at the result (which we provided in
 Eqs. \ref{glms.eq.alpha} and \ref{glms.eq.beta}) or, alternatively, we can
 sample them indirectly using the Metropolis-Hastings algorithm, which we 
@@ -910,7 +914,7 @@ conditional distributions of a Gibbs sampler the resulting hybrid algorithm is
 called
  {\it Metrpolized Gibbs sampling} or
 more commonly {\it Metropolis-within-Gibbs}.
-Shortly we will
+In sec. \ref{GLMM.sect.mcmc} we will
 actually construct such an algorithm for a simple class of models.
 
 The MH algorithm generates candidates from some
@@ -948,13 +952,13 @@ use the term structural parameter to mean all parameters that aren't
 customary thought of as latent variables). We will strive to use
 priors that are meant to express little or no prior information -
 default or customary ``non-informative'' or diffuse priors. This will
-be $\mbox{Unif}(a,b)$ priors for parameters that have a natural
+be $Uniform(a,b)$ priors for parameters that have a natural
 bounded support and, for parameters that live on the real line we use
-either (1) diffuse normal priors; (2) ``improper'' uniform priors or
-(3) sometimes even a bounded $\mbox{Unif}(a,b)$ prior if that greatly
+either (1) diffuse normal priors; (2) improper uniform priors or
+(3) sometimes even a bounded $\mbox{Uniform}(a,b)$ prior if that greatly
 improves the performance of {\bf WinBUGS} or other software doing the MCMC
-for us.  In {\bf WinBUGS} a prior with low ``precision'', $\tau$, where
-$\tau = 1/\sigma^2$, such as $\mbox{Norm}(0,.01)$ will typically be
+for us.  In {\bf WinBUGS} a prior with low precision, $\tau$, where
+$\tau = 1/\sigma^2$, such as $\mbox{Normal}(0,.01)$ will typically be
 used. Of course $\tau = 0.01$ ($\sigma^{2} = 100$) might be very
 informative for a regression parameter that has a high
 variance. Therefore, we recommend that predictor variables {\it
@@ -964,27 +968,27 @@ non-informativeness depends on the parameterization. For example, a
 natural non-informative prior for the intercept of a logistic
 regression
 \[
-\mbox{logit}(p_{i}) = \alpha + \beta x_{i}
+\mbox{logit}(p_{i}) = \beta_0 + \beta_1 x_{i}
 \]
 would be a very diffuse normal prior,
-$[\alpha] = \mbox{Norm}(0,\mbox{Large})$ or even
- $\alpha \sim
-\mbox{Unif}(-\mbox{Large},\mbox{Large})$.
+$[\beta_0] = \mbox{Normal}(0,\mbox{Large})$ or even
+ $\beta_0 \sim
+\mbox{Uniform}(-\mbox{Large},\mbox{Large})$.
 However, we might also use a prior on the parameter $p_0
-= logit^{-1}(\alpha)$, which is $\Pr(y=1)$ for the value $x=0$. 
+= logit^{-1}(\beta_0)$, which is $\Pr(y=1)$ for the value $x=0$. 
 Since $p_0$ is a
-probability a natural choice is $p_0 \sim \mbox{Unif}(0,1)$. 
+probability a natural choice is $p_0 \sim \mbox{Uniform}(0,1)$. 
 These priors are very different in their implications. For example, if
-we choose the normal prior for $\alpha$ with variance
+we choose the normal prior for $\beta_0$ with variance
 $\mbox{Large} = 5^2$ and look at the implied prior for $p_{0}$
 we have the result shown in Fig. \ref{glms.fig.impliedprior}
-which looks nothing like a Uniform(0,1) prior.
+which looks nothing like a $Uniform(0,1)$ prior.
 \begin{figure}[htp]
 \begin{center}
 \includegraphics[height=3.3in]{Ch2/figs/implied_prior}
 \end{center}
-\caption{Implied prior for $p_{0} = exp(\alpha)/(1+exp(\alpha))$ 
-if $\alpha \sim \mbox{Normal}(0, 5^2)$.}
+\caption{Implied prior for $p_{0} = exp(\beta_0)/(1+exp(\beta_0))$ 
+if $\beta_0 \sim \mbox{Normal}(0, 5^2)$.}
 \label{glms.fig.impliedprior}
 \end{figure}
 These two priors can
@@ -1003,9 +1007,10 @@ affect of prior distribution choice in some depth. Some good references include
 \subsection{Convergence and so-forth}
 \label{glms.sec.convergence}
 
-
 Once we have carried-out an analysis by MCMC, there are many other
-practical issues that we have to confront.  One of the most important
+practical issues that we have to confront. One characteristic of MCMC sampling is that Markov chains take some time to converge to their stationary distribution - in our case the posterior distribution for some parameter, given some data, $\theta|y$. Only when the Markov chain has reached
+its stationary distribution, the generated samples can be used to
+characterize the posterior distribution. Thus, one of the most important issues we need to address 
 is ``have the chains converged?'' Since we do not know what the
 stationary posterior distribution of our Markov chain should look like
 (this is the whole point of doing an MCMC approximation), we
@@ -1046,7 +1051,7 @@ indeed converged to the posterior distribution. \footnote{Running
   Minnesota, ``If you don't know any good starting points [...], then
   restarting the sampler at many bad starting points is [...] part of
   the problem, not part of the solution.''
-  (http://users.stat.umn.edu/~charlie/mcmc/diag.html). His suggestion
+  (\url{''http://users.stat.umn.edu/~charlie/mcmc/diag.html''}). His suggestion
   is that your only chance to discover a potential problem with your
   MCMC sampler is to run it for a very long time. But again, there is
   no way of knowing how long is long enough.  It is up to you to
@@ -1080,20 +1085,19 @@ kind of stuff is normally ok and you need to think really hard about
 the context of the model and the problem before you conclude that your
 MCMC algorithm is ill-behaved.
 
-Some models exhibit ``poor mixing'' of the Markov chains or what
-people might also say ``have not coverged'' (or ``slow convergence'')
-which is a term we would disagree with because the samples might well
+Some models exhibit ``poor mixing'' of the Markov chains (or ``slow convergence'')
+in which case the samples might well
 be from the posterior (i.e., the Markov chains have converged to the
 proper stationary distribution) but simply mix around the posterior
-rather slowly. Anyway, poor mixing can happen for a huge number of
+rather slowly. Anyway, poor mixing can happen for many
 reasons -- when parameters are highly correlated (even confounded), or
 barely identified from the data, or the algorithms are very terrible
-and probably many other reasons.  Slow mixing equates to high
+and probably many others.  Slow mixing equates to high
 autocorrelation in the Markov chain - the successive draws are highly
 correlated, and thus we need to run the MCMC algorithm much longer to
 get an effective sample size that is sufficient for estimation, or to
 reduce the MC error (see below) to a tolerable level.  A strategy often used to
-reduce autocorrelation is ``thinning'' - i.e., keep every $m^{th}$
+reduce autocorrelation is ``thinning'' - i.e., keep only every $m^{th}$
 value of the Markov chain output. However, thinning is necessarily
 inefficient from the stand point of inference - you can always get
 more precise posterior estimates by using all of the MCMC output
@@ -1108,13 +1112,16 @@ parameterization, standardization of covariates, and the prior
 distributions being used. Some things work better than others, and the
 investigator should experiment with different settings and
 remain calm when things don't work out perfectly. MCMC is an
-art, and a science.
+art, as much as it is a science.
 
 
 {\bf Is the posterior sample large enough?}  The subsequent samples
 generated from a Markov chain are not {\it iid} samples from the
 posterior distribution, due to the correlation amongst samples
-introduced by the Markov process and the sample size has to be
+introduced by the Markov process\footnote{In case you are not familiar with Markov chains, for
+  $T$ random samples $\theta^ {(1)}$, ... $\theta^{(T)}$ from a Markov chain
+  the distribution of $\theta^{(t)}$ depends only on the immediately preceding
+  value, $\theta^{(t-1)}$.} and the sample size has to be
 adjusted to account for the autocorrelation in subsequent samples (see
 Chapt. 8 in \citet{robert_casella:2010} for more details). This
 adjusted sample size is referred to as the effective sample
@@ -1828,6 +1835,7 @@ for this data set, is 0. This suggests that the basic Poisson model does
 not fit well.
 
 \subsection{ Constructing your own MCMC algorithm}
+\label{GLMM.sect.mcmc}
 
 At this point it might be helpful to suffer through an example
 building a custom MCMC algorithm. Here, we develop an MCMC algorithm
