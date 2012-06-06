@@ -14,7 +14,7 @@ Bayesian Analysis of GL(M)Ms Using R/WinBUGS
 %%%     b in the same chapter!   Use alpha beta probably?
 %%% 8. spell check this document
 
-%%% Andy, add followind data/functions to REPO: 
+%%% Andy, add followind data/functions to REPO: BBS data (add as data object? or as .csv?), pahabdata.csv
 %%% see question in sec. 3.4 (small sample size)
 %%% missing ref: link_barker:2009; could not find it in ref list
 %%% around line 1000 - which section in the closed pop chapter do you want to reference?
@@ -22,6 +22,8 @@ Bayesian Analysis of GL(M)Ms Using R/WinBUGS
 
 %%%NOTATION PROBLEM: IN MCMC CHAPTER WE GENERATE theta(t) from theta(t-1), here we generate theta(*) from theta(t) - which one do you prefer?
 %%% I think the footnote on one versus several chains is too much here; maybe move to MCMC chapter?
+%%% some ref chapters need filling in; eg section 3.8; section 3.8.2
+%%% redo BBS analysis without fit statistic
 
 A major theme of this book is that spatial capture-recapture models
 are, for the most part, just generalized linear models (GLMs) wherein
@@ -1136,10 +1138,10 @@ size is hard to say. A more palpable measure of whether you've run
 your chain for enough iterations is the time-series or Monte Carlo
 error - the 'noise' introduced into your samples by the stochastic
 MCMC process. The MC error \index{Monte Carlo error} is printed by
-default in summaries produced in the \winbugs GUI, and using the
-\mbox{\tt summary} command applied to \jags output (MC error is called
-Time-series SE in \jags). You want that to be
-smallish relative to the magnitude of the parameter and this might
+default in summaries produced in the {\bf WinBUGS} GUI, and using the
+\mbox{\tt summary} command applied to {\bf JAGS} output (MC error is called
+Time-series SE in {\bf JAGS}). You want that to be
+smallish relative to the magnitude of the parameter and what smallish means will
 depend on the purpose of the analysis. For a preliminary analysis you
 might settle for a few percent whereas for a final analysis then
 certainly less than 1\% is called for, but you can run your MCMC
@@ -1157,7 +1159,7 @@ likelihood inference is actually wrong in its actual value.... XYZ.
 
 \subsection{Bayesian confidence intervals}
 
-The 95\% Bayesian interval based on percentiles of the posterior
+The 95\% Bayesian confidence interval based on percentiles of the posterior
 is not a unique interval - there are many of them - and the so-called
 ``highest posterior density'' (HPD) interval is the narrowest
 interval. We might compute that frequently because it is easy to do
@@ -1183,7 +1185,7 @@ parameter. For example, density $D$ is a derived parameter, being a
 function of population size $N$ and the area $A$ of the underlying
 state-space of the point process (see Chapt. \ref{chapt.scr0}).
 
-\section{Bayesian Analysis using WinBUGS}
+\section{Bayesian Analysis using the BUGS language}
 
 We won't be too concerned with devising our own MCMC algorithms for
 every analysis
@@ -1197,7 +1199,7 @@ or
 {\bf WinBUGS} and {\bf JAGS} are  MCMC black boxes
 that takes a pseudo-code description (i.e., the {\bf BUGS}
 language) of all of the relevant stochastic
-and deterministic elements of a model and generates an MCMC algorithm
+and deterministic elements of a model and generate an MCMC algorithm
 for that model. But you never get to see the algorithm. Instead,
 {\bf WinBUGS}/{\bf JAGS} will run the 
 algorithm and  return the Markov chain output
@@ -1211,11 +1213,11 @@ and how data relate to latent variables and data and latent variables
 relate to parameters, and how parameters relate to one another.
 
 While we normally use
-{\bf WinBUGS} or {\bf JAGS} in this book, we note that {\bf
+{\bf WinBUGS}, we note that {\bf
  OpenBUGS} is the current active development tree of the {\bf BUGS}
-language. See \citet[][ch.xyz]{kery:2010} and
+project. See \citet[][ch.xyz]{kery:2010} and
 \citet[][appendix xyz]{kery_schaub:2011} for more on practial analysis
-in {\bf WinBUGS}, and see \citet{hobbs:2011} for an ecological
+in {\bf WinBUGS}. We also frequently use {\bf JAGS}, and you can refer to \citet{hobbs:2011} for an ecological
 perspective on {\bf JAGS}.
 That book should also be consulted
 for a more comprehensive introduction to using {\bf WinBUGS}. In this
@@ -1256,16 +1258,16 @@ can write the model specifications directly within a text file and
 save it in your current working directory, but we do not usually take
 that approach in this book.
 
-{\bf Remarks:} {\bf 1.} The {\bf BUGS} dialects parameterize the normal 
+The {\bf BUGS} dialects parameterize the normal 
 distribution in
 terms of the mean and inverse-variance, called the precision. Thus,
-\mbox{\tt dnorm(0,.01)} implies a variance of 100;
-{\bf 2.} We typically use diffuse normal priors for mean parameters, $\beta_0$ and $\beta_1$ in this case, but sometimes we might use uniform priors with suitable bounds -B and +B.
-{\bf 3.} We typically use a $\mbox{Unif}(0,B)$ prior on standard
+\mbox{\tt dnorm(0,.01)} implies a variance of 100.
+We typically use diffuse normal priors for mean parameters, $\beta_0$ and $\beta_1$ in this case, but sometimes we might use uniform priors with suitable bounds -B and +B.
+Also, we typically use a $\text{Uniform}(0,B)$ prior on standard
 deviation parameters
 \citep{gelman:2006}.
 But sometimes we might use a gamma prior on the precision parameter $\tau$.
-{\bf 4.} In a {\bf BUGS} model file, every variable referenced in
+In a {\bf BUGS} model file, every variable referenced in
 the model description has to be
 either data, which will be input (see below), a random variable which
 must have a probability distribution associated with it using the
@@ -1276,12 +1278,12 @@ data using ``\mbox{\tt <-}''.
 To fit the model, we need to describe various data objects to {\bf
   WinBUGS}. In particular,
 we create an {\bf R} list object called \mbox{\tt data} which
-are the data objects identified in the BUGS model file.
+are the data objects identified in the {\bf BUGS} model file.
  In the example, the
 data consist of two objects which exist as $y$ and $x$ in the {\bf R}
 workspace and also in the {\bf WinBUGS} model definition.
  We also have to create an {\bf R} function
-that produces a list of starting values \mbox{\tt inits} that get sent to
+that produces a list of starting values, \mbox{\tt inits}, that get sent to
 {\bf WinBUGS}.
  Finally, we identify
 the names of the parameters (labeled correspondingly in the {\bf WinBUGS}
@@ -1308,7 +1310,7 @@ current {\bf R} working directory.
 \end{verbatim}
 }
 
-{\bf Remarks:} A common question is ``how should my data be
+A common question is ``how should my data be
 formatted?'' That depends on how you describe the model in the {\bf
   BUGS} language, and how your data are input into {\bf R}.
  There is no unique way to describe any
@@ -1317,10 +1319,10 @@ format further in the context of capture-recapture models and SCR
 models in Chapt. \ref{chapt.scr0} and elsewhere.  In general,
 starting values are optional. We recommend to always provide
 reasonable starting values for structural parameters, but not
-necessarily for random effects.  Note that the previously created
+necessarily for random effects\footnote{While {\bf WinBUGS} is reasonably robust to a wide rangin of more or less plausible startign values, {\bf JAGS} is a lot more sensitive and especially with more complex models you might actually have to spend some time thinking about how to specify good starting values to get the model running \ref{chapt.app1}; we will come back to this issue when we use {\bf JAGS}}.  Note that the previously created
 objects defining data, initial values and parameters to monitor are
 passed to the function \mbox{\tt bugs()}.  In addition, various other
-things are declared: The number of Markov chains (\mbox{\tt
+things are declared: The number of parallel Markov chains (\mbox{\tt
   n.chains}), the thinning rate (\mbox{\tt n.thin}),
 the number of burn-in iterations (\mbox{\tt n.burnin}) and the total
 number of iterations
@@ -1332,7 +1334,7 @@ settings used for MCMC, consult a basic reference such as
 
 
 You should execute all of the commands given above and then look at
-the resulting output. Kill the {\bf WinBUGS} GUI and the data will be
+the resulting output. Close the {\bf WinBUGS} GUI and the data will be
 read back into {\bf R} (or specify \mbox{\tt debug=FALSE}).  We don't
 want to give instructions on how to navigate and use the GUI - but you
 can fire up {\bf WinBUGS} and read the help files, or see Ch. 4 from
@@ -1361,9 +1363,7 @@ pD = 2.6 and DIC = 62.4
 \end{verbatim}
 }
 
-{\bf Remarks:} (1) convergence is assessed using the Rhat 
-statistic (we might sometimes write as $\hat{R}$). A value of $Rhat$ near 1
-indicates satisfactory convergence; (2) DIC is the
+ In the {\WinBUGS} output you see a column called ``Rhat''. This is the $\hat{R}$ statistic we introduced in \ref{glms.sec.convergence} to check whether the multiple chains converged (a value near 1 indicates satisfactory convergence). DIC is the
 ``deviance information criterion'' \citep{spiegelhalter_etal:2002}
 (see section \ref{glms.sec.modsel})
  which
@@ -1371,6 +1371,7 @@ some people use in a manner similar to AIC although it is recognized
 to have some problems in hierarchical models \citep{millar:2009}. We
 evaluate this in the context of SCR models in Chapt. \ref{chapt.gof}.
 
+%Richard will move and write this section into Ch2
 \subsection{Modeling categorical variable effects with dummy
   variables}
 \label{glms.sec.dummy}
@@ -1378,7 +1379,7 @@ evaluate this in the context of SCR models in Chapt. \ref{chapt.gof}.
 Make point here that we often have categorical variables -- with
 nominal levels these are ``factors'', and we model these using dummy
 variables but sometimes in \bugs we use ``index variables''.
-
+%end of section Richard will develop in Ch2
 
 
 \subsection{Inference about functions of model parameters}
@@ -1505,7 +1506,7 @@ we judge ``close to 0.50'' as being ``not too close to 0 or 1'' and,
 as always, closeness is somewhat subjective. We're happy with anything
 $>.1$ and $<.9$ but might settle for $>.05$ and $<0.95$. 
 Another useful fit statistic is the Freeman-Tukey
-statistic\footnote{Ref for this?}, in which
+statistic, in which
 \[
 D({\bf y},\theta) = \sum_{i} ( \sqrt{y_{i}} - \sqrt{e_{i}} )^2
 \]
@@ -1513,9 +1514,9 @@ D({\bf y},\theta) = \sum_{i} ( \sqrt{y_{i}} - \sqrt{e_{i}} )^2
 observation $i$ and $e_{i}$ its expected value. In contrast to a
 Chi-square discrepancy, the Freeman-Tukey statistic removes the need
 to pool cells with small expected values.
-In summary,
+In summary, you can see that 
 the Bayesian p-value is easy to compute,
-and widely used as a result.
+and it is widely used as a result.
 
 
 \subsection{Model Selection }
@@ -1536,7 +1537,7 @@ For regression problems we sometimes use the factor weighting idea
 which is to introduce a set of binary variables $w_{k}$ for variable
 $k$, and express the model as, e.g., for a single covariate model:
  \[
- E(y_i) = \alpha + w \beta x_{i}
+ E(y_i) = \beta_0 + w \beta_1 x_{i}
 \]
 where $w$ is given a Bernoulli prior distribution with some prescribed
 probability. E.g., $w \sim Bern(0.50)$ to provide a prior probability
@@ -1575,12 +1576,12 @@ the prior support to improve the performance of the MCMC algorithm.
 A third method that that we advocate is subject-matter
 context. It seems that there are some situations -- some models -- where one should not
 have to do model selection because it is necessitated by the specific
-context of the problem, thus rendering a formal hypotesis test pointless
+context of the problem, thus rendering a formal hypothesis test pointless
 \citep{johnson:1999}.
 SCR models are such an example. In SCR models, we will see that
 ``spatial location'' of individuals is an element of the model. The
 simpler, reduced, model is an ordinary capture-recapture model which
-is not spatially explicit (i.e., chapter \ref{chapt.closed}),
+is not spatially explicit (i.e., Chapt. \ref{chapt.closed}),
 but it seems silly and pointless to think about actually using the
 reduced model even if we could concoct some statistical test to refute
 the more complex model.  The simpler model is manifestly wrong but,
@@ -1610,13 +1611,13 @@ distribution with mean $\lambda$ which we write
  	y_{i} \sim \mbox{Poisson}(\lambda)
 \]
 Commonly $y_{i}$ is a count of animals or plants at some point in
-space and lambda might depend on i. For example, $i$ might index point
+space $i$, and $\lambda$ might depend on $i$. For example, $i$ might index point
 count locations in a forest, BBS route centers, or sample quadrats, or
 similar.  If covariates are available it is typical to model them as
-linear effects on the log mean. If $x(i)$ is some measured covariate
+linear effects on the log mean. If $x_i$ is some measured covariate
 associated with observation $i$. Then,
 \[
- 	log(x(i)) = \alpha  + \beta*x(i)
+ 	log(x_i) = \beta_0  + \beta_1 x_i
 \]
 
 While we only specify the mean of the Poisson model directly, the
@@ -1625,6 +1626,7 @@ directly related to the mean. In this case, $\mbox{Var}(y) = \mbox{E}(y) =
 \lambda$. Thus the model accommodates a linear increase in variance
 with the mean.
 
+%Richard: move to Ch2
 \subsection{Important properties of the Poisson distribution}
 \label{glms.sec.properties}
 
@@ -1649,6 +1651,7 @@ conditional on their sum $N = y_1 + y_2$, their joint distribution is multinomia
 $\lambda_1/(\lambda_1+\lambda_2)$ and
 $\lambda_2/(\lambda_1+\lambda_2)$.  As a result of this, most
 multinomial models can be analyzed as a Poisson GLM and {\it vice versa}.
+%END section moved to Ch2
 
 \subsection{Example: Breeding Bird Survey Data}
 
@@ -1691,7 +1694,7 @@ the count.  We have a special plotting function for that which is
 called \mbox{\tt spatial.plot()} and it is available with the
 supplemental {\bf R} package.
 Actually, what we want to do here is plot the
-log-count (+1 of course) which (Fig. \ref{glms.fig.padovecounts}) displays a notable pattern that could
+log-counts (+1 of course) which (Fig. \ref{glms.fig.padovecounts}) display a notable pattern that could
 be related to something. The {\bf R} commands for obtaining this figure are:
 {\small
 \begin{verbatim}
@@ -1712,7 +1715,7 @@ Unfortunately we don't have any of that information.
 \begin{center}
 \includegraphics[height=2.75in]{Ch2/figs/PA1}
 \end{center}
-\caption{Needs a caption}
+\caption{Plot of log-counts of mourning doves along North American Breeding Bird Survey routes in Pennsylvania (data from 1990).}
 \label{glms.fig.padovecounts}
 \end{figure}
 
@@ -1737,7 +1740,7 @@ counts and forest cover which is perhaps not surprising.
 \begin{center}
 \includegraphics[height=2.75in]{Ch2/figs/PA2}
 \end{center}
-\caption{Needs a caption}
+\caption{Plot of forest cover in the vicinity of BBS survey routes in Pennsylvania.}
 \label{glms.fig.paforest}
 \end{figure}
 
@@ -1784,11 +1787,13 @@ out<-bugs (data, inits, parameters, "PoissonGLM.txt", n.thin=2,n.chains=2,
                 n.burnin=2000,n.iter=6000,debug=TRUE,working.dir=getwd())
 \end{verbatim}
 }
-{\bf Remarks:} (1) Note the close correspondence in how the model is
+Note the close correspondence in how the model is
 specified here compared with the normal regression model
 previously. As an exercise you should discuss the specific differences
 between the {\bf BUGS} model specifications for the normal and Poisson
 models.
+
+XXXXX OUTPUT DOESNT MATCH MODEL SPECIFICATIONS XXXX
 {\small
 \begin{verbatim}
 > print(out,digits=3)
@@ -1805,34 +1810,34 @@ deviance 1116.605  2.014 1115.000 1115.000 1116.000 1117.000 1122.000 1.001  300
 \end{verbatim}
 }
 
-We might wonder whether this model provides an adequate fit to our
-data.  To evaluate that, we used a Bayesian p-value analysis with fit
-statistic based on the Freeman-Tukey residual by replacing the model
-specification above with this:
-{\small
-\begin{verbatim}
-cat("
-model {
-    for (i in 1:M){
-      y[i]~dpois(lam[i])
-      log(lam[i])<- beta0+beta1*habitat[i]
-      d[i]<-  pow(pow(y[i],0.5)-pow(lam[i],0.5),2)   #
+% We might wonder whether this model provides an adequate fit to our
+% data.  To evaluate that, we used a Bayesian p-value analysis with fit
+% statistic based on the Freeman-Tukey residual by replacing the model
+% specification above with this:
+% {\small
+% \begin{verbatim}
+% cat("
+% model {
+%     for (i in 1:M){
+%       y[i]~dpois(lam[i])
+%       log(lam[i])<- beta0+beta1*habitat[i]
+%       d[i]<-  pow(pow(y[i],0.5)-pow(lam[i],0.5),2)   #
 
-      ynew[i]~dpois(lam[i])
-      dnew[i]<-pow( pow(ynew[i],0.5)-pow(lam[i],0.5),2)
+%       ynew[i]~dpois(lam[i])
+%       dnew[i]<-pow( pow(ynew[i],0.5)-pow(lam[i],0.5),2)
 
-     }
- fit<-sum(d[])
- fitnew<-sum(dnew[])
- beta0~dunif(-5,5)
- beta1~dunif(-5,5)
-}
-",file="PoissonGLM.txt")
-\end{verbatim}
-}
-The Bayesian p-value is the proportion of times $fitnew > fit$ which,
-for this data set, is 0. This suggests that the basic Poisson model does 
-not fit well.
+%      }
+%  fit<-sum(d[])
+%  fitnew<-sum(dnew[])
+%  beta0~dunif(-5,5)
+%  beta1~dunif(-5,5)
+% }
+% ",file="PoissonGLM.txt")
+% \end{verbatim}
+% }
+% The Bayesian p-value is the proportion of times $fitnew > fit$ which,
+% for this data set, is 0. This suggests that the basic Poisson model does 
+% not fit well.
 
 \subsection{ Constructing your own MCMC algorithm}
 \label{GLMM.sect.mcmc}
