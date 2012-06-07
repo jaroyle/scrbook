@@ -627,6 +627,7 @@
      "thompson:2002"
      "thompson:2004"
      "thompson_etal:inpress"
+     "tilman_kareiva:1997"
      "tracy:2006"
      "trolle_kery:2003"
      "trolle_kery:2005"
