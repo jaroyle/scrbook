@@ -15,20 +15,12 @@ Bayesian Analysis of GL(M)Ms Using R/WinBUGS
 %%% 8. spell check this document
 
 %%% NEW STUFF TO DO
-%%% Andy, add followind data/functions to REPO: BBS data (add as data object? or as .csv?), pahabdata.csv, R code for mcmc for Poisson regression, mallard data
-%%% see question in sec. 3.4 (small sample size)
-%%% missing ref: link_barker:2009; could not find it in ref list
-%%% around line 1000 - which section in the closed pop chapter do you want to reference?
+%%% Add followind data/functions to REPO: R code for mcmc for Poisson regression, bugs model for BBS data
 % XXX Should DIC/selection/FIT material go into Chapter 8? XXXXXXX
 
-%%%NOTATION PROBLEM: IN MCMC CHAPTER WE GENERATE theta(t) from theta(t-1), here we generate theta(*) from theta(t) - which one do you prefer?
 %%% I think the footnote on one versus several chains is too much here; maybe move to MCMC chapter?
 %%% some ref chapters need filling in; eg section 3.8; section 3.8.2
-%%% redo BBS analysis without fit statistic
-%%% make mcmc algorithm a panel?
-%%% Fig 3.5 and 3.6 - add parameter names
 %%% Once Ch2 is ready, ask Richard to go over the sections on Poisson and Binommial GL(M)Ms to make sure there isn't too much redundancy between Ch2 and 3
-%%% in line 2211, mallard example, are t=5 observations? So does p also vary with time? Which geographic region do these data come from?
 
 A major theme of this book is that spatial capture-recapture models
 are, for the most part, just generalized linear models (GLMs) wherein
@@ -678,8 +670,7 @@ flexible framework that is theoretically justifiable in arbitrary
 sample sizes. This is not to say that one will obtain precise
 estimates of density or other parameters, just that your inference is
 coherent and justifiable from a conceptual and technical statistical
-point of view. That is, we report the posterior probability
-XXXX ANDY, WHAT'S THE D HERE? XXXXXXXXXX
+point of view. That is, ffor example when we estimate the density $D$ of some animal population, we report the posterior probability
 $\Pr(D|data)$ which is easily interpretable and just what it is
 advertised to be and we don't need to do a simulation study to
 evaluate how well some approximate $\Pr(D|data)$ deviates from the
@@ -756,8 +747,7 @@ distributions (also called conditional posterior
 distributions). The full conditional distribution for an unknown
 quantity is the conditional distribution of that quantity given every
 other random variable in the model - the data and all other
-parameters. \begin{comment}Andy, I moved the footnote up bc it looked
-  like 'to the 4th power' after the formula'\end{comment}
+parameters. 
 For example, for a normal regression model\footnote{We center the 
 independent variable here so that things look more intuitive in the result} with $y \sim
 \mbox{Normal}(\beta_0 + \beta_1 (x-\bar{x}) , \sigma^{2})$
@@ -1669,7 +1659,7 @@ Pennsylvania, USA. A route consists of 50 stops separated by 0.5
 mile. For the purposes here we are defining $y_i$ = route total count
 and the sample location will be marked by the center point of the BBS
 route.  The survey is run annually and the data set we have is
-1966-1998. BBS data can be obtained online at \mbox{\tt http:\//\//www.pwrc.usgs.gov\//bbs\//}, but the particulart chunk of data we will be using here is also included in the {\tt scrbook} package ({\tt pa_bbsdovedata}).
+1966-1998. BBS data can be obtained online at \mbox{\tt http:\//\//www.pwrc.usgs.gov\//bbs\//}, but the particulart chunk of data we will be using here is also included in the {\tt scrbook} package ({\tt bbsdata}).
 We will make use of the whole data set shortly but for now we're going
 to focus on a specific year of counts -- 1990 -- for the sake of
 building a simple model.
@@ -1680,12 +1670,12 @@ below) and the remaining columns are the yearly counts. Years for
 which a route was not run are coded as ``\mbox{\tt NA}'' in the data matrix. We
 imagine that this will be a typical format for many ecological
 studies, perhaps with more columns representing covariates.  To read
-in the data and display the first few elements of this matrix, do
+in the data and display the first few elements of the data frame containing the counts, do
 this:
 {\small
 \begin{verbatim}
-data(pa_bbsdovedata) #loads data frame 'bbs'
-bbs[1:2,1:6]
+data(bbsdata) #loads data frame 'bbs'
+bbsdata$counts[1:2,1:6]
       X     lon    lat    habitat X66 X67
 1 72002 -80.445 41.501 -0.3871372  NA  24
 2 72003 -80.347 41.214 -1.0171629  NA  NA
@@ -1703,11 +1693,11 @@ log-counts (+1 of course) which (Fig. \ref{glms.fig.padovecounts}) display a not
 be related to something. The {\bf R} commands for obtaining this figure are:
 {\small
 \begin{verbatim}
-data(pa_bbsdovedata)
-y<-bbs[,29]  # pick out 1990
+data(bbsdata)
+y<-bbsdata$counts[,29]  # pick out 1990
 notna<-!is.na(y)
 y<-y[notna]
-spatial.plot(bbs[notna,2:3],y)
+spatial.plot(bbsdata$counts[notna,2:3],y)
 \end{verbatim}
 }
  We can ponder the potential effects that
@@ -1726,14 +1716,15 @@ Unfortunately we don't have any of that information.
 
 We do have a measure of forest cover in the vicinity of each point
 which is contained in the data set (variable ``habitat''). This was derived
-from a larger GIS coverage of the state (provided in the data file
-``\mbox{\tt pahabdata.csv}'') which can be plotted using the \mbox{\tt spatial.plot} function
+from a larger GIS coverage of the state (provided in the data frame
+``\mbox{\tt bbsdata\$habitat}'') which can be plotted using the \mbox{\tt spatial.plot} function
 using the following commands
 {\small
 \begin{verbatim}
 library(maps)
+habdata<-bbsdata$habitat
 map('state',regions="penn",lwd=2)
-spatial.plot(pahabdata[,2:3],pahabdata[,"dfor"],cx=2)
+spatial.plot(habdata[,2:3],habdata[,"dfor"],cx=2)
 map('state',regions="penn",lwd=2,add=TRUE)
 \end{verbatim}
 }
@@ -1746,7 +1737,7 @@ counts and forest cover which is perhaps not surprising.
 \begin{center}
 \includegraphics[height=2.75in]{Ch2/figs/PA2}
 \end{center}
-\caption{Plot of forest cover in the vicinity of BBS survey routes in Pennsylvania.}
+\caption{Plot of forest cover in Pennsylvania.}
 \label{glms.fig.paforest}
 \end{figure}
 
@@ -1762,8 +1753,8 @@ here.  To read the BBS data into {\bf R} and get things set up for
 we issue the following commands:
 {\small
 \begin{verbatim}
-data(pa_bbsdovedata)
-data<-bbs                        # pick out 1990
+data(bbsdata)
+data<-bbsdata$counts                        # pick out 1990
 notna<-!is.na(y)
 y<-y[notna]                         # discard missing
 habitat<-data[notna,4]              # get habitat data
@@ -2062,10 +2053,10 @@ samples from the posterior distribution using the following code for
 the BBS dove counts: 
 {\small
 \begin{verbatim}
-data<-read.csv("pa-bbsdovedata-all.csv")
-locs<-data[,2:3]
-habitat<-data[,4]
-y<-data[,29]     # grab year 1990
+data(bbsdata)
+locs<-bbsdata$counts[,2:3]
+habitat<-bbsdata$counts[,4]
+y<-bbsdata$counts[,29]     # grab year 1990
 M<-length(y)
 
 set.seed(2013)
@@ -2272,7 +2263,7 @@ In Chapt. \ref{CH2} we introduced the concept of categorical variables and how t
 y_{it} \sim Binomial(p_{it}, B_{it}}
 logit(p_{it}) = \beta_0 + \beta_1 Sv2_t + \beta_2 Sv3_t + \beta_3 Sv4_t + \beta_4 Sv5_t + \beta_5 lat_i + \beta_6 lon_i + \beta_7 lat_i lon_i
 \]
-Here, $Sv2$ to $Sv5$ are the dummy variable vectors of length $T$ that take on the value of 1 when $t$ corresponds to the respective year and 0 otherwise. For example, Sv2 = (0,1,0,0,0). $\beta_0$ is the common intercept term and correspond to $t=1$; $\beta_1$ - $\beta_4$ describe the difference in $p$ for each $t$ {\emph relative to} $t=1$.
+Here, $Sv2$ to $Sv5$ are the dummy variable vectors of length $T$ that take on the value of 1 when $t$ corresponds to the respective year and 0 otherwise. For example, Sv2 = (0,1,0,0,0). $\beta_0$ is the common intercept term and correspond to $t=1$; $\beta_1$ - $\beta_4$ describe the difference in $p$ for each $t$ \emph{relative to} $t=1$.
 
 There is a more concise way of implementing such a model with a categorical covariate in {\bf BUGS}, namely, by using indexing instead of dummy variables (actually, in some cases a model may mix or converge better depending on whether you choose a dummy variable or an indexing description of it, although they are structurally equivalent \citep{kery:2010}). Essentially, instead of estimating the difference in $p$ relative to survey 1, we  estimate a separate intercept term for each survey, so that we have 5 different $beta_0$ indexed by $t$. This reduces the linear predictor to:
 \[
