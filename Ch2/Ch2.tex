@@ -14,7 +14,7 @@ Bayesian Analysis of GL(M)Ms Using R/WinBUGS
 %%%     b in the same chapter!   Use alpha beta probably?
 %%% 8. spell check this document
 
-%%% Andy, add followind data/functions to REPO: BBS data (add as data object? or as .csv?), pahabdata.csv
+%%% Andy, add followind data/functions to REPO: BBS data (add as data object? or as .csv?), pahabdata.csv, R code for mcmc for Poisson regression, mallard data
 %%% see question in sec. 3.4 (small sample size)
 %%% missing ref: link_barker:2009; could not find it in ref list
 %%% around line 1000 - which section in the closed pop chapter do you want to reference?
@@ -24,6 +24,10 @@ Bayesian Analysis of GL(M)Ms Using R/WinBUGS
 %%% I think the footnote on one versus several chains is too much here; maybe move to MCMC chapter?
 %%% some ref chapters need filling in; eg section 3.8; section 3.8.2
 %%% redo BBS analysis without fit statistic
+%%% make mcmc algorithm a panel?
+%%% Fig 3.5 and 3.6 - add parameter names
+%%% Once Ch2 is ready, ask Richard to go over the sections on Poisson and Binommial GL(M)Ms to make sure there isn't too much redundancy between Ch2 and 3
+%%% in line 2211, mallard example, are t=5 observations? So does p also vary with time? Which geographic region do these data come from?
 
 A major theme of this book is that spatial capture-recapture models
 are, for the most part, just generalized linear models (GLMs) wherein
@@ -141,6 +145,7 @@ and the marginal probability that $y=0$ is
 
 \section{
 GLMs and GLMMs}
+\label{glms.sec.glmms}
 We have asserted already that SCR models work out most of the time to
 be variations of GLMs and GLMMs. Some of you might therefore ask: What
 are GLMs and GLMMs, anyhow?   These models are covered extensively in
@@ -1851,32 +1856,32 @@ you can also find step-by-step instructions for Metropolis-within-Gibbs samplers
 should the following section move through all this stuff too quickly.  
 
 We will assume that the two parameters have diffuse
-normal priors, say $[\alpha] = \mbox{Norm}(0,100)$ and
-$[\beta]=\mbox{Norm}(0,100)$ where each has {\it standard deviation}
+normal priors, say $[\beta_0] = \mbox{Normal}(0,100)$ and
+$[\beta_1]=\mbox{Normal}(0,100)$ where each has {\it standard deviation}
 100 (recall that {\bf WinBUGS} parameterizes the normal in terms of $1/\sigma^{2}$).
 We need to assemble the relevant elements of the model which are these
 two prior distributions and the
-likelihood $[{\bf y}|\alpha,\beta] = \prod_{i} [y_i|\alpha \beta] $ which is,
+likelihood $[{\bf y}|\beta_0,\beta_1] = \prod_{i} [y_i|\beta_0 \beta_1] $ which is,
 mathematically, the product of the Poisson pmf evaluated at each $y_i$,
-given particular values of $\alpha$ and $\beta$.
+given particular values of $\Beta_0$ and $\beta_1$.
 Next, we need to identify the full conditionals
-$[\alpha|\beta, {\bf y}]$ and $[\beta|\alpha,{\bf y}]$.  We use the all-purpose
+$[\beta_0|\beta_1, {\bf y}]$ and $[\beta_1|\beta_0,{\bf y}]$.  We use the all-purpose
 rule for constructing full conditionals
 (section \ref{glms.sec.rules})
  to discover that:
 \[
- [\alpha|\beta,{\bf y}] \propto \left\{ \prod_{i} [y_{i}|\alpha,\beta]\right\}[\alpha]
+ [\beta_0|\beta_1,{\bf y}] \propto \left\{ \prod_{i} [y_{i}|\beta_0,\beta_1]\right\}[\beta_0]
 \]
 and
 \[
- [\beta|\alpha,{\bf y}] \propto \left\{ \prod_{i}
-   [y_{i}|\alpha,\beta]\right\} [\beta]
+ [\beta_1|\beta_0,{\bf y}] \propto \left\{ \prod_{i}
+   [y_{i}|\beta_0,\beta_1]\right\} [\beta_1]
 \]
 Remember, we could replace the ``$\propto$'' with ``$=$'' if we
-put $[y|\beta]$ or $[y|\alpha]$ in the denominator. But, in general,
-$[y|\alpha]$ or $[y|\beta]$ will be quite a pain to compute and, more
+put $[y|\beta_1]$ or $[y|\beta_0]$ in the denominator. But, in general,
+$[y|\beta_0]$ or $[y|\beta_1]$ will be quite a pain to compute and, more
 importantly, it is a constant as far as the operative parameters
-($\alpha$ or $\beta$,
+($\beta_0$ or $\beta_1$,
 respectively) are concerned. Therefore,
 the MH acceptance probability will be the ratio of the
 full-conditional evaluated at a candidate draw to that evaluated at the
@@ -1884,7 +1889,7 @@ current value, and so the denominator required to change $\propto$ to $=$
 winds up canceling from the MH acceptance probability.
 Here we will
 use the so-called random walk candidate generator, which is a Normal proposal distribution, so that, for example,
- $\alpha^{*} \sim \mbox{Normal}(\alpha^{t},\delta)$ where $\delta$ is
+ $\beta_0^{*} \sim \mbox{Normal}(\beta_0^{t},\delta)$ where $\delta$ is
  the standard-deviation of the proposal distribution, which is just a
  tuning parameter that is set by the user and adjusted to achieve
  efficient mixing of chains (see sec. \ref{mcmc.sec.mh}).
@@ -1899,36 +1904,36 @@ Gibbs'' algorithm for a Poisson regression turns out to be  remarkably simple:
 set.seed(2013)  # so we all get the same result
 
 out<-matrix(NA,nrow=1000,ncol=2)   # matrix to store the output
-alpha<- -1                         # starting values
-beta <- -.8
+beta0<- -1                         # starting values
+beta1 <- -.8
 
 # begin the MCMC loop ; do 1000 iterations
 for(i in 1:1000){
 
-# update the alpha parameter
-lambda<- exp(alpha+beta*habitat)
+# update the beta0 parameter
+lambda<- exp(beta0+beta1*habitat)
 lik.curr<- sum(log(dpois(y,lambda)))
-prior.curr<- log(dnorm(alpha,0,100))
-alpha.cand<-rnorm(1,alpha,.05)         # generate candidate
-lambda.cand<- exp(alpha.cand + beta*habitat)
+prior.curr<- log(dnorm(beta0,0,100))
+beta0.cand<-rnorm(1,beta0,.05)         # generate candidate
+lambda.cand<- exp(beta0.cand + beta1*habitat)
 lik.cand<- sum(log(dpois(y,lambda.cand)))
-prior.cand<- log(dnorm(alpha.cand,0,100))
+prior.cand<- log(dnorm(beta0.cand,0,100))
 mhratio<- exp(lik.cand +prior.cand - lik.curr-prior.curr)
 if(runif(1)< mhratio)
-     alpha<-alpha.cand
+     beta0<-beta0.cand
 
-# update the beta parameter
-lik.curr<- sum(log(dpois(y,exp(alpha+beta*habitat))))
-prior.curr<- log(dnorm(beta,0,100))
-beta.cand<-rnorm(1,beta,.25)
-lambda.cand<- exp(alpha+beta.cand*habitat)
+# update the beta1 parameter
+lik.curr<- sum(log(dpois(y,exp(beta0+beta1*habitat))))
+prior.curr<- log(dnorm(beta1,0,100))
+beta1.cand<-rnorm(1,beta1,.25)
+lambda.cand<- exp(beta0+beta1.cand*habitat)
 lik.cand<- sum(log(dpois(y,lambda.cand)))
-prior.cand<- log(dnorm(beta.cand,0,100))
+prior.cand<- log(dnorm(beta1.cand,0,100))
 mhratio<- exp(lik.cand + prior.cand - lik.curr - prior.curr)
 if(runif(1)< mhratio)
-     beta<-beta.cand
+     beta1<-beta1.cand
 
-out[i,]<-c(alpha,beta)             # save the current values
+out[i,]<-c(beta0,beta1)             # save the current values
 }
 
 
@@ -1957,7 +1962,7 @@ look like this.
 \begin{center}
 \includegraphics[height=3in,width=4in]{Ch2/figs/poissonmcmc2}
 \end{center}
-\caption{First 300 MCMC iterations for the Poisson GLM model parameters using
+\caption{First 300 MCMC iterations for the Poisson GLM model parameters $\beta_0$ and $\beta_1$ using
 a Metropolis-Hastings tuning parameter of
  $\delta = 0.05$.}
 \label{glms.fig.poissonmcmc2}
@@ -1967,22 +1972,23 @@ a Metropolis-Hastings tuning parameter of
 \begin{center}
 \includegraphics[height=4in,width=5in]{Ch2/figs/poissonmcmc3}
 \end{center}
-\caption{nice grassy mcmc output, longer run of previous with $\delta
-  = 0.05$.}
+\caption{Nice grassy plots of 10,000 MCMC iterations for the Poisson GLM model parameters $\beta_0$ and $\beta_1$ using
+a Metropolis-Hastings tuning parameter of
+ $\delta = 0.05$.}
 \label{glms.fig.grassy}
 \end{figure}
 
-{\bf Remarks:} (1) We used a specific set of starting values for these
+Note that we used a specific set of starting values for these
 simulations. It should be clear that starting values closer to the
 mass of the posterior distribution might cause burn-in to occur
 faster. As an exercise, evaluate that.  
-(2) For the flat normal prior distributions
+Further, for the diffuse normal prior distributions
 here we could leave the prior contribution out of the full conditional
 evaluation since it is locally constant, i.e., constant in the vicinity of
 the posterior mass, and thus has no practical effect. Removing the
 prior contribution from the MH acceptance probability is equivalent to
 saying that the parameters have an improper uniform prior, i.e.,
-$\alpha \sim \mbox{const}$, which is commonly used for mean parameters
+$\beta_0 \sim \mbox{const}$, which is commonly used for mean parameters
 in practice.
 Note also that we have
 used a different prior than in our {\bf WinBUGS} model specification
@@ -2002,7 +2008,7 @@ example, extending our Poisson regression model to include a random effect.
 with a normally distributed random effect that is additive on the
 linear predictor. For the Poisson case, we have:
 \[
- 	log(\lambda_{i}) = \alpha  + \beta x_{i} + \eta_{i}
+ 	log(\lambda_{i}) = \beta_0  + \beta_1 x_{i} + \eta_{i}
 \]
 where $\eta_{i} \sim \mbox{Normal}(0,\sigma^{2})$.  A natural
 alternative is to have multiplicative gamma-distributed noise,
@@ -2011,12 +2017,14 @@ negative binomial kind of over-dispersion, implying a different
 mean/variance relationship to the log-normal mixture (the interested
 reader should work that out).  Choosing between such possibilities is
 not a topic we will get into here because it doesn't seem possible to
-provide general guidance on it.  For this model we carried-out a
-goodness-of-fit evaluation using the Bayesian p-value based on a
-Pearson residual statistic. See also \citep[][ch. 18]{kery:2010} for
-an example involving a binomial mixed model\footnote{Kery has noticed
-  that such tests probably have 0 power. Should use the marginal
-  frequency of the data}.  Anyhow, it is really amazingly simple to
+provide general guidance on it.  
+% For this model we carried-out a
+% goodness-of-fit evaluation using the Bayesian p-value based on a
+% Pearson residual statistic. See also \citep[][ch. 18]{kery:2010} for
+% an example involving a binomial mixed model\footnote{Kery has noticed
+%   that such tests probably have 0 power. Should use the marginal
+%   frequency of the data}. 
+ Anyhow, it is really amazingly simple to
 express this model in {\bf WinBUGS} and have {\bf WinBUGS} draw
 samples from the posterior distribution using the following code for
 the BBS dove counts: 
@@ -2034,19 +2042,13 @@ cat("
 model {
   for (i in 1:M){
      y[i]~dpois(lam[i])
-     log(lam[i])<- alpha+ beta*habitat[i] + eta[i]
-     frog[i]<-beta*habitat[i] + eta[i]
+     log(lam[i])<- beta0+ beta1*habitat[i] + eta[i]
+     frog[i]<-beta1*habitat[i] + eta[i]
      eta[i] ~ dnorm(0,tau)
-     d[i]<-  pow(pow(y[i],0.5)-pow(lam[i],0.5),2)
-
-     ynew[i]~dpois(lam[i])
-     dnew[i]<- pow(pow(ynew[i],0.5)-pow(lam[i],0.5),2)
    }
- fit<-sum(d[])
- fitnew<-sum(dnew[])
 
- alpha~dunif(-5,5)
- beta~dunif(-5,5)
+ beta0~dunif(-5,5)
+ beta1~dunif(-5,5)
  sigma~dunif(0,10)
  tau<-1/(sigma*sigma)
 }
@@ -2054,8 +2056,8 @@ model {
 ",file="model.txt")
 data <- list ( "y","M","habitat")
 inits <- function()
-  list ( alpha=rnorm(1),beta=rnorm(1),sigma=runif(1,0,4))
-parameters <- c("alpha","beta","sigma","tau","fit","fitnew")
+  list ( beta0=rnorm(1),beta1=rnorm(1),sigma=runif(1,0,4))
+parameters <- c("beta0","beta1","sigma","tau")
 library("R2WinBUGS")
 
 out<-bugs (data, inits, parameters, "model.txt", n.thin=2,n.chains=2,
@@ -2070,24 +2072,23 @@ Inference for Bugs model at "model.txt", fit using WinBUGS,
  2 chains, each with 5000 iterations (first 1000 discarded), n.thin = 2
  n.sims = 4000 iterations saved
            mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
-alpha      2.98  0.08   2.82   2.93   2.98   3.03   3.12 1.00  1400
-beta      -0.53  0.07  -0.68  -0.58  -0.53  -0.49  -0.38 1.01   350
+beta0      2.98  0.08   2.82   2.93   2.98   3.03   3.12 1.00  1400
+beta1     -0.53  0.07  -0.68  -0.58  -0.53  -0.49  -0.38 1.01   350
 sigma      0.60  0.06   0.49   0.56   0.59   0.64   0.73 1.00  2000
 tau        2.88  0.57   1.88   2.47   2.86   3.24   4.12 1.00  2000
-fit       26.58  3.72  19.87  23.96  26.37  29.01  34.46 1.00  4000
-fitnew    26.83  3.90  19.60  24.12  26.68  29.36  35.04 1.00  4000
 deviance 445.94 12.18 424.00 437.40 445.20 453.90 471.50 1.00  4000
 
 [... some output deleted ...]
 \end{verbatim}
 }
-The Bayesian p-value for this model is
-\begin{verbatim}
-> mean(out$sims.list$fit>out$sims.list$fitnew)
-[1] 0.4815
-\end{verbatim}
-indicating a pretty good fit. Given the site-level random effect, it
-would be surprising for this model to not fit! One thing we notice is
+% The Bayesian p-value for this model is
+% \begin{verbatim}
+% > mean(out$sims.list$fit>out$sims.list$fitnew)
+% [1] 0.4815
+% \end{verbatim}
+% indicating a pretty good fit. Given the site-level random effect, it
+% would be surprising for this model to not fit! 
+One thing we notice is
 that the posterior standard deviations of the regression parameters
 are much higher, a result of the excess variation. We would also
 notice much less precise predictions of hypothetical new
@@ -2138,7 +2139,7 @@ is encountered is a binomial outcome with parameter - encounter
 probability -- $p$, based on a sample of size $K$.  In addition, the
 total number of unique individuals observed, $n$, is also a binomial
 random variable based on population size $N$.  We consider such
-models in the chapter \ref{chapt.closed}.
+models in Chapt. \ref{chapt.closed}.
 
 
 \subsection{Binomial regression}
@@ -2147,17 +2148,7 @@ In binomial models, covariates are modeled on a suitable
 transformation (the link function) of the binomial success
 probability, $p$.  Let $x_{i}$ denote some measured covariate for
 sample unit $i$ and let $p_{i}$ be the success probability for unit $i$.
-The standard choice is the ``logit'' link function which is:
-\[
-log(p_i/(1-p_i)) = \alpha + \beta*x_{i}.
-\]
-The inverse-logit (or ``expit'') is
-\[
-p_{i} = \mbox{expit}(\alpha + \beta*x_{i}) =
- \frac{ \exp(\alpha + \beta*x_{i})}
-      {1 + \exp(\alpha + \beta*x_{i} ) }
-\]
-There are many other possible link functions. However, ecologists seem
+The standard choice is the logit link function (\ref{glms.sec.glmms}) but there are many other possible link functions. However, ecologists seem
 to adopt the logit link function without question in most
 applications\footnote{a notable exception is distance sampling, which
   is all about choosing among link functions}.  We sometimes use the
@@ -2198,14 +2189,14 @@ consider an example involving band returns of waterfowl which were
 analyzed by \citet{royle_dubovsky:2001}\footnote{I hate this example.
   Anyone got a better one thats not distribution modeling?}.
 
-For these data, $y_i$ is the number of waterfowl bands recovered out
+For these data, $y_i$ is the number of mallard ({\it Anas platyrhynchos}) bands recovered out
 of $B_i$ birds banded at some location ${\bf s}_{i}$. In this case $B_{i}$ is
 fixed. Thinking about recovery rate as being proportional to harvest
 rate, we use these data to explore geographic gradients in recovery rate
 resulting from variability in harvest pressure experienced by
 populations depending on their migration ecology. As such, we fit a
 basic binomial GLM with a linear response to geographic coordinates
-(including an interaction term). The data are provided with the {\bf
+(including an interaction term). The data ({\tt mallarddata}) are provided with the {\bf
   R} package \mbox{\tt scrbook}. Here we
  provide the part of the script for creating the model and fitting the
  model in
@@ -2227,14 +2218,14 @@ model {
  for(t in 1:5){
     for (i in 1:nobs){
        y[i,t] ~ dbin(p[i,t], B[i,t])
-       logit(p[i,t]) <- alpha0[t] + alpha1*X[i,1] + alpha2*X[i,2] + alpha3*X[i,1]*X[i,2]
+       logit(p[i,t]) <- beta0[t] + beta1*X[i,1] + beta2*X[i,2] + beta3*X[i,1]*X[i,2]
      }
 }
-	alpha1~dnorm(0,.001)
-	alpha2~dnorm(0,.001)
-	alpha3~dnorm(0,.001)
+	beta1~dnorm(0,.001)
+	beta2~dnorm(0,.001)
+	beta3~dnorm(0,.001)
 	for(t in 1:5){
- 	alpha0[t] ~ dnorm(0,.001)
+ 	beta0[t] ~ dnorm(0,.001)
  }
 }
 ",fill=TRUE)
@@ -2243,8 +2234,8 @@ sink()
 data  <- list(B=mallard.bandings, y=mallard.recoveries,
              nobs=nrow(banding.locs),X=banding.locs)
 inits <- function(){
-      list(alpha0=rnorm(5),alpha1=0,alpha2=0,alpha3=0) }
-parms <- list('alpha0','alpha1','alpha2','alpha3')
+      list(beta0=rnorm(5),beta1=0,beta2=0,beta3=0) }
+parms <- list('beta0','beta1','beta2','beta3')
 out   <- bugs(data,inits, parms,"model.txt",n.chains=3,
  	n.iter=2000,n.burnin=1000, n.thin=2,debug=TRUE)
 \end{verbatim}
@@ -2276,22 +2267,22 @@ deviance  1716.001 4.091 1710.000 1713.000 1715.000 1718.000 1726.000 1.001  150
 The basic result suggests a negative east-west gradient and a positive
 south to north gradient but no interaction. A map of the response
 surface is shown in Fig. \ref{glms.fig.bandrecovery}.
- We did an additional MCMC run where we saved the binomial
-parameter $p$ and computed the Bayesian p-value (double use of ``p''
-here is confusing, but I guess that happens sometimes!)
-using a fit statistic based on the Freeman-Tukey
-statistic (see Sec. \ref{glms.sec.gof}
-above). The result indicates that the
-linear response surface model does not provide an adequate fit of the
-data. The reader should contemplate whether this invalidates the basic
-interpretation of the result.
+%  We did an additional MCMC run where we saved the binomial
+% parameter $p$ and computed the Bayesian p-value (double use of ``p''
+% here is confusing, but I guess that happens sometimes!)
+% using a fit statistic based on the Freeman-Tukey
+% statistic (see Sec. \ref{glms.sec.gof}
+% above). The result indicates that the
+% linear response surface model does not provide an adequate fit of the
+% data. The reader should contemplate whether this invalidates the basic
+% interpretation of the result.
 
 
 \begin{figure}
 \begin{center}
 \includegraphics[height=2.75in]{Ch2/figs/responsesurface}
 \end{center}
-\caption{Predicted recovery rate of bands.}
+\caption{Predicted recovery rates of mallard bands across XXX. Note the negative east-west gradient.}
 \label{glms.fig.bandrecovery}
 \end{figure}
 
@@ -2301,7 +2292,7 @@ GLMs and GLMMs are the most useful statistical methods in all of
 ecology. The principles and procedures underlying these methods are
 relevant to nearly all modeling and analysis problems in every branch
 of ecology. Moreover, understanding how to analyze these models is
-crucial in a huge number of diverse problems. If you understand and
+crucial in a large number of diverse problems. If you understand and
 can conduct classical likelihood and Bayesian analysis of Poisson and
 binomial GLM(M)s, then you will be successful analyzing and
 understanding more complex classes of models that arise. We will see
@@ -2313,13 +2304,13 @@ their analysis is extremely useful.
 We note that GLM(M)s are routinely
 analyzed by likelihood methods but we have focused on Bayesian
 analysis here in order to develop the tools that are less familiar to
-most ecologists.  In particular, Bayesian analysis of models with random
+most ecologists, and that we will apply in much of the remainder of the book.  In particular, Bayesian analysis of models with random
 effects is relatively straightforward because the models
 are easy to analyze conditional on the random effect, using methods of
 MCMC.  Thus, we will often analyze SCR models in later chapters by
 MCMC, explicitly adopting a Bayesian inference framework.
 In that regard, the various {\bf BUGS} engines ({\bf WinBUGS}, {\bf
-  OpenBUGS}, {\bf JAGS}) are enormously useful because they
+  OpenBUGS}, {\bf JAGS}; see also \ref{chapt.app1}) are enormously useful because they
 provide an accessible platform for
 carrying out  analyses by MCMC by just
 describing the model, and not having to worry about how to actually
