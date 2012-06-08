@@ -13,8 +13,8 @@ models for estimating population size in closed populations. A closed
 population is one whose abundance $N$ does not change during the
 study. Two forms of closure are often discussed: demographic closure,
 meaning that no births or deaths occur, and geographic closure, which
-means that no individuals do not move onto or off of the study
-area. Few populations are actually closed except during very short
+states that no individuals move onto or off of the plot during the study.
+Few populations are actually closed except during very short
 time intervals, but closed population CR models serve as the basis for
 the development of the rest of the models presented in this book,
 including the models for open populations discussed in
@@ -178,26 +178,28 @@ $N$ binomials
   \Pr(y_1, \ldots, y_N | p) = \prod_{i=1}^N  \mathrm{Bin}(y_i | K, p).
   \label{closed.eq.binNknown}
 \end{equation}
-This expression can be simplified even further if we reformat the
-observations as capture frequencies, which are the sufficient
-statistics under this model. Specifically, let $n_k$ denote the number
-of individuals captured $k$ times after $K$ survey occasions, $n_k = \sum_{i=1}^N
-I(y_i = k)$ where $I$ is the indicator function evaluating to 1 if its
-argument is true and 0 otherwise. For sake of illustration,
-we converted the data from TableTable~\ref{closed.tab.3.1} to this
-format (Table~\ref{closed.tab.3.1.nk}). An equivalent expression to
-Eq.~\ref{closed.eq.binNknown} can now be written as
-\begin{equation}
-  \Pr(y_1, \ldots, y_N | p) = \prod_{k=0}^K  \pi(k)^{n_k}
-  \label{closed.eq.multiNknown}
-\end{equation}
-where $\pi(k) = \mathrm{Bin}(k | K,p)$.
-We emphasize that both expressions are conditional on $N$, in which
+We emphasize that this expression is conditional on $N$, in which
 case we get to observe the $y_i=0$ observations and the resulting data
 are just $iid$ binomial counts. Because this is a binomial regression
 model of the variety described in Chapt. \ref{glms}, fitting this model using
 a {\bf BUGS} engine poses no difficulty.
 
+Equation~\ref{closed.eq.binNknown} can be simplified even further if we reformat the
+observations as capture frequencies, which are the sufficient
+statistics under this model. Specifically, let $n_k$ denote the number
+of individuals captured exactly $k$ times after $K$ survey occasions, $n_k = \sum_{i=1}^N
+I(y_i = k)$ where $I$ is the indicator function evaluating to 1 if its
+argument is true and 0 otherwise. For sake of illustration,
+we converted the data from Table~\ref{closed.tab.3.1} to this
+format (Table~\ref{closed.tab.3.1.nk}). What is important to note is
+that if we know $N$, then we known $n_0$, i.e. the number of
+individuals not captured at all. In this case, an alternative and equivalent expression to
+Eq.~\ref{closed.eq.binNknown} is
+\begin{equation}
+  \Pr(y_1, \ldots, y_N | p) = \prod_{k=0}^K  \pi(k)^{n_k}
+  \label{closed.eq.multiNknown}
+\end{equation}
+where $\pi(k) = \mathrm{Bin}(k | K,p)$.
 
 The essential problem in capture-recapture, however, is that $N$ is
 {\it not} known because the number of uncaptured %/missing
@@ -223,7 +225,7 @@ Number of individuals captured $k$ times ($n_k$) & $N-6$ & 2 & 3 & 1 & 0 & 0 \\
 \end{table}
 Consequently, the observed capture frequencies $n_k$ are no
 longer independent because $n_0$ is a function of the other
-frequencies (as well as $N$), $n_0 = N-\sum_{k=1}^K n_k$. Hence, their joint distribution is multinomial
+frequencies, $n_0 = N-\sum_{k=1}^K n_k$. Hence, their joint distribution is multinomial
 (e.g., see \citet[][p. xyz]{illian_etal:2008}):
 %\hl{Andy, I changed this from n_1, n_2 to n_0, n_1. Isn't that right?}
 \begin{equation}
@@ -249,7 +251,7 @@ probabilities.
 To fit the model in which $N$ is {\it unknown}, we can regard $n_{0}$ as a
 parameter and maximize the multinomial likelihood directly.
 Direct likelihood analysis of the multinomial model is
-straightforward, but that does not prove to be too useful in practice
+straightforward, but that is not always sufficiently useful in practice
 because we seldom are concerned with models for the aggregated
 encounter history frequencies, which entail that capture probabilities are the
 same for all individuals. In many instances, including for
@@ -315,14 +317,66 @@ inference from basic CR methods to be valid, and while they are
 also assumed by most of the models we present in the following
 chapters, we refrain from repeatedly making such statements. Our
 opinion is that all model assumptions are apparent when a model is
-clearly specified. For instance, if we write
+clearly specified, and it is both redundant and impossible to list all
+the things not allowed by the model. For example, closed population
+models also assume that other sources of data entry do not occur, but
+it is not necessary to enumerate each possibility. Rather, it is
+necessary to make clear statements such as
 \[
-y_i \stackrel{iid}{\sim} \text{Bernoulli}(p) \quad \: \text{for} i=1,\ldots,N
+y_i \stackrel{iid}{\sim} \text{Bernoulli}(p) \quad \: \text{for}\: i=1,\ldots,N.
 \]
+This simple model description carries a tremendous amount of
+information, and it leaves very little left to say with respect to
+assumptions. Although we will not always show the $iid$ symbol, it
+will be assumed unless otherwise noted, and this assumption is
+critical for valid inference. It implies that the encounter of one
+individual does not affect the encounter of another
+individual. Under this assumption, it is very easy to write down the
+likelihood of the model and obtain parameter estimates; however,
+whether or not it is true depends upon biological and sampling
+issues. If this assumption is deemed false, the model can be discarded
+in favor of a more realistic alternative. However, once we have
+settled on our model, statistical inference proceeds by assuming the
+model is truth---not an approximation to truth---but actual
+truth; yet as with every model assumption ever made in the history of
+statistics, the core capture-recapture assumptions are not correct. This might
+come as a major shock to some people.
+
+In spite of the fact that we assume that all models are truth, but we
+acknowlege that all models are wrong due to their assumptions,
+assumptions should not be viewed as a necessary evil. In fact, one way
+to view assumptions is as embodiments of our ecological hypotheses. If
+we make these assumptions too complex or too specific, then we will
+never be able to study general phenomenon that hold true across space
+and time. Furthermore, we will rarely have enough data to estimate the
+parameters of highly complex models. These issues have never stopped
+ecologists from trying. A classic example is the software program
+\textbf{Maxent}, which has been acclaimed for its ability to estimate
+an infinite number of parameters! The question that must be asked is
+what scientific hypothesis could possibly be described and evaluated
+using such a model?
+
+\hl{I could blab on about our approach to model development and
+  assumption making, but that would probably be better saved for an
+  intro chapter}
+
+
+\begin{comment}
 then there is not much more to say with respect to assumptions. For
 example, if animals lost their marks, then clearly this statement would
 not apply because we would not be able to know which individual we
-encountered. Likewise for assumption 2.
+encountered. The same is true concerning assumption 2---if marks are
+not correctly recorded, then there is measurement error not accounted
+for by our model.
+
+The point of the above discussion is that all of the assumptions are
+embodied in a clear statement of the model. More generally, %and this
+%is a point not usually understood by people
+%who use capture-recapture models, %is that
+we assume that {\it the model is properly specified} which means everything that is {\it not}
+in the model. In reality, there are infinite things not covered by the model, and
+therefore we think being specific about what it {\it does} assume,
+explicitly identified by the model, is preferred.
 
 
 
@@ -333,25 +387,13 @@ Of course spatial location is a sensible covariate for encounter
 probability and the whole point of SCR models is to induce a certain
 type of non-independence as a result of individual location relative
 to traps.
+\end{comment}
 
-Independence of encounter events {\it among} individuals.
 
-Independence, etc.. and why they?re no good. What is the role of model assumptions?
 
-More generally, and this is a point not usually understood by people
-who use capture-recapture models, is that we assume that {\it the
-  model is properly specified} which means everything thats {\it not}
-in the model. Things not covered by the model is really
-an infinity things, and
-therefore we think being specific about what it {\it does} assume,
-explicitly identified by the model, is preferred.
 
-Statistical inference: we assume the model is truth -- not an
-approximation to truth -- but actual truth.
 
-As with every model assumption ever made in the history of statistics,
-the core capture-recapture assumptions are not correct. This might
-come as a major shock to some people.
+
 
 \subsection{Conditional likelihood}
 
