@@ -1009,7 +1009,7 @@ needs to pay some attention to this issue and possibly try different
 things out.
 Most standard Bayesian analysis books address issues related to specification and
 affect of prior distribution choice in some depth. Some good references include 
-\citet{kass_wasserman:1996}, \citet{gelman:2006} and \citet{link_barker:2009}.
+\citet{kass_wasserman:1996}, \citet{gelman:2006} and \citet{link_barker:2010}.
 
 
 \subsection{Convergence and so-forth}
@@ -2241,19 +2241,21 @@ application where $K=1$ and the outcome is occurrence ($y=1$) or not
 \citet[][ch. 3]{royle_dorazio:2008}; \citet[][ch. 21]{kery:2010};
 \citet[][ch. 13]{kery_schaub:2011}) and in the literature.
 Instead, we will
-consider an example involving band returns of waterfowl which were
+consider an example involving band returns of waterfowl in the upper great plains including some canadian provinces, which were
 analyzed by \citet{royle_dubovsky:2001}\footnote{I hate this example.
   Anyone got a better one thats not distribution modeling?}.
 
-For these data, $y_i$ is the number of mallard ({\it Anas platyrhynchos}) bands recovered out
-of $B_i$ birds banded at some location ${\bf s}_{i}$. In this case $B_{i}$ is
+For these data, $y_{it}$ is the number of mallard ({\it Anas platyrhynchos}) bands recovered out
+of $B_{it}$ birds banded at some location ${\bf s}_{i}$ in year $t$. In this case $B_{it}$ is
 fixed. Thinking about recovery rate as being proportional to harvest
 rate, we use these data to explore geographic gradients in recovery rate
 resulting from variability in harvest pressure experienced by
 populations depending on their migration ecology. As such, we fit a
 basic binomial GLM with a linear response to geographic coordinates
-(including an interaction term). The data ({\tt mallarddata}) are provided with the {\bf
-  R} package \mbox{\tt scrbook}. Here we
+(including an interaction term). 
+% The data ({\tt mallarddata}) are provided with the {\bf
+%   R} package \mbox{\tt scrbook}. XXX MAYBE ADD LATER XXXX
+Here we
  provide the part of the script for creating the model and fitting the
  model in
 {\bf WinBUGS} using the \mbox{\tt bugs} function.
@@ -2262,7 +2264,21 @@ Poisson GLM fitted previously. The main things are due to the data
 structure (we have a matrix here instead of a vector) and otherwise we
 change the main distributional assumption to binomial (specified with
 \mbox{\tt dbin}) and then use the \mbox{\tt logit} function to relate
-the parameter $p_{it}$ to the covariates.  Here is the script:
+the parameter $p_{it}$ to the covariates.  
+
+{\flushleft \bf Dummy variables in BUGS: } 
+In Chapt. \ref{CH2} we introduced the concept of categorical variables and how to display them in model formulas in the form of ``dummy variables''. In the mallard example, we model the band recovery probability $p$ not only as a linear function (on the logit scale) of geographic location, but also allow for variation in $p$ with year, $t$; $t=1,2,...T$. In this particular example there are T=5 years of data and if we wanted to describe the full mallard model with a formula adopting the dummy variable format, it would look like this:
+\[
+y_{it} \sim Binomial(p_{it}, B_{it}}
+logit(p_{it}) = \beta_0 + \beta_1 Sv2_t + \beta_2 Sv3_t + \beta_3 Sv4_t + \beta_4 Sv5_t + \beta_5 lat_i + \beta_6 lon_i + \beta_7 lat_i lon_i
+\]
+Here, $Sv2$ to $Sv5$ are the dummy variable vectors of length $T$ that take on the value of 1 when $t$ corresponds to the respective year and 0 otherwise. For example, Sv2 = (0,1,0,0,0). $\beta_0$ is the common intercept term and correspond to $t=1$; $\beta_1$ - $\beta_4$ describe the difference in $p$ for each $t$ {\emph relative to} $t=1$.
+
+There is a more concise way of implementing such a model with a categorical covariate in {\bf BUGS}, namely, by using indexing instead of dummy variables (actually, in some cases a model may mix or converge better depending on whether you choose a dummy variable or an indexing description of it, although they are structurally equivalent \citep{kery:2010}). Essentially, instead of estimating the difference in $p$ relative to survey 1, we  estimate a separate intercept term for each survey, so that we have 5 different $beta_0$ indexed by $t$. This reduces the linear predictor to:
+\[
+logit(p_{it}) = \beta_{0t} +  \beta_5 lat_i + \beta_6 lon_i + \beta_7 lat_i lon_i
+\]
+We show you how to implement that in {\BUGS} for this mallard example. Here is the script:
 
 {\small
 \begin{verbatim}
@@ -2298,8 +2314,7 @@ out   <- bugs(data,inits, parms,"model.txt",n.chains=3,
 }
 
 \begin{table}
-\caption{Inference for binomial GLM with effects of survey time (alpha0) and geographic loation (alpha1 - alpha3) on mallard band recovery probabilities, fit using WinBUGS,
- 3 chains, each with 2000 iterations (first 1000 discarded), n.thin = 2
+\caption{Inference for binomial GLM with effects of year(alpha0) and geographic loation (alpha1 - alpha3) on mallard band recovery probabilities, fit using WinBUGS, 3 chains, each with 2000 iterations (first 1000 discarded), n.thin = 2
  n.sims = 1500 iterations saved.}
    \scriptsize
   \begin{tabular}{lccccccccc}
@@ -2345,7 +2360,7 @@ deviance & 1716.001 4.091 & 1710.000 & 1713.000 & 1715.000 & 1718.000 & 1726.000
 
 
 Look at the posterior summaries of model parameters in Table \ref{glms.tab.mallard}. The basic result suggests a negative east-west gradient and a positive
-south to north gradient but no interaction. A map of the response
+south to north gradient of abnd recovery probabilities, but no interaction. A map of the response
 surface is shown in Fig. \ref{glms.fig.bandrecovery}.
 %  We did an additional MCMC run where we saved the binomial
 % parameter $p$ and computed the Bayesian p-value (double use of ``p''
@@ -2362,7 +2377,7 @@ surface is shown in Fig. \ref{glms.fig.bandrecovery}.
 \begin{center}
 \includegraphics[height=2.75in]{Ch2/figs/responsesurface}
 \end{center}
-\caption{Predicted recovery rates of mallard bands across XXX. Note the negative east-west gradient.}
+\caption{Predicted recovery rates of mallard bands across the upper great plains. Note the negative east-west gradient.}
 \label{glms.fig.bandrecovery}
 \end{figure}
 
