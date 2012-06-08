@@ -30,7 +30,7 @@ dat<-data(pa_bbsdovedata)
 y<-dat[,29]  # pick out 1990
 notna<-!is.na(y)
 y<-y[notna]
-'histogram of mourning dove counts in yr. 1990
+#histogram of mourning dove counts in yr. 1990
 hist(y)
 }
 \keyword{datasets}
