@@ -33,12 +33,12 @@ various software packages and the suite of possible encounter models
 dealing with different types of sampling.  However, we have not
 considered different detection functions or covariates that my affect
 the parameters of the detection function, including those that may
-arise from the individual or the trap device.  
+arise from the individual or the trap device.
 Most detection functions include a baseline encounter
 rate termed $\lambda_0$ (or $g_0$ for the detection probability when
 we use a logit link for the detection function) and a shape parameter
 labeled $\sigma$, which takes on different interpretations depending on
-the selected function.  
+the selected function.
 
  Such covariates
 include time (e.g., day of year, or season), behavior (e.g., has the
@@ -47,7 +47,7 @@ type (e.g., various camera types, or different constructions for hair
 snares).
 
 In this chapter, we  generalize the encounter probability
-model to accommodate both alternative encounter models and also 
+model to accommodate both alternative encounter models and also
 many different kinds of covariates. We focus on the Binomial encounter
 model used in chapter 4 and 5 and the half-normal detection function,
 but the extension to other encounter and detection models is
@@ -66,18 +66,20 @@ example, the home range size of individuals, or unstructured random
 
 
 We will see that models containing these different types of
-covariates are relatively easy to describe in the BUGS language, and
+covariates are relatively easy to describe in the {\bf WinBUGS} or
+{\bf JAGS} languages, and
 therefore to analyze using Bayesian analysis of the joint likelihood
 based on data augmentation thus providing a coherent and flexible
 framework for inference for all classes of SCR models.  Throughout the
 chapter, we will continue to develop an analysis of the black bear
-study introduced in Chapter 3, using the bugs language.  We also
+study introduced in Chapter 3, using the
+{\bf JAGS}.  We also
 consider likelihood analysis of many of these models, to do so, we
 will demonstrate the use of the R package 'secr' and how to do model
 comparison with AIC.
 There are other types of covariates that we do {\it not} cover in this
-chapter. For example, there are covariates that vary across the 
-landscape, and these covariates 
+chapter. For example, there are covariates that vary across the
+landscape, and these covariates
 might affect density, and we consider this in
 Chapt. \ref{chapt.state-space}.
 Alternatively, these covariates might affect the way individuals use
@@ -100,7 +102,7 @@ where $||{\bf s}_{i}-{\bf x}_{j}||$ is the distance between ${\bf
 \[
 \alpha_{1} = 1/(2*\sigma^2).
 \]
-We argued (XXXX not yet done section XXXX) that this model 
+We argued (XXXX not yet done section XXXX) that this model
 corresponds to an explicit model of space usage -- namely, that
 individual locations are draws from a bivariate normal
 distribution. We also mentioned that other detection models are
@@ -112,67 +114,72 @@ possible, including a logit model of the form:
 
 However, there's nothing preventing us from constructing a myriad of
 other models for encounter probability.
-The negative exponential model is:
+The negative exponential model is: XXshould p0 be alpha0 here?XX
 \[
 p_{ij} = p_{0}*\exp(-\alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||)
 \]
 or we could use the general power model which includes both the
 Gaussian and exponential models \citep{russell_etal:2012}: XXX What is
 this model called? CITE from Buckland et al. XXXXX
+XX hazard rate is Hayes and Buckland (1983), but not sure which Buckland we want hereXXX
 \[
 p_{ij} = p_{0}*\exp(-\alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||^{\theta} )
 \]
 The most commonly used detection
 functions are also those used in the distance sampling literature: the
-half-normal, the hazard, and the negative exponential.  
+half-normal, the hazard, and the negative exponential.
 The {\bf R} package
 secr allows the user to access 12 different detection models, of which
 some are only used for simulating data (see Table 1).  These detection
-functions can be also be coded in {\bf R}, BUGS, jags, etc.  
+functions can be also be coded in {\bf R}, {\bf WinBUGS},
+{\bf JAGS} etc.
 
 Insofar as these are all symmetric and stationary, they are pretty
 coarse descriptions of space usage by real animals. But this is not to
-say they are inadequate descriptions of the data (Gary: put that in
-your pipe and smoke it!).  We don't believe in doing too much
+say they are inadequate descriptions of the data XXX this is no longer true, Andy
+is showing that they might be inadequate now, right?? XXX
+We don't believe in doing too much
 selection among models because there is no biological basis for
 choosing any one of these models over any other. We do describe more
 realistic models in Chapt. XXXXX.
 
 
 
-XXXX TABLE NEEDS PROOFED! XXXXX
+XXXX  Proofed table, but want to see it in pdf form to double check XXXXX
 
 \begin{table}
 \centering
 \caption{Distance functions available in secr.  (Table taken from the secr
-help files). Notation deviates from that used in the text. 
-XXXXXXX BETH MORE HERE???????????? XXXXXX
-in this table $g_{0}$ is the baseline encounter rate or probability
-parameter used in SECR but this is equivalent to our $p_{0}$ or
-$\lambda_{0}$ depending on context. 
+help files). Notation deviates from that used in the text.
+In this table $g_{0}$ is the baseline encounter rate or probability
+parameter used in secr but this is equivalent to our $alpha_{0}$ or
+$\lambda_{0}$ depending on context. $d$ is distance defined as we have done throughout,
+as the distance between the activity center and the trap.
+One can read more on this specific table by loading the secr package and using the
+help command in R (?detectfn).
 }
 \begin{tabular}{cccl}
-\hline \hline 
+\hline \hline
 SECR Code & Name & Parameters & Function  \\ \hline
-0 & half-normal &$g_0$, $\sigma$                 &  $g(d) = g_0 * exp\{-d^2 / (2  \sigma^2) \}$  \\
-1 &hazard rate & $g_0$, $\sigma$, z              &  $g(d) = g_0 * (1 - exp(- (d / \sigma) ^(-z) ))$ \\
-2 &exponential              &$g_0$, $\sigma$    &  $g(d) = g_0 * exp(- d / \sigma)$ \\
-3 &compound half-normal      & $g_0$, $\sigma$, z & $g(d) = g_0 * [1 - \{1 - exp(-d^2 / (2 \sigma^2))]^z\}$ \\
-4 &uniform                  & $g_0$, $\sigma$     & 
-\parbox[t]{2in}{ $g(d) = g_{0}, d<=\sigma$; \\ 
-                 $g(d)= 0$, otherwise 
+0 & half-normal &$g_0$, $\sigma$          &  $g(d) = g_0 * exp\{-d^2 / (2  \sigma^2) \}$  \\
+1 &hazard rate  & $g_0$, $\sigma$, z      &  $g(d) = g_0 * (1 - exp(- (d / \sigma) ^(-z) ))$ \\
+2 &exponential   &$g_0$, $\sigma$    &  $g(d) = g_0 * exp(- d / \sigma)$ \\
+3 &compound half-normal  & $g_0$, $\sigma$, z & $g(d) = g_0 * [1 - \{1 - exp(-d^2 / (2 \sigma^2))]^z\}$ \\
+4 &uniform     & $g_0$, $\sigma$     &
+\parbox[t]{2in}{ $g(d) = g_{0}, d \leq \sigma$; \\
+                 $g(d)= 0$, otherwise
 } \\
-5 &w exponential            & $g_0$, $\sigma$, w & 
+5 &w exponential            & $g_0$, $\sigma$, w &
 \parbox[t]{2in}{ $g(d) = g_{0}, d < w$; \\
                  $g(d) = g_{0} \exp(- (d - w) / \sigma)$, otherwise
 } \\
 6 &annular normal           & $g_0$, $\sigma$, w & $g(d) = g_0 * exp(-(d-w)^2 / (2 \sigma^2))$ \\
 7 &cumulative lognormal     & $g_0$, $\sigma$, z & $g(d) = g_0 [1 -F{(d-\mu)/s)}]$  \\
 8 &cumulative gamma         & $g_0$, $\sigma$, z  & $g(d) = g_0 \{ 1 - G (d; k,  \theta) \}$  \\
-9 &binary signal strength   & $\alpha_0$, $\alpha_1$       & $g(d) = 1 - F \{- (\alpha_0 + \alpha_1 * d) \}$ \\
-10&signal strength          & $\alpha_0$, $\alpha_1$, sdS  & 
-  $g(d) = 1 - F[ \{c - (\alpha_0 + \alpha_1 * d)\} / sdS]$  \\
-11&signal strength spherical&  $\alpha_0$, $\alpha_1$, sdS & $g(d) = 1 - F[\{c - (\alpha_0 + \alpha_1 * (d-1) - 10 * log10 ( d^2 ) ) \} / sdS ]$
+9 &binary signal strength   & $b_0$, $b_1$       & $g(d) = 1 - F \{- (b_0 + b_1 * d) \}$ \\
+10&signal strength          & $\beta_0$, $\beta_1$, sdS  &
+  $g(d) = 1 - F[ \{c - (\beta_0 + \beta_1 * d)\} / sdS]$  \\
+11&signal strength spherical&  $\beta_0$, $\beta_1$, sdS & $g(d) = 1 - F[\{c - (\beta_0 + \beta_1 * (d-1) - 10 * log10 ( d^2 ) ) \} / sdS ]$
 \end{tabular}
 \label{covariates.tab.detmodels}
 \end{table}
@@ -192,7 +199,7 @@ and likelihood sections below.
 
 The basic strategy  for modeling covariate effects is to include them
 on the baseline encounter rate or probability parameter, $p_{0}$ (or
-$\lambda_{0}$), or the scale parameter of the encounter model, 
+$\lambda_{0}$), or the scale parameter of the encounter model,
 $\sigma$.
 
 Broadly speaking, we recognize (here) 2 types of covariates: Fixed
@@ -226,11 +233,11 @@ model, just as we would do in any standard GLM or GLMM. For example,
 \alpha_2*C_{ijk}
 \]
 where $C_{ijk}$ is some covariate and
-$\alpha_2$ is the coefficient to be estimated. 
+$\alpha_2$ is the coefficient to be estimated.
  How we define specific covariates (e.g., trap specific
 versus individual specific) will influence exactly how we include them
-in the model.  For example, $C$ might vary by 
-individual, trap, sampling occasion or combinations of these. 
+in the model.  For example, $C$ might vary by
+individual, trap, sampling occasion or combinations of these.
 
 
 \subsection{Spatial Covariates}
@@ -255,11 +262,11 @@ or if we have binary responses then use the cloglog link
 
 The model is closely related to RSF models, under this RSF model
 \[
-blah 
+blah
 \]
  and, in fact, the parameter
 a2 is estimated unbiasedley from sCR data alone, although RSF data
-from telemetry improves the RMSE to some extent Chapt 10b. 
+from telemetry improves the RMSE to some extent Chapt 10b.
 
 
 
@@ -274,9 +281,9 @@ probabilities.  Or we may expect reproductive behaviors to influence
 the detection of certain species at certain times of year.  There are
 a number of ways to incorporate such information into the model; here
 we will describe two that seem most common.  The first is to allow
-detection probability to be different for each date XXXX sampling
-occasion? XXXXX, but not to be a
-parametric function of data.  In this case, we allow each sampling
+detection probability to be different for each sampling
+occasion, but not to be a
+parametric function of date.  In this case, we allow each sampling
 occasion, $k$, to have its own baseline detection probability,
 $\alpha_0$.
 \[
@@ -311,7 +318,7 @@ logit(p_{ijk}) = \alpha_0 + \alpha_1*||{\bf s}_{i}-{\bf x}_{j}|| +
  + \alpha_3*\mbox{\tt Date}_{k}^{2}
 \]
 where the variable $\mbox{\tt Date}$ is an integer coding of
-day-of-year, indexed to some arbitrary point in time.  XXXX  Beth: ok? XXXXX
+day-of-year, indexed to some arbitrary start point in time.
 
 \subsection{Trap-specific covariates}
 
@@ -325,14 +332,13 @@ being located on roads which the animals were using to travel along as
 opposed to traps placed off roads.  In each of these cases, the trap
 type is a binary or categorical variable - on/off road,
 baited/non-baited, and camera model.  We write this such that:
-XXXXX ALL: how do we indicate this? XXXXXXX
-XXXXX Change to dummy variables XXXXXXXXXXX
+
 \[
-logit(p_{ijk}) = \alpha_{0}[type[j]] + \alpha_1*||{\bf s}_{i}-{\bf x}_{j}||^{2}
+logit(p_{ijk}) = \alpha_{0, type_j} + \alpha_1*||{\bf s}_{i}-{\bf x}_{j}||^{2}
 \]
 Here, we use an indicator variable, ``type'', that will be a numeric
 value for the trap-specific covariate.  Thus for our example of on/off
-road, we would have $type[j] = 1$ if trap j is on a road and $type[j]
+road, we would have $type_j = 1$ if trap j is on a road and $type_j
 = 2$ otherwise.  This general set up allows for multiple categories,
 say if 3 or 4 different camera models were used.
 
@@ -368,7 +374,7 @@ an array, $C_{ijk}$, that indicates if an individual $i$ has been
 previously captured in trap $j$ at time $k$.  We then include this in
 the model in the exact same form as above:
 \[
-logit(p_{ijk}) = \alpha_{0} + \alpha_1*||s[i]-x[j]|| + \alpha_2*C_i,j,k	
+logit(p_{ijk}) = \alpha_{0} + \alpha_1*||s[i]-x[j]|| + \alpha_2*C_i,j,k
 \]
 
 
@@ -376,31 +382,38 @@ logit(p_{ijk}) = \alpha_{0} + \alpha_1*||s[i]-x[j]|| + \alpha_2*C_i,j,k
 
 Individual covariates are those which are measured or measurable on
 individuals, so we get to observed them only for the captured
-individuals. 
-
-Sex is a simple example of an individual covariate but it is often the
-case that it is missing for some captured individuals because 
+individuals. Sex is a simple example of an individual covariate but it is often the
+case that it is missing for some captured individuals because
 frequently, in practice, we only imperfectly determine gender of many
-species. We can imagine that sex impacts both the baseline encounter
-probability $\alpha_{0}$ and also it might affect the typical home range
-size, and therefore  $\alpha_{1}$ might be sex-specific
-also. Therefore, a fully sex-specific model is:
-XXXXX Use dummy variables here XXXXXXXXXXXXXXXX
+species.  The sex of an individual can influence its home range size, this is
+common in studies of carnivores where females are known to have smaller home range sizes than
+males \citep{gardner_etal:2010jwm, sollmann_etal:2011}.  Additionally, we may find differences in
+the baseline detection between males and females because XXXX
+
+
+Thus, we can imagine that sex may impact both the baseline encounter
+probability $\alpha_{0}$ and the typical home range
+size, and therefore
+$\alpha_{1}$ might be sex-specific also.  Thus, a fully sex-specific model is:
 \[
-logit(p_{ijk}) = \alpha_{0,sex_{i}} + \alpha_1[sex[i]]*||s[i]-x[j]|| + \alpha_2*C_{i,j,k}
+logit(p_{ijk}) = \alpha_{0,sex_{i}} + \alpha_{1, sex_{i}}*||s[i]-x[j]|| + \alpha_2*C_{i,j,k}
 \]
 where $sex_{i}$ is a vector  having two values indicating the sex of
-each individual (1 = male, 2 = female).  However, we do not know the
-sex of individuals that are not observed or may not have been
-determined, resulting in missing values even for some observed
-individuals \citep{gardner_etal:2010jwm} XXX check tag XXXX. 
-We deal with slightly differently based on the framework
-that we select (Bayesian or likelihood] and we discuss this in detail
+each individual (1 = male, 2 = female).  While we might know the sex of all
+individuals observed in the study, we will never know the
+sex of individuals that are not observed,
+resulting in missing values \citep{gardner_etal:2010jwm} XXX check tag XXXX.
+It is also possible that we may not be able to determine the sex of
+individuals that are observed in during the study, for example photographic
+captures do not necessary result in pictures that allow the sex to be absolutely
+determined, thus sometimes resulting in missing values of this covariate for animals
+captured in the study.   We deal with this slightly differently based on the framework
+that we select (Bayesian or likelihood) and we discuss this in detail
 below in sections XXXXX latex TAG XXXX 8.3.3 and XXXX latex TAG XXXXX 8.4.3.
 
 \begin{comment}
 XXX whole section on this below so commented out here XXXXX
-\subsection{Heterogeneity} 
+\subsection{Heterogeneity}
 
 Heterogeneity is a covariate that is completely latent.  This can
 include many things such as an additive individual effect or an
@@ -412,7 +425,7 @@ mixture model carried out in secr in Section 8.4.4.
 \section{Bayesian Analysis of covariates}
 
 To demonstrate how to incorporate various types of covariates using
-{\bf BUGS}, we will again return to the data collected during the
+{\bf JAGS}, we will again return to the data collected during the
 Ft. Drum bear study.  This data set was first introduced in Chapt. \ref{chapt.closed},
 but to refresh your memory, there 38 baited hair snared that were run
 between June and July 2006.  The snares were checked each week for a
@@ -429,6 +442,7 @@ the half normal distance function.
 {\small
 \begin{verbatim}
 library("scrbook")
+library("rjags")
 data("beardata")
 trapmat<-beardata$trapmat
 nind<-dim(beardata$bearArray)[1]
@@ -437,18 +451,18 @@ ntraps<-dim(beardata$bearArray)[2]
 M=650
 nz<-M-nind
 Yaug <- array(0, dim=c(M,ntraps,K))
-Yaug[1:nind,,]<-beardata$bearArray 
+Yaug[1:nind,,]<-beardata$bearArray
 y<- apply(Yaug,c(1,2),sum) # summarize by ind x traps
 
 #center the coordinates of the trap matrix
-X=as.matrix(cbind((trapmat[,2]- mean(trapmat[,2]))/1000, (trapmat[,3]- mean(trapmat[,3]))/1000))
+X=as.matrix(cbind((trapmat[,1]- mean(trapmat[,1])), (trapmat[,2]- mean(trapmat[,2]))))
 
-#set up the state-space 
+#set up the state-space
 
-Xl=min(trapmat[,2]- mean(trapmat[,2]))/1000 - 20
-Xu=max(trapmat[,2]- mean(trapmat[,2]))/1000 + 20
-Yl=min(trapmat[,3]- mean(trapmat[,3]))/1000 - 20
-Yu=max(trapmat[,3]- mean(trapmat[,3]))/1000 + 20
+Xl=min(trapmat[,1]- mean(trapmat[,1])) - 20
+Xu=max(trapmat[,1]- mean(trapmat[,1])) + 20
+Yl=min(trapmat[,2]- mean(trapmat[,2])) - 20
+Yu=max(trapmat[,2]- mean(trapmat[,2])) + 20
 areaX=(Xl-Xu)*(Yl-Yu)
 
 cat("
@@ -475,56 +489,63 @@ D<-N/area
 ",file = "SCR0a.txt")
 
 data0<-list(y=y,M=M,K=K, J=ntraps, Xl=Xl, Yl=Yl, Xu=Xu, Yu=Yu, X=X, area=areaX)
-params0<-list('psi','p0','N', 'D', 'sigma')
-zst=as.vector(rbinom(M, 1, .5))
-inits =  function() {list(z=zst,psi=runif(1), sigma=runif(1),alpha0=runif(1)) }
-fit0 = bugs(data0, inits, params0, model.file="SCR0a.txt",working.directory=getwd(),    
-       debug=T, n.chains=3, n.iter=20000, n.burnin=10000, n.thin=2)
+params<-c('psi','p0','N', 'D', 'sigma')
+zst=as.vector(c(rep(1, nind), rep(0, M-nind)))
+
+toad<- spiderplot(beardata$bearArray,X)
+Sst<-matrix(cbind(runif(M, Xl, Xu), runif(M, Yl, Yu)), ncol=2)
+Sst[1:nind, ]<-toad$avg.s
+
+inits =  function() {list(z=zst,psi=runif(1), s=Sst, sigma=runif(1,2,3),alpha0=runif(1)) }
+
+
+out1 <- jags.model("SCR0a.txt", data0, inits, n.chains=3, n.adapt=500)
+outSCR0a <- coda.samples(out1,  params, n.iter=20000)
 \end{verbatim}
 }
-XXXXX I think JAGS might be sensitive to having some of the zst=0, we
-need to check this and resolve, or note it XXXXXXXXXX XXXXXX
-
-XXXX BETH CAN you get this function in the scrbook repo? put the data 
-commands in the help file....... XXXXXX
-
-Fitting this model produces the following summary output:
-{\small 
+Executing this block of code produces the following summary output:
+{\small
 \begin{verbatim}
-> print(fit0, digits=3)
-Inference for Bugs model at "SCR0a.txt", fit using WinBUGS,
- 3 chains, each with 20000 iterations (first 10000 discarded), n.thin = 2
- n.sims = 15000 iterations saved
-            mean     sd    2.5%     25%     50%     75%   97.5%  Rhat n.eff
-psi        0.775  0.100   0.578   0.705   0.777   0.848   0.956 1.003  1100
-p0         0.106  0.014   0.080   0.096   0.105   0.115   0.134 1.002  2900
-N        504.262 64.264 377.000 459.000 506.000 552.000 621.000 1.003  1100
-D          0.166  0.021   0.124   0.151   0.167   0.182   0.205 1.003  1100
-sigma      1.996  0.129   1.766   1.908   1.988   2.077   2.272 1.001  8800
-deviance 774.331 20.409 737.000 759.900 773.400 787.900 817.000 1.001 13000
+> print(summary(outSCR0a), digits=2)
 
-For each parameter, n.eff is a crude measure of effective sample size,
-and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+Iterations = 501:20500
+Thinning interval = 1
+Number of chains = 3
+Sample size per chain = 20000
 
-DIC info (using the rule, pD = var(deviance)/2)
-pD = 208.3 and DIC = 982.6
-DIC is an estimate of expected predictive error (lower deviance is better).
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
+
+        Mean     SD Naive SE Time-series SE
+D       0.17  0.022  9.0e-05        0.00096
+N     500.63 66.652  2.7e-01        2.91683
+p0      0.11  0.014  5.7e-05        0.00017
+psi     0.77  0.104  4.2e-04        0.00453
+sigma   1.99  0.131  5.3e-04        0.00252
 \end{verbatim}
 }
 The output from our basic model with no covariates and the half-normal
 distance function provides an estimate of $D = 0.167$ bears per $km^2$
 and $\sigma = 1.996$.  This is similar to the estimated density found
-under model $M_0$ in Chapter 3.2.5, which was 0.18 bears per $km^2$.
-XXXXX why bother then? XXXXX  We can also see that the 97.5\%
+under model $M_0$ in Chapter 3.2.5, which was 0.18 bears per $km^2$,
+when we used the effective trap area based on the trap polygon
+buffered by $1/2$ the female home range radius.
+However, the results may be similar but this is mostly coincident given this particular set of
+conditions, but now we have model based estimate instead of having to wonder
+what effective trap area to use.
+We can also see that the 97.5\%
 percentile for $N$ is 621, thus not reaching our $M=650$ value, but
 close enough that we may want to check that $N$ is not truncated by
-this level of data augmentation.
+this level of data augmentation.  In addition to checking the percentiles, we can also see from \ref{fig.9.1}, the histogram of $N$,that $N$ shows no signs of truncation.  We could also increase
+M as another check that our data augmentation is sufficient.
+
+
 XXXXX probably worth checking that..... can you included that here? XXXXXXX
 
 Now, we can use the same data setup, but fit a model having a
 different distance function in the encounter probability model. Here
-we use the negative exponential distance function, and the new 
- {\bf BUGS} model is:  XXXX BETH: include this in your scrbook
+we use the negative exponential distance function, and the new
+{\bf JAGS} model is:  XXXX BETH: include this in your scrbook
  function too and maybe allow the user to specify which model file
  they want to use with an if statement or something XXXXXXXXXXXXXXXXXXXXXXXXXX
 {\small
@@ -533,7 +554,7 @@ cat("
 model {
 alpha0~dnorm(0,.1)
 logit(p0)<- alpha0
-alpha1<-1/(sigma)
+alpha1<-1/(2*sigma*sigma)
 sigma~dunif(0, 15)
 psi~dunif(0,1)
 
@@ -546,51 +567,55 @@ d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
 y[i,j] ~ dbin(p[i,j],K)
 p[i,j]<- z[i]*p0*exp(- alpha1*d[i,j])
 }
+}
 N<-sum(z[])
 D<-N/area
 }
 ",file = "SCR0exp.txt")
 
 data0<-list(y=y,M=M,K=K, J=ntraps, Xl=Xl, Yl=Yl, Xu=Xu, Yu=Yu, X=X, area=areaX)
-params0<-list('psi','p0','N', 'D', 'sigma')
-zst=as.vector(rbinom(M, 1, .5))
-inits =  function() {list(z=zst,psi=runif(1), sigma=runif(1),alpha0=runif(1)) }
-fitexp = bugs(data0, inits, params0, model.file="SCR0exp.txt",working.directory=getwd(),    
-       debug=T, n.chains=3, n.iter=20000, n.burnin=10000, n.thin=2)
+params<-c('psi','p0','N', 'D', 'sigma')
+zst=as.vector(c(rep(1, nind), rep(0, M-nind)))
+
+toad<- spiderplot(beardata$bearArray,X)
+Sst<-matrix(cbind(runif(M, Xl, Xu), runif(M, Yl, Yu)), ncol=2)
+Sst[1:nind, ]<-toad$avg.s
+inits =  function() {list(z=zst,psi=runif(1), s=Sst, sigma=runif(1,2,3),alpha0=runif(1)) }
+
+out1 <- jags.model("SCR0exp.txt", data0, inits, n.chains=3, n.adapt=500)
+outSCR0exp <- coda.samples(out1,  params, n.iter=20000)
 \end{verbatim}
 }
 Executing this block of code produces the following summary output:
 {\small
 \begin{verbatim}
-> print(fitexp, digits=3)
-Inference for Bugs model at "SCR0exp.txt", fit using WinBUGS,
- 3 chains, each with 20000 iterations (first 10000 discarded)
- n.sims = 30000 iterations saved
-            mean     sd    2.5%     25%     50%     75%   97.5%  Rhat n.eff
-psi        0.789  0.102   0.588   0.718   0.790   0.863   0.975 1.004   760
-p0         0.348  0.056   0.252   0.308   0.344   0.382   0.470 1.005   550
-N        513.419 65.770 384.000 467.000 513.000 561.000 634.000 1.004   790
-D          0.169  0.022   0.127   0.154   0.169   0.185   0.209 1.004   790
-sigma      1.114  0.093   0.947   1.049   1.108   1.173   1.315 1.004   780
-deviance 717.773 22.363 676.500 702.100 717.000 732.100 764.000 1.001  6000
+> print(summary(outSCR0exp), digits=2)
 
-For each parameter, n.eff is a crude measure of effective sample size,
-and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+Iterations = 501:20500
+Thinning interval = 1
+Number of chains = 3
+Sample size per chain = 20000
 
-DIC info (using the rule, pD = var(deviance)/2)
-pD = 250.0 and DIC = 967.8
-DIC is an estimate of expected predictive error (lower deviance is
-better).
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
+
+         Mean     SD Naive SE Time-series SE
+D        0.17  0.023  9.3e-05        0.00111
+N      511.55 68.730  2.8e-01        3.35478
+p0       0.34  0.055  2.2e-04        0.00088
+psi      0.79  0.107  4.4e-04        0.00520
+sigma    1.12  0.094  3.8e-04        0.00213
+
+[some output deleted]
+...
 \end{verbatim}
 }
 
 
-
-
-Here, we see that posterior mean density is approximately 0.17,
+Here, we see that posterior mean density is 0.17,
 effectively the same as under the half-normal distance function model
 above.  The posterior mean (percentiles) of $\sigma$ for the negative
-exponential model are $1.14 (0.95, 1.32)$, entirely distinct from our
+exponential model are $1.12 (0.95, 1.32)$, entirely distinct from our
 estimate of $\sigma$ under the half normal model. The interpretation
 of $\sigma$ in the two models is really quite distinct. In the normal
 model it can be interpreted as the standard deviation of a bivariate
@@ -598,19 +623,18 @@ normal movement model whereas the manner in which $\sigma$ relates to
 ``area used'' for the negative exponential model has nothing to do
 with a bivariate normal model of movement.  This highlights that it is
 important for the user to know what distance function is used and what
-the interpretation of $\sigma$ might be.  There is not a clear way XXX
-actually I have some material for Ch. 4 that addresses this XXXXXX
-(that we know of) for $\sigma$ from the exponential model to be
-related to home range radius.
+the interpretation of $\sigma$ might be in relation to the home range size.
+This relationship was discussed in Ch. 4
+XXadd ref tagXX for various detection functions.
+
 
 We leave the detection functions for now and move onto incorporating
-covariates into the model using the \bugs 
+covariates into the model using the {\bf JAGS}
 language.  For this part, we will stick with the half-normal distance
-model shown in the \mbox{\tt SCR0.txt} model file above. 
+model shown in the \mbox{\tt SCR0.txt} model file above.
 
 \subsection{Time-Varying Encounter Probability}
 
-XXX I added this general context to lead-in here XXXX
 A classical type of capture-recapture model is that commonly referred
 to as ``model $M_{t}$'' \citep{otis_etal:1978} in which detection probability varies by
 sampling occasion. That is, there are $K$ sampling occasion-specific
@@ -618,26 +642,26 @@ parameters to reflect potential variation in sampling effort or other
 factors that might vary across samples.
 
 There are a number of ways in which we can incorporate time into our
-models.  As we demonstrated above XXXX I didn't see this demonstrated
-anywhere XXXXXXX, we can easily fit a ``time effect'' model in \winbugs
+models.  As we described above, we can easily fit a ``time effect'' model in {\bf JAGS}
 where each occasion has its own detection probability.
 For this, we can use the same data set up as in the previous
-section and modify our \winbugs code to now allow $\alpha_0$ to be
+section and modify our {\bf JAGS} code to now allow $\alpha_0$ to be
 estimated for each time period $k$ either using an index vector or
 dummy variables XXXXX index variables and dummy variables need defined
 somewhere XXXXXXXX.  In order to estimate time
-specific baseline detection, we need to use the 3-d data array which
+specific baseline detection, we need to use the 3-d data array (called \mbox{\tt Yaug} in our
+code) which
 has dimension
 $\mbox{\tt nind} \times \mbox{\tt ntraps} \times \mbox{\tt nreps}$.
-Thus, in our list of data, we now use 
-XXXX BETH: I'm not understanding this sentence XXXXXXXX
-\mbox{\tt Yaug}
-instead of \mbox{\tt y} (the 2-d version of the data).  We also update our
-initial values so that there are $K=8$ values generated. This
+We use \mbox{\tt Yaug} as opposed to \mbox{\tt y} (the 2-d version of the data),
+ because we need to have the occasion specific trap
+encounter histories in order to estimate time effects.
+We also update our
+initial values so that there are $K=8$ values generated for $\alpha0$. This
 ultimately means that we have put in another nested for loop in our
 code and the computation time will increase quite a bit (this model
-may take up to 20 hours or more on your machine to obtain a sufficient
-posterior sample). XXXX BETH: Is JAGS any faster? XXXXXXXX
+may take up to 15 hours or more on your machine to obtain a sufficient
+posterior sample).
 
 {\small
 \begin{verbatim}
@@ -672,78 +696,94 @@ D<-N/area
 ",file = "SCR0t.txt")
 
 data0<-list(y=Yaug,M=M,K=K, J=ntraps, Xl=Xl, Yl=Yl, Xu=Xu, Yu=Yu, X=X, area=areaX)
-params0<-list('psi','p0','N', 'D', 'sigma')
-zst=as.vector(rbinom(M, 1, .5))
-inits =  function() {list(z=zst,psi=runif(1), sigma=runif(1),alpha0=runif(8)) }
-fitt = bugs(data0, inits, params0, model.file="SCR0t.txt",working.directory=getwd(),    
-       debug=T, n.chains=3, n.iter=20000, n.burnin=10000, n.thin=2)
+params<-c('psi','p0','N', 'D', 'sigma')
+zst=as.vector(c(rep(1, nind), rep(0, M-nind)))
+
+toad<- spiderplot(beardata$bearArray,X)
+Sst<-matrix(cbind(runif(M, Xl, Xu), runif(M, Yl, Yu)), ncol=2)
+Sst[1:nind, ]<-toad$avg.s
+
+inits =  function() {list(z=zst,psi=runif(1), s=Sst, sigma=runif(1,2,3),alpha0=runif(8)) }
+
+library("rjags")
+
+outt <- jags.model("SCR0t.txt", data0, inits, n.chains=3, n.adapt=500)
+outSCR0t <- coda.samples(outt,  params, n.iter=20000)
 \end{verbatim}
 }
 
-Executing this code produces the fullowing summary output:
-{\small 
+Executing this code produces the following summary output:
+{\small
 \begin{verbatim}
-> print(fitt, digits=3)
-Inference for Bugs model at "SCR0t.txt", fit using WinBUGS,
- 3 chains, each with 20 iterations (first 10 discarded), n.thin = 2
- n.sims = 15 iterations saved
-             mean     sd     2.5%      25%      50%      75%    97.5%   Rhat n.eff
-psi         0.084  0.014    0.063    0.075    0.084    0.092    0.107  0.898    15
-p0[1]       0.658  0.044    0.610    0.614    0.649    0.712    0.717 37.099     3
-p0[2]       0.557  0.031    0.512    0.516    0.578    0.581    0.582 13.305     3
-p0[3]       0.640  0.045    0.577    0.583    0.659    0.680    0.686 29.848     3
-p0[4]       0.645  0.054    0.570    0.575    0.667    0.688    0.700 27.818     3
-p0[5]       0.574  0.015    0.554    0.559    0.573    0.589    0.592 10.273     3
-p0[6]       0.672  0.010    0.662    0.664    0.667    0.682    0.688  6.429     3
-p0[7]       0.596  0.056    0.521    0.529    0.610    0.653    0.656 30.910     3
-p0[8]       0.619  0.037    0.589    0.591    0.598    0.665    0.671 14.977     3
-N          54.600  3.795   49.691   52.000   54.000   57.498   61.570  0.987    15
-D           0.018  0.001    0.016    0.017    0.018    0.019    0.020  0.987    15
-sigma       8.282  0.364    7.660    8.066    8.362    8.521    8.819  1.258     9
-deviance 1498.133 40.440 1444.144 1465.999 1492.000 1526.440 1564.546  1.507     6
-...
+print(summary(outSCR0t), digits = 2)
+
+Iterations = 501:20500
+Thinning interval = 1
+Number of chains = 3
+Sample size per chain = 20000
+
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
+
+         Mean     SD Naive SE Time-series SE
+D       0.17  0.02  8.9e-05        0.00101
+N     509.24 66.13  2.7e-01        3.05688
+p0[1]   0.06  0.02  7.8e-05        0.00015
+p0[2]   0.05  0.02  7.0e-05        0.00012
+p0[3]   0.15  0.03  1.3e-04        0.00027
+p0[4]   0.14  0.03  1.3e-04        0.00027
+p0[5]   0.15  0.03  1.3e-04        0.00026
+p0[6]   0.12  0.03  1.2e-04        0.00022
+p0[7]   0.15  0.03  1.3e-04        0.00025
+p0[8]   0.08  0.02  9.1e-05        0.00016
+psi     0.78  0.10  4.2e-04        0.00473
+sigma   1.96  0.12  5.1e-04        0.00236
+
+
 [some output deleted]
 ...
 \end{verbatim}
 }
 
 
-
-
-
-
 The results from this model are very similar to those from the basic
 model, but now we can examine the difference in detection across time.
-We see that there is a clear difference in detection $p_0$ at time $k=1$
+We see that there is a difference in detection $p_0$ at time $k=1$
 than with the other time periods.  Additionally, detection seems to
-increase for the first few time periods before stabilizing around $0.7$.
-It is clear XXXX how is this clear? XXXXX
-that by adding in a time specific detection probability,
-we have identified that there is heterogeneity in detection and it is
-important XXXX Why is it important? XXXX
-to model those differences.  Our density estimates are
-similar however to the base model, suggesting that the variation in
-detection by occasion did not have a huge impact on our results. XXX
-So it is not important? XXXXXX 
+increase for the first few time periods before stabilizing around $0.14$.
+The differences in detection from the first time period to the others might
+actually be due to something like a behavioral response or possibly seasonal
+differences in the efficiency of the sampling technique.
+Researchers have found that hair snares are more effective at different
+times of the year (even within season) due to shedding \citep{wegan_etal:inpress}.
+In this particular example, our density estimates are
+similar to the base model likely because the differences between occasion were not that large.
+In a longer term study or in one with greater variation in the detection probability,
+the implication of such differences might have a bigger impact on the estimates of density
+and $\sigma$.
 
 \subsection{Behavioral Response}
 
+The behavioral response can be constructed in two ways -- either as a
+global response (i.e., was the individual previously captured in any trap) or
+as a local response (i.e., was the animal previously captured in this
+trap).  To do this, we have to first
+construct an indicator of whether an animal has been capture before or not.  For
+example, if C[i,j,k] = 1, then individual i has been captured at trap j
+ at least once during
+sample occasions $1 \dots k-1$.  Specifying the trap at which the individual was
+previously captured would allow us to estimate the local behavioral response.  If
+we condensed this array to a matrix of individual by occasion, where C[i,k] = 1 indicates
+that individual i was previously captured at any trap at least once during
+sample occasions $1 \dots k-1$, then we
+could model the global behavioral response.
 
-To model a behavioral response, we must first create the require matrix or
-array that will indicate whether or not an individual has been previously
-captured.  We can do this in one of two ways - either as a
-global response (was the individual previously captured in any trap)
-or as a local response XXXX the matrix we have to construct is
-different depending on which we are considering so the lead sentence
-needs changed here XXXXXX
-(was the animal previously captured in this
-trap).  In either case, we will have to use the 3-d array of the
+In either case, because the behavioral response is occasion specific, we will have to use the 3-d array of the
 capture histories ($\mbox{\tt nind} \times \mbox{\tt ntraps} \times
 \mbox{\tt nreps}$) as we did for the time-varying encounter probability
-model.  
-
-
-XXX is the following model for a global or local behavioral response? XXXXX
+model.
+Here, we demonstrate the local behavioral response model and start by constructing the
+indicator of previous capture array C[i,j,k].
 
 XXXXX please put this in the R package XXXXXX
 
@@ -784,25 +824,17 @@ D<-N/area
 ",file = "SCRb.txt")
 
 
-
-datab<-list(y=Yaug,C=C, M=M,K=K, J=ntraps, Xl=Xl, Yl=Yl, Xu=Xu, Yu=Yu, X=X, area=areaX)
-params0<-list('psi','alpha0','alpha2', 'N', 'D', 'sigma')
-zst=as.vector(rbinom(M, 1, .5))
-inits =  function() {list(z=zst,psi=runif(1), sigma=runif(1),alpha0=runif(1),alpha2=runif(1)) }
-fitb = bugs(datab, inits, params0, model.file="SCRb.txt",working.directory=getwd(),    
-       debug=TRUE, n.chains=3, n.iter=20, n.burnin=10, n.thin=2)
+XXupdate with jags code XXXX
 
 \end{verbatim}
 }
 
 
-WAITING FOR THE RESULTS HERE.  
+WAITING FOR THE RESULTS HERE.
 
-XXXX  Still waiting.... XXXX
+XXX it is running in JAGS right now XXXX
 
-XXXX Does JAGS run faster? XXXXXX
-
-XXXX change n.iter etc.. in the bugs() call to reflect what you ran
+XXX Definitely faster, but not THAT fast XXX
 
 
 
@@ -822,7 +854,7 @@ particular, in the secr() package.  A variant of the conditional
 likelihood which is kind of distinct and relevant to the individual
 covariates is the ``Huggins-Alho'' idea which is based on thinking
 about Horwitz-Thompson estimators involving unequal probabilities of
-sampling. 
+sampling.
 
 
 
@@ -835,14 +867,14 @@ specification framework, defining the dependent and independent
 variable relationship using tildes
 (e.g., \Verb+y ~ x+).
 Thus, in \secr we
-might have \verb+g0 ~ behavior+ or \verb+sigma ~ time+; 
+might have \verb+g0 ~ behavior+ or \verb+sigma ~ time+;
 when left unspecified or set
 to 1 (e.g., \verb+g0 ~ 1+), this will default to a model with no
 covariates
 (i.e., constant parameter values).
 Additionally, we can specify covariates in \secr
-on density (see Chapt. \ref{chapt.ipp}), 
-which are set for example as \verb+D ~ habitat+.  
+on density (see Chapt. \ref{chapt.ipp}),
+which are set for example as \verb+D ~ habitat+.
 
 To demonstrate
 a suite of models with various types of covariates using \secr, we
@@ -853,14 +885,14 @@ it for his or her own use.  First we need to read in the raw data and
 the trap file so that we can build the capture history and trap files
 required by \secr.  After doing this, similar to the wolverine example
 shown in Chapt. \ref{chapt.mle}, we then call the command \mbox{\tt
-  secr.fit} 
+  secr.fit}
 to fit the model by the method of maximum likelihood.
  All of the following models should take somewhere between 30
 seconds and 5 minutes to run on your computer (possibly a little
 longer or shorter given the specifics of your machine).  To refresh
-your memory, we being by fitting a basic 
+your memory, we being by fitting a basic
 model with no covariates and a bivariate normal detection model in
-\secr to the Ft. Drum bear study data: 
+\secr to the Ft. Drum bear study data:
 
 {\small
 \begin{verbatim}
@@ -869,44 +901,44 @@ trapmat[,2:3] = trapmat[,2:3]*1000
 colnames(trapmat)<- c("trapID","x", "y")
 trapfile <- read.traps(data = trapmat, detector = "proximity")
 
-captfile <- bearraw[ , c(4,1,3,2)] 
+captfile <- bearraw[ , c(4,1,3,2)]
 colnames(captfile) <- c("Session", "ID", "Occasion", "trapID")
 bearcapt=make.capthist(captfile, trapfile, fmt = "trapID", noccasions = 8)
 
 bear=secr.fit (bearcapt, buffer = 20000)
 
-Detector type     proximity 
-Detector number   38 
-Average spacing   1776.437 m 
-x-range           438789 456465 m 
-y-range           4874895 4887477 m 
-N animals       :  47  
-N detections    :  151 
-N occasions     :  8 
-Mask area       :  301466.0 ha 
+Detector type     proximity
+Detector number   38
+Average spacing   1776.437 m
+x-range           438789 456465 m
+y-range           4874895 4887477 m
+N animals       :  47
+N detections    :  151
+N occasions     :  8
+Mask area       :  301466.0 ha
 
-Model           :  D~1 g0~1 sigma~1 
-Fixed (real)    :  none 
-Detection fn    :  halfnormal 
-Distribution    :  poisson 
-N parameters    :  3 
-Log likelihood  :  -587.1641 
-AIC             :  1180.328 
-AICc            :  1180.886 
+Model           :  D~1 g0~1 sigma~1
+Fixed (real)    :  none
+Detection fn    :  halfnormal
+Distribution    :  poisson
+N parameters    :  3
+Log likelihood  :  -587.1641
+AIC             :  1180.328
+AICc            :  1180.886
 
-Beta parameters (coefficients) 
+Beta parameters (coefficients)
            beta    SE.beta       lcl       ucl
 D     -6.398657 0.15502806 -6.702506 -6.094807
 g0    -2.133876 0.14669415 -2.421391 -1.846361
 sigma  7.587286 0.06458962  7.460692  7.713879
 
-Variance-covariance matrix of beta parameters 
+Variance-covariance matrix of beta parameters
                   D            g0        sigma
 D      0.0240336981 -0.0001084522 -0.002602049
 g0    -0.0001084522  0.0215191733 -0.005977169
 sigma -0.0026020486 -0.0059771686  0.004171819
 
-Fitted (real) parameters evaluated at base levels of covariates 
+Fitted (real) parameters evaluated at base levels of covariates
        link     estimate  SE.estimate          lcl          ucl
 D       log 1.663791e-03 2.594918e-04 1.227831e-03 2.254545e-03
 g0    logit 1.058476e-01 1.388370e-02 8.155599e-02 1.363008e-01
@@ -915,23 +947,25 @@ sigma   log 1.972951e+03 1.275652e+02 1.738351e+03 2.239211e+03
 }
 
 
-
+XXXX this is the first and only time I used ``reminder" in the chapter,
+ so I think it might be okay here but I can remove itXXXX
 Just as a reminder XXXX lets use the word and phrases involving
-``reminder'' less XXXXXX, \mbox{\tt secr} returns density in terms of 
+``reminder'' less XXXXXX, \mbox{\tt secr} returns density in terms of
 individuals per
 hectare, so we must multiply this $D$ by 100 to see the estimate as
 individuals per $km^2$.  In doing so, the resulting density is 0.166
 individuals / $km^2$, which very similar to that found in sec. XXXXX
-latex tag here XXXX
-using \winbugs for the equivalent detection model. XXXX how different
-is it? be precise here so the reader doesn't have to go back there XXXXX
+latex tag here XXXX ($D = 0.167$)
+using {\bf JAGS} for the equivalent detection model. In fact, the difference
+is only 0.001 suggesting that in this case the two frameworks provide consistent
+results.
 
 In the \secr package, the detection functions are specified
 by changing the ``\mbox{\tt detectfn}'' option (an integer code)
 within the \mbox{\tt secr.fit} command.  Table
 \ref{covariates.tab.detmodels} shows the possible detection functions
 that \mbox{\tt secr} will fit; the default is that based on the kernel
-of a bivariate normal 
+of a bivariate normal
 (``half-normal'') model and the
 (negative) exponential is \mbox{\tt detectfn = 2}. Therefore, to fit the
 exponential distance function, we use the following commands:
@@ -942,19 +976,19 @@ bearexp = secr.fit (bearcapt, buffer = 20000, detectfn=2)
 
 [secr data and model summary output deleted ]
 
-Beta parameters (coefficients) 
+Beta parameters (coefficients)
             beta   SE.beta       lcl        ucl
 D     -6.3778954 0.1575762 -6.686739 -6.0690518
 g0    -0.6439777 0.2436156 -1.121455 -0.1664999
 sigma  7.0065881 0.0838522  6.842241  7.1709354
 
-Variance-covariance matrix of beta parameters 
+Variance-covariance matrix of beta parameters
                  D          g0        sigma
 D      0.024830243  0.00312779 -0.004050057
 g0     0.003127790  0.05934856 -0.015261224
 sigma -0.004050057 -0.01526122  0.007031192
 
-Fitted (real) parameters evaluated at base levels of covariates 
+Fitted (real) parameters evaluated at base levels of covariates
        link     estimate  SE.estimate          lcl          ucl
 D       log 1.698694e-03 2.693439e-04 1.247344e-03 2.313366e-03
 g0    logit 3.443479e-01 5.500169e-02 2.457414e-01 4.584709e-01
@@ -962,21 +996,20 @@ sigma   log 1.103882e+03 9.272586e+01 9.365855e+02 1.301061e+03
 \end{verbatim}
 }
 
-Density is estimated similar to the bivariate normal model, 
+Density is estimated similar to the bivariate normal model,
 although the mean
-estimate is slightly larger. The 
-posterior mean of 
+estimate is slightly larger. The
+mean of
 $\sigma$ is about $1.1$
- which is very different from the bivariate normal where the
-posterior mean of $\sigma$ was $1.97$.
+ which is very different from the half-normal model where the
+ mean of $\sigma$ was $1.97$.
 These results are consistent with the what we saw in the Bayesian
-analysis of the model. XXXX requires further comment here....so reader
-doesn't have to look back and compare XXXXXXX
+analysis of the model where the poster mean of $\sigma$ under the negative
+exponential model was $1.12$ and under the half normal was $1.99$.
+
 
 XXX can you put the secr commands in an R help file for a relevant
 function in scrbook? XXXXXX
-
-
 
 
 \subsection{Time-Varying Encounter Probability}
@@ -988,31 +1021,25 @@ there are very few sampling occasions but becomes an unwieldy model
 with lots of parameters, in general, if sample occasions are very
 frequent (e.g., daily). In some cases it might make sense to have a
 smooth function of time to reflect season variation in encounter
-probability as show above. We saw previous that such models are easy
-to fit in \winbugs.  The package \secr only fits XXXX is this true?
-you can't have a covariate on p ??? XXXXXXX the classical
-time-effects type 
-of model with $K$ distinct parameters, unless an alternative approach is
-used such as ``groups'' or ``sessions''.
-
-XXXX this next paragraph seems redundant can you convert to 1 sentence
-or reword and then attached to the previous paragraph? XXXXXXX
-Time specific parameters are also easy to incorporate, we just include
-$t$ in our model fit call and \secr will automatically fit time
-specific encounter probability.  For example, if we allowed baseline detection to
-vary by time (as we did in eq. ** XXXXXX which equation is this?
-XXXXXXX), we simply use \verb+g0~t+ in our model expression.
-
+probability as shown above. We also saw previously that such models are easy
+to fit in {\bf JAGS}.  The package \secr fits the classical
+time-effects type of model with $K$ distinct parameters (\secr uses 't' to denote
+this in the command call) and a linear
+trend over occasions (\secr uses 'T' to denote this in the command call).
+\secr will then automatically fit a time
+specific encounter probability (either factor based or linear) based on the use
+of lower or upper case 't'.  For example, we simply use \verb+g0~t+ in
+our model expression to implement eq. XX   XXget eq. refXX
 
 
 {\small
 \begin{verbatim}
-beart=secr.fit (bearcapt, model = list(D~1, g0~t, sigma~1), buffer = 20000) 
+beart=secr.fit (bearcapt, model = list(D~1, g0~t, sigma~1), buffer = 20000)
 beart
 
 [secr data and model summary output deleted ]
 
-Beta parameters (coefficients) 
+Beta parameters (coefficients)
             beta    SE.beta         lcl        ucl
 D     -6.3984155 0.15485019 -6.70191633 -6.0949147
 g0    -2.8248967 0.34791833 -3.50680406 -2.1429893
@@ -1025,10 +1052,10 @@ g0.t7  1.0185729 0.39931309  0.23593362  1.8012122
 g0.t8  0.2871613 0.44183900 -0.57882724  1.1531498
 sigma  7.5832897 0.06435693  7.45715244  7.7094270
 
-Variance-covariance matrix of beta parameters 
+Variance-covariance matrix of beta parameters
 [output deleted]
 
-Fitted (real) parameters evaluated at base levels of covariates 
+Fitted (real) parameters evaluated at base levels of covariates
        link     estimate  SE.estimate          lcl          ucl
 D       log 1.664192e-03 2.592530e-04 1.228555e-03 2.254302e-03
 g0    logit 5.599354e-02 1.839036e-02 2.911925e-02 1.049882e-01
@@ -1040,7 +1067,7 @@ The package \mbox{\tt secr} does not provide the fitted value XXX make
 sure of this or Murray will have a cow and publish slammers about us! XXXXX
 for the
 detection probability of each time period after the initial time
-$(t1)$.  
+$(t1)$.
  We can back calculate each of the values using:
 {\small
 \begin{verbatim}
@@ -1059,8 +1086,8 @@ $(t1)$.
 These results suggest the same as we saw in sec. XXXXX give latex tag
 here  XXXX 8.3.1, that there
 are differences in detection by time.  Interestingly, the estimate of
-density remains similar to our basic model with $D = 0.167$ 
-individuals per $km ^2$.   
+density remains similar to our basic model with $D = 0.167$
+individuals per $km ^2$.
 One might have expected the density to change given how
 small the baseline detection probability was in the first session.
 However, the increased detection in other time periods clearly
@@ -1069,7 +1096,8 @@ balances that initial low detection probability.
 \subsection{Behavior}
 
 The secr package allows one to incorporate a simple trap response
-rather easily.  Not without reorganizing our data, we can just take
+rather easily (we called this the 'global behavioral model' above).
+Without reorganizing our data, we can just take
 the basic model and change the model call to:
 {\small
 \begin{verbatim}
@@ -1080,27 +1108,27 @@ secr 2.0.0, 18:39:38 14 Jul 2011
 
 [...secr data and model summary output deleted...]
 
-Beta parameters (coefficients) 
+Beta parameters (coefficients)
               beta    SE.beta        lcl       ucl
 D        -6.063824 0.20998468 -6.4753866 -5.652262
 g0       -2.962320 0.30193079 -3.5540936 -2.370547
 g0.bTRUE  1.069292 0.30169340  0.4779839  1.660600
 sigma     7.580269 0.06276493  7.4572522  7.703286
 
-Variance-covariance matrix of beta parameters 
+Variance-covariance matrix of beta parameters
                     D           g0      g0.bTRUE         sigma
 D         0.044093568 -0.038995412  0.0406985508 -0.0024012404
 g0       -0.038995412  0.091162203 -0.0788400314 -0.0054049828
 g0.bTRUE  0.040698551 -0.078840031  0.0910189076 -0.0006804517
 sigma    -0.002401240 -0.005404983 -0.0006804517  0.0039394367
 
-Fitted (real) parameters evaluated at base levels of covariates 
+Fitted (real) parameters evaluated at base levels of covariates
        link     estimate  SE.estimate          lcl          ucl
 D       log 2.325491e-03 4.937501e-04 1.540903e-03 3.509570e-03
 g0    logit 4.915745e-02 1.411255e-02 2.781168e-02 8.544641e-02
 sigma   log 1.959156e+03 1.230875e+02 1.732381e+03 2.215617e+03
 \end{verbatim}
-} 
+}
 The package \secr does not provide the fitted value for the detection
 probability of individuals that were not observed and so we have to
 compute this by evaluating the encounter probability model explicitly.
@@ -1112,80 +1140,94 @@ been previously captured, we see it is $0.131$:
 [1] 0.1309028
 \end{verbatim}
 Thus, encounter probability for individuals previously captured is
-almost 3 times greater than that of individuals not 
- detection of those individuals
-not previously captured.  We see that the 
+almost 3 times greater than that of individuals
+not previously captured.  We see that the
 estimated density increases over the model with no behavioral effect
 (posterior mean $0.23
 bears/km2$ versus $0.16 bears/km2$ in model SCR0).
 
-
-
-While we have just seen that 
-it is very easy to incorporate a trap response; however, to
+It is not only easy to incorporate a global trap response model, but also just as simple to
 incorporate a trap specific behavioral response (as in
-\citet{royle_etal:2009}) is not so straight forward.  XXXX ***B - figure
-this out**. XXXXX 
-XXX I guess if secr() can handle general covariates then it should be
-possible right?
+\citet{royle_etal:2009}).  To do so, we use just modify the
+the behavioral code from above from using a ``b" to ``bk".
 
+XXX I might remove this part, but left it for reference right now XXX
+{\small
+\begin{verbatim}
 
-Behavioral and time effects can be both incorporated by writing the standard linear regression type code within the model call:
+> bearbk=secr.fit (bearcapt, model = list(D~1, g0~bk, sigma~1), buffer = 20000)
+
+> bearbk
+
+Beta parameters (coefficients)
+               beta    SE.beta       lcl       ucl
+D         -6.336352 0.17638162 -6.682053 -5.990650
+g0        -3.154732 0.20113222 -3.548944 -2.760520
+g0.bkTRUE  2.377687 0.25262813  1.882545  2.872829
+sigma      7.859917 0.09660444  7.670576  8.049258
+\end{verbatim}
+}
+
+Additionally, we can have additive effects within \secr.  For example, behavioral and time effects can be both incorporated by writing the standard linear regression type code within the model call:
 XXX we need to figure out how to center the tidles in the line XXXXX
 \[
 bearbt=secr.fit (bearcapt, model = list(D~1, g0~b + t, sigma~1), buffer = 20000)
 \]
 
+This particular code specifies a model with a global behavioral response and a factorial time trend in g0.
+
+
 \subsection{Sex Effects}
 
-
-
-XXXX general statement that sex might affect both the intercept and
-also the scale parameter. maybe some biological context XXXXXX
-
 Incorporating sex effects into models with \secr can be done a few
-different ways, but none XXX {\bf recommend moving this ``but none....''
-end of sentence to a general discussion point at the end of this
-section} XXXXX
-of these allow us to include partial observability.   Individuals that
-are of unknown sex must be removed from the dataset, which is
-different XXX {\bf not sure what is meant by ``which is different'' clarify
-this sentence here and probably this should be moved to the end of the
-section as a general discussion point} XXXXXX
-from the \winbugs approach.  The most common way to include
+different ways.  Due to the approach, individuals that
+are of unknown sex must be removed from the dataset,
+The most common way to include
 sex is to code it into ``session'', providing two sessions that
 represent males and females.  This is specified using the model list
 within \mbox{\tt secr.fit} command as follows:
-{\small 
+{\small
 \begin{verbatim}
 bearraw$Sex<-bearsex$Sex[pmatch(bearraw$Ind, bearsex$Bear, duplicates.ok=T)]
 bearraw$Session<-as.numeric(bearraw$Sex)
 
-captfile <- bearraw[ , c(6,1,3,2)] 
+captfile <- bearraw[ , c(6,1,3,2)]
 colnames(captfile) <- c("Session", "ID", "Occasion", "trapID")
 
 bearcapt=make.capthist(captfile, trapfile, fmt = "trapID", noccasions = 8)
 
 bearsex=secr.fit (bearcapt, model = list(D~session, g0~session, sigma~session), buffer = 20000)
 
-Fitted (real) parameters evaluated at base levels of covariates 
+Fitted (real) parameters evaluated at base levels of covariates
 
- session = 1 
+ session = 1
        link     estimate  SE.estimate          lcl          ucl
 D       log 1.192961e-03 2.400004e-04 8.073782e-04 1.762689e-03
 g0    logit 1.352143e-01 2.504984e-02 9.317268e-02 1.922053e-01
 sigma   log 1.513867e+03 1.276755e+02 1.283591e+03 1.785454e+03
 
- session = 2 
+ session = 2
        link     estimate  SE.estimate          lcl          ucl
 D       log 5.376811e-04 1.081709e-04 3.638945e-04 7.944638e-04
 g0    logit 9.248494e-02 1.798037e-02 6.276472e-02 1.342622e-01
 sigma   log 2.522380e+03 2.127309e+02 2.138699e+03 2.974894e+03
 \end{verbatim}
 }
+
+\begin{comment}
+but none XXX {\bf recommend moving this ``but none....''
+end of sentence to a general discussion point at the end of this
+section} XXXXX
+of these allow us to include partial observability.
+{\bf not sure what is meant by ``which is different'' clarify
+this sentence here and probably this should be moved to the end of the
+section as a general discussion point} XXXXXX
+from the \textbf{WinBUGS} approach.
+\end{comment}
+
 As you can see in the output, this provides two separate density
 estimates, which can then be combined into a total density.  The
-resulting estimates for $\sigma$ are consistent with those from \winbugs
+resulting estimates for $\sigma$ are consistent with those from {\bf JAGS}
 provided in sec. XXX {\bf insert dynamic link} XXXX XXXX {\bf also say in what
 sense are they consistent so reader doesn't have to look back} XXXX
 
@@ -1204,8 +1246,8 @@ this latter option (M. Efford, pers. comm).  ***I'm not trusting the
 AIC for the sex model as session either*** XXXXX ok, what to do then? XXXXXX
 
 
-XXX 
-{\bf Do we have an example of a Bayesian analysis of a model with sex in it? 
+XXX
+{\bf Do we have an example of a Bayesian analysis of a model with sex in it?
 we gotta have one, preferably with some missing data, since this is a
 nice feature of the bayesian version of the models. }
 XXXXX
@@ -1225,8 +1267,8 @@ think this is a description of the underlying model and not an
 attribute of secr per se} XXXXX that the population is
 comprised of 2 or more latent classes, with an unknown proportion in
 each class.  We discuss heterogeneity in more detail in the next
-section but provide just the basic model for \secr here. 
-XXXX 
+section but provide just the basic model for \secr here.
+XXXX
 {\bf its ok
 to have something of a brief introduction here and also reference back
 to some material in chapter 3 and some other references including the
@@ -1237,16 +1279,16 @@ To fit a
 2-part finite mixture for baseline detection we use the following
 function call:
 
-\begin{verbatim} 
+\begin{verbatim}
 bearhh=secr.fit (bearcapt, model = list(g0~h2), buffer = 20000)
-\end{verbatim} 
+\end{verbatim}
 
 Remarks:  1) It is important to note that this specification of
 individual heterogeneity is different from that which we incorporate
-into \winbugs.  Here, a finite mixture model is used, which effectively
+into \textbf{WinBUGS}.  Here, a finite mixture model is used, which effectively
 puts the individuals into one of two (or three) latent classes and
 then assigns each class a distribution for the specified detection
-parameter. XXXX 
+parameter. XXXX
 {\bf but we could do that in winbugs too, right? we just
 choose not to. I think its worth making this point that you've made
 but you need to be more precise, its not just that winbugs and secr
@@ -1289,7 +1331,7 @@ bear            D~1 g0~1 sigma~1 halfnormal    3 -587.1641 1180.328 1180.886 28.
 The results from this AIC analysis are pretty easy to interpret; the model
 with individual heterogeneity as a finite mixture for $g0$ XXXXX and
 sigma right ?XXXXXX
- has a 
+ has a
 model weight of 1 and therefore appears to be clearly superior to the
 other models.  Using the AIC provides a convenient mechanism for
 conducting model comparisons.  However, the user must be left a little
@@ -1297,7 +1339,7 @@ frustrated with these results, which indicated that individuals have
 some unknown source of heterogeneity which we have not identified
 using time and behavior.  Naturally, since we found that the model
 with the most weight has two latent classes, we might try to explain
-this unknown heterogeneity by classifying the groups into sex. 
+this unknown heterogeneity by classifying the groups into sex.
 XXXX So why don't we do that here? don't leave the reader hanging! XXXXXXX
 
 
@@ -1307,7 +1349,7 @@ XXXX So why don't we do that here? don't leave the reader hanging! XXXXXXX
 
 Capture-recapture models with individual heterogeneity in detection
 probability, so-called model $M_{h}$,  have a long history in classical capture recapture models
-(see sec. XXXX link here XXX), and they have special relevance to 
+(see sec. XXXX link here XXX), and they have special relevance to
 SCR
 as we noted in sec. XXXX link here XXXX.
 We note that their use has been called into question by
@@ -1329,14 +1371,14 @@ XXXX ANDY STOPPED HERE XXXXXX
 While the advent of SCR models may appear to have rendred the use of
 classical Model Mh obsolete (because the heterogeneity is being
 accounted for explicitly) we probably still wish to consider
-heterogeneity models for biological reasons -- 
+heterogeneity models for biological reasons --
  a certain kind of heterogeneity
 makes eminent biological sense.
 
-In particular, 
+In particular,
 
-\[  
- cloglog(p[i,j]) = \alpha + \alpha_1*||s_{i} - x_{j}||^2 
+\[
+ cloglog(p[i,j]) = \alpha + \alpha_1*||s_{i} - x_{j}||^2
 \]
 where $\beta = (1/\sigma^{2})$.  We could as well use a logit link
 here which is customary in many contexts.  This GLM formulation
@@ -1349,7 +1391,7 @@ parameter has been constant or a function of explicit covariates
 (e.g., sex; \citet{gardner_etal:2010}). Conversely, it is reasonable
 to expect in real biological populations that there exists
 heterogeneity in home range size.
-  
+
 Here we develop and evaluate a new class of spatial capture-recapture
 models which allow for individual heterogeneity in encounter
 probability.  In particular, one class of models we propose explicitly
@@ -1372,8 +1414,8 @@ home range size.
 
 \subsection{Models of Heterogeneity}
 
-An obvious model extends the SCR model by including an additive individual effect, analogous to classical ``Model $M_{h}$''. We'll call this model ``SCR+Mh'': 
-\[  
+An obvious model extends the SCR model by including an additive individual effect, analogous to classical ``Model $M_{h}$''. We'll call this model ``SCR+Mh'':
+\[
  cloglog(p) = \alpha + \beta*d(i,j)^2  + \eta_{i}
 \]
 where $\eta_{i}$ is an individual random effect having distribution
@@ -1382,15 +1424,15 @@ $\eta_{i} \sim Normal(0,\tau^{2})$ (\citet{coull_agresti:1999};
 \citet{dorazio_royle:2003}; etc..).  Many other random effects
 distributions are possible. \citet{norris_pollock:1996} propose a
 finite mixture of point supports which has been addressed considerably
-in the literature \citep{pledger:2003; dorazio_royle:2003; link:2003}.  Our view is that such models are not very realistic, yet data hugry as they require many more parameters. Heterogeneity seems naturally continuous unless one expects the heterogeneity to be due to meaningful biological groupings in which case such information would normally be collected if possible.  Even so the more likely scenario is that heterogeneity is due to a lot of different sources contributing independent components of variation, and so the normal model seems sensible in that regard. We note that Efford (XXX) considered a finite-mixture type of representation for SCR models. These are fit in the R package secr() which we do in section XYZ below. 
+in the literature \citep{pledger:2003; dorazio_royle:2003; link:2003}.  Our view is that such models are not very realistic, yet data hugry as they require many more parameters. Heterogeneity seems naturally continuous unless one expects the heterogeneity to be due to meaningful biological groupings in which case such information would normally be collected if possible.  Even so the more likely scenario is that heterogeneity is due to a lot of different sources contributing independent components of variation, and so the normal model seems sensible in that regard. We note that Efford (XXX) considered a finite-mixture type of representation for SCR models. These are fit in the R package secr() which we do in section XYZ below.
 
 {\bf Heterogeneity Induced by Variation in Home Range Size} -- We suggest an alternative heterogeneity model, one that has more of a direct biological motivation and interpretation. Specifically , we suppose that there exists heterogeneity in home range size among individuals. This is manifest in the scale parameter of the detection function $\sigma^{2}$ or its inverse $\beta = 1/\sigma^{2}$. We might
 thus assume a distribution for either $\sigma^{2}$ or its inverse,
 $\beta$.  We thus propose ``Model SCR + Ah'' (Ah for area-induced
 heterogeneity).
 \[
- cloglog(p) = \alpha + \beta_{i}*d(i,j)^2 
-\]  
+ cloglog(p) = \alpha + \beta_{i}*d(i,j)^2
+\]
 This model is a model of heterogeneity in home range area. For example
 if we assume that $\beta_{i} \sim \mbox{Normal}(\beta_0,\tau^{2})$
 with $\beta_{0} = 2$ and $\tau = 0.50$. Then the population
@@ -1425,14 +1467,14 @@ will never find those notes, ever!
 {\bf Approximation: }
 Note that ``SCR + Mh'' might be a good approximation to ``SCR + Ah''.  If we write $beta_{i} =
 beta_{0} + \eta_{i}$ then
-we can take the expectation over  $\beta_{i}$ to arrive at 
-\[ 
+we can take the expectation over  $\beta_{i}$ to arrive at
+\[
  cloglog(p_{ij} ) = \alpha + \beta_{0}*d(i,j)^2 +  \eta_{i}*d(I,j)^2
 \]
 Which has this additive individual effect that varies also by trap. It might be that approximating
 This by SCR+Mh is better than nothing.
-This could also be viewed as suggesting an over-dispersed count model for encounter frequencies.  
-  
+This could also be viewed as suggesting an over-dispersed count model for encounter frequencies.
+
 \subsection{Doing it in WinBUGS}
 
 Here we will simulate some data and fit SCR, SCR + Mh, SCR + Ah
@@ -1472,20 +1514,20 @@ but also some new types like trap-specific. We consider spatial covariates
 in Chapt. XXXXXXX.
 
 
-Different detection models: We can make up detection models {\it all fucking 
+Different detection models: We can make up detection models {\it all fucking
 day}, to no end, with no point, and with no biological justification for
 any single model. To us this would be bad practice and so we think it is
-perfectly fine to pick a model ahead of time and stick with it. 
+perfectly fine to pick a model ahead of time and stick with it.
 
 we note that underlying these different models is basically something
 to do with the 2nd moment structure of some correlated spatial process...
 i.e., correlation functions (Higdon et al. 1998; etc...) and , insofar
 as chooing detection functions is like choosing a correlation function,
-it probably wont have much affect on inferences. 
+it probably wont have much affect on inferences.
 
 
 
-not sure what else to say in this ``covariates'' chapter. 
+not sure what else to say in this ``covariates'' chapter.
 
 
 

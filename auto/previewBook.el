@@ -2,12 +2,9 @@
  (lambda ()
     (LaTeX-add-bibliographies
      "AndyRefs_alphabetized")
-    (LaTeX-add-labels
-     "chapt.gof"
-     "chapt.covariates"
-     "chapt.open")
     (TeX-add-symbols
      "R"
+     "winbugs"
      "bugs"
      "jags"
      "secr"
@@ -16,6 +13,7 @@
      "url"
      "bm"
      "makeidx"
+     "fancyvrb"
      "color"
      "soul"
      "verbatim"
@@ -35,12 +33,19 @@
      "Ch2/Ch2"
      "Ch3/Ch3"
      "Ch4/Chapter4"
-     "Ch5/Ch5"
      "Ch6/Ch6"
+     "Ch9/Ch9"
+     "Ch8/Ch8"
+     "Ch5/Ch5"
      "Ch7/Ch7"
+     "Ch10b/Ch10b"
      "Ch10/Ch10"
      "Ch11/Ch11"
+     "Ch12/Ch12"
+     "Ch13/Ch13"
      "Ch14/Ch14"
      "Ch15/Ch15"
-     "Ch17/Ch17")))
+     "Ch17/Ch17"
+     "Ch20/Ch20"
+     "Ch21/Ch21")))
 

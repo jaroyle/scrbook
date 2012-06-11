@@ -167,7 +167,7 @@ In a nutshell, MCMC lets us generate sequential draws of $\theta$ (the
 parameter(s) of interest) from distributions approximating the unknown
 posterior over $T$ iterations. The distribution of the draw at $t$ depends
 on the value drawn at $t$-1; hence, the draws from a Markov
-chain\footnote{In case you are not familiar with Markov chains, for
+chain\footnote{Remember that for
   $T$ random samples $\theta^ {(1)}$, ... $\theta^{(T)}$ from a Markov chain
   the distribution of $\theta^{(t)}$ depends only on the immediately preceding
   value, $\theta^{(t-1)}$.}. As $T$ goes to infinity, the Markov chain
@@ -416,11 +416,11 @@ the work by \citet{metropolis_ulam:1953}. You saw the basics of this
 algorithm in Chapt. \ref{chapt.glms}. In a nutshell, because we do not recognize the
 posterior $[\theta|y]$ as a parametric distribution, the MH algorithm
 generates samples from a known proposal distribution, say $h(\theta)$,
-that depends on $\theta$ at $t-1$. The $t^{th}$ sample is accepted with probability. 
+that depends on the current value of $\theta$,  $\theta^t$. The candidate value $\theta^*$ is accepted with probability. 
 
 \[
-r = \frac{ [\theta^{(t-1)}|y] h(\theta^{(t)}|\theta^{(t-1)})}
-    {[\theta^{(t)}|y] h(\theta^{(t-1)}|\theta^{(t)}) }
+r = \frac{ [\theta^{t}|y] h(\theta^{*}|\theta^{t})}
+    {[\theta^{*}|y] h(\theta^{t}|\theta^{*}) }
 \]
 
 Proposal distributions can be absolutely
@@ -435,7 +435,7 @@ $[\theta|y]$ will lead to higher acceptance probabilities.
 The original Metropolis algorithm
 required $h(\theta)$ to be symmetric so that
 \[
-h(\theta^{(t)}|\theta^{(t-1)}) = h(\theta^{(t-1)}|\theta^{(t)})
+h(\theta^{*}|\theta^{t}) = h(\theta^{t}|\theta^{*})
 \]
 In that case these two terms just cancel
 out from the MH acceptance probability and $r$ is then just the ratio
@@ -463,8 +463,8 @@ updating parameters with bounded support in this chapter.
 
 It is worth
 knowing that there are alternatives to the random walk MH algorithm. For
-example, in the independent M-H, $\theta^{(t)}$ does not depend on
-$\theta^{(t-1)}$, while the Langevin algorithm \citep{roberts_etal:1998}
+example, in the independent M-H, $\theta^{*}$ does not depend on
+$\theta^{t}$, while the Langevin algorithm \citep{roberts_etal:1998}
 aims at avoiding the random walk by favoring moves towards regions of
 higher posterior probability density. The interested reader should
 look up these algorithms in \citet{robert_casella:2004} or
@@ -482,30 +482,30 @@ The following steps are required to set up a random walk MH algorithm:
 
 {\flushleft {\bf Step 0}: Choose initial values, $\theta^{(0)}$.}
 
-{\flushleft {\bf Step 1}: Generate a proposed value of $\theta$ at $t$ from $h(\theta^{(t)}|\theta^{(t-1)})$. }
+{\flushleft {\bf Step 1}: Generate a proposed value of $\theta$ from $h(\theta^{*}|\theta^{t})$. }
 We often use a Normal proposal distribution, so we draw $\theta^{(1)}$ from $\mbox{Normal}(\theta^{(0)}, \delta)$, where $\delta$ is the variance of the Normal proposal distribution, the tuning parameter that we have to set.
 
 {\flushleft {\bf Step 2}: Calculate the ratio of posterior densities for the proposed and the original value for $\theta$: }
 \[
-r = \frac{[\theta^{(t)}|y]}  {[\theta^{(t-1)}|y]}
+r = \frac{[\theta^{*}|y]}  {[\theta^{t}|y]}
 \]
 In our example,
 \[
-r = \frac{\mbox{Bern}(y|\theta^{(t)}) * \mbox{Normal}(\theta^{(t)}|\mu, \sigma)} {\mbox{Bern}(y|\theta^{(t-1)}) * \mbox{Normal}(\theta^{(t-1)}|\mu, \sigma)}
+r = \frac{\mbox{Bern}(y|\theta^{*}) * \mbox{Normal}(\theta^{*}|\mu, \sigma)} {\mbox{Bern}(y|\theta^{t}) * \mbox{Normal}(\theta^{t}|\mu, \sigma)}
 \]
 
 
 {\bf Step 3}: Set
 \begin{eqnarray*}
-\theta^{(t)}  &= &   \theta^{(t)} \mbox{ with probability min(r,1)}\\
-	 & = & 	\theta^{(t-1)} \mbox{ otherwise }
+\theta  &= &   \theta^{*} \mbox{ with probability min(r,1)}\\
+	 & = & 	\theta^{t} \mbox{ otherwise }
 \end{eqnarray*}
 
 %should work now
 
 
 We can do that by drawing a random number $u$ from a
-$\mbox{Unif}(0,1)$ and accept $\theta^{(t)}$ if
+$\mbox{Uniform}(0,1)$ and accept $\theta^{*}$ if
 $u<r$.
 Repeat for $t = 1,2,\ldots$ a large number of samples.
 The {\bf R} code for this MH sampler is provided in Panel \ref{mcmc.panel.logitnormal}.
