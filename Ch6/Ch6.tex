@@ -12,8 +12,6 @@ Likelihood Analysis of Spatial Capture-Recapture Models
 %  got everything. 
 % 3. Need to finish MLE for restricted state-space
 %%   requires code from Rahel
-% 4. draft up intlik3 wrapper "scr()"
-
 \vspace{.3in}
 
 
@@ -414,6 +412,7 @@ We will formalize the unknown-$N$ problem next.
 
 
 \section{MLE when N is Unknown} 
+\label{mle.sec.Nunknown}
 
 Here we build on the previous introduction to integrated likelihood
 but we consider now the case in which $N$ is unknown. We will see that
@@ -429,7 +428,15 @@ be sure to include a combinatorial term to
 account for the fact that of the $n$ observed individuals there are
 ${N \choose n}$
  ways to realize a sample of size $n$. The combinatorial term
-involves the unknown $n_{0}$ and thus it must be included in the likelihood.
+involves the unknown $n_{0}$ and thus it must be included in the
+likelihood. The resulting likelihood looks like this
+\[
+{\cal L} = formula here
+\]
+which is discussed in \citet[][p. 379]{borchers_efford:2008} as the
+conditional-on-$N$ form of the likelihood -- we might also call it
+``binomial form'' because of its appearance. 
+
 
 Operationally then, things proceed much as before: 
 We compute the marginal probability of each observed ${\bf y}_{i}$,
@@ -1263,10 +1270,84 @@ particularly with the different units being used between programs and
 packages.
 \end{comment}
 
-\subsection{Technical Details of the \secr Package}
+\subsection{Likelihood Analysis in the \secr Package}
 
-XXXX WHAT EXACTLY IS SECR DOING ? Look into Borchers and Efford
-XXXXXXXX
+The \mbox{\tt secr} package does likelihood analysis of SCR models for most
+classes of models using the likelihood formulation developed in 
+\citep{borchers_efford:2008} which 
+deviates slightly from the binomial form we presented in sec.
+\ref{mle.sec.Nunknown} above (though \citet{borchers_efford:2008}
+mention the binomial form).
+Specifically, the likelihood that \mbox{\tt secr} implements is that based on removing
+$N$ from the likelihood by integrating the binomial likelihood
+(Eq. XXX above) over a Poisson prior for $N$. 
+Specifically, lets take our likelihood which we expressed as:
+\[
+  [{\bf y}_{i}|{\bm \alpha}] = 
+\int_{{\cal S}} \mbox{Binomial}({\bf y}_{i} |{\bf s}_{i}, {\bm \alpha})g({\bf s}_{i}) d{\bf s}_{i}
+\]
+where $g({\bf s})$ is a uniform pmf and to account for the unobserved
+individuals we get  NOTE: PUT THIS FORMULA IN CH 5!!! (also formula
+for pi_{0})
+\[
+ {\cal L} = \frac{N!}{n! n_{0}!} 
+ \left\{ \prod_{i}  [{\bf y}_{i}|{\bm \alpha}] \right\}
+ (\pi_{0})^{n_{0})
+\]
+now lets assume that $N \sim \mbox{Poisson}(\Lambda)$ and do a further level
+of marginalization over this prior distribution:
+\[
+\sum_{n0=0}^{\infty}  this * Poisson
+\frac{N!}{n! n_{0}!} 
+ \left\{ \prod_{i}  [{\bf y}_{i}|{\bm \alpha}] \right\}
+ (\pi_{0})^{n_{0})
+\]
+Thus we note there are two marginalizations
+ going on here -- the
+integration to remove the latent variables ${\bf s}$ and then
+summation to remove the parameter $N$. 
+This produces exactly this likelihood:
+\[
+{\cal L} = 
+ \left\{ \prod_{i}  [{\bf y}_{i}|{\bm \alpha}] \right\}  \Lambda^{n}   \exp( - \Lambda \pi_{0} )
+\]
+which is Eq. 2 of \citet{borchers_efford:2008} except for notational
+differences, and this 
+looks like our likelihood Eq. XXXX except with 
+$\Lambda^{n}   exp( - \Lambda \pi_{0} )$ replacing the combinatorial
+term and the $\pi_{0}^{n_{0}}$ term.
+
+So the essential distinction between our MLE and Borchers and Efford
+as implemented in \mbox{\tt secr}
+is whether you keep $N$ in the model or remove it by
+integration over a Poisson prior. If you have prescribed a state-space explicitly then
+there is no difference at all, or at least there shouldn't be. That
+is, the estimators should be very similar. Perhaps the difference is: N
+is the actual realized population size whereas $\lambda$ is the
+expected value of that. We probably want to estimate N in most
+cases. Numerically we think these will be the same under the Poisson
+model used to compute the marginal likelihood but perhaps the error is
+different?
+I will make up a Poisson likelihood and we will test it out.
+Both models assumes ${\bf s}$ is uniformly distributed over space, but
+for the binomial model we  make no additional assumption about N
+whereas we assume $N$ is Poisson using the formulation in \mbox{\tt
+  secr} from 
+\citep{borchers_efford:2008}.
+
+Using data augmentation we could do a similar kind of integration but 
+integrate $N$ over a binomial (M,\psi) prior. So obviously this is
+approximately the same as M gets large. However, doing a bayesian
+analysis by MCMC ,  we obtain an
+estimate of both $N$ and the parameter controlling its expected value
+$\psi$ which are, in fact, both identifiable from the data even using
+likelihood analysis \citep{royle_etal:2007}.   That said we can integrate N
+out completely and just estimate $\psi$ as we noted in Section XXX
+above (and from RD book). 
+
+
+
+
 
 
 \begin{comment}
