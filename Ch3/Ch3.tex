@@ -13,8 +13,8 @@ models for estimating population size in closed populations. A closed
 population is one whose abundance $N$ does not change during the
 study. Two forms of closure are often discussed: demographic closure,
 meaning that no births or deaths occur, and geographic closure, which
-means that no individuals do not move onto or off of the study
-area. Few populations are actually closed except during very short
+states that no individuals move onto or off of the plot during the study.
+Few populations are actually closed except during very short
 time intervals, but closed population CR models serve as the basis for
 the development of the rest of the models presented in this book,
 including the models for open populations discussed in
@@ -178,26 +178,28 @@ $N$ binomials
   \Pr(y_1, \ldots, y_N | p) = \prod_{i=1}^N  \mathrm{Bin}(y_i | K, p).
   \label{closed.eq.binNknown}
 \end{equation}
-This expression can be simplified even further if we reformat the
-observations as capture frequencies, which are the sufficient
-statistics under this model. Specifically, let $n_k$ denote the number
-of individuals captured $k$ times after $K$ survey occasions, $n_k = \sum_{i=1}^N
-I(y_i = k)$ where $I$ is the indicator function evaluating to 1 if its
-argument is true and 0 otherwise. For sake of illustration,
-we converted the data from TableTable~\ref{closed.tab.3.1} to this
-format (Table~\ref{closed.tab.3.1.nk}). An equivalent expression to
-Eq.~\ref{closed.eq.binNknown} can now be written as
-\begin{equation}
-  \Pr(y_1, \ldots, y_N | p) = \prod_{k=0}^K  \pi(k)^{n_k}
-  \label{closed.eq.multiNknown}
-\end{equation}
-where $\pi(k) = \mathrm{Bin}(k | K,p)$.
-We emphasize that both expressions are conditional on $N$, in which
+We emphasize that this expression is conditional on $N$, in which
 case we get to observe the $y_i=0$ observations and the resulting data
 are just $iid$ binomial counts. Because this is a binomial regression
 model of the variety described in Chapt. \ref{glms}, fitting this model using
 a {\bf BUGS} engine poses no difficulty.
 
+Equation~\ref{closed.eq.binNknown} can be simplified even further if we reformat the
+observations as capture frequencies, which are the sufficient
+statistics under this model. Specifically, let $n_k$ denote the number
+of individuals captured exactly $k$ times after $K$ survey occasions, $n_k = \sum_{i=1}^N
+I(y_i = k)$ where $I$ is the indicator function evaluating to 1 if its
+argument is true and 0 otherwise. For sake of illustration,
+we converted the data from Table~\ref{closed.tab.3.1} to this
+format (Table~\ref{closed.tab.3.1.nk}). What is important to note is
+that if we know $N$, then we known $n_0$, i.e. the number of
+individuals not captured at all. In this case, an alternative and equivalent expression to
+Eq.~\ref{closed.eq.binNknown} is
+\begin{equation}
+  \Pr(y_1, \ldots, y_N | p) = \prod_{k=0}^K  \pi(k)^{n_k}
+  \label{closed.eq.multiNknown}
+\end{equation}
+where $\pi(k) = \mathrm{Bin}(k | K,p)$.
 
 The essential problem in capture-recapture, however, is that $N$ is
 {\it not} known because the number of uncaptured %/missing
@@ -223,7 +225,7 @@ Number of individuals captured $k$ times ($n_k$) & $N-6$ & 2 & 3 & 1 & 0 & 0 \\
 \end{table}
 Consequently, the observed capture frequencies $n_k$ are no
 longer independent because $n_0$ is a function of the other
-frequencies (as well as $N$), $n_0 = N-\sum_{k=1}^K n_k$. Hence, their joint distribution is multinomial
+frequencies, $n_0 = N-\sum_{k=1}^K n_k$. Hence, their joint distribution is multinomial
 (e.g., see \citet[][p. xyz]{illian_etal:2008}):
 %\hl{Andy, I changed this from n_1, n_2 to n_0, n_1. Isn't that right?}
 \begin{equation}
@@ -249,7 +251,7 @@ probabilities.
 To fit the model in which $N$ is {\it unknown}, we can regard $n_{0}$ as a
 parameter and maximize the multinomial likelihood directly.
 Direct likelihood analysis of the multinomial model is
-straightforward, but that does not prove to be too useful in practice
+straightforward, but that is not always sufficiently useful in practice
 because we seldom are concerned with models for the aggregated
 encounter history frequencies, which entail that capture probabilities are the
 same for all individuals. In many instances, including for
@@ -315,14 +317,66 @@ inference from basic CR methods to be valid, and while they are
 also assumed by most of the models we present in the following
 chapters, we refrain from repeatedly making such statements. Our
 opinion is that all model assumptions are apparent when a model is
-clearly specified. For instance, if we write
+clearly specified, and it is both redundant and impossible to list all
+the things not allowed by the model. For example, closed population
+models also assume that other sources of data entry do not occur, but
+it is not necessary to enumerate each possibility. Rather, it is
+necessary to make clear statements such as
 \[
-y_i \stackrel{iid}{\sim} \text{Bernoulli}(p) \quad \: \text{for} i=1,\ldots,N
+y_i \stackrel{iid}{\sim} \text{Bernoulli}(p) \quad \: \text{for}\: i=1,\ldots,N.
 \]
+This simple model description carries a tremendous amount of
+information, and it leaves very little left to say with respect to
+assumptions. Although we will not always show the $iid$ symbol, it
+will be assumed unless otherwise noted, and this assumption is
+critical for valid inference. It implies that the encounter of one
+individual does not affect the encounter of another
+individual. Under this assumption, it is very easy to write down the
+likelihood of the model and obtain parameter estimates; however,
+whether or not it is true depends upon biological and sampling
+issues. If this assumption is deemed false, the model can be discarded
+in favor of a more realistic alternative. However, once we have
+settled on our model, statistical inference proceeds by assuming the
+model is truth---not an approximation to truth---but actual
+truth; yet as with every model assumption ever made in the history of
+statistics, the core capture-recapture assumptions are not correct. This might
+come as a major shock to some people.
+
+In spite of the fact that we assume that all models are truth, but we
+acknowlege that all models are wrong due to their assumptions,
+assumptions should not be viewed as a necessary evil. In fact, one way
+to view assumptions is as embodiments of our ecological hypotheses. If
+we make these assumptions too complex or too specific, then we will
+never be able to study general phenomenon that hold true across space
+and time. Furthermore, we will rarely have enough data to estimate the
+parameters of highly complex models. These issues have never stopped
+ecologists from trying. A classic example is the software program
+\textbf{Maxent}, which has been acclaimed for its ability to estimate
+an infinite number of parameters! The question that must be asked is
+what scientific hypothesis could possibly be described and evaluated
+using such a model?
+
+\hl{I could blab on about our approach to model development and
+  assumption making, but that would probably be better saved for an
+  intro chapter}
+
+
+\begin{comment}
 then there is not much more to say with respect to assumptions. For
 example, if animals lost their marks, then clearly this statement would
 not apply because we would not be able to know which individual we
-encountered. Likewise for assumption 2.
+encountered. The same is true concerning assumption 2---if marks are
+not correctly recorded, then there is measurement error not accounted
+for by our model.
+
+The point of the above discussion is that all of the assumptions are
+embodied in a clear statement of the model. More generally, %and this
+%is a point not usually understood by people
+%who use capture-recapture models, %is that
+we assume that {\it the model is properly specified} which means everything that is {\it not}
+in the model. In reality, there are infinite things not covered by the model, and
+therefore we think being specific about what it {\it does} assume,
+explicitly identified by the model, is preferred.
 
 
 
@@ -333,25 +387,13 @@ Of course spatial location is a sensible covariate for encounter
 probability and the whole point of SCR models is to induce a certain
 type of non-independence as a result of individual location relative
 to traps.
+\end{comment}
 
-Independence of encounter events {\it among} individuals.
 
-Independence, etc.. and why they?re no good. What is the role of model assumptions?
 
-More generally, and this is a point not usually understood by people
-who use capture-recapture models, is that we assume that {\it the
-  model is properly specified} which means everything thats {\it not}
-in the model. Things not covered by the model is really
-an infinity things, and
-therefore we think being specific about what it {\it does} assume,
-explicitly identified by the model, is preferred.
 
-Statistical inference: we assume the model is truth -- not an
-approximation to truth -- but actual truth.
 
-As with every model assumption ever made in the history of statistics,
-the core capture-recapture assumptions are not correct. This might
-come as a major shock to some people.
+
 
 \subsection{Conditional likelihood}
 
@@ -428,7 +470,7 @@ zero-inflated binomial\\
 We consider a method of analyzing closed population models using
 parameter-expanded data augmentation (PX-DA), which we abbreviate to
 ``data augmentation'' or DA, which is useful for Bayesian analysis
-and, in particular, analysis of models using the various \bugs engines
+and, in particular, analysis of models using the various \bugs~engines
 and other Bayesian model fitting software.  Data augmentation is a
 general statistical concept that is widely used in statistics in many
 different settings. The classical reference is
@@ -450,7 +492,7 @@ models.
 Conceptually, the technique of data augmentation represents  a reparameterization of the
 ``complete data'' model -- i.e., that conditional on $N$. The
 reparameterization is achieved by embedding this data set into a
-larger data set having $M> N$ ``rows'' (individuals) and reexpressing
+larger data set having $M> N$ ``rows'' (individuals) and re-expressing
 the model conditional on $M$ instead of $N$. The great thing about
 data augmentation is that we do not need to know $N$ for this reparameterization.
 Although this has a whiff of
@@ -458,15 +500,14 @@ arbitrariness or even outright ad hockery to it, in the choice of $M$,
 it is always possible, in practice, to choose $M$ pretty easily for
 a given problem and context and results will be insensitive to choice
 of $M$\footnote{Unless the data set is sufficiently small that parameters are
-weakly
-identified}.
+weakly identified}.
 Then, under data augmentation, analysis
- is focused on the ``augmented data set.'' That is, we analyze the bigger
- data set - the one having $M$ rows - with an appropriate model that
- accounts for the augmentation. This is achieved by a Bernoulli sampling process that determines whether and individual in $M$ is also a member of $N$.
+is focused on the ``augmented data set.'' That is, we analyze the bigger
+data set - the one having $M$ rows - with an appropriate model that
+accounts for the augmentation. This is achieved by a Bernoulli sampling process that determines whether and individual in $M$ is also a member of $N$.
 Inference is focused directly on
- estimating the proportion $\psi = E[N]/M$, instead of directly on $N$,
- where $\psi$ is the ``data augmentation parameter.''
+estimating the proportion $\psi = E[N]/M$, instead of directly on $N$,
+where $\psi$ is the ``data augmentation parameter.''
 
 
 \subsection{DA links occupancy models and closed population models}
@@ -474,42 +515,43 @@ Inference is focused directly on
 %We provide a heuristic description of data augmentation based on the
 There is a close correspondence between so-called ``occupancy'' models and closed
 population models \citet[see][sec. 5.6]{royle_dorazio:2008}.
-
 In occupancy models \citep{mackenzie_etal:2002, tyre_etal:2003} the
 sampling situation is that $M$ sites, or patches, are sampled multiple
 times to assess whether a species occurs at the sites.  This yields
 encounter data such as that illustrated in the left panel of Table
 \ref{closed.tab.occ}. The important problem is that a species may
-occur at a site, but go undetected, yielding all-zero encounter
-histories which, in the case of occupancy studies, are {\it
-  observed}. However, some of the all-zeros will typically correspond
+occur at a site, but go undetected, yielding an all-zero encounter
+history for the site, which in the case of occupancy studies, are {\it
+  observed}. However, some of the zero vectors will typically correspond
 to sites where the species in fact {\it does} occur. Thus, while the
 zeros are observed, there are too many of them and, in a sense, the
 inference problem is to partition the zeros into ``structural''
 (fixed) and ``sampling'' (or stochastic) zeros, where the former are
 associated with unoccupied and the latter with occupied sites. More
 formally, inference is focused on the parameter $\psi$, the
-probability that a site is occupied.  In contrast, in classical closed
+probability that a site is occupied.
+
+In contrast to occupancy studies, in classical closed
 population studies, we observe a data set as in the middle panel of
 Table \ref{closed.tab.occ} where {\it no} zeros are observed. The
 inference problem is, essentially, to estimate how many sampling zeros
-there are - or should be - in a ``complete'' data set. This objective
+there are -- or should be -- in a ``complete'' data set. This objective
 (how many sampling zeros?) is precisely the same for both types of
 problems if an upper limit $M$ is specified for the closed population
 model. The only distinction being that, in occupancy models, $M$ is
-set by design (i.e., the number of sites to visit), whereas a natural
+set by design (i.e., the number of sites in the sample), whereas a natural
 choice of $M$ for capture-recapture models may not be
 obvious. However, the choice of $M$ induces a uniform prior for $N$ on
 the integers $[0,M]$ \citep{royle_etal:2007}. Then, one can analyze
 capture-recapture models by adding $M-n$ all-zero encounter histories
 to the data set and regarding the augmented data set, essentially, as
-a site-occupancy data set, where the occupancy parameter ($psi$) takes
+a site-occupancy data set, where the occupancy parameter ($\psi$) takes
 the place of the abundance parameter ($N$).
 
 Thus, the heuristic motivation of data augmentation is to fix the size
 of the data set by adding {\it too many} all-zero encounter histories
 to create the data set shown in the right panel of Table
-\ref{closed.tab.occ} - and then analyze the augmented data set using an
+\ref{closed.tab.occ}, and then analyze the augmented data set using an
 occupancy type model which includes both ``unoccupied sites'' as well
 as ``occupied sites'' at which detections did not occur. We call these
 $M-n$ all-zero histories ``potential individuals'' because they exist
@@ -530,7 +572,7 @@ each individual $i$ is ($z_i=1$) or is not ($z_i=0$) a member of the
 population of $N$ individuals exposed to sampling. We assume that
 $z_{i} \sim \mbox{Bern}(\psi)$ where $\psi$ is the probability that an
 individual in the data set of size $M$ is a member of the sampled
-population - in the sense that $1-\psi$ is the probability of
+population -- in the sense that $1-\psi$ is the probability of
 realizing a ``structural zero'' in the augmented data set.  The
 zero-inflated binomial model which arises under data augmentation can
 be formally expressed by the following set of assumptions (we include
@@ -624,18 +666,17 @@ M  & 0   & 0   & 0   &     &     &   &      & . & 0 & 0 & 0 \\
 For model $M_0$, in which we can aggregate the encounter data to
 individual-specific encounter frequencies, the augmented data are
 given by the vector of frequencies $(y_{1}, \ldots, y_{n}, 0, 0,
-\ldots, 0)$. The zero-inflated model of the augmented data combines
+\ldots, 0)$ \hl{Is this right? Shouldn't it be y(n+1), ...,
+  y(M)}?. The zero-inflated model of the augmented data combines
 the model of the latent variables, $z_{i} \sim \mbox{Bern}(\psi)$ with
 the conditional-on-$z$ binomial model:
 \[
 y_{i}|z_{i}   \sim \mbox{Bin}(K,z_{i} p)
 \]
-so that,
-if $z_{i}=0$, the success probability of the binomial
+so that, if $z_{i}=0$, the success probability of the binomial
 distribution is identically 0 whereas, if $z_{i}=1$, the success
 probability is $p$. This is useful in describing the model in the {\bf
-  BUGS}
-language, as shown in Panel \ref{closed.panel.da4m0}.
+  BUGS} language, as shown in Panel \ref{closed.panel.da4m0}.
  Note the last line of the model
 specification  provides the expression for computing $N$ from the
 data augmentation variables $z_{i}$. To improve readability of code
@@ -657,8 +698,8 @@ model{
 p  ~ dunif(0,1)
 psi~dunif(0,1)
 
-# nind = number of individuals captured at least once $better call nind n as in the table and also in the text$
-#   nz = number of uncaptured individuals added for PX-DA
+# nind = number of individuals captured at least once
+#   nz = number of uncaptured individuals added for DA
 for(i in 1:(nind+nz)) {
     z[i]~dbern(psi)
    mu[i]<-z[i]*p
@@ -731,13 +772,14 @@ This expression arises by removing $N$ from Eq. \ref{closed.eq.multinomial4m0} b
 integrating
 over the binomial prior distribution for $N$. Thus, the models we
 analyze under data augmentation arise formally by removing the
-parameter $N$ from the ordinary closed-population model - the model conditional on $N$ -
-by integrating over a binomial prior distribution for $N$.
+parameter $N$ from the ordinary closed-population model---the model
+conditional on $N$---by integrating over a binomial prior distribution
+for $N$.
 
 Note that the $M-n$ unobserved individuals in the augmented data set
 have probability $\psi \pi(0) + (1-\psi)$, indicating that these
 unobserved individuals are a mixture of individuals that are sampling
-zeros ($\psi \pi_0$), and belong to the population of size $N$) and
+zeros ($\psi \pi_0$), and belong to the population of size $N$, and
 others that are ``structural zeros'' (occurring in the augmented data
 set with probability $1 - \psi$). In Eq.~\ref{closed.eq.multinomial4DA} $N$
 has been eliminated as a formal parameter of the model by
@@ -760,34 +802,30 @@ binomial which is distinct from the original model, but
 only in the sense that it embodies, explicitly, the $\mbox{Unif}(0,M)$
 prior for $N$.
 
-
-
 We emphasize the motivation for data augmentation being that it
 produces a data set of fixed size, so that the parameter dimension in
 any capture-recapture model is also fixed.  As a result, MCMC is a
 relatively simple proposition using standard Gibbs Sampling.  And, in
 particular, capture-recapture models become trivial to implement in
-\bugs.
-Consider
-the simplest context - analyzing model $M_0$ using the occupancy-type
+\bugs. Consider
+the simplest context---analyzing model $M_0$ using the occupancy-type
 model. In this case, DA converts model $M_0$ to a basic occupancy model
 and the parameters $p$ and $\psi$ have known full-conditional
 distributions (in fact, beta distributions) that can be sampled from
 directly.  Furthermore, the data augmentation variables, i.e., the collection
 of $z$'s, can be sampled from Bernoulli full
 conditionals. MCMC is not much more difficult for complicated
-models - sometimes the hyperparameters need to be sampled using a
+models---sometimes the hyperparameters need to be sampled using a
 Metropolis-Hastings step (e.g., Chapt. \ref{chapt.mcmc}), but nothing more sophisticated than that is
 required.
 
 Choice of $M$ might be cause for some concern related
 to potential sensitivity to choice of $M$. The guiding principle is
 that it should be chosen large enough so that the posterior for $N$ is
-not truncated, but no larger because large values entail a greater
+not truncated, but it should not be too large due to the increased %no larger because large values entail a greater
 computational burden. It seems likely that the properties of the
 Markov chains should be affected by $M$ and so some optimal choice of
-$M$ might
-exist \citep{gopalaswamy_etal:2012}.
+$M$ might exist \citep{gopalaswamy_etal:2012}.
 Formal analysis of this is needed.
 
 
@@ -806,7 +844,9 @@ that one can model $N$ explicitly or consider alternative priors for
 $N$. However, despite that $N$ is removed as an explicit parameter in
 DA, it is possible to develop hierarchical models that involve
 structure on $N$ \citep{converse_royle:2010, royle_etal:2011ms} which
-we consider in Chapt. \ref{chapt.hscr}.
+we consider in Chapt. \ref{chapt.hscr}. Furthermore, data augmentation
+is often easier to implement that RJMCMC and the details of the
+DA implementation are the same for all capture-recapture problems.
 
 
 \subsection{Example: Black Bear Study on Fort Drum}
@@ -850,7 +890,8 @@ Yaug <- array(0, dim=c(M,ntraps,K))
 
 Yaug[1:nind,,]<-beardata$bearArray
 y<- apply(Yaug,c(1,3),sum) # summarize by ind x rep
-y[y>1]<- 1                 # toss out multiple encounters
+y[y>1]<- 1                 # toss out multiple encounters b/c
+                           #    traditional CR models ignore space
 ytot<-apply(y,1,sum)       # total encounters out of K
 \end{verbatim}
 }
@@ -1006,7 +1047,7 @@ XXX This is lame as shit XXXXX
 
 The purpose of this chapter is mainly to emphasize the central
 importance of the binomial model in capture-recapture and so we have
-considered models for individual encounter frequencies - the number of
+considered models for individual encounter frequencies---the number of
 times individuals are captured out of $K$ samples.  Sometimes we can't
 aggregate the encounter data for each individual, such as when
 encounter probability varies over time among samples.  Time-varying
@@ -1030,7 +1071,7 @@ distinction between persistent and ephemeral was made by
 \citet{yang_chao:2005} who considered a general behavioral response
 model of the form:
 \[
-\mbox{logit}(p_{ik}) = \alpha_{0} + \alpha_{1}*y_{i,k-1} + \alpha_{2} x_{ik}
+\mbox{logit}(p_{ik}) = \alpha_{0} + \alpha_{1} y_{i,k-1} + \alpha_{2} x_{ik}
 \]
 where $x_{ik}$ is a covariate indicator variable of previous capture
 (i.e., $x_{ik} = 1$ if captured in any previous period). Therefore,
@@ -1045,7 +1086,7 @@ response).
 %shyness due to trauma.
 Because spatial capture-recapture models allow us to include
 trap-specific covariates, we can describe a 3rd type of behavioral
-response -- a local behavioral response that is trap-specific
+response---a local behavioral response that is trap-specific
 \citep{royle_etal:2011jwm}. In this local behavioral response, the
 encounter probability is modified for an individual trap depending on
 previous capture in that trap.
@@ -1067,7 +1108,8 @@ unknown.  The basic class of models is often referred to as ``model
 $M_h$'', but really this is a broad class of models, each being
 distinguished by the specific distribution assumed for $p_{i}$.  There
 are many different varieties of model $M_{h}$ including parametric and
-various putatively non-parametric approaches
+various %putatively
+non-parametric approaches
 \citep{burnham_overton:1978, norris_pollock:1996, pledger:2000}. One
 important practical matter is that estimates of $N$ can be extremely
 sensitive to the choice of heterogeneity model
@@ -1144,8 +1186,9 @@ of individuals about their home range.
 \begin{center}
 \includegraphics[height=3in]{Ch3/figs/quadrat}
 \end{center}
-\caption{A quadrat searched for lizards and the locations of each
-  lizard over some period of time (simulated data).nice plot ! but, as usual, I would give more info. For instance, I would say something like ?Successive locations of 10 individual lizards over time are depicted by grey lines; black dots represent the individual activity centers.?}
+\caption{A quadrat searched for lizards over some period of time
+  (simulated data). The locations of encounter for each of 10 lizards are
+  connected by lines---the dots are activity centers.}
 \label{closed.fig.quadrat}
 \end{figure}
 
@@ -1184,7 +1227,7 @@ standard methods of inference based either on integrated likelihood
 Chapt. \ref{chapt.mle}, or standard Bayesian
 methods. However, because $N$ is not known, inference is somewhat more
 challenging. We address that here using Bayesian analysis based on
-data augmentation (DA). Although we use data augmentation in the context of
+data augmentation. Although we use data augmentation in the context of
 Bayesian methods here, we note that
 heterogeneity models formulated under DA are easily analyzed by
 conventional likelihood methods as zero-inflated binomial mixtures
@@ -1247,6 +1290,8 @@ The logit-normal heterogeneity model was fitted to the bear data from
 the Fort Drum study, and we used data augmentation to produce a data
 set of $M=500$ individuals.  We ran the model using {\bf JAGS} with
 the instructions given as follows:
+\hl{If this is the first time we use JAGS, we should say some things
+  about it.}
 {\small
 \begin{verbatim}
 [... get data as before ....]
@@ -1417,8 +1462,8 @@ very sensitive to prior distributions. While MLEs are invariant to
 transformation of the parameters, the posterior distribution
 definitely is {\it not} invariant. In the present case, the use of a
 $\mbox{Unif}(0,1)$ prior for $p_{0} = \mbox{expit}(\mu)$ is somewhat
-informative -- in particular, it is not at all ``flat'' on the scale
-of $\mu$ -- and this affects the posterior.  We generally always
+informative---in particular, it is not at all ``flat'' on the scale
+of $\mu$, and this affects the posterior.  We generally always
 recommend use of a $\mbox{Unif}(0,1)$ prior for $\mbox{expit}(\mu)$ in such
 models. That said, we were surprised at this result, and we
 experimented with other prior configurations including putting a flat
@@ -1630,17 +1675,17 @@ y_{i} \sim \mbox{Bin}(K, p_{i})
 \]
 and we assume also  a model for encounter probability according to:
 \begin{equation}
- \mbox{logit}(p_{i}) = \alpha + \beta x_{i}
+ \mbox{logit}(p_{i}) = \alpha_0 + \alpha_1 x_{i}
 \label{closed.eq.ha}
 \end{equation}
-Classical examples of covariates influencing detection probability are
+where $x_i$ is the covariate value for individuals $i$ and the
+parameters $\bm{alpha}$ are the regression coefficients. Classical examples of covariates influencing detection probability are
 type of animal (juvenile/adult or male/female), a continuous covariate
 such as body mass \citep[][ch. 6]{royle_dorazio:2008}, or a
 discrete covariate such as group or cluster size. For example, in
 models of aerial survey data, it is natural to model the detection
 probability of a group as a function of the observation-level individual
-covariate, ``group size'' \citep{royle:2008, royle:2009,
-  langtimm_etal:2011}.
+covariate, ``group size'' \citep{royle:2008, royle:2009, langtimm_etal:2011}.
 
 Such ``individual covariate models'' are similar in structure to model
 $M_{h}$, except that the individual effects are {\it observed} for the
@@ -1676,7 +1721,7 @@ according to Eq. \ref{closed.eq.ha}.  In practice, parameters are
 estimated from the conditional-likelihood of the observed encounter
 histories which is, for observation $y_{i}$,
 \[
-{\cal L}_{c}(\alpha, \beta | y_{i}) = \frac{ \mbox{Bin}(y_{i}|\alpha,\beta) } { \tilde{p}_{i}}.
+{\cal L}_{c}(\bm{alpha} | y_{i}) = \frac{ \mbox{Bin}(y_{i}|\bm{alpha}) } { \tilde{p}_{i}}.
 \]
 
 Here we take a formal model-based approach to Bayesian analysis of
@@ -1747,7 +1792,7 @@ individual $i$ and ${\bf x}_{0}$ is the centroid of the trap array.
 Conceptually, individuals in the middle of the array should have a
 higher probability of encounter and, as $x_{i}$ increases, $p_{i}$
 should therefore decrease. We note that we have defined ${\bf s}_{i}$
-in terms of a sample quantity - the observed mean - which is ad hoc
+in terms of a sample quantity---the observed mean---which is ad hoc
 but consistent with existing applications in the literature.  For an
 expansive, dense trapping grid we might expect the sample mean
 encounter location to be a good estimate of home range center but,
@@ -1761,17 +1806,16 @@ effect, and we need therefore to specify a probability distribution
 for it.  As a measurement of distance we know it must be
 positive-valued, and it seems sensible that an individual located
 extremely far from the array of traps would not be captured.
-Therefore,
- lets assume that $x_{i}$ is uniformly distributed from $0$ to some large number,
-say $D_{max}$, beyond which it would be difficult to imagine an
-individual being captured. For example, $D_{max}$ should be at a home
+Therefore, let's assume that $x_{i}$ is uniformly distributed from $0$ to some large number,
+say $B$, beyond which it would be difficult to imagine an
+individual being captured. For example, $B$ should be at a home
 range diameter past the furthest trap from the center.  As such, we
 use this distribution for the individual covariate ``distance from
 center of the trap array''
 \[
- x_{i} \sim \mbox{Unif}(0,D_{max})
+ x_{i} \sim \mbox{Unif}(0,B)
 \]
-where $D_{max}$ is a specified constant, which we may choose to be
+where $B$ is a specified constant, which we may choose to be
 arbitrarily large.  In practice, people have
 used distance from edge of the trap array but that is less easy to
 make sense of.
@@ -1809,12 +1853,13 @@ XXX note change one of the dots to an X or something XXXXX
 \end{figure}
 
 For the analysis of these data using the individual covariate
-"distance from centroid" we used $x_{i} \sim \mbox{Unif}(0,D_{max})$
-with $D_{max} = 11.5$ $km^2$, which is about the distance from the
-array center to the furthest trap.  Once we pick $D_{max}$ then the
+``distance from centroid''
+we used $x_{i} \sim \mbox{Unif}(0,B)$
+with $B = 11.5$ $km^2$, which is about the distance from the
+array center to the furthest trap.  Once we pick $B$ then the
 direct implication is that the population size parameter applies to
 the area within 11.5 units of the trap centroid and thus we will find
-that $N$ does, in fact, scale with our choice of $D_{max}$ to reflect
+that $N$ does, in fact, scale with our choice of $B$ to reflect
 the changing area over which the $N$ individuals of the model reside.
 The {\bf BUGS} model specification and {\bf R} commands to package the
 data and fit the model are as follows:
@@ -1828,7 +1873,7 @@ psi~dunif(0,1)
 beta~dnorm(0,.01)
 
 for(i in 1:(nind+nz)){
-  xcent[i]~dunif(0,Dmax)
+  xcent[i]~dunif(0,B)
   z[i]~dbern(psi)     # DA variables
   lp[i] <- mup + beta*xcent[i] # individual effect
   logit(p[i])<-lp[i]
@@ -1839,7 +1884,7 @@ N<-sum(z[1:(nind+nz)])
 }
 ",file="modelMcov.txt")
 
-data2<-list(y=ytot,nz=nz,nind=nind,K=K,xcent=xcent,Dmax=11.5)
+data2<-list(y=ytot,nz=nz,nind=nind,K=K,xcent=xcent,B=11.5)
 params2<-list('p0','psi','N','beta')
 inits =  function() {list(z=zst, psi=psi, p0=runif(1),beta=rnorm(1) ) }
 fit2 =   bugs(data2, inits, params2, model.file="modelMcov.txt",working.directory=getwd(),
@@ -1874,13 +1919,13 @@ array. Moreover, we have done so using a model that is based on an
 explicit mechanism, as opposed to a phenomenological one such as Model
 $M_h$. Moreover, importantly, using our new model, {\it the estimated N
   applies to an explicit area which is defined by our prescribed value
-  of $D_{max}$}. That is, this area is a fixed component of the model and
+  of $B$}. That is, this area is a fixed component of the model and
 the parameter $N$ therefore has explicit spatial context, as the number
-of individuals with home range centers less than $D_{max}$ from the
+of individuals with home range centers less than $B$ from the
 centroid of the trap array. As such, the implied ``effective
-area'' of the trap array for a given $D_{max}$ is a precisely defined
-quantity -- it is that of a circle with with radius
-$D_{max}$.
+area'' of the trap array for a given $B$ is a precisely defined
+quantity---it is that of a circle with with radius
+$B$.
 
 
 \subsection{Extension of the Model}
@@ -1890,27 +1935,27 @@ The model developed in the previous section
 Imposing a uniform prior distribution on $x$ implies that density is
 {\it not constant} over space. In particular, this model implies that
 it {\it decreases} as we move away from the centroid of the trap
-array.  That is, $x_{i} \sim \mbox{Unif}(0,D_{max})$ implies constant
+array.  That is, $x_{i} \sim \mbox{Unif}(0,B)$ implies constant
 $N$ in each distance band from the centroid but obviously the {\it
   area} of each distance band is increasing.  This is one reason we
 have a lower estimate of density than that obtained previously from
 model $M_h$ (sec. \ref{closed.sec.Mhbear})
-and also why, if we were to increase $D_{max}$, we would
+and also why, if we were to increase $B$, we would
 see density continue to decrease.
 
 Fortunately, the use of an individual covariate model is {\it not} restricted to
 use of this specific distribution for the individual
 covariate. Clearly, it is a bad choice and, therefore, we should think
-about whether we can choose a better distribution for $D_{max}$ - one that
+about whether we can choose a better distribution for $B$---one that
 doesn't imply a decreasing density as distance from the centroid
 increases.  Conceptually, what we want to do is impose a prior on
 distance from the centroid, $x$, such that density is proportional to
 the amount of area in each successive distance band as you move
 farther away from the centroid.  In fact, theory exists
 which tells us what the correct distribution of $x$ is:
-$2x/D_{max}^2$. This can be derived by noting that $F(x) = \Pr(X<x) =
-\pi*x*x/\pi*D_{max}^{2}$ . Then, $f(x) = dF/dx =
-2*x/(D_{max}^{2})$. This is a sort of triangular distribution in
+$2x/B^2$. This can be derived by noting that $F(x) = \Pr(X<x) =
+\pi*x*x/\pi*B^{2}$ . Then, $f(x) = dF/dx =
+2*x/(B^{2})$. This is a sort of triangular distribution in
 density
 induced because the incremental area in each additional distance band
 increases linearly with radius (i.e., distance from centroid). It is
@@ -1933,12 +1978,12 @@ of.  One possibility is to use a discrete version of the pdf. We might
 also be able to use what is referred to in {\bf WinBUGS} jargon as the
 ``zeros trick'' (see {\it Advanced BUGS tricks} in the manual)
 although we haven't pursued this approach. Instead, we use a discrete
-approximation of the density of $x$, and break $D_{max}$ into $L$
+approximation of the density of $x$, and break $B$ into $L$
 distance classes of width $\delta$, with probabilities proportional to
 $2*x$. In particular, if we denote the cut-points by $xg_{1}=0,xg_{2},
-\ldots, xg_{L+1}=D_{max}$ and the interval midpoints are $xm_{i} =
-xg_{i+1}-\delta$ then the interval probabilities are $p_{i} =
-2*xm_{i}*\delta/(D_{max}^{2})$, which we can compute once and then
+\ldots, xg_{L+1}=B$ and the interval midpoints are $xm_{i} =
+xg_{i+1}-\delta$ \hl{earlier delta was used as a point mass in DA} then the interval probabilities are $p_{i} =
+2*xm_{i}*\delta/(B^{2})$, which we can compute once and then
 pass them to {\bf WinBUGS} as data.
 
 The {\bf R} commands for doing all of this (noting that we have
@@ -1979,7 +2024,7 @@ N<-sum(z[1:(nind+nz)])
 ",file="modelMcov.txt")
 \end{verbatim}
 }
-To fit the model we do this - keeping in mind that the data objects
+To fit the model we do this---keeping in mind that the data objects
 required below have been defined in previous analyses of this chapter:
 {\small
 \begin{verbatim}
@@ -1994,16 +2039,16 @@ fit = bugs(data2, inits, params2, model.file="modelMcov.txt",
 
 This is a useful model because it induces a clear definition of area
 in which the population of $N$ individuals reside. Under this model,
-that area is defined by specification of $D_{max}$.
+that area is defined by specification of $B$.
 Further, the parameter $N$ of the model is, explicitly, the
-population size that applies to the particular value of $D_{max}$ and,
-as such, we will see that $N$ scales with our choice of $D_{max}$.
-This might be disconcerting to some -- we can get whatever value of
-$N$ we want by changing $D_{max}$!
+population size that applies to the particular value of $B$ and,
+as such, we will see that $N$ scales with our choice of $B$.
+This might be disconcerting to some---we can get whatever value of
+$N$ we want by changing $B$!
 Fortunately, we find empirically, that while $N$ seems
-highly sensitive to the prescribed value of $D_{max}$, density seems to
-be invariant to $D_{max}$ as long as it is chosen to be sufficiently
-large. We fit the model for a random of values of $D_{max}$ from $D_{max}=12$ (restricting
+highly sensitive to the prescribed value of $B$, density seems to
+be invariant to $B$ as long as it is chosen to be sufficiently
+large. We fit the model for a random of values of $B$ from $B=12$ (restricting
 values of $x$ to be in close proximity to
 the trap array) on up to 20. The results are given in Table
 \ref{closed.tab.Dmax}.
@@ -2011,13 +2056,13 @@ the trap array) on up to 20. The results are given in Table
 \begin{table}[htp]
 \centering
 \caption{Analysis of Fort Drum bear hair snare data using the
-  individual covariate model, for different values of $D_{max}$, the upper
+  individual covariate model, for different values of $B$, the upper
   limit of the uniform distribution of `distance from centroid of the
   trap array'. ``Density'' is the posterior mean of density and SD is
   the posterior standard deviation.}
 \begin{tabular}{ccc}
 \hline %\hline
- $D_{max}$ & Density & SD \\ \hline
+ $B$ & Density & SD \\ \hline
   12& 0.230 & 0.038 \\
   15& 0.244 &0.041 \\
   17& 0.249 &0.044 \\
@@ -2031,7 +2076,7 @@ the trap array) on up to 20. The results are given in Table
 
 
 We see that the posterior mean and SD of density (individuals per
-square km) appear insensitive to choice of $D_{max}$ once we get away from the maximum observed value of about 11.5. The estimated
+square km) appear insensitive to choice of $B$ once we get away from the maximum observed value of about 11.5. The estimated
 density of 0.25 per km$^2$ is actually quite a bit lower than we
 reported using model $M_h$ for which no relevant ``area'' quantity is
 explicit in the model.  Using MLEs of $N$ in conjunction with buffer
@@ -2043,7 +2088,7 @@ the buffered area (0.18). There is no basis really for comparing or
 contrasting these various estimates and it would be a useful
 philosophical exercise for the reader to discuss this matter. In
 particular, application of models $M_0$ and $M_h$ are distinctly {\it
-  not} spatially explicit models -- the area within which the
+  not} spatially explicit models---the area within which the
 population resides is not defined under either model. There is
 therefore no reason at all to think that the estimates produced under
 either either closed population model, based on a buffered ``trap
@@ -2051,7 +2096,7 @@ area'', are justifiable by any theory. In fact, we would get exactly
 the same estimate of $N$ no matter what we declare the area to be. On
 the other hand, the individual covariate model explicitly describes a
 distribution for ``distance from centroid'' that is a reasonable and
-standard null model - it posits, in the absence of direct information,
+standard null model---it posits, in the absence of direct information,
 that individual home range centers are randomly distributed in space
 and that probability of detection depends on the distance between home
 range center and the centroid of the trap array. Under this definition
@@ -2059,20 +2104,20 @@ of the system, we see that density is invariant to the choice of area,
 which seems like a desirable feature.
 
 
-\subsection{Invariance of density to $D_{max}$}
+\subsection{Invariance of density to $B$}
 
 Under this individual covariate model, and also under models that we
 consider in later chapters, a general property of the estimators is
 that while $N$ increases with the prescribed trap area (equivalent to
-$D_{max}$ in this case), we expect that density estimators should be
+$B$ in this case), we expect that density estimators should be
 invariant to this area. In the model used above, we note that
-$Area(D_{max}) = \pi*D_{max}^{2}$ and $E[N(D_{max})] =
-\lambda*Area(D_{max})$ and thus $E[Density(D_{max})] = \lambda$, i.e.,
+$Area(B) = \pi*B^{2}$ and $E[N(B)] =
+\lambda*Area(B)$ and thus $E[Density(B)] = \lambda$, i.e.,
 constant. This should be interpreted as the {\it prior}
 density. Absent data, then realizations under the model will have
-density $\lambda$ regardless of what $D_{max}$ is prescribed to be.
+density $\lambda$ regardless of what $B$ is prescribed to be.
 As we verified empirically above, the posterior density is also
-invariant to $D_{max}$ as long as the implied area is large enough so
+invariant to $B$ as long as the implied area is large enough so
 that the data no longer provide information about density (i.e., ``far
 away'').
 
@@ -2131,7 +2176,7 @@ describes, explicitly, the spatial organization of individual
 locations (although this is not always stated explicitly) and, as a
 result, somewhat general models of how individuals are distributed in
 space can be specified \citep{hedley_etal:1999, royle_etal:2004,
-  johnson_etal:2010, niemi_fernandez:2010, sillett_etal:2011}.
+  johnson_etal:2010, niemi_fernandez:2010, sillett_etal:2012}.
 
 As before, the distance sampling model, under data augmentation,
 includes a set of $M$ zero-inflation variables $z_{i}$ and the
@@ -2148,7 +2193,7 @@ for $\alpha_{1} < 0$, where $x_i$ denotes the distance at which the $i$th
 individual is detected relative to some reference location where
 perfect detectability ($p=1$) is assumed. This function corresponds to
 the ``half-normal'' detection function (i.e., with $\alpha_{1} =
-1/\sigma^{2}$).  If $K>1$ then an intercept in this model is
+1/2\sigma^{2}$).  If $K>1$ then an intercept in this model is
 identifiable and such models are usually called ``capture-recapture
 distance sampling''\citep{alpizar_pollock:1996,borchers_etal:1998}.
 
@@ -2262,7 +2307,7 @@ We illustrate the application of distance sampling models using data
 on the Sonoran desert tortoise ({\it Gopherus agassizii}), shown in
 Fig. \ref{closed.fig.tortoise}, collected along transects
 in southern Arizona (see \citet{zylstra_etal:2010} for
-details). The data are from 120 square transects having 4 250 m sides,
+details). The data are from 120 square transects having 4, 250 m sides,
  although we ignore this detail in our analysis here and regard
 them as 1 km transects, and we pooled the detection data from all
 120 transects. The histogram of encounter distances from the 65
@@ -2465,18 +2510,6 @@ xxxxxxx$Is the first line (beta) reasonable?$xxxxxxxxxx
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 \section{Summary and Outlook}
 
 Traditional closed population capture-recapture models are closely
@@ -2501,7 +2534,7 @@ Spatial capture-recapture models that we will consider in the rest of
 the chapters of this book are closely related to what have been called
 individual covariate models. Heuristically, spatial capture-recapture
 models arise by defining individual covariates based on observed
-locations of individuals -- we can think of using some function of
+locations of individuals---we can think of using some function of
 mean encounter location as an individual covariate. We did this in a
 novel way, by using distance to the centroid of the trapping array as
 a covariate. We analyzed the {\it full likelihood} using data
@@ -2520,7 +2553,7 @@ the fully spatial encounter histories, which provide direct
 information about the locations and density of individuals.  A
 specific individual covariate model that is in widespread use is
 classical distance sampling. The model underlying distance
-sampling is precisely a special kind of SCR model - but one without
+sampling is precisely a special kind of SCR model---but one without
 replicate samples. Understanding distance sampling and individual
 covariate models more broadly provides a solid basis for understanding
 and analyzing spatial capture-recapture models.

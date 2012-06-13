@@ -12,8 +12,6 @@ Likelihood Analysis of Spatial Capture-Recapture Models
 %  got everything. 
 % 3. Need to finish MLE for restricted state-space
 %%   requires code from Rahel
-% 4. draft up intlik3 wrapper "scr()"
-
 \vspace{.3in}
 
 
@@ -114,7 +112,7 @@ trap is independent of encounter in every other trap, conditional on
 ${\bf s}_{i}$, this is the fundamental property of the basic model SCR0.
 
 
- The so-called marginal likelihood is computed by removing
+The marginal likelihood is computed by removing
 ${\bf s}_{i}$, by integration (hence also {\it integrated} likelihood), from the conditional-on-${\bf s}$
 likelihood and regarding the {\it marginal} distribution of the data
 as 
@@ -414,6 +412,7 @@ We will formalize the unknown-$N$ problem next.
 
 
 \section{MLE when N is Unknown} 
+\label{mle.sec.Nunknown}
 
 Here we build on the previous introduction to integrated likelihood
 but we consider now the case in which $N$ is unknown. We will see that
@@ -429,7 +428,31 @@ be sure to include a combinatorial term to
 account for the fact that of the $n$ observed individuals there are
 ${N \choose n}$
  ways to realize a sample of size $n$. The combinatorial term
-involves the unknown $n_{0}$ and thus it must be included in the likelihood.
+involves the unknown $n_{0}$ and thus it must be included in the
+likelihood. 
+
+Therefore, we take the following 3 components: (1) the marginal
+probability of each ${\bf y}_{i}$ as before,
+\[
+  [{\bf y}_{i}|{\bm \alpha}] = 
+\int_{{\cal S}} \mbox{Binomial}({\bf y}_{i} |{\bf s}_{i}, {\bm \alpha})g({\bf s}_{i}) d{\bf s}_{i}.
+\]
+(2) We compute
+the probability of an all-0 encounter history:
+\[
+\pi_{0} = [{\bf y} = {\bf 0} | {\bm \alpha}] = 
+\int_{{\cal S}} \mbox{Binomial}({\bf 0} |{\bf s}_{i}, {\bm \alpha})g({\bf s}_{i}) d{\bf s}_{i}
+\]
+(3) The combinatorial term: ${N \choose n}$. Then, 
+ the marginal likelihood has this form:
+\[
+ {\cal L}({\bm \alpha}, n_{0}| {\bf y})  = \frac{N!}{n! n_{0}!} 
+ \left\{ \prod_{i}  [{\bf y}_{i}|{\bm \alpha}] \right\}
+ (\pi_{0})^{n_{0}).
+\]
+This is discussed in \citet[][p. 379]{borchers_efford:2008} as the
+conditional-on-$N$ form of the likelihood -- we might also call it
+``binomial form'' because of its appearance. 
 
 Operationally then, things proceed much as before: 
 We compute the marginal probability of each observed ${\bf y}_{i}$,
@@ -763,11 +786,11 @@ $iterations
 }
 Of course we're interested in obtaining an estimate of population size
 for the prescribed state-space, or density, and associated measures of
-uncertainty which we do using the delta method \footnote{
+uncertainty which we do using the delta method\footnote{
 We found a good set of notes on the delta approximation on Dr. David
 Patterson's ST549 notes: 
 \url{http://www.math.umt.edu/patterson/549/Delta.pdf}
- approximation
+}
 \citep[][Appendix F4]{williams_etal:2002}.
 To do all of that we need to manipulate the output of
 \mbox{\tt nlm} since we have our  estimate in terms of $\mbox{\tt
@@ -1025,17 +1048,17 @@ command is \mbox{\tt secr.fit} and is generally written as
 \begin{verbatim}
  secr.fit(capturedata, model = list(D~1, g0~1, sigma~1), buffer = 20000)
 \end{verbatim}
-where \mbox{\tt capturedata} is the \mbox{\tt secr} created object containing the encounter history data and 
-and the trap information and 
-the model expression \verb#g0~1# indicates the intercept-only (i.e., constant) model. 
- Possible predictors for detection probability include both
-pre-defined variables (e.g., \mbox{\tt t} and \mbox{\tt b}
-corresponding to ``time'' and 
-``behavior''), and user-defined covariates of several kinds. 
-For example, to include a global behavioral response, this would be written
-as \verb#g0~b#.   
-The discussion of this (global versus local trap-specific behavioral response) and other covariates 
-is developed more in Chapt. \ref{chapt.covariates}.
+where \mbox{\tt capturedata} is the \mbox{\tt secr} created object
+containing the encounter history data and and the trap information and
+the model expression \verb#g0~1# indicates the intercept-only (i.e.,
+constant) model.  Possible predictors for detection probability
+include both pre-defined variables (e.g., \mbox{\tt t} and \mbox{\tt
+  b} corresponding to ``time'' and ``behavior''), and user-defined
+covariates of several kinds.  For example, to include a global
+behavioral response, this would be written as \verb#g0~b#.  The
+discussion of this (global versus local trap-specific behavioral
+response) and other covariates is developed more in
+Chapt. \ref{chapt.covariates}.
 
 Before we can fit the models, the data must first be packaged properly
 for 
@@ -1104,36 +1127,39 @@ converted to ``area used'' or something in a common currency.
 
 \subsection{ Analysis using the \mbox{\tt secr} package}
 
-To demonstrate the use of the \mbox{\tt secr} package, we will show how to do the
-same analysis on the wolverine study as shown in
-sec. \ref{scr0.sec.wolverine}. To use 
-the \mbox{\tt secr} package, the data need to be formatted in a similar but
-slightly different manner than we use in {\bf WinBUGS}.  
+To demonstrate the use of the \mbox{\tt secr} package, we will show
+how to do the same analysis on the wolverine study as shown in
+sec. \ref{scr0.sec.wolverine}. To use the \mbox{\tt secr} package, the
+data need to be formatted in a similar but slightly different manner
+than we use in {\bf WinBUGS}.
 
-For example, in sec. \ref{scr0.sec.wolverine} we had a "flat file" with 3 columns
-representing trap identity,
-the individual identity and the sample occasion index (sample).  We will use that same file
-here but reorder the columns and add a "Session" column so that \mbox{\tt secr} can properly format 
-the encounter array. The "Session" column in our case is all 1s, representing a single primary 
-sampling occasion.   The use of this column allows \mbox{\tt secr} flexibility should there be more than
-one primary sampling occasion.   Additionally, we must tell \mbox{\tt secr} information about the traps 
-so that the correct likelihood is used in the analysis.  Instead of telling \mbox{\tt secr} exactly which likelihood
-to use for the encounter (e.g., Bernoulli or Poisson), we provide it with the type of 
-detector used (such as "proximity", "multi", etc.) when reading in the trap location information.   
-We demonstrate these differences now by walking through
-the wolverine example in \mbox{\tt secr}.
+For example, in sec. \ref{scr0.sec.wolverine} we had a "flat file"
+with 3 columns representing trap identity, the individual identity and
+the sample occasion index (sample).  We will use that same file here
+but reorder the columns and add a "Session" column so that \mbox{\tt
+  secr} can properly format the encounter array. The "Session" column
+in our case is all 1s, representing a single primary sampling
+occasion.  The use of this column allows \mbox{\tt secr} flexibility
+should there be more than one primary sampling occasion.
+Additionally, we must tell \mbox{\tt secr} information about the traps
+so that the correct likelihood is used in the analysis.  Instead of
+telling \mbox{\tt secr} exactly which likelihood to use for the
+encounter (e.g., Bernoulli or Poisson), we provide it with the type of
+detector used (such as "proximity", "multi", etc.) when reading in the
+trap location information.  We demonstrate these differences now by
+walking through the wolverine example in \mbox{\tt secr}.
 
 
-After installing
-the \mbox{\tt secr} package, we first have to read in the trap locations and
-other related information, such as if the trap is operational during a
-sampling occasion.  The \mbox{\tt secr} package reads in the trap data through a
-command called ``\mbox{\tt read.traps}'', which requires the detector type as
-input.  The detector type is important because it will determine the
-likelihood that \mbox{\tt secr} will use to fit the model.  Here, we have
+After installing the \mbox{\tt secr} package, we first have to read in
+the trap locations and other related information, such as if the trap
+is operational during a sampling occasion.  The \mbox{\tt secr}
+package reads in the trap data through a command called ``\mbox{\tt
+  read.traps}'', which requires the detector type as input.  The
+detector type is important because it will determine the likelihood
+that \mbox{\tt secr} will use to fit the model.  Here, we have
 selected ``proximity'' which corresponds to the Bernoulli encounter
-model in which individuals are captured at most once in
-each trap during each sampling occasion:
+model in which individuals are captured at most once in each trap
+during each sampling occasion: 
 {\small
 \begin{verbatim}
 library("secr")
@@ -1263,10 +1289,89 @@ particularly with the different units being used between programs and
 packages.
 \end{comment}
 
-\subsection{Technical Details of the \secr Package}
+\subsection{Likelihood Analysis in the \mbox{\tt secr} Package}
 
-XXXX WHAT EXACTLY IS SECR DOING ? Look into Borchers and Efford
-XXXXXXXX
+The \mbox{\tt secr} package does likelihood analysis of SCR models for most
+classes of models using the likelihood formulation developed in 
+\citep{borchers_efford:2008} which 
+deviates slightly from the binomial form we presented in sec.
+\ref{mle.sec.Nunknown} above (though \citet{borchers_efford:2008}
+mention the binomial form).
+Specifically, the likelihood that \mbox{\tt secr} implements is that based on removing
+$N$ from the likelihood by integrating the binomial likelihood
+(Eq. XXX above) over a Poisson prior for $N$ -- what we will call a
+Poisson-integrated likelihood as opposed to the 
+conditional-on-$N$ (binomial-form) considered previously. 
+To develop the Poisson-integrated likelihood 
+we compute the marginal
+probability of each ${\bf y}_{i}$ and the probability of an all-0
+encounter history, $\pi_{0}$, as before, 
+to arrive at the  marginal likelihood in the binomial-form:
+\[
+ {\cal L}({\bm \alpha},n_{0} | {\bf y})  = \frac{N!}{n! n_{0}!} 
+ \left\{ \prod_{i}  [{\bf y}_{i}|{\bm \alpha}] \right\}
+ (\pi_{0})^{n_{0})
+\]
+Now, what \citet{borchers_efford:2008} do is
+assume that $N \sim \mbox{Poisson}(\Lambda)$ and they do a further level
+of marginalization over this prior distribution:
+\[
+\sum_{n0=0}^{\infty}  
+\frac{N!}{n! n_{0}!} 
+ \left\{ \prod_{i}  [{\bf y}_{i}|{\bm \alpha}] \right\}
+ (\pi_{0})^{n_{0})
+\frac{exp(-\Lambda) \Lambda^{N}}{N!}
+\]
+Thus we note there are two marginalizations
+ going on here -- the
+integration to remove the latent variables ${\bf s}$ and then
+summation to remove the parameter $N$. 
+This produces exactly this likelihood:
+\[
+{\cal L}_{2} = 
+ \left\{ \prod_{i}  [{\bf y}_{i}|{\bm \alpha}] \right\}  \Lambda^{n}   \exp( - \Lambda \pi_{0} )
+\]
+which is Eq. 2 of \citet{borchers_efford:2008} except for notational
+differences, and this 
+looks like our likelihood Eq. XXXX except with 
+$\Lambda^{n}   exp( - \Lambda \pi_{0} )$ replacing the combinatorial
+term and the $\pi_{0}^{n_{0}}$ term. We provide a function for
+computing this in the \mbox{\tt scrbook} package called \mbox{\tt
+  intlik3Poisson}. The help file for that function shows how to
+conduct a small simulation study to compare the MLE under the
+Poisson-integrated likelihood with that from the binomial form. 
+
+The essential distinction between our MLE and Borchers and Efford
+as implemented in \mbox{\tt secr}
+is whether you keep $N$ in the model or remove it by
+integration over a Poisson prior. If you have prescribed a state-space explicitly then
+there is no difference at all, or at least there shouldn't be. That
+is, the estimators should be very similar. Perhaps the difference is: N
+is the actual realized population size whereas $\lambda$ is the
+expected value of that. We probably want to estimate N in most
+cases. Numerically we think these will be the same under the Poisson
+model used to compute the marginal likelihood but perhaps the error is
+different?
+I will make up a Poisson likelihood and we will test it out.
+Both models assumes ${\bf s}$ is uniformly distributed over space, but
+for the binomial model we  make no additional assumption about N
+whereas we assume $N$ is Poisson using the formulation in \mbox{\tt
+  secr} from 
+\citep{borchers_efford:2008}.
+
+Using data augmentation we could do a similar kind of integration but 
+integrate $N$ over a binomial (M,\psi) prior. So obviously this is
+approximately the same as M gets large. However, doing a bayesian
+analysis by MCMC ,  we obtain an
+estimate of both $N$ and the parameter controlling its expected value
+$\psi$ which are, in fact, both identifiable from the data even using
+likelihood analysis \citep{royle_etal:2007}.   That said we can integrate N
+out completely and just estimate $\psi$ as we noted in Section XXX
+above (and from RD book). 
+
+
+
+
 
 
 \begin{comment}
