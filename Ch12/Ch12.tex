@@ -7,22 +7,13 @@
 
 \section{Introduction}
 
-\hl{I'm trying to expand this first paragraph to broaden the scope of
-  the chapter.}
 All of the previous chapters focused on closed population models
 for estimating density and for inference about spatial variation in density. However, a thorough
 understanding of population dynamics requires information about both
-spatial and temporal variation in population density. In this chapter, we develop a framework for
+spatial and temporal variation in population density. In this chapter, 
+we develop a framework for
 inference about the processes governing spatial and temporal dynamics,
-namely survival, fecundity, and movement (migration, dispersal, etc...).
-%In many cases
-%. data from spatial capture recapture studies for
-%demographically open populations.  There are a number of reasons why
-%modeling open populations is of interest to researchers.  Probably the
-%most important reason because natural populations experience mortality
-%and recruitment over time.  Modeling parameters such as survival,
-%recruitment, and home range center movement can allows us to better
-%understand population dynamics.  For example, survival probability is
+namely survival, recruitment, and movement (migration, dispersal, etc...).
 The ability to estimate these parameters is critical to both basic and
 applied ecological research. For example, testing hypotheses about
 life history trade-offs requires accurate estimates of both survival
@@ -41,9 +32,7 @@ variation in survival or fecundity. Although matrix
 population models are often used for these purposes \citep{caswell:1989,saether_bakke:2000}, the same
 objectives can be accomplished by computing posterior predictive
 distributions as part of the MCMC algorithm.
-%Likewise, survival probability is
-%a key demographic parameter driving populations
-%\citep{saether_bakke:2000}.
+
 
 \hl{Maybe a paragraph here discussing the importance of movement in
   both estimating vital rates and structuring population. }
@@ -119,235 +108,48 @@ population chapters are equivalent to {\it secondary} periods).
 
 \section{Overview of Population Dynamics}
 
-\hl{rbc: I think it would be helpful to define and discuss the different
-parameters that affect population size. Even something as basic as the
-BIDE model, N(t) = N(t-1) + B + I - D - E, would help set the stage
-for the next sections where we talk about how to estimate these
-parameters. }
-
-
-
-\section{CJS models}
-
-%%% Beth, while CSJ models are in some ways less complex than JS
-%%% models it might make for a more natural flow of things to have JS
-%%% models first -- because they are most naturally discussed as the
-%%% extension of SCR0 and other models, whereas the CJS is then a
-%%% simplification of those models , but not at all an extension of
-%%% SCR0.
-
-\hl{rbc comment: I would first describe the non-spatial versions of
-  the model first. Describe each part and then explain the weaknesses
-  associated with ignoring space.}
-
-There are essentially two ways to fit these models, using either a
-multinomial approach \citep{lebreton_etal:1992} or a state-space
-likelihood approach \citep{gimenez:2007, royle:2008}.  Multi-state
-models have been used to estimate survival and movement in CJS models
-using spatial or geographic location as a state (see
-\cite{kery_schaub:2011} for a review of these models using WinBUGS).
-Building on the state-space and multi-state CJS models, we can
-explicitly model individual movement into the CJS models as an
-individual covariate model \citep{royle_indcov:2007}.
-
-To extend SCR models to open populations, we adopt a hierarchical
-parameterization of the JS models in which the observation model is
-described conditional on the latent state variables $z(i,t)$ -- the
-“alive state” – which describe whether individual $i$ is
-alive ($z(i,t)=1$) or not ($z(i,t)=0$) during each of $t=1,2,\ldots,T$
-{\it primary} periods.  We may consider the same basic encounter
-models as described previously (i.e., Poisson, Bernoulli, or
-multinomial). In particular, let $y_{ijkt}$ indicate the observed
-encounter data of individual $i$ in trap $j$, during interval
-(sub-sample) $k=1,2,\ldots,K$ and primary period $t$. We note that in
-some cases we may have intervals ($K=1$) which correspond to the
-design underlying a standard CJS or JS models whereas the case $K>1$
-corresponds to the ``robust design'' (\citealt{pollock:1982}).  The
-Poisson observation model, specified conditional on $z(i,t)$, is:
- \[
-  y_{ijkt}|z(i,t) \sim
-\mbox{Pois}(\lambda_0 g_{ij} z(i,t)).
-\]
-Thus, if individual $i$ is alive at time $t$ ($z(i,t)=1$), then the observations are Poisson as before. Conversely, if the
-individual is not alive ($z(i,t)=0$), then the observations must be
-fixed zeros with probability 1.   In the CJS formulation, we will condition on first capture which means that $z(i,t)$ will
-be 1 when $t$ is the first primary period of capture.  We can denote this $z(i, t_first)$  XXX still working on best notation
-for first capture XXXX.  This ensures that each individual is alive upon entering the model.   Modeling time-effects either
-within or across primary periods
-is straightforward. For that, we define $\lambda_{0} \equiv
-\lambda_{0}(k,t)$ and then develop models for
-$\lambda_{0}(k,t)$ as in our closed SCR models (we note that
-trap-specific effects could be modeled analogously).
-
-Instead of allowing $z(i,t)$ to be independent for each year, we
-describe the ''alive state" at time $t$ for each individual as a
-function of the state at the previous time step $t-1$.  The initial
-state is described the same way as we have done in our closed
-population models, by:
+The most basic formulation of models for population growth stem from an idea originally used
+in accounting, the balance sheet.  In this case, we can think of the population as a function
+of credits (i.e., births and immigrants) and debits (i.e., deaths and emigrants).  We can then
+set up the population at time $t+1$ as a function of these four components:
 \[
- z(i,1) \sim \mbox{Bern}(\psi)
+N(t+1) = N(t) + B(t) + I(t) - D(t) - E(t)
 \]
-and to model the transition of individual states from $t$ to $t+1$ for
-all $t >2$ we have
+where $N(t)$ is the population size at time $t$, $B(t)$ and $I(t)$ are the credits (additions) from births and 
+immigrants at time $t$, and $D(t)$ and $E(t)$ are the debits (losses) due to deaths and emigration.   This balance
+equation model, termed the "BIDE model" lays the basic foundation for population models.  We can easily derive
+a simple population growth model under density independence, by assuming no immigration or emigration.  
 \[
- z(i,t) \sim \mbox{Bern}( \phi z(i,t-1)).
+N(t+1) = N(t) + N(t)r(t)
 \]
-Thus, if $z(i,1)=1$, then the individual may survive with probability
-$\phi$ to time $t=2$ and so forth.  Once an individual leaves the
-population (i.e., $z(i,t) = 0$), there is no mechanism for the
-individual to return.
+where $r(t) = b(t) - d(t)$.  Here, $b(t)$ and $d(t)$ are the per-capita birth and death rates and thus $r(t)$ is the per-capita
+growth rate.  Density-dependent, age structured, stochastic effects on growth, spatially structured, and competition models (e.g.,Lotka-Volterra)
+all are basic derivations of the BIDE model.  
 
-In the CJS model we are not estimating $N$, so we do not incorporate
-any data augmentation here.  This conveniently makes the model run
-faster too!
-
-
-\section{Migratory fish example}
-
-In stream networks, technology such as passive integrated transponders
-(PIT) and the placement of PIT antennas along the stream mimics the
-type of spatial data collected in terrestrial passive arrays such as
-camera traps, hair snares, acoustic recording devices, etc.  The
-difference is that for fish and aquatic species, the stream constrains
-the movement of individuals to a linear network.  Here, we demonstrate
-the CJS model to evaluate survival and movement of migratory fishes in
-a North Carolina river using an American shad \textit{Alosa sapidissima}
-example.  Using a resistance board weir near the river mouth, 317 fish
-were tagged with passive integrated transponders (PIT) in the spring
-of 2010. An array of 7 upstream PIT antennas passively recaptured
-individuals during upstream and downstream migrations.  The number of
-times each fish passed over the antenna was recorded and summarized
-each week for 12 weeks.  Thus, the dimensions of the data are 317
-individuals by 7 antennas by 12 sample occasions. Individuals can
-encounter any antenna any number of times during the week, which means
-we just sum the encounters over the week and eliminate any need for
-explicit secondary occasions in the model The result is a 3-D array
-instead of a 4-D array.  Given the structure of the encounters, we use
-a Poisson encounter model in this example.  Since we condition on
-first capture, it is necessary for the model that we record the week
-when each fish was tagged.
-
-\begin{verbatim}
-XXXX Clean up initial code for data entry XXXXX
-library(reshape)
-
-# Constants:
-M <- 317       # Number of individuals
-T <- 12     # Number of periods (weeks)
-nantenna <- 7  # weir, 6 antennas
-antenna.loc <- c(3,7,12,44,56,72,77)  # antenna locations
-xl <- 0     # lower boundary, river mouth
-xu <- 82    # upper boundary, Atkinson Mill Dam
+In closed population models, we focus on estimating $N(t)$, but in open population models
+we are interested in the dynamics that arise between years or seasons and thus we focus not only on $N(t)$ but on these so-called "credits" 
+"debits" that drive the population changes. If we take the basic parameters in the BIDE model and reconceptualize them, 
+we can easily at the more commonly used parameters in JS and CJS models which we 
+will describe in more detail below.  
+For example, survival ($\phi(t)$) tells us the number of individuals that survive from time $t$ to $t+1$, and thus $1-\phi(t)$ is the
+mortality (i.e., deaths), in some cases, we call this '$apparent$ survival' because deaths and emigration cannot be separated.  
+And recruitment ($\gamma$) is the probability of a new individual entering the population between $t$ to $t+1$, thus is essentially those
+born into the population and immigrants.  
 
 
-# Input and format data matrix:
-AS10 <- read.table("AS10.txt" ,header=T)
-melted.rkm <- melt(AS10, id=c("TagID","RKM"))
-tagid.week <- cast(melted.rkm, TagID ~ RKM ~ value, fill=0, length)
-y <- tagid.week
-first=read.csv("firstcap.csv")
 
-sink("ModelCJS.txt")
-cat("
+\section{Traditional Jolly-Seber Models}
 
-model {
-
-# Priors
-
-sigma ~ dunif(0,80)
-sigma2 <- sigma*sigma
-lam0 ~ dgamma(0.1, 0.1)
-phi ~ dunif(0, 1)   # Survival (constant across time)
-tauv~dunif(0, 30)
-tau<-1/(tauv*tauv)
-
-
-# Code can be improved, Right now has same code for first[i] and t except for z
-
-for (i in 1:M){
-  z[i,first[i]] ~ dbern(1)
-  S[i,first[i]] ~ dunif(0,50)
-
-for(j in 1:nantenna) {
-	  D2[i,j,first[i]] <- pow(S[i,first[i]]-antenna.loc[j], 2)
-       lam[i,j,first[i]]<-  lam0*exp(- D2[i,j,first[i]]/(2*sigma2))
-       tmp[i,j,first[i]] <- lam[i,j,first[i]]   # z[i,first[i]]* not needed here because z=1 when first entering
-         y[i,j,first[i]] ~ dpois(tmp[i,j,first[i]])
-      }
-
-   for (t in first[i]+1:T) {
-	          S[i,t] ~ dunif(xl, xu)
-         for(j in 1:nantenna) {
-		        D2[i,j,t] <- pow(S[i,t]-antenna.loc[j], 2)
-               lam[i,j,t] <- lam0 * exp(-D2[i,j,t]/(2*sigma2))
-	           tmp[i,j,t] <- z[i,t]*lam[i,j,t]
-		         y[i,j,t] ~ dpois(tmp[i,j,t])
-		 }
- 	   phiUP[i,t] <-  z[i,t-1]*phi
-	       z[i,t] ~ dbern(phiUP[i,t])
-	}
-	}
+\comment{
+There are a number of formulations used in MARK to estimate abundance and related parameters,
+e.g., the POPAN; the Link-Barker and Pradel-recruitment; and the Burnham JS and Pradel-l formulations.
+All of these models are slightly different parameterizations of the underlying population
+processes, and all are (asymptotically) equivalent in that they should give the same estimates of
+abundance and related parameters. The two main differences among the various formulations are
+1. the way in which they parameterize new entrants to the population
+2. if estimation is conditional upon the animals actually seen in the study (refer to
+Sanathanan 1972, 1977).
 }
-
-",fill = TRUE)
-sink()
-
-data1<-list(y=y, first=first, M=M, T=T, xl=0, xu=80, nantenna=nantenna, antenna.loc=antenna.loc)
-
-z=matrix(NA, 317, 12)
-for(i in 1:317){
-for(t in first[i]:12){
-z[i,t] <-1
-}
-}
-
-inits =  function() {list(z=z,phi=runif(1,0,1), lam0=runif(1,0,2), tauv=runif(1,10, 20), sigma=runif(1,0,10)) }
-
-parameters <- c("sigma", "phi", "lam0")
-
-library("rjags")
-
-out1 <- jags.model("modelCJS.txt", data1, inits, n.chains=3, n.adapt=500)
-out2CJS <- coda.samples(out1,parameters,n.iter=20000)
-
-> summary(out2JS)
-
-Iterations = 501:20500
-Thinning interval = 1
-Number of chains = 3
-Sample size per chain = 20000
-
-1. Empirical mean and standard deviation for each variable,
-   plus standard error of the mean:
-
-        Mean      SD  Naive SE Time-series SE
-lam0  1.8022 0.04776 0.0001950      4.762e-04
-phi   0.7549 0.01269 0.0000518      6.657e-05
-sigma 9.3645 0.14680 0.0005993      1.542e-03
-
-2. Quantiles for each variable:
-
-        2.5%    25%   50%    75%  97.5%
-lam0  1.7105 1.7695 1.801 1.8341 1.8977
-phi   0.7293 0.7465 0.755 0.7635 0.7793
-sigma 9.0855 9.2637 9.362 9.4623 9.6583
-
-\end{verbatim}
-
-Because our primary periods in this model are defined as weeks, our
-survival rate is actually the weekly survival.  In this case, our
-posterior mean estimate for $\phi$ was 0.75, suggesting that most fish
-have a low survival probability.  This could is likely due to the fact
-that the migration upstream can be quite energetically taxing.
-Additionally, the CJS model is only estimating the 'apparent' survival
-and some fish may have left the stream temporally or permanently.  The
-other parameter of interest is $\sigma$, the movement parameter.  Our
-system here is linear, so we do not think of fish as having a home
-range radius in this system.  However, $\sigma$ can still inform us
-about the linear distance fish are moving.  XXXX should I convert
-sigma to a linear movement distance - like a 95 percent distance
-moved?? XXX
-
 
 
 \section{Spatial Jolly-Seber Models}
@@ -706,6 +508,254 @@ reasonable when compared with the literature.  Some studies have found annual ma
 {porneluzi_faaborg:1999, bayne_hobson:2002}; however, female ovenbird survival was much lower (0.21, \cite
 {bayne_hobson:2002}). With more individuals, we could run this model with survival estimated for each sex separately.
 However, we should be careful not to over-parameterize our model based on the amount of data that is available.
+
+
+
+
+
+\section{CJS models}
+
+%%% Beth, while CSJ models are in some ways less complex than JS
+%%% models it might make for a more natural flow of things to have JS
+%%% models first -- because they are most naturally discussed as the
+%%% extension of SCR0 and other models, whereas the CJS is then a
+%%% simplification of those models , but not at all an extension of
+%%% SCR0.
+
+\hl{rbc comment: I would first describe the non-spatial versions of
+  the model first. Describe each part and then explain the weaknesses
+  associated with ignoring space.}
+
+There are essentially two ways to fit these models, using either a
+multinomial approach \citep{lebreton_etal:1992} or a state-space
+likelihood approach \citep{gimenez:2007, royle:2008}.  Multi-state
+models have been used to estimate survival and movement in CJS models
+using spatial or geographic location as a state (see
+\cite{kery_schaub:2011} for a review of these models using WinBUGS).
+Building on the state-space and multi-state CJS models, we can
+explicitly model individual movement into the CJS models as an
+individual covariate model \citep{royle_indcov:2007}.
+
+To extend SCR models to open populations, we adopt a hierarchical
+parameterization of the JS models in which the observation model is
+described conditional on the latent state variables $z(i,t)$ -- the
+“alive state” – which describe whether individual $i$ is
+alive ($z(i,t)=1$) or not ($z(i,t)=0$) during each of $t=1,2,\ldots,T$
+{\it primary} periods.  We may consider the same basic encounter
+models as described previously (i.e., Poisson, Bernoulli, or
+multinomial). In particular, let $y_{ijkt}$ indicate the observed
+encounter data of individual $i$ in trap $j$, during interval
+(sub-sample) $k=1,2,\ldots,K$ and primary period $t$. We note that in
+some cases we may have intervals ($K=1$) which correspond to the
+design underlying a standard CJS or JS models whereas the case $K>1$
+corresponds to the ``robust design'' (\citealt{pollock:1982}).  The
+Poisson observation model, specified conditional on $z(i,t)$, is:
+ \[
+  y_{ijkt}|z(i,t) \sim
+\mbox{Pois}(\lambda_0 g_{ij} z(i,t)).
+\]
+Thus, if individual $i$ is alive at time $t$ ($z(i,t)=1$), then the observations are Poisson as before. Conversely, if the
+individual is not alive ($z(i,t)=0$), then the observations must be
+fixed zeros with probability 1.   In the CJS formulation, we will condition on first capture which means that $z(i,t)$ will
+be 1 when $t$ is the first primary period of capture.  We can denote this $z(i, t_first)$  XXX still working on best notation
+for first capture XXXX.  This ensures that each individual is alive upon entering the model.   Modeling time-effects either
+within or across primary periods
+is straightforward. For that, we define $\lambda_{0} \equiv
+\lambda_{0}(k,t)$ and then develop models for
+$\lambda_{0}(k,t)$ as in our closed SCR models (we note that
+trap-specific effects could be modeled analogously).
+
+Instead of allowing $z(i,t)$ to be independent for each year, we
+describe the ''alive state" at time $t$ for each individual as a
+function of the state at the previous time step $t-1$.  The initial
+state is described the same way as we have done in our closed
+population models, by:
+\[
+ z(i,1) \sim \mbox{Bern}(\psi)
+\]
+and to model the transition of individual states from $t$ to $t+1$ for
+all $t >2$ we have
+\[
+ z(i,t) \sim \mbox{Bern}( \phi z(i,t-1)).
+\]
+Thus, if $z(i,1)=1$, then the individual may survive with probability
+$\phi$ to time $t=2$ and so forth.  Once an individual leaves the
+population (i.e., $z(i,t) = 0$), there is no mechanism for the
+individual to return.
+
+In the CJS model we are not estimating $N$, so we do not incorporate
+any data augmentation here.  This conveniently makes the model run
+faster too!
+
+
+\section{Migratory fish example}
+
+In stream networks, technology such as passive integrated transponders
+(PIT) and the placement of PIT antennas along the stream mimics the
+type of spatial data collected in terrestrial passive arrays such as
+camera traps, hair snares, acoustic recording devices, etc.  The
+difference is that for fish and aquatic species, the stream constrains
+the movement of individuals to a linear network.  Here, we demonstrate
+the CJS model to evaluate survival and movement of migratory fishes in
+a North Carolina river using an American shad \textit{Alosa sapidissima}
+example.  Using a resistance board weir near the river mouth, 317 fish
+were tagged with passive integrated transponders (PIT) in the spring
+of 2010. An array of 7 upstream PIT antennas passively recaptured
+individuals during upstream and downstream migrations.  The number of
+times each fish passed over the antenna was recorded and summarized
+each week for 12 weeks.  Thus, the dimensions of the data are 317
+individuals by 7 antennas by 12 sample occasions. Individuals can
+encounter any antenna any number of times during the week, which means
+we just sum the encounters over the week and eliminate any need for
+explicit secondary occasions in the model The result is a 3-D array
+instead of a 4-D array.  Given the structure of the encounters, we use
+a Poisson encounter model in this example.  Since we condition on
+first capture, it is necessary for the model that we record the week
+when each fish was tagged.
+
+\begin{verbatim}
+XXXX Clean up initial code for data entry XXXXX
+library(reshape)
+
+# Constants:
+M <- 317       # Number of individuals
+T <- 12     # Number of periods (weeks)
+nantenna <- 7  # weir, 6 antennas
+antenna.loc <- c(3,7,12,44,56,72,77)  # antenna locations
+xl <- 0     # lower boundary, river mouth
+xu <- 82    # upper boundary, Atkinson Mill Dam
+
+
+# Input and format data matrix:
+AS10 <- read.table("AS10.txt" ,header=T)
+melted.rkm <- melt(AS10, id=c("TagID","RKM"))
+tagid.week <- cast(melted.rkm, TagID ~ RKM ~ value, fill=0, length)
+y <- tagid.week
+first=read.csv("firstcap.csv")
+
+sink("ModelCJS.txt")
+cat("
+
+model {
+
+# Priors
+
+sigma ~ dunif(0,80)
+sigma2 <- sigma*sigma
+lam0 ~ dgamma(0.1, 0.1)
+phi ~ dunif(0, 1)   # Survival (constant across time)
+tauv~dunif(0, 30)
+tau<-1/(tauv*tauv)
+
+
+# Code can be improved, Right now has same code for first[i] and t except for z
+
+for (i in 1:M){
+  z[i,first[i]] ~ dbern(1)
+  S[i,first[i]] ~ dunif(0,50)
+
+for(j in 1:nantenna) {
+	  D2[i,j,first[i]] <- pow(S[i,first[i]]-antenna.loc[j], 2)
+       lam[i,j,first[i]]<-  lam0*exp(- D2[i,j,first[i]]/(2*sigma2))
+       tmp[i,j,first[i]] <- lam[i,j,first[i]]   # z[i,first[i]]* not needed here because z=1 when first entering
+         y[i,j,first[i]] ~ dpois(tmp[i,j,first[i]])
+      }
+
+   for (t in first[i]+1:T) {
+	          S[i,t] ~ dunif(xl, xu)
+         for(j in 1:nantenna) {
+		        D2[i,j,t] <- pow(S[i,t]-antenna.loc[j], 2)
+               lam[i,j,t] <- lam0 * exp(-D2[i,j,t]/(2*sigma2))
+	           tmp[i,j,t] <- z[i,t]*lam[i,j,t]
+		         y[i,j,t] ~ dpois(tmp[i,j,t])
+		 }
+ 	   phiUP[i,t] <-  z[i,t-1]*phi
+	       z[i,t] ~ dbern(phiUP[i,t])
+	}
+	}
+}
+
+",fill = TRUE)
+sink()
+
+data1<-list(y=y, first=first, M=M, T=T, xl=0, xu=80, nantenna=nantenna, antenna.loc=antenna.loc)
+
+z=matrix(NA, 317, 12)
+for(i in 1:317){
+for(t in first[i]:12){
+z[i,t] <-1
+}
+}
+
+inits =  function() {list(z=z,phi=runif(1,0,1), lam0=runif(1,0,2), tauv=runif(1,10, 20), sigma=runif(1,0,10)) }
+
+parameters <- c("sigma", "phi", "lam0")
+
+library("rjags")
+
+out1 <- jags.model("modelCJS.txt", data1, inits, n.chains=3, n.adapt=500)
+out2CJS <- coda.samples(out1,parameters,n.iter=20000)
+
+> summary(out2JS)
+
+Iterations = 501:20500
+Thinning interval = 1
+Number of chains = 3
+Sample size per chain = 20000
+
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
+
+        Mean      SD  Naive SE Time-series SE
+lam0  1.8022 0.04776 0.0001950      4.762e-04
+phi   0.7549 0.01269 0.0000518      6.657e-05
+sigma 9.3645 0.14680 0.0005993      1.542e-03
+
+2. Quantiles for each variable:
+
+        2.5%    25%   50%    75%  97.5%
+lam0  1.7105 1.7695 1.801 1.8341 1.8977
+phi   0.7293 0.7465 0.755 0.7635 0.7793
+sigma 9.0855 9.2637 9.362 9.4623 9.6583
+
+\end{verbatim}
+
+Because our primary periods in this model are defined as weeks, our
+survival rate is actually the weekly survival.  In this case, our
+posterior mean estimate for $\phi$ was 0.75, suggesting that most fish
+have a low survival probability.  This could is likely due to the fact
+that the migration upstream can be quite energetically taxing.
+Additionally, the CJS model is only estimating the 'apparent' survival
+and some fish may have left the stream temporally or permanently.  The
+other parameter of interest is $\sigma$, the movement parameter.  Our
+system here is linear, so we do not think of fish as having a home
+range radius in this system.  However, $\sigma$ can still inform us
+about the linear distance fish are moving.  XXXX should I convert
+sigma to a linear movement distance - like a 95 percent distance
+moved?? XXX
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
