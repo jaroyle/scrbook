@@ -285,13 +285,14 @@ in Panel \ref{mcmc.panel.gibbs1}.
 \rule[0.15in]{\textwidth}{.03in}
 %\begin{minipage}{2.5in}
 \begin{verbatim}
-Norm.Gibbs<-function(y=y,mu_0=mu_0,sigma2_0=sigma2_0,a=a,b=b,niter=niter){
+Norm.Gibbs<-function(y=y,mu_0=mu_0,sigma2_0=sigma2_0,a=a,b=b,
+			niter=niter){
 
 ybar<-mean(y)
 n<-length(y)
 mu<-1            #mean initial value
 sigma2<-1        #sigma2 initial value
-an<-n/2 + a      #shape parameter of IvGamma distribution of sigma2
+an<-n/2 + a      #shape parameter of IvGamma of sigma2
 
 out<-matrix(nrow=niter, ncol=2)
 colnames(out)<-c('mu', 'sig')
@@ -299,7 +300,8 @@ colnames(out)<-c('mu', 'sig')
 for (i in 1:niter) {
 
 #update mu according to Eq. 7.2
-mu_n<- (sigma2/(sigma2+n*sigma2_0))*mu_0 + (n*sigma2_0/(sigma2 + n*sigma2_0))*ybar 
+mu_n<- ((sigma2/(sigma2+n*sigma2_0))*mu_0 
+		+ (n*sigma2_0/(sigma2 + n*sigma2_0))*ybar )
 sigma2_n <- (sigma2*sigma2_0)/ (sigma2 + n*sigma2_0)
 mu<-rnorm(1,mu_n, sqrt(sigma2_n))
 
@@ -584,7 +586,7 @@ sense and, with enough experience, some intuition. Or, one can use an adaptive p
 is automatically adjusted until it reaches a user-defined acceptance
 rate, at which point the adaptive phase ends and the actual Markov
 chain begins. This is computationally a little more
-advanced. \citet{link_barker:2009} discuss this in more detail. It is
+advanced. \citet{link_barker:2010} discuss this in more detail. It is
 important the samples drawn during the adaptive phase are discarded.
 To illustrate the effects of tuning, we ran the
 Metropolis-within-Gibbs algorithm in Panel \ref{mcmc.panel.logitnormal} with $\delta=0.01$,
@@ -774,10 +776,11 @@ alphaUps<-0
 #lev is the number of sites i
 for (i in 1:lev) { 		
 alpha.cand<-rnorm(1, alpha[i], delta_alpha)	
-loglike<- sum(dpois (y[site==i], exp(alpha[i] + beta*x[site==i]), log=TRUE))  
+loglike<- sum(dpois (y[site==i], exp(alpha[i] + beta*x[site==i]), 
+		  log=TRUE))  
 logprior<- dnorm(alpha[i], mu_alpha,sig_alpha, log=TRUE)
 loglike.cand<- sum(dpois (y[site==i], exp(alpha.cand + beta *x[site==i]), 
-log=TRUE))
+			   log=TRUE))
 logprior.cand<- dnorm(alpha.cand,  mu_alpha,sig_alpha, log=TRUE)
 if (runif(1)< exp((loglike.cand+logprior.cand) -(loglike+logprior))) {
 alpha[i]<-alpha.cand
@@ -785,7 +788,7 @@ alphaUps<-alphaUps+1
 }
 }
 
-#this lets you check the acceptance rate of alpha at every 100th iteration
+#lets you check the acceptance rate of alpha at every 100th iteration
 if(iter %% 100 == 0) {  
             cat("   Acceptance rates\n")
             cat("     alpha =", alphaUps/lev, "\n")
@@ -1139,7 +1142,7 @@ the term has to be taken into account when updating $z_i$:
 
             prior <- dbinom(z[i], 1, psi, log=TRUE)
             prior.cand <- dbinom(zcand, 1, psi, log=TRUE)
-            if(runif(1) < exp( (llcand+prior.cand) - (llz+prior) )) {
+            if(runif(1) < exp((llcand+prior.cand)-(llz+prior))){
                 z[i] <- zcand
                 zUps <- zUps+1
             }
@@ -1181,7 +1184,8 @@ can be found in the {\bf R} package \mbox{\tt scrbook}.
 
 \begin{verbatim}
         lam0.cand <- rnorm(1, lam0, 0.1)
-        if(lam0.cand >0){   #automatically reject lam0.cand that are <0
+        #automatically reject lam0.cand that are <0
+        if(lam0.cand >0){   
             lam.cand <- lam0.cand*exp(-(D*D)/(2*sigma*sigma))
             p.cand <- 1-exp(-lam.cand)
             ll<- sum(dbinom(y, K, pmat *z, log=TRUE))  
@@ -1216,7 +1220,7 @@ formulation the updater for $p_0$ becomes:
   if(p0.cand >0 & p0.cand < 1 ){   
       #automatically rejects lam0.cand that are not {0,1}
        p.cand <- p0.cand*exp(-(D*D)/(2*sigma*sigma))
-       ll<- sum(dbinom(y, K, pmat *z, log=TRUE)) #no transformation needed
+       ll<- sum(dbinom(y, K, pmat *z, log=TRUE)) 
        llcand <- sum(dbinom(y, K, p.cand *z, log=TRUE))
        if(runif(1) < exp( llcand  - ll) ){
           ll<-llcand
@@ -1507,7 +1511,8 @@ yl= ymin-b
 yu= ymax+b
 
             #create data frame with coordinate pairs
-dd <- data.frame(Id=c(1,1,1,1,1),X=c(xl,xu,xu,xl,xl), Y=c(yl,yl,yu,yu,yl)) 
+dd <- data.frame(Id=c(1,1,1,1,1),X=c(xl,xu,xu,xl,xl), 
+				 Y=c(yl,yl,yu,yu,yl)) 
 ddTable <- data.frame(Id=c(1),Name=c("Item1"))
             #convert to shapefile, type polygon
 ddShapefile <- convert.to.shapefile(dd, ddTable, "Id", 5) 
@@ -1711,7 +1716,7 @@ increasingly
 complicated or inefficient is when using point processes other 
 than the 
  Binomial point process (''uniformity'') which underlies the basic 
- SCR model (see Chapt. \ref {chapt.scr0}). In the Chapt. 
+ SCR model (see Chapt. \ref {chapt.scr0}). In Chapt. 
  \ref {chapt.state-space} and XXXX BETHS PP CHAPTER XXXX you will see examples of different point processes,
   implemented using custom-made MCMC algorithms.
 
