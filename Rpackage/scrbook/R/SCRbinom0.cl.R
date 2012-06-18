@@ -13,8 +13,8 @@ K=K
 delta=delta
 
 #initiate distance matrix and lamij matrix
-D <- e2dist(S, X)
-lam<-lam0*exp(-(D*D)/(2*sigma*sigma))
+d <- e2dist(S, X)
+lam<-lam0*exp(-(d*d)/(2*sigma*sigma))
 pmat<- 1-exp(-lam)
 pmat[pmat<1e-30] <- 1e-30 #ensures >0 detection probabilities in first iteration
 
@@ -39,7 +39,7 @@ for (iter in 1:niter) {
 #update sigma
         sig.cand <- rnorm(1, sigma, delta[1])
         if(sig.cand>0){   #automatically reject sig.cand that are <0
-            lam.cand <- lam0*exp(-(D*D)/(2*sig.cand*sig.cand))
+            lam.cand <- lam0*exp(-(d*d)/(2*sig.cand*sig.cand))
 	    p.cand<-1-exp(-lam.cand)
 
 		#if (iter==1) p.cand[p.cand<1e-30] <- 1e-30 
@@ -56,7 +56,7 @@ for (iter in 1:niter) {
 #update lam0
         lam0.cand <- rnorm(1, lam0,delta[2])
         if(lam0.cand>0){   #automatically reject lam0.cand that are <0
-            lam.cand <- lam0.cand*exp(-(D*D)/(2*sigma*sigma))
+            lam.cand <- lam0.cand*exp(-(d*d)/(2*sigma*sigma))
 	    p.cand<-1-exp(-lam.cand)
             llcand <- sum(dbinom(y,K,p.cand*z, log=TRUE))
             if(runif(1) < exp( llcand  - ll) ){
@@ -100,7 +100,7 @@ for (iter in 1:niter) {
                 if(runif(1) < exp(llcand - llS)) {
                     S[i,] <- Scand
                     pmat[i,] <- p.cand
-                    D[i,] <- dtmp
+                    d[i,] <- dtmp
                     Sups <- Sups+1
                 }
             }
