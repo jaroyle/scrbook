@@ -473,7 +473,7 @@ look up these algorithms in \citet{robert_casella:2004} or
 
 Building a MH sampler can be broken down into several steps. We are going to demonstrate these steps using a different but still simple and common model: the logit-normal or logistic regression model. For simplicity, assume that
 \[
-y \sim \mbox{Bern} \left(\frac{\exp(\theta)}{1+ \exp(\theta)}\right)
+y \sim \mbox{Bernoulli} \left(\frac{\exp(\theta)}{1+ \exp(\theta)}\right)
 \]
 and
 \[
@@ -492,7 +492,7 @@ r = \frac{[\theta^{*}|y]}  {[\theta^{t-1}|y]}
 \]
 In our example,
 \[
-r = \frac{\mbox{Bern}(y|\theta^{*}) \times \mbox{Normal}(\theta^{*}|\mu, \sigma)} {\mbox{Bern}(y|\theta^{t-1}) \times \mbox{Normal}(\theta^{t-1}|\mu, \sigma)}
+r = \frac{\mbox{Bernoulli}(y|\theta^{*}) \times \mbox{Normal}(\theta^{*}|\mu, \sigma)} {\mbox{Bernoulli}(y|\theta^{t-1}) \times \mbox{Normal}(\theta^{t-1}|\mu, \sigma)}
 \]
 
 
@@ -623,7 +623,7 @@ with a few extra lines of code.
 One weakness of the MH sampler is that formulating the joint posterior
 when evaluating whether to accept or reject the candidate values for
 $\theta$ becomes increasingly complex or inefficient as the number of
-parameters in a model increases. As you already saw in Chapter 2, in
+parameters in a model increases. As you already saw in Chapt. \ref{chapt.glms}, in
 these cases you can simply combine MH sampling and Gibbs sampling. You
 can use Gibbs sampling to break down your high-dimensional parameter
 space into easy-to-handle one-dimensional conditional distributions
@@ -647,15 +647,15 @@ our model is:
 y_{ij} \sim \mbox{Poisson}(\lambda_{ij})
 \]
 \[
-\lambda_{ij} = \exp (\alpha_i + \beta x_{ij})
+\lambda_{ij} = \exp (\alpha_i + \beta_1 x_{ij})
 \]
-Let's use Normal priors on $\alpha$ and $\beta$,  \[
+Let's use Normal priors on $\alpha$ and $\beta_1$,  \[
 \alpha_i \sim \mbox{Normal} (\mu_{\alpha}, \sigma_{\alpha})
 \]
 and
 \[
-\beta \sim \mbox{Normal} (\mu_{\beta}, \sigma_{\beta})
-\].
+\beta \sim \mbox{Normal} (\mu_{\beta_1}, \sigma_{\beta_1})
+\]
 
 Since we want to estimate the random effect on $\alpha$ in this model, we do not
 specify $\mu_{\alpha}$ and $\sigma_{\alpha}$, but instead, estimate them as well, so we have
@@ -670,8 +670,8 @@ breaking the multi-dimensional parameter space into one-dimensional
 components:
 
 \begin{eqnarray*}
-[\alpha_1|\alpha_2,\alpha_3,\ldots,\alpha_i,\beta,{\bf y}_{1}] & \propto &   [{\bf y}_{1}|\alpha_1,\beta]  [\alpha_1] \\
-	 & \propto  &   \mbox{Poisson}({\bf y}_{1}| \exp(\alpha_1 + \beta {\bf x}_1)) \times \mbox{Norm}(\alpha_1|\mu_{\alpha} , \sigma_{\alpha})
+[\alpha_1|\alpha_2,\alpha_3,\ldots,\alpha_i,\beta_1,{\bf y}_{1}] & \propto &   [{\bf y}_{1}|\alpha_1,\beta_1]  [\alpha_1] \\
+	 & \propto  &   \mbox{Poisson}({\bf y}_{1}| \exp(\alpha_1 + \beta_1 {\bf x}_1)) \times \mbox{Norm}(\alpha_1|\mu_{\alpha} , \sigma_{\alpha})
 \end{eqnarray*}
 where ${\bf y}_{1} = (y_{11},y_{12}, \ldots, y_{1n})$ is the vector of
 observed counts for site $i=1$ and, in general, ${\bf y}_{i}$ is the
@@ -680,13 +680,13 @@ vector of all observations of the covariate for site $i$. The other full conditi
 each $\alpha_{i}$ are constructed similarly:
 
 \begin{eqnarray*}
-[\alpha_2|\alpha_1,\alpha_3,\ldots,\alpha_i,\beta,{\bf y}_{2}] & \propto&  [{\bf y}_{2}|\alpha_2,\beta]  [\alpha_2] \\
-	 & \propto  & \mbox{Poisson}({\bf y}_{2}| \exp(\alpha_2 + \beta {\bf x}_2)) \times \mbox{Norm}(\alpha_2|\mu_{\alpha}, \sigma_{\alpha})
+[\alpha_2|\alpha_1,\alpha_3,\ldots,\alpha_i,\beta_1,{\bf y}_{2}] & \propto&  [{\bf y}_{2}|\alpha_2,\beta_1]  [\alpha_2] \\
+	 & \propto  & \mbox{Poisson}({\bf y}_{2}| \exp(\alpha_2 + \beta_1 {\bf x}_2)) \times \mbox{Norm}(\alpha_2|\mu_{\alpha}, \sigma_{\alpha})
 \end{eqnarray*}
-and so on for all elements of ${\bf \alpha}$. The full-conditional for $\beta$ is:
+and so on for all elements of ${\bf \alpha}$. The full-conditional for $\beta_1$ is:
 \begin{eqnarray*}
-[\beta|\alpha,{\bf y}] &\propto & [{\bf y}|\alpha,\beta]  [\beta] \\
-	 &\propto& \mbox{Poisson}({\bf y}|exp(\alpha + \beta {\bf x})) \times \mbox{Norm}(\beta|\mu_{\beta}, \sigma_{\beta})
+[\beta_1|\alpha,{\bf y}] &\propto & [{\bf y}|\alpha,\beta_1]  [\beta_1] \\
+	 &\propto& \mbox{Poisson}({\bf y}|exp(\alpha + \beta_1 {\bf x})) \times \mbox{Norm}(\beta_1|\mu_{\beta_1}, \sigma_{\beta_1})
 \end{eqnarray*}
 
 Finally, we need to update the hyperparameters for the random effects
@@ -706,26 +706,26 @@ sampling.
 Now let's build the updating steps for these full conditionals. Again,
 for the MH steps that update ${\bf \alpha}$ and $\beta$ we use Normal
 proposal distributions with standard deviations $\delta_{\alpha}$ and
-$\delta_{\beta}$.
+$\delta_{\beta_1}$.
 
 First, we set the initial values ${\bf \alpha}^{(0)}$ and
-$\beta^{(0)}$. Then, starting with $\alpha_1$, we draw
+$\beta_1^{(0)}$. Then, starting with $\alpha_1$, we draw
 $\alpha_1^{(1)}$ from $\mbox{Norm}(\alpha_1^{(0)}, \delta_{\alpha})$,
 calculate the conditional posterior density of $\alpha_1^{(0)}$ and
 $\alpha_1^{(1)}$ and compare their ratios,
 \[
-r = \frac{\mbox{Poisson}({\bf y}_{1}|exp(\alpha_1^{(1)} + \beta {\bf x}_1)) \times
-  \mbox{Norm}(\alpha_1^{(1)}|\mu_{\alpha}, \sigma_{\alpha})} {\mbox{Poisson}({\bf y}_{1}|exp(\alpha_1^{(0)} + \beta {\bf x}_1)) \times \mbox{Norm}(\alpha_1^{(0)}|\mu_{\alpha}, \sigma_{\alpha})}
+r = \frac{\mbox{Poisson}({\bf y}_{1}|exp(\alpha_1^{(1)} + \beta_1 {\bf x}_1)) \times
+  \mbox{Norm}(\alpha_1^{(1)}|\mu_{\alpha}, \sigma_{\alpha})} {\mbox{Poisson}({\bf y}_{1}|exp(\alpha_1^{(0)} + \beta_1 {\bf x}_1)) \times \mbox{Norm}(\alpha_1^{(0)}|\mu_{\alpha}, \sigma_{\alpha})}
 \]
 and accept $\alpha_1^{(1)}$ with probability $min(r,1)$. We repeat this for all ${bf \alpha}$.
 
-For $\beta$, we draw $\beta^{(1)}$ from $\mbox{Norm} (\beta^{(0)}, \delta_{\beta})$, compare the posterior densities of $\beta^{(0)}$ and $\beta^{(1)}$,
+For $\beta_1$, we draw $\beta_1^{(1)}$ from $\mbox{Norm} (\beta_1^{(0)}, \delta_{\beta_1})$, compare the posterior densities of $\beta_1^{(0)}$ and $\beta_1^{(1)}$,
 \[
 r = \frac{\mbox{Poisson}({\bf y}|exp({\bf \alpha} + \beta_1^{(1)}{\bf x}))
-  \times\mbox{Norm}(\beta^{(1)}|\mu_{\beta}, \sigma_{\beta})} { \mbox{Poisson}({\bf
-    y}|exp({\bf \alpha} + \beta^{(0)}{\bf x})) \times \mbox{Norm}(\beta^{(0)}|\mu_{\beta}, \sigma_{\beta})},
+  \times\mbox{Norm}(\beta_1^{(1)}|\mu_{\beta_1}, \sigma_{\beta_1})} { \mbox{Poisson}({\bf
+    y}|exp({\bf \alpha} + \beta_1^{(0)}{\bf x})) \times \mbox{Norm}(\beta_1^{(0)}|\mu_{\beta_1}, \sigma_{\beta_1})},
 \]
-and accept $\beta^{(1)}$  with probability $min(r,1)$.
+and accept $\beta_1^{(1)}$  with probability $min(r,1)$.
 
 For $\mu_{\alpha}$ and $\sigma_{\alpha}$, we sample directly from the full conditional distributions (Eq. \ref{mcmc.eq.mu-posterior}  and Eq. \ref{mcmc.eq.sig-posterior}):
 \[
@@ -867,13 +867,13 @@ individuals is either detected (1) or not (0) during each of $K$
 sampling occasions. We estimate $N$ using data augmentation and have a
 Bernoulli model for the zero-inflation variables $z_{i}$. 
 \[
-z_{i} \sim \mbox{Bern}(\psi)
+z_{i} \sim \mbox{Bernoulli}(\psi)
 \]
 The binomial
 observation model is expressed conditional on the latent variables
 $z_{i}$. 
 \[
-y_i \sim \mbox{Bin} (p_i \times z_i, K)
+y_i \sim \mbox{Binomial} (p_i \times z_i, K)
 \]
 Further, we prescribe a distribution for the capture
 probability $p_{i}$. Here we assume
@@ -955,7 +955,7 @@ Metropolis-Hastings algorithm (the constant term in the full
 conditionals for $\mu_{p}$ and $\sigma_{p}$ reflects the improper
 prior we chose for both parameters).  Below, you see the updating step
 for the detection parameter ${\bf p}$. Note that (1) we draw candidate
-values on the logit scale and (2) instead of looping through $1 -- M$
+values on the logit scale and (2) instead of looping through $1 - M$
 individuals to update all $p_{i}$, we update all elements of the
 vector of {\bf p} in parallel.
 
@@ -977,7 +977,7 @@ Updating the $z_{i}$ is essentially analogous to updating the $p_{i}$
 (although they can be updated directly from their
 full-conditional). The parameters $\mu_{p}$ and $\sigma_{p}$ are also updated using MH steps (see the code for $\mu_{p}$ below). In truth, we could also sample $\mu_{p}$
 and $\sigma_{p}^{2}$ directly with certain choices of prior
-distributions. For example, if $\mu_{p} \sim \mbox{Norm}(0, 1000)$
+distributions. For example, if $\mu_{p} \sim \mbox{Normal}(0, 1000)$
 then the full conditional for $\mu_{p}$ is also normal (see
 sec. \ref{mcmc.sec.gibbs}), etc..
 
@@ -1029,7 +1029,7 @@ Recall the components of the basic SCR model with a Poisson encounter process fr
 We assume that individuals $i$, or rather, their activity centers
 ${\bf s}_i$, are uniformly distributed across the state space ${\cal S}$,
 \[
-{\bf s}_i  \sim \mbox{Unif}({\cal S})
+{\bf s}_i  \sim \mbox{Uniform}({\cal S})
 \]
 and that the number of times individual $i$ encounters trap $j$, $y_{ij}$, is a random Poisson variable with mean $\lambda_{ij}$,
 \[
@@ -1038,28 +1038,28 @@ y_{ij} \sim \mbox{Poisson}(\lambda_{ij})
 The link between individual location, movement and trap encounter
 rates is made by the assumption that $\lambda_{ij}$, is a decreasing
 function of the distance between ${\bf s}_i$ and the location of $j$,
-${\bf x}_{j}$, say $D_{ij} = ||{\bf s}_{i} - {\bf x}_{j}||$, of the half-normal form
+${\bf x}_{j}$, say $d_{ij} = ||{\bf s}_{i} - {\bf x}_{j}||$, of the half-normal form
 \[
-\lambda_{ij} =  \lambda_0  \exp(-D_{ij}^2/2\sigma^2),
+\lambda_{ij} =  \lambda_0  \exp(-d_{ij}^2/2\sigma^2),
 \]
-where $\lambda_0$ is the baseline trap encounter rate at $D_{ij}=0$ and $\sigma$ controls the shape of the half-normal function.
+where $\lambda_0$ is the baseline trap encounter rate at $d_{ij}=0$ and $\sigma$ controls the shape of the half-normal function.
 
 In order to estimate the number of ${\bf s}_i$ in ${\cal S}$ (or any
 subset of ${\cal S}$), $N$, we use data augmentation (sec. \ref{closed.sec.da}) and create $M-n$ all-0 encounter histories, where $n$ is the number of individuals we observed and $M$ is a somewhat arbitrary number that is larger than $N$. We estimate $N$ by summing over the auxiliary data augmentation variables, $z_i$, which is 1 if the individual is part of the population and 0 if not, and assume that $z_i$ is a random Bernoulli variable,
 \[
-z_{i} \sim \mbox{Bern}(\psi)
+z_{i} \sim \mbox{Bernoulli}(\psi)
 \]
 
 To link the two model components, we modify our trap encounter model to
 \[
-\lambda_{ij} = \lambda_0 \times \exp(-D_{ij}^2/2\sigma^2) \times z_{i}.
+\lambda_{ij} = \lambda_0 \times \exp(-d_{ij}^2/2\sigma^2) \times z_{i}.
 \]
 The model has the following structural parameters, for which we need to specify priors:
 \begin{itemize}
-\item[ $\psi$:] the $\mbox{Unif}(0,1)$ is required as part of the data augmentation procedure and in general is a natural choice of an uninformative prior for a probability. It will also lead to conjugacy as we saw in the example of model Mh, so that we can update $\psi$ directly from its full conditional distribution using Gibbs sampling.
+\item[ $\psi$:] the $\mbox{Uniform}(0,1)$ is required as part of the data augmentation procedure and in general is a natural choice of an uninformative prior for a probability. It will also lead to conjugacy as we saw in the example of model Mh, so that we can update $\psi$ directly from its full conditional distribution using Gibbs sampling.
 \item[ ${\bf s}_{i}$:] since ${\bf s}_{i}$ is a pair of coordinates it is two-dimensional and we use a uniform prior limited by the extent of our state-space over both dimensions.
 \item[ $\sigma$:] we can conceive several priors for $\sigma$ but let's assume an improper prior, one that is Uniform over $(-\infty, \infty)$. We will see why this is convenient when we construct the full conditionals for $\sigma$.
-\item[ $\lambda_{0}$:] analogous, we will use a $\mbox{Unif}(-\infty, \infty)$ improper prior for $\lambda_{0}$.
+\item[ $\lambda_{0}$:] analogous, we will use a $\mbox{Uniform}(-\infty, \infty)$ improper prior for $\lambda_{0}$.
 \end{itemize}
 The parameter that is the objective of our modeling, $N$, is a derived parameter that we can simply obtain by summing all $z_i$:
 \[
@@ -1084,7 +1084,7 @@ Notice that we automatically reject negative candidate values, since $\sigma$ ca
 \begin{verbatim}
 sig.cand <- rnorm(1, sigma, 0.1)	#draw candidate value
  if(sig.cand>0){   #automatically reject sig.cand that are <0
-     lam.cand <- lam0*exp(-(D*D)/(2*sig.cand*sig.cand))
+     lam.cand <- lam0*exp(-(d*d)/(2*sig.cand*sig.cand))
      ll<- sum(dpois(y, lam*z, log=TRUE))
      llcand <- sum(dpois(y, lam.cand*z, log=TRUE))
      if(runif(1) < exp( llcand  - ll) ){
@@ -1138,7 +1138,7 @@ the term has to be taken into account when updating $z_i$:
 
 $\psi$
  is a hyperparameter of the model, with an uninformative prior 
- distribution of $\mbox{Unif}(0,1)$ or $\mbox{Beta}(1,1)$, so that
+ distribution of $\mbox{Uniform}(0,1)$ or $\mbox{Beta}(1,1)$, so that
 \[
 [psi|{\bf z}] \propto \mbox{Beta}(1 + \sum_i z_i, 1 + M-\sum_i z_i)
 \]
@@ -1154,7 +1154,7 @@ The equivalent SCR model with a binomial encounter process is very
 similar. Here, each individual $i$ can only be detected once at any
 given trap $j$ during a sampling occasion $k$.  Thus
 \[
-y_{ij} \sim \mbox{Bin} (p_{ij}, K)
+y_{ij} \sim \mbox{Binomial} (p_{ij}, K)
 \]
 Where $p_{ij}$ is some function of distance between ${\bf s}_{i}$ and trap location ${\bf x}_{j}$. Here we use:
 \[
@@ -1164,7 +1164,7 @@ Recall from Chapt. \ref{chapt.glms} that this is the complementary log-log (clog
 to fall between 0 and 1.
 For our MCMC algorithm that means that, instead of using a Poisson 
 likelihood, $\mbox{Poisson}(y|\sigma,\lambda_0,{\bf s},z)$, we use a 
-Binomial likelihood, $\mbox{Bin}(y| \sigma,\lambda_0,{\bf s},z; K)$, 
+Binomial likelihood, $\mbox{Binomial}(y| \sigma,\lambda_0,{\bf s},z; K)$, 
 in all the conditional distributions. An exemplary updating step for $\lambda_0$ under a Binomial encounter model is shown below. 
 The full MCMC code for the Binomial SCR with a clog-log link (\mbox{\tt SCR0binom.cl}) 
 can be found in the {\bf R} package \mbox{\tt scrbook}.
@@ -1173,7 +1173,7 @@ can be found in the {\bf R} package \mbox{\tt scrbook}.
         lam0.cand <- rnorm(1, lam0, 0.1)
         #automatically reject lam0.cand that are <0
         if(lam0.cand >0){   
-            lam.cand <- lam0.cand*exp(-(D*D)/(2*sigma*sigma))
+            lam.cand <- lam0.cand*exp(-(d*d)/(2*sigma*sigma))
             p.cand <- 1-exp(-lam.cand)
             ll<- sum(dbinom(y, K, pmat *z, log=TRUE))  
             llcand <- sum(dbinom(y, K, p.cand *z, log=TRUE))
@@ -1189,7 +1189,7 @@ Another possibility is to model variation in the individual and site
 specific detection probability,  $p_{ij}$, directly, without any 
 transformation, such that
 \[
-p_{ij} = p_0 \times exp(-D_{ij}^2/(2\sigma^2))
+p_{ij} = p_0 \times exp(-d_{ij}^2/(2\sigma^2))
 \]
 and $p_0 \in [0,1]$.
 This formulation is analogous to how detection probability is modeled 
@@ -1202,7 +1202,7 @@ formulation the updater for $p_0$ becomes:
   p0.cand <- rnorm(1, p0, 0.1)
   if(p0.cand >0 & p0.cand < 1 ){   
       #automatically rejects lam0.cand that are not {0,1}
-       p.cand <- p0.cand*exp(-(D*D)/(2*sigma*sigma))
+       p.cand <- p0.cand*exp(-(d*d)/(2*sigma*sigma))
        ll<- sum(dbinom(y, K, pmat *z, log=TRUE)) 
        llcand <- sum(dbinom(y, K, p.cand *z, log=TRUE))
        if(runif(1) < exp( llcand  - ll) ){

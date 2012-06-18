@@ -11,8 +11,8 @@ seen <- apply(y>0, 1, any)
 z[seen]<-1#set seen individuals' z=1
 
 #initiate distance matrix and lamij matrix
-D <- e2dist1(S, X)
-lam<-lam0*exp(-(D*D)/(2*sigma*sigma))
+d <- e2dist1(S, X)
+lam<-lam0*exp(-(d*d)/(2*sigma*sigma))
 
 #set up matrix to hold results
 out<-matrix(nrow=niter, ncol=4)
@@ -34,7 +34,7 @@ for (iter in 1:niter) {
 #update sigma
         sig.cand <- rnorm(1, sigma, delta[1])
         if(sig.cand>0){   #automatically reject sig.cand that are <0
-            lam.cand <- lam0*exp(-(D*D)/(2*sig.cand*sig.cand))
+            lam.cand <- lam0*exp(-(d*d)/(2*sig.cand*sig.cand))
             ll<- sum(dpois(y, lam*z, log=TRUE))
             llcand <- sum(dpois(y, lam.cand*z, log=TRUE))
             if(runif(1) < exp( llcand  - ll) ){
@@ -47,7 +47,7 @@ for (iter in 1:niter) {
 #update lam0
         lam0.cand <- rnorm(1, lam0, delta[2])
         if(lam0.cand>0){   #automatically reject lam0.cand that are <0
-            lam.cand <- lam0.cand*exp(-(D*D)/(2*sigma*sigma))
+            lam.cand <- lam0.cand*exp(-(d*d)/(2*sigma*sigma))
             ll<- sum(dpois(y, lam*z, log=TRUE))
             llcand <- sum(dpois(y, lam.cand*z, log=TRUE))
             if(runif(1) < exp( llcand  - ll) ){
@@ -91,7 +91,7 @@ if(inbox){
                 if(runif(1) < exp(llcand - llS)) {
                     S[i,] <- Scand
                     lam[i,] <- lam.cand
-                    D[i,] <- dtmp
+                    d[i,] <- dtmp
                     Sups <- Sups+1
                 }
             }
