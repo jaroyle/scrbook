@@ -97,13 +97,8 @@ abundance/density of the population.  Estimating more parameters does
 require a few more assumptions including that all individuals in the
 population have the same probability of capture.  Under a ``robust
 design'' (\citep{pollock:1982}, which we will demonstrate in this
-capture, we can estimate heterogeneity in capture probabilities.  To
-that extent, we can envision the data as arising from repeated
-sampling over seasons or years (or {\it primary} periods) within which
-one or more samples (e.g., nights) might be taken ({\it secondary}
-periods).  Comparing this with all of our previous work, the sample
-intervals (e.g., trap nights, weeks, etc. ) described in the closed
-population chapters are equivalent to {\it secondary} periods).
+chapter, we can estimate heterogeneity in capture probabilities.  
+
 
 
 \section{Overview of Population Dynamics}
@@ -140,74 +135,35 @@ born into the population and immigrants.
 
 \section{Traditional Jolly-Seber Models}
 
-\comment{
-There are a number of formulations used in MARK to estimate abundance and related parameters,
-e.g., the POPAN; the Link-Barker and Pradel-recruitment; and the Burnham JS and Pradel-l formulations.
-All of these models are slightly different parameterizations of the underlying population
-processes, and all are (asymptotically) equivalent in that they should give the same estimates of
-abundance and related parameters. The two main differences among the various formulations are
-1. the way in which they parameterize new entrants to the population
-2. if estimation is conditional upon the animals actually seen in the study (refer to
-Sanathanan 1972, 1977).
-}
+There are a number of ways that researchers have used to formulate the JS model and while
+all of these models are slightly different parameterizations of the underlying population processes, 
+they are all essentially equivalent.  The resulting estimates of abundance and the driving parameters such 
+as suvivial and some form of recruitment should be the same.  The most commonly used formulations are the
+Link-Barker, Pradel-recruitment, Burham JS, and the Pradel-l models. In all of these models, we are interested
+in recruitment, or how new individuals arrive into the population.  Thus one the main differences between
+the various models is how are new entrants into the population parameterized.  It is also possible to 
 
 
-\section{Spatial Jolly-Seber Models}
+Robust design enters here......
+Pollock (1982) created the robust design in order to allow for heterogeniety in capture probability
+under the JS model.  The basic idea is that there are primary occassions (e.g., years, seasons) and we 
+allow the population to be "open" between the primary occasions.  This means that individuals can enter
+and leave the population (i.e., births, deaths, immigration, emigration) between the primary occassions.  
+However, within a primary occasion, the population is assumed to be closed to these processes.  Typically,
+the JS sampling framework would not allow for variation in detection probability between individuals or within
+a primary occasion because only one sample was taken. However, when multiple samples are taken within a primary 
+occassion (we call these ``secondary occassions"), then variation in detection probabilty can be modeled and thus
+our estimates of $N$ can be improved.  To
+that extent, we can envision the data as arising from repeated
+sampling over seasons or years (or {\it primary} periods) within which
+one or more samples (e.g., nights) might be taken ({\it secondary}
+periods).  Comparing this with all of our previous work, the sample
+intervals (e.g., trap nights, weeks, etc. ) described in the closed
+population chapters are equivalent to {\it secondary} periods).   
 
-To parameterize the JS models, we can start with the same set up as
-the CJS model.  Again, we describe the Poisson observation model,
-specified conditional on $z(i,t)$, as:
- \[
-  y_{ijkt}|z(i,t) \sim
-\mbox{Pois}(\lambda_0 g_{ij} z(i,t)).
-\]
-Thus, if individual $i$ is alive at time $t$ ($z(i,t)=1$), then the
-observations are Poisson as before.  Conversely, if the individual is
-not alive ($z(i,t)=0$), then the observations must be fixed zeros with
-probability 1.
 
-Survival and recruitment in the open population are manifest in a
-model for the latent state variables $z(i,t)$ describing individual
-mortality and recruitment events.  An important aspect of the
-hierarchical formulation of the model that we adopt here is that the
-model for the state variables is described conditional on the total
-number of individuals ever alive during the study (a parameter which
-we label $N$) based on $T$ periods, as in \cite{schwarz1996gma}.  Data
-augmentation induces a special interpretation on the latent state
-variables $z(i,t)$.  In particular, ``not alive'' includes individuals
-that have died, or individuals that have not yet been recruited.
-Using this formulation simplifies the state model and also allows it
-to be implemented directly in the JAGS software \cite {royle:book}.
-For example, considering the case $T=2$, the state model is composed
-of the following two components: First the initial state is described
-by:
-\[
- z(i,1) \sim \mbox{Bern}(\psi)
-\]
-and then a model describing the transition of individual states from
-$t=1$ to $t=2$:
-\[
- z(i,2) \sim \mbox{Bern}( \phi z(i,1)  + \gamma (1-z(i,1)) ).
-\]
-Thus, if $z(i,1)=1$, then the individual may survive with
-probability $\phi$ whereas, if $z(i,1)=0$, then the
-``pseudo-individual'' may be recruited with probability $\gamma$.
+Based on the robust design, we can easily create a non-spatial JS model in {\bf JAGS}.  
 
-We can then generalize this model for $T>2$ time periods and allow survival and
-recruitment to be time dependent.  Initialize the
-model for time $T=1$ as we have done above
-and then the model describing the transition of individual states from
-$t$ to $t+1$ is:
-\[
- z(i,t+1) \sim \mbox{Bern}( \phi_t z(i,t)  + \gamma_t (1-z(i,t)) ).
-\]
-
-This parameterization then results in $T-1$ survival and recruitment
-parameters.  The main difference here is from the CJS model is that we
-are now including recruitment and we are interested in estimating $N$.
-Since this state model described above is conditional-on-N, we must
-deal with the fact that N is unknown, which again is done through data
-augmentation.
 
 
 \subsection{Data Augmentation for the Jolly-Seber Model}
@@ -288,6 +244,121 @@ using the \mbox{\tt sum}) and \mbox{\tt step}) functions together to
 ascertain if a particular individual $i$ was ever previously alive.
 Individuals that were ever previously alive are no longer eligible to
 be ``recruited" into the population.
+
+
+
+XXXXMaybe make model into a panel?
+{\small
+\begin{verbatim}
+cat("
+model {
+
+psi ~ dunif(0,1)
+phi ~ dunif(0,1)
+p.mean ~ dunif(0,1)
+
+
+for(t in 1:5){
+N[t] <- sum(z[1:M,t])
+gamma[t] ~ dunif(0,1)
+}
+
+for(i in 1:M){
+  z[i,1] ~ dbern(psi)
+ cp[i,1] <- z[i,1]*p.mean
+  Y[i,1] ~ dbinom(cp[i,1], K)
+  a[i,1] <- (1-z[i,1])
+
+for(t in 2:5){                           #ensure that individuals are not recruited into the population more than once
+      a1[i,t] <- sum(z[i, 1:t])          #have you ever been alive (0 = no, >1 = yes)
+       a[i,t] <- 1-step(a1[i,t] - 1)     #use the step function to make a1 binary 
+
+       mu[i,t]<- (phi*z[i,t-1]) + (gamma[t]*a[i,t-1])
+        z[i,t]~dbern(mu[i,t])
+       cp[i,t] <- z[i,t]*p.mean
+        Y[i,t] ~ dbinom(cp[i,t], K)
+          }
+        }
+}
+
+",file="modelNSJS.txt")
+###
+
+zst<-c(rep(1,M/2),rep(0,M/2))
+zst<-cbind(zst,zst,zst,zst,zst)
+
+inits <- function(){list (z=zst,sigma=runif(1,25,100), gamma=runif(5,0,1)) }             
+parameters <- c("psi","N","phi", "p.mean", "gamma")                                                               
+data <- list (K=10,Y=Ybin,M=M)        
+
+library("rjags")
+
+out1 <- jags.model("modelNSJS.txt", data, inits, n.chains=3, n.adapt=500)
+out2NSJS <- coda.samples(out1,parameters,n.iter=20000)
+\end{verbatim}
+}
+
+\subsection{Mist netting example}
+
+
+
+\section{Spatial Jolly-Seber Models}
+
+To parameterize the JS models, we can start with the same set up as
+the CJS model.  Again, we describe the Poisson observation model,
+specified conditional on $z(i,t)$, as:
+ \[
+  y_{ijkt}|z(i,t) \sim
+\mbox{Pois}(\lambda_0 g_{ij} z(i,t)).
+\]
+Thus, if individual $i$ is alive at time $t$ ($z(i,t)=1$), then the
+observations are Poisson as before.  Conversely, if the individual is
+not alive ($z(i,t)=0$), then the observations must be fixed zeros with
+probability 1.
+
+Survival and recruitment in the open population are manifest in a
+model for the latent state variables $z(i,t)$ describing individual
+mortality and recruitment events.  An important aspect of the
+hierarchical formulation of the model that we adopt here is that the
+model for the state variables is described conditional on the total
+number of individuals ever alive during the study (a parameter which
+we label $N$) based on $T$ periods, as in \cite{schwarz1996gma}.  Data
+augmentation induces a special interpretation on the latent state
+variables $z(i,t)$.  In particular, ``not alive'' includes individuals
+that have died, or individuals that have not yet been recruited.
+Using this formulation simplifies the state model and also allows it
+to be implemented directly in the JAGS software \cite {royle:book}.
+For example, considering the case $T=2$, the state model is composed
+of the following two components: First the initial state is described
+by:
+\[
+ z(i,1) \sim \mbox{Bern}(\psi)
+\]
+and then a model describing the transition of individual states from
+$t=1$ to $t=2$:
+\[
+ z(i,2) \sim \mbox{Bern}( \phi z(i,1)  + \gamma (1-z(i,1)) ).
+\]
+Thus, if $z(i,1)=1$, then the individual may survive with
+probability $\phi$ whereas, if $z(i,1)=0$, then the
+``pseudo-individual'' may be recruited with probability $\gamma$.
+
+We can then generalize this model for $T>2$ time periods and allow survival and
+recruitment to be time dependent.  Initialize the
+model for time $T=1$ as we have done above
+and then the model describing the transition of individual states from
+$t$ to $t+1$ is:
+\[
+ z(i,t+1) \sim \mbox{Bern}( \phi_t z(i,t)  + \gamma_t (1-z(i,t)) ).
+\]
+
+This parameterization then results in $T-1$ survival and recruitment
+parameters.  The main difference here is from the CJS model is that we
+are now including recruitment and we are interested in estimating $N$.
+Since this state model described above is conditional-on-N, we must
+deal with the fact that N is unknown, which again is done through data
+augmentation (described above).
+
 
 
 
