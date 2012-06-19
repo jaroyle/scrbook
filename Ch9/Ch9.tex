@@ -144,9 +144,6 @@ choosing any one of these models over any other. We do describe more
 realistic models in Chapt. XXXXX.
 
 
-
-XXXX  Proofed table, but want to see it in pdf form to double check XXXXX
-
 \begin{table}
 \centering
 \caption{Distance functions available in secr.  (Table taken from the secr
@@ -835,6 +832,72 @@ WAITING FOR THE RESULTS HERE.
 XXX it is running in JAGS right now XXXX
 
 XXX Definitely faster, but not THAT fast XXX
+
+\subsection{Sex Effects}
+
+{\small
+\begin{verbatim}
+bearsex<-read.csv("bearsex.csv")   #we read in the sex data for captured individual
+sex<-c(as.numeric(bearsex[,2])-1, rep(NA, nz))
+
+cat("
+model {
+
+psi~dunif(0,1)
+pi~dunif(0,1)
+
+for(t in 1:2){
+alpha0[t]~dnorm(0,.1)
+logit(p0[t])<- alpha0[t]
+alpha1[t]<-1/(2*sigma[t]*sigma[t])
+sigma[t]~dunif(0, 15)
+}
+
+for(i in 1:M){
+ z[i] ~ dbern(psi)
+ SEX[i]~dbern(pi)
+SEX2[i]<-SEX[i] + 1
+ s[i,1]~dunif(Xl,Xu)
+ s[i,2]~dunif(Yl,Yu)
+
+for(j in 1:J){
+d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
+y[i,j] ~ dbin(p[i,j],K)
+p[i,j]<- z[i]*p0[SEX2[i]]*exp(-alpha1[SEX2[i]]*d[i,j]*d[i,j])
+}
+}
+N<-sum(z[])
+D<-N/area
+}
+",file = "SCRsex.txt")
+
+
+> summary(outSCRsex)
+
+Iterations = 501:20500
+Thinning interval = 1
+Number of chains = 3
+Sample size per chain = 20000
+
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
+
+            Mean    SD  Naive SE Time-series SE
+D          0.168  0.022 8.932e-05      0.0010252
+N        509.982 66.355 2.709e-01      3.1092473
+p0[1]      0.136  0.025 1.027e-04      0.0002936
+p0[2]      0.092  0.017 6.994e-05      0.0002564
+pi         0.310  0.068 2.767e-04      0.0017374
+psi        0.784  0.103 4.203e-04      0.0048169
+sigma[1]   1.542  0.132 5.404e-04      0.0019245
+sigma[2]   2.682  0.389 1.588e-03      0.0119850
+\end{verbatim}
+}
+
+
+Our estimate of density is still very similar, and while the baseline detection was not very different
+between males and females, we can see that they had very different sigma estimates (note that the BCIs do not
+overlap).  
 
 
 
