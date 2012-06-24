@@ -2,6 +2,7 @@
 \markboth{Chapter 12 }{}
 \label{chapt.open}
 
+
 \vspace{0.3cm}
 
 
@@ -302,13 +303,13 @@ XXXXMaybe make model into a panel?XXXXXX
 
 Implementation of the non-spatial JS model in the \JAGS. 
 {\small
-\begin{verbatim}
+\begin{verbatim}[commandchars=\\\{\}]
 cat("
 model {
 
-psi ~ dunif(0,1)
-phi ~ dunif(0,1)
-p.mean ~ dunif(0,1)
+psi \mytilde dunif(0,1)
+phi \mytilde dunif(0,1)
+p.mean \mytilde dunif(0,1)
 
 
 for(t in 1:5){
@@ -350,7 +351,7 @@ in the \secr package (see, \cite{efford_etal:2004,
 fig. XXXX) were operated on 9 or 10 non-consecutive days in late May
 and June for 5 years from 2005-2009.
 
-In Chapter 5, we dealt with this dataset as a type of ``multi-season"
+In Chapt. 5, we dealt with this dataset as a type of ``multi-season"
 model where abundance in each year, $N_{t}$, was estimated
 separately. This of course is a first step in thinking about data
 collected over multiple years, but now, we can use the JS model to
@@ -361,8 +362,11 @@ The first issue at hand is that each line in our 3-D encounter history
 array of
 data must correspond to a single individual.  Previously, we were not
 interested in individual identity across years so this was not of
-concern. Now, we must organize the data set so that each row in our
-array represents just one individual.  For the ovenbird dataset, we
+concern; however, we need to maintain the order of individuals across years
+in order to estimate the survival and recruitment of the individual into the population.
+Thus, we must organize the data set so that each row in our
+array represents just one individual across all primary periods.  
+For the ovenbird dataset, we
 can organize the data by creating a master list of all individuals
 captured during the entire study.  From this list, we can assign each
 individual a unique row in our dataset (in the following R commands,
@@ -421,8 +425,6 @@ for(t in 1:5){
 Ybin[,t] <- rowSums(Yarr[,,t])
 }
 
-
-
 zst<-c(rep(1,M/2),rep(0,M/2))
 zst<-cbind(zst,zst,zst,zst,zst)
 
@@ -454,7 +456,22 @@ observations are Bernoulli as before.  Conversely, if the individual is
 not alive ($z(i,t)=0$), then the observations must be fixed zeros with
 probability 1.
 
-XXFill this in more now
+Previously, we described how this formulation of the model uses a set of latent indicator
+variables $r(i,t)$ which describes if individual is recruited into the population during time
+$(t-1, t)$.  Thus, $r(i,t) = 1$
+if individual $i$ is recruited in time interval $(t-1, t)$ otherwise
+$r(i,t)=0$.  To determine the number of recruits into the population, 
+\[
+R_{t} = \sum_{i=1}^{M} (1-z(i,t-1))z(i,t)
+\]  
+we can use a set of two steps.
+For example, to estimate the number of recruits from time period 1 to 2, we count those 
+individuals not in the population at time 1 ($z_{i,1} = 0$) but alive at time 2 ($z_{i,2} = 1$).  
+We can determine if individual $i$ has entered the population at time $t=2$ by using the formula:
+ $R__{i,2}=(1-z_{i,1})z_{i,2}$ and then sum
+$R_{i,2}$ over $M$ to get the total number of recruits.  
+We can do this for all the primary periods in our study, which we implement 
+in the \jags  code below.  
 
 
 \subsection{Mist-netting example}
@@ -469,7 +486,6 @@ not-captured; however, the data array  \mbox{\tt Yarr}) contains the number of t
 each individual was captured in and contains a $45$ if the individual was not captured.  The
 encounter history array, \mbox{\tt Yarr}), was created above in the code, so we do not 
 reproduce the code here. 
-
 
 
 \begin{verbatim}
