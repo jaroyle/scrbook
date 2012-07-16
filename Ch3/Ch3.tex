@@ -588,12 +588,12 @@ be formally expressed by the following set of assumptions (we include
 typical priors for a Bayesian analysis):
 \begin{eqnarray*}
  y_{i}|{z_{i}=1} & \sim  &\mbox{Bin}(K, p) \\
- y_{i}|{z_{i}=0} & \sim &  \delta(0)  \\
+ y_{i}|{z_{i}=0} & \sim &  1(y=0)  \\
  z_{i} & \stackrel{iid}{\sim} & \mbox{Bern}(\psi) \\
  \psi & \sim & \mathrm{Unif}(0,1) \\
  p & \sim & \mathrm{Unif}(0,1)
 \end{eqnarray*}
-for $i=1, \ldots, M$, where $\delta(0)$ is a point mass at
+for $i=1, \ldots, M$, where $1(y=0)$ is a point mass at
 $y=0$.
 It is sometimes convenient to express the conditional-on-$z$
 observation model concisely in
@@ -675,8 +675,9 @@ M  & 0   & 0   & 0   &     &     &   &      & . & 0 & 0 & 0 \\
 For model $M_0$, in which we can aggregate the encounter data to
 individual-specific encounter frequencies, the augmented data are
 given by the vector of frequencies $(y_{1}, \ldots, y_{n}, 0, 0,
-\ldots, 0)$ \hl{Is this right? Shouldn't it be y(n+1), ...,
-  y(M)}?. The zero-inflated model of the augmented data combines
+\ldots, 0)$ where the augmented values of $y=0$ represent the encounter
+frequency  for pseudo-individuals $y_{n+1},\ldots,y_{M}$.
+The zero-inflated model of the augmented data combines
 the model of the latent variables, $z_{i} \sim \mbox{Bern}(\psi)$ with
 the conditional-on-$z$ binomial model:
 \[
@@ -837,7 +838,6 @@ Markov chains should be affected by $M$ and so some optimal choice of
 $M$ might exist \citep{gopalaswamy_etal:2012}.
 Formal analysis of this is needed.
 
-
 There are other approaches to analyzing models with unknown $N$, using
 reversible jump MCMC (RJMCMC) or other so-called ``trans-dimensional''
 (TD) algorithms \citep{king_brooks:2001, durban_elston:2005,
@@ -901,11 +901,10 @@ Yaug[1:nind,,]<-beardata$bearArray
 y<- apply(Yaug,c(1,3),sum) # summarize by ind x rep
 y[y>1]<- 1                 # toss out multiple encounters b/c
                            #    traditional CR models ignore space
-ytot<-apply(y,1,sum)       # total encounters out of K
+y<-apply(y,1,sum)       # total encounters out of K, re-use y
 \end{verbatim}
 }
 
-XXXX In these scripts change ytot to just y XXXXXXX
 
 The raw data object, \mbox{\tt beardata\$bearArray} is a 3-dimensional
 array $\mbox{\tt nind} \times \mbox{\tt ntraps} \times K$ of
@@ -913,7 +912,7 @@ individual encounter events (i.e., $y_{ijk} = 1$ if individual $i$ was
 encountered in trap $j$ during occasion $k$, and 0 otherwise).  For
 fitting model $M_{0}$ (or $M_{h}$, see below), it is sufficient to
 reduce the data to individual encounter frequencies which we have
-labeled \mbox{\tt ytot} above.  The {\bf BUGS} model file along with
+re-labeled \mbox{\tt y} above.  The {\bf BUGS} model file along with
 commands to fit the model are as follows:
 
 {\small
@@ -1253,7 +1252,7 @@ individual-specific $p_{i}$:
 \[
 y_{i}|{z_{i} \! = \! 1} \sim \mbox{Bin}(K,p_{i})
 \]
-and otherwise $y_{i} |{ z_{i} \! = \! 0} \sim \delta(0)$. Further, we
+and otherwise $y_{i} |{ z_{i} \! = \! 0} \sim 1(y=0)$. Further, we
 prescribe a distribution for $p_{i}$. Here we assume
 \[
 \mathrm{logit}(p_{i}) \sim \mbox{Normal}(\mu,\sigma^2)
@@ -1327,9 +1326,9 @@ N<-sum(z[1:(nind+nz)])
 }
 ",file="modelMh.txt")
 
-data1<-list(y=ytot, nz=nz, nind=nind,K=K)
+data1<-list(y=y, nz=nz, nind=nind,K=K)
 params1= c('p0','sigmap','psi','N')
-inits =  function() {list(z=as.numeric(ytot>=1), psi=.6, p0=runif(1),
+inits =  function() {list(z=as.numeric(y>=1), psi=.6, p0=runif(1),
           sigmap=runif(1,.7,1.2),lp=rnorm(M,-2)) }
 
 library("rjags")
@@ -1572,7 +1571,7 @@ samples.\footnote{This data grabbing function is not implemented yet}
 temp<-getdata()
 M<-temp$M
 K<-temp$K
-ytot<-temp$ytot
+y<-temp$ytot
 
 ###
 ### MCMC algorithm for Model Mh
@@ -1730,7 +1729,7 @@ according to Eq. \ref{closed.eq.ha}.  In practice, parameters are
 estimated from the conditional-likelihood of the observed encounter
 histories which is, for observation $y_{i}$,
 \[
-{\cal L}_{c}(\bm{alpha} | y_{i}) = \frac{ \mbox{Bin}(y_{i}|\bm{alpha}) } { \tilde{p}_{i}}.
+{\cal L}_{c}( {\bm \alpha} | y_{i}) = \frac{ \mbox{Bin}(y_{i}|{\bm \alpha}) } { \tilde{p}_{i}}.
 \]
 
 Here we take a formal model-based approach to Bayesian analysis of
@@ -1753,7 +1752,7 @@ zero-inflated binomial model of the form:
 \begin{eqnarray*}
 z_{i} &\sim& \mbox{Bern}(\psi) \; \; \; i=1,2,\ldots,M\\
 y_{i}|{z_{i}\! =\! 1} &\sim& \mbox{Bin}(K,p_{i}(x_{i})) \\
-y_{i} |{ z_{i}\! =\! 0} &\sim& \delta(0)  \\
+y_{i} |{ z_{i}\! =\! 0} &\sim& 1(y=0)  \\
 x_{i} & \sim & \mbox{Normal}(\mu,\sigma^{2})
 \end{eqnarray*}
 Fully spatial capture-recapture models use this
@@ -1893,7 +1892,7 @@ N<-sum(z[1:(nind+nz)])
 }
 ",file="modelMcov.txt")
 
-data2<-list(y=ytot,nz=nz,nind=nind,K=K,xcent=xcent,B=11.5)
+data2<-list(y=y,nz=nz,nind=nind,K=K,xcent=xcent,B=11.5)
 params2<-list('p0','psi','N','beta')
 inits =  function() {list(z=zst, psi=psi, p0=runif(1),beta=rnorm(1) ) }
 fit2 =   bugs(data2, inits, params2, model.file="modelMcov.txt",working.directory=getwd(),
@@ -1991,7 +1990,8 @@ approximation of the density of $x$, and break $B$ into $L$
 distance classes of width $\delta$, with probabilities proportional to
 $2*x$. In particular, if we denote the cut-points by $xg_{1}=0,xg_{2},
 \ldots, xg_{L+1}=B$ and the interval midpoints are $xm_{i} =
-xg_{i+1}-\delta$ \hl{earlier delta was used as a point mass in DA} then the interval probabilities are $p_{i} =
+xg_{i+1}-\delta$ 
+then the interval probabilities are $p_{i} =
 2*xm_{i}*\delta/(B^{2})$, which we can compute once and then
 pass them to {\bf WinBUGS} as data.
 
@@ -2037,7 +2037,7 @@ To fit the model we do this---keeping in mind that the data objects
 required below have been defined in previous analyses of this chapter:
 {\small
 \begin{verbatim}
-data2<-list(y=ytot,nz=nz,nind=nind,K=K,xround=xround,xprobs=xprobs,delta=delta)
+data2<-list(y=y,nz=nz,nind=nind,K=K,xround=xround,xprobs=xprobs,delta=delta)
 params2<-list('p0','psi','N','beta')
 inits =  function() {list(z=z, psi=psi, p0=runif(1),beta=rnorm(1) ) }
 fit = bugs(data2, inits, params2, model.file="modelMcov.txt",
@@ -2252,7 +2252,7 @@ prior distribution on individual {\it location} instead of distance
 between individual and observation point (or transect).  Thus we can
 write the general distance sampling model as
 \[
-p_{i} = f(\alpha_{1},||{\bf u}_{i} - {\bf x}_0||)
+p_{i} = h(||{\bf u}_{i} - {\bf x}_0||,\alpha_{1})
 \]
 along with
 \[
@@ -2316,7 +2316,7 @@ We illustrate the application of distance sampling models using data
 on the Sonoran desert tortoise ({\it Gopherus agassizii}), shown in
 Fig. \ref{closed.fig.tortoise}, collected along transects
 in southern Arizona (see \citet{zylstra_etal:2010} for
-details). The data are from 120 square transects having 4, 250 m sides,
+details). The data are from 120 square transects having four 250 m sides,
  although we ignore this detail in our analysis here and regard
 them as 1 km transects, and we pooled the detection data from all
 120 transects. The histogram of encounter distances from the 65

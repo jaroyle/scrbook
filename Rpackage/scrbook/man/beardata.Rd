@@ -35,11 +35,11 @@ Yaug <- array(0, dim=c(M,ntraps,K))
 Yaug[1:nind,,]<-beardata$bearArray
 y<- apply(Yaug,c(1,3),sum)
 y[y>1]<-1
-ytot<-apply(y,1,sum)   # total encounters out of K
+y<-apply(y,1,sum)   # total encounters out of K
 
 set.seed(2013)
 
-out<-modelMh(ytot,K,nsim=11000)
+out<-modelMh(y,K,nsim=11000)
 
 # MCMC CODE HERE
 
