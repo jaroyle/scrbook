@@ -376,7 +376,7 @@ study, and initially presented in Chapt. \ref{chapt.poisson-mn}.  These data are
 in the \secr package (see, \cite{efford_etal:2004,
   borchers_efford:2008}). To refresh your memory: 44 mist nets spaced
 30 m apart on the perimeter of a 600-m x 100-m rectangle (see
-fig. XXXX) were operated on 9 or 10 non-consecutive days in late May
+Fig. XXXX) were operated on 9 or 10 non-consecutive days in late May
 and June for 5 years from 2005-2009.
 
 In Chapt. \ref{chapt.poisson-mn}, we dealt with this dataset as a type of ``multi-season"
@@ -411,6 +411,7 @@ we hold survival constant but allow recruitment to be time dependent
 process as described above, it makes sense to allow recruitment to be
 time specific). 
 
+{\small 
 \begin{verbatim}
 library("secr")
 library(scrbook)
@@ -428,12 +429,13 @@ Sst<-array(Sst,dim=c(M,2,5))
 
 
 hold<- unique(c(unlist(dimnames(Y[[1]])[1]), unlist(dimnames(Y[[2]])[1]), 
-       unlist(dimnames(Y[[3]])[1]), unlist(dimnames(Y[[4]])[1]), unlist(dimnames(Y[[5]])[1])))
+       unlist(dimnames(Y[[3]])[1]), unlist(dimnames(Y[[4]])[1]), 
+       unlist(dimnames(Y[[5]])[1])))
 
 Yarr<-array(ntraps+1,dim=c(M,K,5))
 for(i in 1:5){
 tmp<-Y[[i]]
-tmp[tmp<0]<-tmp[tmp<0]*(-1) ## one guy died, we ignore that here and treat it as a  normal event
+tmp[tmp<0]<-tmp[tmp<0]*(-1) ## one guy died, we ignore that here 
 tmp[tmp==0]<-ntraps+1
 nind<-nrow(tmp)
 nrep<-ncol(tmp)
@@ -441,7 +443,8 @@ tmp2<-matrix(ntraps+1,nrow=M,ncol=10)  # pad last col with NA for year 1
 tmp2[pmatch(unlist(dimnames(Y[[i]])[1]), hold),1:nrep]<-tmp
 Stmp<-Sst[,,i]
 Stmp[pmatch(unlist(dimnames(Y[[i]])[1]), hold),1:2]<-
-        spiderplot(tmp2[pmatch(unlist(dimnames(Y[[i]])[1]), hold),1:nrep],as.matrix(X[[i]]))$avg.s   #$
+        spiderplot(tmp2[pmatch(unlist(dimnames(Y[[i]])[1]), hold),1:nrep],
+        as.matrix(X[[i]]))$avg.s   #$
 Sst[,,i]<-Stmp
 Yarr[,,i]<-tmp2
 }
@@ -461,43 +464,14 @@ parameters <- c("psi","N","phi", "p.mean", "gamma")
 data <- list (K=10,Y=Ybin,M=M)        
 
 library("rjags")
-
 out1 <- jags.model("modelNSJS.txt", data, inits, n.chains=3, n.adapt=500)
 out2NSJS <- coda.samples(out1,parameters,n.iter=20000)
-
-
-print(summary(out2NSJS), digits = 2)
-Iterations = 501:20500
-Thinning interval = 1 
-Number of chains = 3 
-Sample size per chain = 20000 
-
-1. Empirical mean and standard deviation for each variable,
-   plus standard error of the mean:
-
-           Mean    SD Naive SE Time-series SE
-N[1]     26.518 3.184  0.01300        0.02415
-N[2]     30.207 2.713  0.01108        0.01932
-N[3]     33.070 2.955  0.01206        0.02203
-N[4]     29.483 3.270  0.01335        0.02955
-N[5]     21.743 2.750  0.01123        0.01855
-gamma[1]  0.500 0.288  0.00118        0.00125
-gamma[2]  0.086 0.027  0.00011        0.00021
-gamma[3]  0.109 0.030  0.00012        0.00022
-gamma[4]  0.129 0.035  0.00014        0.00028
-gamma[5]  0.074 0.030  0.00012        0.00024
-p.mean    0.137 0.012  0.00005        0.00011
-phi       0.484 0.055  0.00023        0.00044
-psi       0.136 0.029  0.00012        0.00019
-
 \end{verbatim}
+}
 
-
-N[1]      3.3e+01 5.0e+00  2.9e-02        7.8e-02
-N[2]      3.6e+01 4.3e+00  2.5e-02        6.4e-02
-N[3]      3.9e+01 4.6e+00  2.6e-02        6.8e-02
-N[4]      3.7e+01 5.0e+00  2.9e-02        7.8e-02
-N[5]      2.8e+01 4.2e+00  2.4e-02        7.3e-02
+We found in this non-spatial JS model that N is estimated to be between about 22 and 33 for each of the 5 years (see
+Table \ref{open.tab.JSmulti} for results).  The posterior mean for detection (p.mean in the model) was 0.14, it 
+is not included in the table because the spatial models do not have a parameter that directly corresponds to this one.
 
 
 \subsection{Shortcomings of the traditional JS models}
@@ -505,9 +479,14 @@ N[5]      2.8e+01 4.2e+00  2.4e-02        7.3e-02
 
 As we have previously discussed, one of the biggest shortcomings of the non-spatial
 JS model is that we estimate N but have no explicit spatial reference area for that
-value.  
+value.  As you will see in Table \ref{open.tab.JSmulti}, the density estimate from the non-spatial JS model
+is listed as NA.  This is because, again, the effective sampling area is unknown and thus we would have to 
+determine that area in an ad hoc manner.  Not making use of the spatial arrangement of the trap array renders 
+the estimation of density to a non-formal process.  Thus, as we saw in the closed models, the explicit
+incorporation of spatial information allows us to provide a robust estimate of density.  This improvement should
+also carry through in our estimation of other demographic parameters such as survival and recruitment. 
 
-Also, we can potentially model the relationship between density and the 
+Also, while we can potentially model the relationship between density and the 
 demographic parameters we are interested using the standard JS models, we can make no
 inference regarding the spatial arrangement of individuals in the landscape nor the direct
 impact of movement.
@@ -568,8 +547,8 @@ in the \jags  code below.
 
 We now implement the spatial JS model with the ovenbird data.  In the previous
 section, we did not make use of the spatial location for each net the ovenbirds
-were captured in.   However, there 44 mist nets that each bird could be capture in during
-any of the sampling occasions.  We already organized the data above so that our 3-D encounter
+were captured in.   However, there 44 mist nets operational during
+each of the sampling occasions.  We already organized the data above so that our 3-D encounter
 histories are set up.  The data set is then $M=200$ individuals by $K=10$ secondary occasions 
 by $T=5$ primary occasions.  In the non-spatial version, we reduced the data to captured or
 not-captured; however, the data array  \mbox{\tt Yarr}) contains the number of the net that 
@@ -577,7 +556,7 @@ each individual was captured in and contains a $45$ if the individual was not ca
 encounter history array, \mbox{\tt Yarr}), was created above in the code, so we do not 
 reproduce the code here. 
 
-
+{\small 
 \begin{verbatim}
 cat("
 model {
@@ -610,7 +589,6 @@ for(i in 1:M){
 
 
   for(t in 1:5){
-
   S[i,1,t] ~ dunif(xlim[1],xlim[2])
   S[i,2,t] ~ dunif(ylim[1],ylim[2])
 
@@ -623,16 +601,16 @@ for(i in 1:M){
       lp[i,k,j,t] <- exp(alpha0 - alpha1*d[i,j,t])*z[i,t]
       cp[i,k,j,t] <- lp[i,k,j,t]/(1+sum(lp[i,k,,t]))
     }
-    cp[i,k,ntraps+1,t] <- 1-sum(cp[i,k,1:ntraps,t])  # last cell = not captured
+    cp[i,k,ntraps+1,t] <- 1-sum(cp[i,k,1:ntraps,t])  #last cell = not captured
     Ycat[i,k,t] ~ dcat(cp[i,k,,t])
   }
 }
 
 a[i,1]<-(1-z[i,1])
 
-for(t in 2:5){                           #ensure that individuals are not recruited into the population more than once
-      a1[i,t] <- sum(z[i, 1:t])          #have you ever been alive (0 = no, >1 = yes)
-       a[i,t] <- 1-step(a1[i,t] - 1)     #use the step function to make a1 binary
+for(t in 2:5){                           
+      a1[i,t] <- sum(z[i, 1:t])         
+       a[i,t] <- 1-step(a1[i,t] - 1)     
 
        mu[i,t]<- (phi*z[i,t-1]) + (gamma[t]*a[i,t-1])
         z[i,t]~dbern(mu[i,t])
@@ -662,52 +640,63 @@ out1 <- jags.model("modelJS.txt", data, inits, n.chains=3, n.adapt=500)
 out2JS <- coda.samples(out1,parameters,n.iter=10000)
 
 \end{verbatim}
+}
+
 
 \begin{table}
 \centering
 \caption{
-Posterior mean of model parameters for the spatial JS model and the multi-season model fitted to the 
+Posterior mean of model parameters for the non-spatial JS model (NS-JS), the spatial JS model (S-JS), 
+and the spatial multi-season model (S-MS) fitted to the 
 ovenbird data set.
 }
-\begin{tabular}{crr}
+\begin{tabular}{crrr}
 \hline \hline 
-&           JS   &   Multi-seaon \\  \hline
-D[1]    &   9.6e-05 &  9.3e-05   \\
-D[2]     &  1.0e-04 &  1.0e-04  \\
-D[3]   &    1.1e-04 &  1.2e-04  \\
-D[4]   &    1.1e-04 &  8.9e-05  \\
-D[5]   &    7.9e-05 &  7.6e-05  \\
-N[1]   &    33 &  32.4  \\
-N[2]   &    36 &  35.8  \\
-N[3]    &   39 &  42.1 \\
-N[4]   &    37 &  30.8 \\
-N[5]   &    28 &  26.2 \\
-alpha0 &   -2.9e+00 & -2.88  \\
-alpha1  &   1.2e-04 & 1.219e-04  \\
-sigma  &    6.4e+01 & 6.443 \\
-gamma[1] &  5.0e-01 & NA \\ 
-gamma[2] &  9.4e-02 & NA \\ 
-gamma[3] &  1.3e-01 & NA \\ 
-gamma[4] &  1.6e-01 & NA \\ 
-gamma[5] &  8.1e-02 & NA \\ 
-R2    &     1.5e+01 & NA \\ 
-R3    &     1.9e+01 & NA \\ 
-R4    &     8.3e+00 & NA \\ 
-R5    &     8.3e+00 & NA \\ 
-phi   &     5.3e-01 & NA \\ 
-psi   &     1.7e-01 & NA \\ \hline
+    &   NS-JS &   S-JS   &   S-MS \\  \hline
+D[1]    &  NA & 9.6e-05 &  9.3e-05   \\
+D[2]     & NA & 1.0e-04 &  1.0e-04  \\
+D[3]   &   NA & 1.1e-04 &  1.2e-04  \\
+D[4]   &   NA & 1.1e-04 &  8.9e-05  \\
+D[5]   &   NA & 7.9e-05 &  7.6e-05  \\
+N[1]   &  26.5 &  33 &  32.4  \\
+N[2]   &  30.2 &  36 &  35.8  \\
+N[3]    & 33.1 &  39 &  42.1 \\
+N[4]   &  29.5 &  37 &  30.8 \\
+N[5]   &   21.7 & 28 &  26.2 \\
+alpha0 &   NA & -2.9 & -2.88  \\
+alpha1  &   NA & 1.2e-04 & 1.22e-04  \\
+sigma  &   NA &  6.4 & 6.44 \\
+gamma[1]  & 0.50 &  0.50 & NA \\ 
+gamma[2] &  0.09  & 0.09 & NA \\ 
+gamma[3] &  0.11 & 0.13 & NA \\ 
+gamma[4] &  0.13 & 0.16 & NA \\ 
+gamma[5] &  0.07 & 0.08 & NA \\ 
+phi   &  0.48 &   0.53 & NA \\ 
+psi   &  0.14 &  0.17 & NA \\ 
+R2    &  NA &   1.5e+01 & NA \\ 
+R3    &   NA &   1.9e+01 & NA \\ 
+R4    &   NA &   8.3e+00 & NA \\ 
+R5    &   NA &   8.3e+00 & NA \\ \hline
 \end{tabular}
 \label{open.tab.JSmulti}
 \end{table}
 
-Our results for density, alpha0, and alpha1 are rather similar to those found in the multi-season analysis from Chapt. \ref{chapt.poisson-mn}.
+Our results for density, alpha0, and alpha1 are rather similar to those found in the multi-season 
+analysis from Chapt. \ref{chapt.poisson-mn}.
 Since all of our parameters including alpha0 and alpha1 are shared between seasons, we
 would expect these results to be similar between the multi-season model and the JS model (see Table \ref{open.tab.JSmulti}).  
-There are some slight variations in the parameter estimates, such as the density in the multi-season model is lower
+There are some slight differences in the parameter estimates, such as the density in the multi-season model is lower
 in year 4 than in the JS model.  This maybe be due to a smaller sample size in that year and the JS model is able to
-make use of the data a little more efficiently across the years. 
-In the JS formulation of the model, we also estimate the
- recruitment for each year, and we can look at our derived values for recruitment (R2, R3, R4, and R5).  
+make use of the data a little more efficiently across the years.   Because we have defined the same state space for 
+the spatial JS model and multi-season, our estimates of $N$ are directly comparable.  However, the estimates of $N$ 
+under the  non-spatial JS model are not directly comparable as we do not have a well-defined effective trapping area.  
+We see from Table \ref{open.tab.JSmulti} that $N$ is smallest for the non-spatial JS model across all years.  
+This likely indicates to us that the effective trapping area is smaller than our state space (and we hope that is the case or
+else our state space should be increased), but since we have no way to know, we will not make any direct comparisons of 
+the parameter estimates.  
+
+In the JS formulation of the model, we also estimate the recruitment for each year, 
+and we can look at our derived values for recruitment (R2, R3, R4, and R5).  
 R2 is the number of new
 recruits from primary period 1 to 2; R3 is the number of new recruits from primary period 2 to 3; and so forth.   
 R2 and R3 are almost
@@ -721,24 +710,14 @@ we checked to make sure that M=200 was sufficiently large and determined that it
 In addition to recruitment, we also estimated survival
 and the posterior mean for $\phi$ was 0.53.  Although we did not do it here,
 it should be easy to see that we could allow survival to vary by time, as we did with recruitment.
- These results for survival seem pretty
+ These results for survival also seem
 reasonable when compared with the literature.  Some studies have found annual male ovenbird survival to be around 0.62 \citep
 {porneluzi_faaborg:1999, bayne_hobson:2002}; however, female ovenbird survival was much lower (0.21, \cite
 {bayne_hobson:2002}). With more individuals, we could run this model with survival estimated for each sex separately.
 However, we should be careful not to over-parameterize our model based on the amount of data that is available.
 
-XXX compare to non-spatial results  detection, N.  comment again on how N is not associated with an area
-in the non-spatial JS, and thus it's not clear how we compare the two.
-
 
 \section{CJS models}
-
-%%% Beth, while CSJ models are in some ways less complex than JS
-%%% models it might make for a more natural flow of things to have JS
-%%% models first -- because they are most naturally discussed as the
-%%% extension of SCR0 and other models, whereas the CJS is then a
-%%% simplification of those models , but not at all an extension of
-%%% SCR0.
 
 \hl{rbc comment: I would first describe the non-spatial versions of
   the model first. Describe each part and then explain the weaknesses
@@ -755,7 +734,7 @@ explicitly model individual movement into the CJS models as an
 individual covariate model \citep{royle_indcov:2007}.
 
 To extend SCR models to open populations, we adopt a hierarchical
-parameterization of the JS models in which the observation model is
+parameterization of the CJS models in which the observation model is
 described conditional on the latent state variables $z(i,t)$ -- the
 “alive state” – which describe whether individual $i$ is
 alive ($z(i,t)=1$) or not ($z(i,t)=0$) during each of $t=1,2,\ldots,T$
@@ -763,7 +742,7 @@ alive ($z(i,t)=1$) or not ($z(i,t)=0$) during each of $t=1,2,\ldots,T$
 models as described previously (i.e., Poisson, Bernoulli, or
 multinomial). In particular, let $y_{ijkt}$ indicate the observed
 encounter data of individual $i$ in trap $j$, during interval
-(sub-sample) $k=1,2,\ldots,K$ and primary period $t$. We note that in
+(secondary period or sub-sample) $k=1,2,\ldots,K$ and primary period $t$. We note that in
 some cases we may have intervals ($K=1$) which correspond to the
 design underlying a standard CJS or JS models whereas the case $K>1$
 corresponds to the ``robust design'' (\citealt{pollock:1982}).  The
@@ -775,8 +754,7 @@ Poisson observation model, specified conditional on $z(i,t)$, is:
 Thus, if individual $i$ is alive at time $t$ ($z(i,t)=1$), then the observations are Poisson as before. Conversely, if the
 individual is not alive ($z(i,t)=0$), then the observations must be
 fixed zeros with probability 1.   In the CJS formulation, we will condition on first capture which means that $z(i,t)$ will
-be 1 when $t$ is the first primary period of capture.  We can denote this $z(i, t_first)$  XXX still working on best notation
-for first capture XXXX.  This ensures that each individual is alive upon entering the model.   Modeling time-effects either
+be 1 when $t$ is the first primary period of capture.  We can denote this $z(i, first_i)$ where $first_i$ indicates the primary occasion in which individual $i$ is first captured.  This ensures that each individual is alive upon entering the model.   Modeling time-effects either
 within or across primary periods
 is straightforward. For that, we define $\lambda_{0} \equiv
 \lambda_{0}(k,t)$ and then develop models for
@@ -785,23 +763,21 @@ trap-specific effects could be modeled analogously).
 
 Instead of allowing $z(i,t)$ to be independent for each year, we
 describe the ''alive state" at time $t$ for each individual as a
-function of the state at the previous time step $t-1$.  The initial
-state is described the same way as we have done in our closed
-population models, by:
+function of the state at the previous time step $t-1$.   Because
+we condition on the first capture, the initial
+state is set to one:
 \[
- z(i,1) \sim \mbox{Bern}(\psi)
+ z(i,first_i) = 1
 \]
 and to model the transition of individual states from $t$ to $t+1$ for
-all $t >2$ we have
+all $t > first_i$ we have
 \[
  z(i,t) \sim \mbox{Bern}( \phi z(i,t-1)).
 \]
-Thus, if $z(i,1)=1$, then the individual may survive with probability
-$\phi$ to time $t=2$ and so forth.  Once an individual leaves the
+Thus, because we start with $z(i, first_i) = 1$, the individual survives with probability
+$\phi$ to time $first_i + 1$ and so forth.  Once an individual leaves the
 population (i.e., $z(i,t) = 0$), there is no mechanism for the
-individual to return.
-
-In the CJS model we are not estimating $N$, so we do not incorporate
+individual to return. In the CJS model we are not estimating $N$, so we do not incorporate
 any data augmentation here.  This conveniently makes the model run
 faster too!
 
@@ -831,33 +807,27 @@ a Poisson encounter model in this example.  Since we condition on
 first capture, it is necessary for the model that we record the week
 when each fish was tagged.
 
+{\small 
 \begin{verbatim}
-XXXX Clean up initial code for data entry XXXXX
 library(reshape)
 
 # Constants:
-M <- 317       # Number of individuals
+M <- 315       # Number of individuals
 T <- 12     # Number of periods (weeks)
 nantenna <- 7  # weir, 6 antennas
 antenna.loc <- c(3,7,12,44,56,72,77)  # antenna locations
-xl <- 0     # lower boundary, river mouth
-xu <- 82    # upper boundary, Atkinson Mill Dam
-
 
 # Input and format data matrix:
 AS10 <- read.table("AS10.txt" ,header=T)
 melted.rkm <- melt(AS10, id=c("TagID","RKM"))
-tagid.week <- cast(melted.rkm, TagID ~ RKM ~ value, fill=0, length)
-y <- tagid.week
+y <- cast(melted.rkm, TagID ~ RKM ~ value, fill=0, length)
 first=read.csv("firstcap.csv")
 
 sink("ModelCJS.txt")
 cat("
 
 model {
-
 # Priors
-
 sigma ~ dunif(0,80)
 sigma2 <- sigma*sigma
 lam0 ~ dgamma(0.1, 0.1)
@@ -865,17 +835,14 @@ phi ~ dunif(0, 1)   # Survival (constant across time)
 tauv~dunif(0, 30)
 tau<-1/(tauv*tauv)
 
-
-# Code can be improved, Right now has same code for first[i] and t except for z
-
 for (i in 1:M){
-  z[i,first[i]] ~ dbern(1)
+  z[i,first[i]] <- 1
   S[i,first[i]] ~ dunif(0,50)
 
 for(j in 1:nantenna) {
 	  D2[i,j,first[i]] <- pow(S[i,first[i]]-antenna.loc[j], 2)
        lam[i,j,first[i]]<-  lam0*exp(- D2[i,j,first[i]]/(2*sigma2))
-       tmp[i,j,first[i]] <- lam[i,j,first[i]]   # z[i,first[i]]* not needed here because z=1 when first entering
+       tmp[i,j,first[i]] <- lam[i,j,first[i]]  
          y[i,j,first[i]] ~ dpois(tmp[i,j,first[i]])
       }
 
@@ -905,59 +872,45 @@ z[i,t] <-1
 }
 }
 
-inits =  function() {list(z=z,phi=runif(1,0,1), lam0=runif(1,0,2), tauv=runif(1,10, 20), sigma=runif(1,0,10)) }
+inits =  function() {list(z=z,phi=runif(1,0,1), lam0=runif(1,0,2), 
+                     tauv=runif(1,10, 20), sigma=runif(1,0,10)) }
 
 parameters <- c("sigma", "phi", "lam0")
 
 library("rjags")
-
 out1 <- jags.model("modelCJS.txt", data1, inits, n.chains=3, n.adapt=500)
 out2CJS <- coda.samples(out1,parameters,n.iter=20000)
-
-> summary(out2JS)
-
-Iterations = 501:20500
-Thinning interval = 1
-Number of chains = 3
-Sample size per chain = 20000
-
-1. Empirical mean and standard deviation for each variable,
-   plus standard error of the mean:
-
-        Mean      SD  Naive SE Time-series SE
-lam0  1.8022 0.04776 0.0001950      4.762e-04
-phi   0.7549 0.01269 0.0000518      6.657e-05
-sigma 9.3645 0.14680 0.0005993      1.542e-03
-
-2. Quantiles for each variable:
-
-        2.5%    25%   50%    75%  97.5%
-lam0  1.7105 1.7695 1.801 1.8341 1.8977
-phi   0.7293 0.7465 0.755 0.7635 0.7793
-sigma 9.0855 9.2637 9.362 9.4623 9.6583
-
 \end{verbatim}
+}
+
+\begin{table}
+\centering
+\caption{
+Results of the spatial CJS model fitted to the 
+American shad data set.
+}
+\begin{tabular}{crrrrr}
+\hline \hline 
+&       Mean   &  SD  &  2.5 \%   &   50 \%    &  97.5 \% \\
+$\lambda_0$ & 1.8022 & 0.04776 & 1.7105 &1.801  &1.8977  \\
+$\phi$  & 0.7549  & 0.01269 & 0.7293 &0.755  &0.7793  \\
+$\sigma$& 9.3645 & 0.14680 & 9.0855 &9.362  &9.6583  \\
+\hline
+\end{tabular}
+\label{open.tab.shad1}
+\end{table}
 
 Because our primary periods in this model are defined as weeks, our
 survival rate is actually the weekly survival.  In this case, our
-posterior mean estimate for $\phi$ was 0.75, suggesting that most fish
-have a low survival probability.  This could is likely due to the fact
+posterior mean estimate for $\phi$ was 0.75 (see Table \ref{open.tab.shad1}), suggesting that the
+survival probability is generally low.  This could is likely due to the fact
 that the migration upstream can be quite energetically taxing.
 Additionally, the CJS model is only estimating the 'apparent' survival
 and some fish may have left the stream temporally or permanently.  The
 other parameter of interest is $\sigma$, the movement parameter.  Our
 system here is linear, so we do not think of fish as having a home
 range radius in this system.  However, $\sigma$ can still inform us
-about the linear distance fish are moving.  XXXX should I convert
-sigma to a linear movement distance - like a 95 percent distance
-moved?? XXX
-
-
-
-
-
-
-
+about the linear distance fish are moving.  
 
 \section{Activity Centers}
 
@@ -992,7 +945,7 @@ we could model the effect of stream flow in two ways.  First, we might allow $\s
 to be a function of flow and to vary for each primary ocassion.  
 
 \[
- \sigma_t = \mu_S + \alpha_2 \mbox{Flow}_t
+ \mbox{log}(\sigma_t) = \mu_S + \alpha_2 \mbox{Flow}_t
 \]  
 
 But if we think that the change in activity centers might be related to the overall movement 
@@ -1007,161 +960,23 @@ where
 \mbox{log}(\tau) = \mu_T + \alpha_2 \mbox{Flow}_t
 \]
 
-XXXstart up here again.
+There are a number of options here for how we might allow activity centers to vary as a function 
+of covariates such as habitat, season, or behavior.  This is just the beginning of modeling how 
+the spatial arrangement of individuals within a study, we can also look at other point process models
+such as the Strauss model, or we can use diffusion models to look at correlation between activity centers, etc..
+XX this part should suggest that we are going to talk about the Otso papers. XXX
+
+
+
+\subsection{Migratory Fish - Correlated Activity Centers}
 
 
 
 
-\subsection{Multi-year Black Bear Example}
-
-XXX Will fill in shortly XXXX
-
-A 3 year study of black bears was conducted in the upper peninsula of
-Michigan.  Researchers placed XX hair snares in an array and checked
-them weekly for 6 weeks.  The study was conducted each summer for 3
-consecutive years, thus our secondary periods in this example are
-weeks and the primary period is years.
-
-\small{
-\begin{verbatim}
-
-library(reshape)
-library(scrbook)
-
-bearraw=read.csv("caphist.csv")
-bearraw$count=1
-a=which(bearraw$snare == "HS46")
-bearraw=bearraw[-a, ]
-
-junk.melt=melt(bearraw,id.var=c("bear.ID", "snare", "year", "session"), measure.var="count")
-bearArray=cast(junk.melt, bear.ID~snare~year, sum)
-
-locs=read.csv("locs.csv")
-locs2=locs[order(locs[,1]),]
-X<-cbind(locs2[,2:3]/1000)
-
-xlim<- c(min(X[,1] - mean(X[,1]))-20, max(X[,1] - mean(X[,1]))+20)
-ylim<-c(min(X[,2] - mean(X[,2]))-20, max(X[,2] - mean(X[,2]))+20)
-
-X[,1]=X[,1] - mean(X[,1])
-X[,2]=X[,2] - mean(X[,2])
-
-ntraps<-45
-T<-3
-n<-dim(bearArray)[1]
-M<-400 # do constant data augmentation to all years
-
-# flesh out the missing traps and created augmented dataset.
-Yarr<- array(0, dim=c(M,ntraps,T))
-a=pmatch(row.names(bearArray[1,,]), locs2[,1])
-Yarr[1:n,a,] <- bearArray[,,]
-Yarr2<-Yarr
-
-K<-4
-Sst<-cbind(runif(M,xlim[1],xlim[2]),runif(M,ylim[1],ylim[2]))
-Sst<-array(Sst,dim=c(M,2,T))
-
-#for(i in 1:T){
-#Stmp<-Sst[,,i]
-#Stmp[1:n,1:2]<-spiderplot(Yarr[1:n,,i], as.matrix(X))$avg.s
-#Sst[,,i]<-Stmp
-#Sst[Sst == "NaN"] <- 0
-
-Yarr[Yarr > 1] <-1
-
-for(i in 1:n){
-for(t in 1:T){
-Stmp<-colSums(Yarr[i,,t]*X)/sum(Yarr[i,,t])
-Sst[i,,t]<-Stmp
-}
-}
-Sst[Sst == "NaN"] <- 0
+\subsection{Migratory Fish - Auto regressive model}
 
 
 
-cat("
-model {
-
-sigma~dunif(0, 10)
-sigma2 <- sigma*sigma      # set priors for sigma2, lam0 (encounter rate), gamma, and phi
-lam0 ~ dgamma(.1,.1)
-
-sigY~dunif(0,10)
-tauY <- 1/(sigY * sigY)
-sigX~dunif(0,10)
-tauX <- 1/(sigX * sigX)
-
-for(jj in 1:T){             # T = 3 years
-    gamma[jj]~dunif(0, 1)   #recruitment
-    phi[jj]~dunif(0, 1)     #survival
-    N[jj]<-sum(z[1:M,jj])
-    }
-
-for (i in 1:M){            #loop over M individuals (includes the augmented data)
-      z[i,1] ~ dbin(gamma[1], 1)
-    S[i,1,1] ~ dunif(xlim[1],xlim[2])
-    S[i,2,1] ~ dunif(ylim[1],ylim[2])
-
-   for(j in 1:J) {    #loop over all traps
-       for(t in 1:T){
-
-           D2[i,j,t] <- pow(S[i,1,t]-X[j,1], 2) + pow(S[i,2,t]-X[j,2],2)
-            g[i,j,t] <- lam0*exp(-D2[i,j,t]/sigma2)
-            pmean[i,j,t] <- 1- exp(-g[i,j,t])
-          tmp[i,j,t] <- z[i,t]*pmean[i,j,t]
-            y[i,j,t] ~ dbin(tmp[i,j,t], 13)
-        }
-     }
-
-a[i,1]<-(1-z[i,1])
-
-  for(t in 2:T){
-       S[i,1,t] ~ dnorm(S[i,1,t-1], tauX)
-       S[i,2,t] ~ dnorm(S[i,2,t-1], tauY)
-
-        a1[i,t] <- sum(z[i, 1:t])
-         a[i,t] <- 1-step(a1[i,t] - 1)
-
-        mu[i,t] <- (phi[t]*z[i,t-1]) + (gamma[t]*a[i,t-1])
-         z[i,t] ~ dbern(mu[i,t])
-          }
-
-R[i,1]<- z[i,1]
-R[i,2]<-(1-z[i,1])*z[i,2]
-R[i,3]<- (1-z[i,1])*(1-z[i,2])*z[i,3]
-
-}
-
-
-R1<-sum(R[1:M,1])
-R2<-sum(R[1:M,2])
-R3<-sum(R[1:M,3])
-}
-",file="modelJS.txt")
-
-###
-###
-
-
-library("rjags")
-
-zst<-c(rep(1,n),rep(0,M-n))
-zst<-cbind(zst,zst,zst)
-
-inits <- function(){list (z=zst,sigma=runif(1,1,9), gamma=runif(T,0,1) ,S=Sst ) }
-
-parameters <- c("sigma","N", "phi", "gamma", "R2", "R3", "sigX", "sigY")
-
-data <- list (X=as.matrix(X),y=Yarr2,M=M,T=T,J=ntraps,ylim=ylim,xlim=xlim)
-
-
-out1 <- jags.model("modelJS.txt", data, inits, n.chains=3, n.adapt=500)
-out2JS <- coda.samples(out1,parameters,n.iter=1500)
-
-\end{verbatim}
-
-
-}
 
 
 
