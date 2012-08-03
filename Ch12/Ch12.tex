@@ -325,17 +325,16 @@ variable with probability $\gamma_{t}$, a parameter that is related to
 using the \mbox{\tt sum}) and \mbox{\tt step}) functions together to
 ascertain if a particular individual $i$ was ever previously alive.
 Individuals that were ever previously alive are no longer eligible to
-be ``recruited" into the population.
+be ``recruited" into the population.  The implementation of this model
+in \jags~ is shown in panel \ref{open.panel.nsJS}.
 
 
-
-XXXXMaybe make model into a panel?XXXXXX
-
-Implementation of the non-spatial JS model in the \jags. 
+\begin{panel}[htp]
+\centering
+\rule[0.1in]{\textwidth}{.03in}
 {\small
 \begin{Verbatim}[commandchars=\\\{\}]
-cat("
-model
+model\{
 
 psi \mytilde dunif(0,1)
 phi \mytilde dunif(0,1)
@@ -363,11 +362,16 @@ for(t in 2:5)\{
          \}
         \}
 \}
-",file="modelNSJS.txt")
-###
-
 \end{Verbatim}
 }
+
+\rule[-0.1in]{\textwidth}{.03in}
+\caption{
+\jags~ model specification for the non-spatial JS model.}
+\label{open.panel.nsJS}
+\end{panel}
+
+
 
 \subsection{Mist netting example}
 
@@ -718,35 +722,124 @@ reasonable when compared with the literature.  Some studies have found annual ma
 However, we should be careful not to over-parameterize our model based on the amount of data that is available.
 
 
-\section{CJS models}
+\section{Traditional CJS models}
 
 The Cormack-Jolly-Seber models are used extensively in the literature to
-determine detection and survival probabilities.  
-
-
-There are essentially two ways to fit these models, using either a
+determine detection and survival probabilities.  There are essentially two ways to 
+fit these models, using either a
 multinomial approach \citep{lebreton_etal:1992} or a state-space
-likelihood approach \citep{gimenez:2007, royle:2008}.  Multi-state
-models have been used to estimate survival and movement in CJS models
-using spatial or geographic location as a state (see
-\cite{kery_schaub:2011} for a review of these models using WinBUGS).
-
-In this multi-state model approach, the movement is often parameterized
-as random or Markovian between patches.
-
-
-Building on the state-space and multi-state CJS models, we can
-explicitly model individual movement into the CJS models as an
-individual covariate model \citep{royle_indcov:2007}.  
+likelihood approach \citep{gimenez:2007, royle:2008}.  
   
 
-
-To extend SCR models to open populations, we adopt a hierarchical
-parameterization of the CJS models in which the observation model is
+We can adopt a simple hierarchical parameterization of the 
+basic single state, non-spatial CJS model in which the observation model is
 described conditional on the latent state variables $z(i,t)$ -- the
 “alive state” – which describe whether individual $i$ is
 alive ($z(i,t)=1$) or not ($z(i,t)=0$) during each of $t=1,2,\ldots,T$
-{\it primary} periods.  We may consider the same basic encounter
+{\it primary} periods.  Let $y_{it}$ indicate the observed
+encounter data of individual $i$ in primary period $t$. The
+model, specified conditional on $z(i,t)$, is:
+ \[
+  y_{it}|z_{it} \sim
+\mbox{Bernoulli}(p_{t}z_{it}).
+\]
+Thus, if individual $i$ is alive at time $t$ ($z_{it}=1$), 
+then the observations are Bernoulli with probability of detection $p_t$. 
+If the
+individual is not alive ($z_{it}=0$), then the observations must be
+fixed zeros with probability 1.   
+In the CJS formulation, as opposed to the JS, we condition on first capture which means that $z_{it}$ will
+be 1 when $t$ is the first primary period of capture.  We can denote this $z_{i f_i}$ 
+where $f_i$ indicates the primary occasion in which individual $i$ is first captured.  
+This ensures that each individual is alive upon entering the model.  
+
+We can
+describe the ''alive state" at time $t$ for each individual as a
+function of the state at the previous time step $t-1$.   Because
+we condition on the first capture, the initial
+state is set to one:
+\[
+ z_{i f_i} = 1
+\]
+and to model the transition of individual states from $t$ to $t+1$ for
+all $t > f_i$ we have
+\[
+ z_{i t} \sim \mbox{Bernoulli}( \phi z_{i,t-1}).
+\]
+Thus, because we start with $z_{i f_i} = 1$, the individual survives with probability
+$\phi$ to time $f_i + 1$ and so forth.  Once an individual leaves the
+population (i.e., $z_{it} = 0$), there is no mechanism for the
+individual to return. In the CJS model we are not estimating $N$, so we do not incorporate
+any data augmentation here.  This version of the model is easy to construct in the \bugs~ (or \jags~)
+language which is shown in \ref{open.panel.nsCJS}.  Variations on this basic model and associated code for
+fitting the model in \bugs~ is described in detail in \citep[][Chapts. 7-9]{kery_schaub:2011}.
+
+\begin{panel}[htp]
+\centering
+\rule[0.1in]{\textwidth}{.03in}
+%\begin{minipage}{2.5in}
+{\small
+\begin{Verbatim}[commandchars=\\\{\}]
+model \{ 
+phi \mytilde dunif(0,1)   #Survival (constant over time)
+
+for(t in 1:T)\{
+p[t] \mytilde dunif(0, 1)    #detection (varies with time)
+\}
+    
+for (i in 1:M)\{     
+   z[i,first[i]] ~ dbern(1)  
+  for (t in (first[i]+1):T) \{ 
+         tmp[i,t] <- z[i,t]*p[t]
+           y[i,t] \mytilde dbern(tmp[i,t])
+       phiUP[i,t] <- z[i,t-1]*phi     
+           z[i,t] \mytilde dbern(phiUP[i,t])    
+   \} 
+  \} 
+\}
+\end{Verbatim}
+}
+
+\rule[-0.1in]{\textwidth}{.03in}
+\caption{
+\jags~ model specification for the non-spatial basic CJS model.}
+\label{open.panel.nsCJS}
+\end{panel}
+
+
+\subsection{Multi-state CJS models}
+
+The basic version of the model only allows for estimation of survival and detection.  However,
+researchers are often interested in addressing other ecological questions such as age-dependent
+survival rates, habitat based movements, etc.  Multi-state models allow researchers to directly
+address such questions by incorporating more than multiple states that an individual may potentially
+be in.  These possible states can be geographic location, age class, or reproductive status among many
+others.  Thus, instead of just having an encounter history for an individual, we will also have auxiliary 
+information on the state of that individual at capture (e.g., breeder or non-breeder).  
+Since our interest in movement of individuals, here we will consider states that represent spatial units or
+geographic locations.  Generally speaking, we might think that the transition rates between locations could be due to 
+habitat features (or quality) and we can use multi-state models to help us address such a question.
+In addressing movement through a multi-state model approach, the movement is often parameterized
+as random or Markovian between patches (\cite{arnason:1972,arnason:19732, schwarz_etal:1993}).
+
+
+
+\section{Spatial CJS models}
+
+In Chapt. \ref{chapt.poisson-mn}, we describe how SCR models are
+a essentially a type of multi-state model with spatially structured transition probabilities.
+As we noted, individuals can appear in $>1$ states, simultaneously, 
+which not directly analogous to a standard multi-state model.  However, building on the state-space and 
+multi-state CJS models, we can
+explicitly model individual movement into the CJS models as an
+individual covariate model \citep{royle_indcov:2007}. 
+To move from the basic and multi-state CJS models to the SCR version, we need only make a few
+changes to the model.  Essentially, we will not have discrete states and thus the biggest
+difference is that individuals do not ``transition'' between a finite set of states, but 
+instead are allowed to move in continuous space. 
+
+
+We may consider the same basic encounter
 models as described previously (i.e., Poisson, Bernoulli, or
 multinomial). In particular, let $y_{ijkt}$ indicate the observed
 encounter data of individual $i$ in trap $j$, during interval
@@ -762,12 +855,16 @@ Poisson observation model, specified conditional on $z(i,t)$, is:
 Thus, if individual $i$ is alive at time $t$ ($z(i,t)=1$), then the observations are Poisson as before. Conversely, if the
 individual is not alive ($z(i,t)=0$), then the observations must be
 fixed zeros with probability 1.   In the CJS formulation, we will condition on first capture which means that $z(i,t)$ will
-be 1 when $t$ is the first primary period of capture.  We can denote this $z(i, first_i)$ where $first_i$ indicates the primary occasion in which individual $i$ is first captured.  This ensures that each individual is alive upon entering the model.   Modeling time-effects either
+be 1 when $t$ is the first primary period of capture.  We can denote this $z(i, first_i)$ 
+where $first_i$ indicates the primary occasion in which individual $i$ is first captured.  
+This ensures that each individual is alive upon entering the model.   Modeling time-effects either
 within or across primary periods
 is straightforward. For that, we define $\lambda_{0} \equiv
 \lambda_{0}(k,t)$ and then develop models for
 $\lambda_{0}(k,t)$ as in our closed SCR models (we note that
 trap-specific effects could be modeled analogously).
+
+We follow 
 
 Instead of allowing $z(i,t)$ to be independent for each year, we
 describe the ''alive state" at time $t$ for each individual as a
