@@ -565,7 +565,6 @@ reproduce the code here.
 \begin{verbatim}
 cat("
 model {
-#PRIORS
 
 psi ~ dunif(0,1)
 phi ~ dunif(0,1)
@@ -579,7 +578,6 @@ for(t in 1:5){
 N[t] <- sum(z[1:M,t])
 D[t] <- N[t]/A
 gamma[t] ~ dunif(0,1)
-
 }
 
 for(i in 1:M){
@@ -853,6 +851,93 @@ Dead & 0 & 0 & 1\\ \hline
 We do not necessarily observe individuals in their given state though, so we must estimate detection
 separately for each of the states.  Thus we also will have $p_A$ and $p_B$, the probability of detecting
 an individual in state A and state B respectively.  
+
+To relate this back to the description in Chapt. \ref{chapt.poisson-mn}, we can define ${\bf s}$
+as the index of which state an individual is in and $u_{it}$ as
+the state in which individual $i$ was observed during sample $t$.  In this two state example, 
+$u_{it}$ can only take on values for being observed in A or B (i.e., 1 or 2).  
+
+We can define a simplistic model where the successive movement outcomes
+are $iid$
+\[
+u_{it} \sim  dcat( {\psi}({\bf s}_{i}) )
+\]
+
+Conditional on the state in which individual $i$ is located, we
+observe that individual with probability $p_{0}$. That is:
+\[
+ \Pr(y_{it} = 1| u_{it} )  = p_{0}
+\]
+The state-transition
+probabilities are constant, conditional on ${\bf s}$.  Other models for these transition probabilities
+are possible and will discuss those later.  
+
+To program this model in \jags~, we use a slightly different formulation which essentially combines 
+$u_{it}$ and $y_{it}$ as defined above into one observation matrix such that $y_{it} = 1, 2, or 3$ where
+3 indicates ``not observed''.  Additionally, we use $z_{it}$ to indicate the true state of individual
+$i$ such that $z_{it} = 1, 2, or 3$ where 1 indicates alive and in state 1, 2 indicates alive and in state 2, 
+and 3 indicates ``not alive''.  Using this delineation, we just need to set up the transition
+matrix based on Table \ref{open.tab.CJSmulti-matrix}
+and define each item within the model specification, shown in Panel \ref{open.panel.msCJS}.  
+Note, this can become quite cumbersome when dealing with models that
+have many states. 
+
+
+\begin{panel}[htp]
+\centering
+\rule[0.1in]{\textwidth}{.03in}
+%\begin{minipage}{2.5in}
+{\small
+\begin{Verbatim}[commandchars=\\\{\}]
+model \{ 
+
+for(r in 1:2)\{
+phi[r] \mytilde dunif(0,1)
+psi[r] \mytilde dunif(0,1)
+p[r] \mytilde dunif(0,1)
+\}
+
+for (i in 1:M)\{    
+    z[i,first[i]] <- y[i, first[i]]
+
+for (t in (first[i]+1):T)\{
+    z[i,t] \mytilde dcat(ps[z[i,t-1], i, ])
+    y[i,t] \mytilde dcat(po[z[i,t], i, ])
+\}
+
+ps[1, i, 1] <- phi[1] * (1-psi[1])
+ps[1, i, 2] <- phi[1] * psi[1]
+ps[1, i, 3] <- 1-phi[1]
+ps[2, i, 1] <- phi[2] * (1-psi[2])
+ps[2, i, 2] <- phi[2] * psi[2]
+ps[2, i, 3] <- 1-phi[2]
+ps[3, i, 1] <- 0
+ps[3, i, 2] <- 0
+ps[3, i, 3] <- 1
+
+po[1, i, 1] <- p[1]
+po[1, i, 2] <- 0
+po[1, i, 3] <- 1-p[1]
+po[2, i, 1] <- 0
+po[2, i, 2] <- p[2]
+po[2, i, 3] <- 1-p[2]
+po[3, i, 1] <- 0
+po[3, i, 2] <- 0
+po[3, i, 3] <- 1
+\}
+\} 
+\end{Verbatim}
+}
+
+\rule[-0.1in]{\textwidth}{.03in}
+\caption{
+\jags~ model specification for a two state version of the multi-state CJS model. Code adjusted
+from \citep[][Chapt. 9]{kery_schaub:2011}. }
+\label{open.panel.msCJS}
+\end{panel}
+
+
+
 
 
 
