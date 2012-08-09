@@ -728,7 +728,6 @@ fit these models, using either a
 multinomial approach \citep{lebreton_etal:1992} or a state-space
 likelihood approach \citep{gimenez:2007, royle:2008}.  
   
-
 We can adopt a simple hierarchical parameterization of the 
 basic single state, non-spatial CJS model in which the observation model is
 described conditional on the latent state variables $z(i,t)$ -- the
@@ -805,6 +804,24 @@ for (i in 1:M)\{
 \end{panel}
 
 
+
+\subsection{Migratory fish example}
+
+The motivation for this example stems from an interest in better
+understanding survival and movement of migratory fishes.  For this 
+example, we will use data collected on American shad \textit{Alosa sapidissima}
+in the New River in North Carolina, U.S.A.  Using a resistance board weir near the 
+river mouth, 315 fish
+were tagged with passive integrated transponders (PIT) in the spring
+of 2010. An array of 7 upstream PIT antennas passively recaptured
+individuals during upstream and downstream migrations.  Each time a fish passed 
+over the antenna, it was recorded and summarized
+each week for 12 weeks.  To apply the basic CJS model, we create the 
+encounter history for each individual for the 12 weeks and we also create 
+a vector to indicate the period of first capture.  
+
+
+
 \subsection{Multi-state CJS models}
 
 The basic version of the model only allows for estimation of survival and detection.  However,
@@ -873,9 +890,9 @@ probabilities are constant, conditional on ${\bf s}$.  Other models for these tr
 are possible and will discuss those later.  
 
 To program this model in \jags~, we use a slightly different formulation which essentially combines 
-$u_{it}$ and $y_{it}$ as defined above into one observation matrix such that $y_{it} = 1, 2, or 3$ where
+$u_{it}$ and $y_{it}$ as defined above into one observation matrix such that $y_{it} = 1, 2,$ or $3$ where
 3 indicates ``not observed''.  Additionally, we use $z_{it}$ to indicate the true state of individual
-$i$ such that $z_{it} = 1, 2, or 3$ where 1 indicates alive and in state 1, 2 indicates alive and in state 2, 
+$i$ such that $z_{it} = 1, 2,$ or $3$ where 1 indicates alive and in state 1, 2 indicates alive and in state 2, 
 and 3 indicates ``not alive''.  Using this delineation, we just need to set up the transition
 matrix based on Table \ref{open.tab.CJSmulti-matrix}
 and define each item within the model specification, shown in Panel \ref{open.panel.msCJS}.  
@@ -890,7 +907,6 @@ have many states.
 {\small
 \begin{Verbatim}[commandchars=\\\{\}]
 model \{ 
-
 for(r in 1:2)\{
 phi[r] \mytilde dunif(0,1)
 psi[r] \mytilde dunif(0,1)
@@ -899,31 +915,29 @@ p[r] \mytilde dunif(0,1)
 
 for (i in 1:M)\{    
     z[i,first[i]] <- y[i, first[i]]
-
 for (t in (first[i]+1):T)\{
     z[i,t] \mytilde dcat(ps[z[i,t-1], i, ])
     y[i,t] \mytilde dcat(po[z[i,t], i, ])
 \}
+	ps[1, i, 1] <- phi[1] * (1-psi[1])
+	ps[1, i, 2] <- phi[1] * psi[1]
+	ps[1, i, 3] <- 1-phi[1]
+	ps[2, i, 1] <- phi[2] * (1-psi[2])
+	ps[2, i, 2] <- phi[2] * psi[2]
+	ps[2, i, 3] <- 1-phi[2]
+	ps[3, i, 1] <- 0
+	ps[3, i, 2] <- 0
+	ps[3, i, 3] <- 1
 
-ps[1, i, 1] <- phi[1] * (1-psi[1])
-ps[1, i, 2] <- phi[1] * psi[1]
-ps[1, i, 3] <- 1-phi[1]
-ps[2, i, 1] <- phi[2] * (1-psi[2])
-ps[2, i, 2] <- phi[2] * psi[2]
-ps[2, i, 3] <- 1-phi[2]
-ps[3, i, 1] <- 0
-ps[3, i, 2] <- 0
-ps[3, i, 3] <- 1
-
-po[1, i, 1] <- p[1]
-po[1, i, 2] <- 0
-po[1, i, 3] <- 1-p[1]
-po[2, i, 1] <- 0
-po[2, i, 2] <- p[2]
-po[2, i, 3] <- 1-p[2]
-po[3, i, 1] <- 0
-po[3, i, 2] <- 0
-po[3, i, 3] <- 1
+	po[1, i, 1] <- p[1]
+	po[1, i, 2] <- 0
+	po[1, i, 3] <- 1-p[1]
+	po[2, i, 1] <- 0
+	po[2, i, 2] <- p[2]
+	po[2, i, 3] <- 1-p[2]
+	po[3, i, 1] <- 0
+	po[3, i, 2] <- 0
+	po[3, i, 3] <- 1
 \}
 \} 
 \end{Verbatim}
@@ -932,11 +946,22 @@ po[3, i, 3] <- 1
 \rule[-0.1in]{\textwidth}{.03in}
 \caption{
 \jags~ model specification for a two state version of the multi-state CJS model. Code adjusted
-from \citep[][Chapt. 9]{kery_schaub:2011}. }
+from \cite[][Chapt. 9]{kery_schaub:2011}. }
 \label{open.panel.msCJS}
 \end{panel}
 
 
+Results of the multistate CJS model for the migratory fish example.  p[1] is survival in the first state, which in this
+case is the down stream area.  p[2] is the survival in state B, or here, the upstream area.
+
+
+         Mean      SD  Naive SE Time-series SE
+p[1]   0.7787 0.04431 2.558e-04      0.0010963
+p[2]   0.4336 0.02671 1.542e-04      0.0005830
+phi[1] 0.8505 0.02192 1.266e-04      0.0004348
+phi[2] 0.7826 0.01953 1.128e-04      0.0002824
+psi[1] 0.4213 0.03272 1.889e-04      0.0007412
+psi[2] 0.9270 0.01381 7.976e-05      0.0001745
 
 
 
@@ -969,9 +994,11 @@ Poisson observation model, specified conditional on $z(i,t)$, is:
   y_{ijkt}|z(i,t) \sim
 \mbox{Poisson}(\lambda_0 g_{ij} z(i,t)).
 \]
-Thus, if individual $i$ is alive at time $t$ ($z(i,t)=1$), then the observations are Poisson as before. Conversely, if the
+Thus, if individual $i$ is alive at time $t$ ($z(i,t)=1$), then the observations are Poisson as before. 
+Conversely, if the
 individual is not alive ($z(i,t)=0$), then the observations must be
-fixed zeros with probability 1.   In the CJS formulation, we will condition on first capture which means that $z(i,t)$ will
+fixed zeros with probability 1.   In the CJS formulation, we will condition on first capture 
+which means that $z(i,t)$ will
 be 1 when $t$ is the first primary period of capture.  We can denote this $z(i, first_i)$ 
 where $first_i$ indicates the primary occasion in which individual $i$ is first captured.  
 This ensures that each individual is alive upon entering the model.   Modeling time-effects either
@@ -1006,30 +1033,30 @@ any data augmentation.  This conveniently makes the model run
 faster too!
 
 
+
+
+
 \section{Migratory fish example}
 
-In stream networks, technology such as passive integrated transponders
-(PIT) and the placement of PIT antennas along the stream mimics the
+Going back to our American shad example, we can consider that this is 
+exactly a spatial capture recapture problem  
+In stream networks, the placement of PIT antennas along the stream mimics the
 type of spatial data collected in terrestrial passive arrays such as
 camera traps, hair snares, acoustic recording devices, etc.  The
 difference is that for fish and aquatic species, the stream constrains
-the movement of individuals to a linear network.  Here, we demonstrate
-the CJS model to evaluate survival and movement of migratory fishes in
-a North Carolina river using an American shad \textit{Alosa sapidissima}
-example.  Using a resistance board weir near the river mouth, 317 fish
-were tagged with passive integrated transponders (PIT) in the spring
-of 2010. An array of 7 upstream PIT antennas passively recaptured
-individuals during upstream and downstream migrations.  The number of
-times each fish passed over the antenna was recorded and summarized
-each week for 12 weeks.  Thus, the dimensions of the data are 317
+the movement of individuals to a linear network.  Using the data from the
+array of 7 PIT antennas and the number of
+times each fish passed over the antenna, we can apply the SCR CJS model to 
+evaluate movement up and downstream of these fishes.  
+When we look at the individual by traps for each of the primary periods, 
+the dimensions of the data are 317
 individuals by 7 antennas by 12 sample occasions. Individuals can
 encounter any antenna any number of times during the week, which means
 we just sum the encounters over the week and eliminate any need for
-explicit secondary occasions in the model The result is a 3-D array
+explicit secondary occasions in the model. The result is a 3-D array
 instead of a 4-D array.  Given the structure of the encounters, we use
-a Poisson encounter model in this example.  Since we condition on
-first capture, it is necessary for the model that we record the week
-when each fish was tagged.
+a Poisson encounter model in this example.  
+
 
 {\small 
 \begin{verbatim}
