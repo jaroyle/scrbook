@@ -454,6 +454,7 @@ Whether you have a known or an unknown number of marked individuals is included 
 XXXX Other example data set? XXXX
 
 \section  {Individual identification rate of tagged animals $<$ 100 \%}
+\lable{partialID.sec.IDrate}
 Often during resighting, it may be possible to see that an individual is tagged but impossible to determine the individual identity of the tag. In such a situation in addition to the $y_{ijk}$ and $n_{jk}$, we also have site and occasion specific counts of marked but unidentified individuals, $r_{jk}$. Here, the individual encounter histories of marked animals are essentially incomplete, and if we used these incomplete data to inform the detection parameter of the model, we would be likely to underestimate detection/trap encounter rate and overestimate abundance. Some non-spatial mark-resigh models do not require that marked animals be identified individually, as long as the marking status can be observed unambiguously, but ignoring individual level information means that we cannot accomodate heterogeneity in detection \citet{mcclintock_white:2010}. In a spatial framework we could ignore marked and unmarked status completely and apply the model by \citet{chandler_royle:2012} we discussed in Chapt. \ref{chapt.scr-unmarked}. But again, that would mean losing important information on individual detection and movement. Therefore, being able to retain the individual identity of records that can be identified while at the same time accounting for an identification rate $<$ 100 \% is extremely useful. 
 \citet{mcclintock_etal:2009biometrics,mcclintock_etal:2009mdp} suggest an intuitive means of correcting for this bias in a non-spatial model framework when dealing with a Poisson encounter model (or sampling with replacement). When marked but unknown resightings are part of the data, the expected number of records of unmarked individuals at time $t$, $n_t$, changes from Eq. \ref{partialID.eq.E_n} to:
 
@@ -561,19 +562,19 @@ As we expected, parameter estimates of spatial mark-resight models get better th
 So how could we combine resighting data and telemetry data in a unified mark-resight model? Recall that the basic SCR model underlying all the SMR models we discuss here uses a half-normal detection function.
 By using this function, we can relate the parameters $\sigma$ and ${\bf s}_{i}$ directly to those from a bivariate normal movement model, with mean = ${\bf s}_{i}$, and variance-covariance matrix $\Sigma$, where the variance in both dimensions is $\sigma^2$ and the covariance is 0. Ordinarily, these parameters are estimated directly from the spatial distribution of individual recaptures/resightings. Telemetry data, however, provide more detailed information on individual location and movement, since the resolution and extent of the data are not limited by the trapping grid and potentially more locations can be accumulated through telemetry than resighting (depending on the monitoring frequency and resighting rates of individuals).  
 
-By assuming that the locations of individual $i$, ${\bf l}_{i}$ (consisting of a pari of x and y coordinates, $l_{ix}$ and $l_{iy}$), are a bivariate normal random variable:
+By assuming that the $R$ locations of individual $i$, ${\bf l}_{i}$ (consisting of a pair of x and y coordinates, $l_{ix}$ and $l_{iy}$), are a bivariate normal random variable:
 \[
 {\bf l}_i\sim Normal_2 ({\bf s}_i,\Sigma)
 \]
 we can estimate $\sigma$ as well as ${\bf s}_{i}$ for the collared individuals directly from telemetry locations, using their full conditional distributions:
 \[
-[\sigma|{\bf l},{\bf s}] \propto \left\{\prod_{i=1}^m \frac{1}{2 \pi \sigma^2} exp\left(-1/2 \left[ \frac {l_{ix}-s_{ix}} {\sigma^2} + \frac{l_{iy}-s_{iy}}{\sigma^2} \right]\right)\right\}*[\sigma] 
+[\sigma|{\bf l},{\bf s}] \propto \left\{\prod_{i=1}^m \prod_{r=1}^R \frac{1}{2 \pi \sigma^2} exp\left(-1/2 \left[ \frac {(l_{irx}-s_{ix})^2} {\sigma^2} + \frac{(l_{iry}-s_{iy})^2}{\sigma^2} \right]\right)\right\}*[\sigma] 
 \] 
 and
 \[
-[{\bf s}_{i}|{\bf l}_{i},\sigma] \propto \left\{\frac{1}{2 \pi \sigma^2} exp\left(-1/2 \left[ \frac {l_{ix}-s_{ix}} {\sigma^2} + \frac{l_{iy}-s_{iy}}{\sigma^2} \right]\right)\right\}*[{\bf s}_{i}] 
+[{\bf s}|{\bf l},\sigma] \propto \left\{\prod_{i=1}^m \prod_{r=1}^R \frac{1}{2 \pi \sigma^2} exp\left(-1/2 \left[ \frac {(l_{irx}-s_{ix})^2} {\sigma^2} + \frac{(l_{iry}-s_{iy})^2}{\sigma^2} \right]\right)\right\}*\prod_{i=1}^m[{\bf s}_{i}] 
 \]
-XXXXX ANYONE - I am pretty sure that's what the BVN pdf reduces to when covariance = 0, but would someone mind cross-checking? XXXXXX 
+
 Under the standard mark-resight assumption that marked individuals are a representative sample of the population, the estimate of $\sigma$ can be applied for the entire population. For the unmarked individuals ${\bf s}_{i}$ are estimated as described before conditional on their latent encounter histories. 
 
 {\bf R} makes it easy to implement the update of $\sigma$ and ${\bf s}_i$ based on telemetry data and the above described full conditionals within our existing MCMC algorithm. We simply replace the current updating step for $\sigma$ with: 
@@ -605,7 +606,36 @@ lls.cand[x]<-sum(dmvnorm(x=locs[[x]],mean=c(S[telID[x],1],S[telID[x],2]),
 For ${\bf s}$ we use an analogous updater for the telemetry-tagged individuals and the regular updater for individuals without associated telemetry location information. A full example code can be found in the {\bf R} package {\tt scrbook}, by calling {\tt scrPID.telemetry}. Note that not all marked individuals need to be telemetry-tagged. This approach of incorporating telemetry data into a spatial mark-resight model can easily be extended to update $\sigma$ and ${\bf s}$ conditional on both resighting and telemetry data and applies equally to regular SCR models where all individuals are identifiable. 
 
 {\flushleft \bf Example: Raccoons on the Outer Banks of North Carolina } 
-XXXX Will have to ask for permission to include this; alternatively use the panthers; both examples are written up XXXXXXX
+We applied a spatial mark-resigh model with telemetry data to a camera-trap and radio-telemetry data set from the raccoon population on South Core Banks, a barrier island within Cape Lookout National Seashore, North Carolina \citep{sollmann_etal:inprep}. Between May and September 2007,131 individuals were marked with dog collars and large individually numbered cattle tags; 44 of these tagged individuals were equipped with radio collars. Collared individuals were located using a VHF receiver and antenna, and their locations were estimated approximately weekly. Twenty camera traps  were set up in May 2007 along the length of South Core Banks, spaced approximately 1.77 km apart. To meet the condition that individuals are tagged before resighting, and to choose a sampling time frame that approximates a demographically closed population, we only considered camera-trapping data from October 1st 2007 to January 22nd 2008 in our analysis. During this period 104 marked individuals, 38 radio-collared, were alive and available for resighting with camera traps. 
+
+We defined the state-space {\cal S} as the entire area of South Core Banks island. A change in the number of photocaptures over the course of the study suggested a variation of detection rate with time. Since date recording in cameras malfunctioned, photographic records could only be assigned to the time interval between subsequent trap checks, and we refer to these intervals between checks as sampling occasions. These occasions ranged from 2 to 43 days and we accounted for the differences in sampling effort by standardizing $\lambda_0$ to 7-day intervals and allowed the standardized $\lambda_0$ to change with sampling occasion. Since not all pictures of marked raccoons could be identified to the individual level, we applied the correction factor described in sec. \ref{partialID.sec.IDrate}, estimated separately for each occasion. 
+
+Camera-traps recorded 117 pictures of unmarked raccoons, 33 pictures of 18 marked and identifiable raccoons, and 49 records of marked but not individually identifiable individuals. An average of 16.32 telemetry locations (SD 4.91) were collected for each of the 38 collared individuals. Raccoon abundance on the island was estimated at 305.461 ± 35.012 individuals, which translated to a density of 13.564 ± 1.554 individuals per $km^2$. Parameter estimates are listed in Table \ref{partialID.tab.raccoons}. 
+
+\begin{table}%[hb]
+\caption{Summary statistics of parameter estimates from spatial mark-resigh model for raccoon camera trapping and telemetry data. Baseline trap encounter rate $\lambda_0$ was standardized to 7-day intervals; $\lambda_0$ and the probability of identifying a picture of a marked individual, $c$, were allowed to vary among the 6 sampling occasions (t); $\sigma$ is estimated from telemetry data of 38 radio-collared individuals.}
+\begin{tabular}{lrrrrr}
+   &	Mean (SE) &	2.5\% &	50\%	& 97.5\% \\
+ \hline
+\sigma	& 0.492 (0.010)	& 0.472	& 0.491	& 0.512 \\
+\lambda_0 (t=1)	& 0.126 (0.021)	& 0.089	& 0.125	& 0.170 \\
+\lambda_0 (t=2)	& 0.200 (0.035)	& 0.140	& 0.197	& 0.276 \\
+\lambda_0 (t=3)	& 0.051 (0.012)	& 0.032	& 0.050	& 0.077 \\
+\lambda_0 (t=4)	& 0.151 (0.030)	& 0.100	& 0.149	& 0.218 \\
+\lambda_0 (t=5)	& 0.015 (0.005)	& 0.007	& 0.015	& 0.027 \\
+\lambda_0 (t=6)	& 0.015 (0.007)	& 0.008	& 0.014	& 0.035 \\
+c (t=1)	& 0.545 (0.085)	& 0.377	& 0.547	& 0.709 \\
+c (t=2)	& 0.389 (0.112)	& 0.184	& 0.385	& 0.616 \\
+c (t=3)	& 0.294 (0.108) & 0.110	& 0.286	& 0.525 \\
+c (t=4)	& 0.375 (0.161)	& 0.099	& 0.364	& 0.709 \\
+c (t=5)	& 0.375 (0.161)	& 0.099	& 0.364	& 0.711 \\
+c (t=6)	& 0.300 (0.138)	& 0.075	& 0.286	& 0.600 \\
+N	& 305.461 (35.012) & 241	& 305	& 371 \\
+D [km-2]	& 13.564 (1.554)	& 10.700	& 13.540	& 16.470 \\
+ \hline
+\end{tabular}
+\label{partialID.tab.raccoons}
+\end{table}
 
 \section{Summary}
 In this chapter we extended the spatial model for unmarked populations to a mark-resight situation, where part of the population is individually identifiable, usually through artificial tags. The basic model with known number of marked individuals and 100 \% individual identification of marked is easily modified for situations where the number of marked individuals is unknown, or where marked animals can sometimes not be identified to individual level. As expected, having marked individuals in the study population improved accuracy and precision of parameter estimates when compared to fully unmarked populations, but we also saw that the spatial counts of unmarked individuals still contribute information to parameter estimates. Finally, we present an approach of how to incorporate telemetry location data into the spatial mark-resight model to inform estimates of $\sigma$ and activity centers. Especially for difficult-to-study, cryptic species where often only a small sample of the population can be tagged this enables researchers to make optimal use of all existing data and obtain robust density estimates without the need for additional invasive methods. 
