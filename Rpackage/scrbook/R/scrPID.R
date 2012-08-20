@@ -1,4 +1,4 @@
-scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unknown"), IDrate, niters, 
+scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unknown"), IDrate, niters, npics,
     xlims, ylims, a, b, inits, delta ) 
 {
     obsmod <- match.arg(obsmod)
@@ -42,10 +42,8 @@ scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unk
         }
     }
 
-    if (missing(IDrate)) {
-	cr<-rep(1,M) } else {
-	cr<-rep(1,M)
-	cr[marked]<-IDrate}
+
+	cr<-rep(1,M) 
 
     out <- matrix(NA, nrow = niters, ncol = 4)
     colnames(out) <- c("sigma", "lam0", "psi", "N")
@@ -64,6 +62,10 @@ scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unk
            ll <- sum(dbinom(Y, 1, lam*cr * z, log = TRUE)) 
        }
 
+	if(!missing(npics)){
+	crat<-rbeta(1, 1+npics[1], 1+npics[2]-npics[1]) #npics[1]=identified, npics[2]=all marked
+	cr[marked]<-crat
+ 	}
 
         sigma.cand <- rnorm(1, sigma, delta[1])
         if (sigma.cand > 0) {
