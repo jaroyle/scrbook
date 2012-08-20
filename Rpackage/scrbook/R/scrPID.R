@@ -44,10 +44,13 @@ scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unk
 
 
 	cr<-rep(1,M) 
+	if(missing(npics)){
+	crat<-1} else{
+	crat<-npics[1]/npics[2]}
 
-    out <- matrix(NA, nrow = niters, ncol = 4)
-    colnames(out) <- c("sigma", "lam0", "psi", "N")
-    cat("\nstarting values =", c(sigma, lam0, psi, sum(z)), "\n\n")
+    out <- matrix(NA, nrow = niters, ncol = 5)
+    colnames(out) <- c("sigma", "lam0","c", "psi", "N")
+    cat("\nstarting values =", c(sigma, lam0, crat, psi, sum(z)), "\n\n")
     for (iter in 1:niters) {
         if (iter%%100 == 0) {
             cat("iter", iter, format(Sys.time(), "%H:%M:%S"), 
@@ -193,7 +196,7 @@ scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unk
             cat("     z =", zUps/M, "\n")
             cat("     S =", Sups/M, "\n")
         }
-        out[iter, ] <- c(sigma, lam0, psi, sum(z))
+        out[iter, ] <- c(sigma, lam0, crat, psi, sum(z))
     }
     return(out)
 }
