@@ -1,4 +1,4 @@
-scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unknown"), IDrate, niters, npics,
+scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unknown"), niters, npics,
     xlims, ylims, a, b, inits, delta ) 
 {
     obsmod <- match.arg(obsmod)

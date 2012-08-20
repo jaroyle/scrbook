@@ -4,10 +4,11 @@
 MCMC algorithm for spatial mark-resight models/ SCR models with partial individual identifiability
 }
 \description{
-Runs the MCMC algorithm for the Canada geese example presented in Chapter 15 (spatial mark-resight model)
+Runs the MCMC algorithm for spatial mark-resight models described in Chapter 15 
 }
 \usage{
-SCR0pois(n, X, y, M, Eff, niter,xl,xu,yl,yu,inits, Sex, delta)
+scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unknown"), npics,niters, 
+                  xlims, ylims, a, b, inits, delta ) 
 }
 \arguments{
   \item{n}{
@@ -28,8 +29,10 @@ SCR0pois(n, X, y, M, Eff, niter,xl,xu,yl,yu,inits, Sex, delta)
   \item{nmarked}{
    is the number of marked individuals known ("known") or unknown ("unknown") 
 }
-  \item{IDrate}{
-    optional; if rate of individual identification of marked individuals <1, provide this rate here, otherwise leave blank
+  \item{npics}{
+    optional; if rate of individual identification of marked individuals <1, provide a vector with the number of identified pictures 
+    of marked individuals and the total number of pictures ofmarked individuals (both identified and unidentified), in this order! If not provided, 
+    the identification rate is assumed to be 100%
 }
   \item{niter}{
     Number of iterations to run the algorithm for
