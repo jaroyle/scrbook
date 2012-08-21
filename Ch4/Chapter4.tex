@@ -1243,7 +1243,7 @@ traplocs<-data$traplocs
 nind<-nrow(y) # in this case nind=N because we're doing the known-N problem
 X<-data$traplocs
 J<-nrow(X)   # number of traps
-
+K<-data$K
 Xl<-data$xlim[1]
 Yl<-data$ylim[1]
 Xu<-data$xlim[2]
@@ -1314,11 +1314,11 @@ ni<-2000
 out <- bugs (data, inits, parameters, "SCR0a.txt", n.thin=nthin, n.chains=nc, 
          n.burnin=nb,n.iter=ni,debug=TRUE,working.dir=getwd())
 \end{verbatim}
-}
-There is little to say about the preceding operations other than
-to suggest that you might explore the output and investigate 
-additional analyses by running the \mbox{\tt simSCR0.fn} script provided in the {\bf R}
-package \mbox{\tt scrbook}. 
+} 
+There is little to say about the preceding operations other than to
+suggest that you might explore the output and investigate additional
+analyses by running the \mbox{\tt simSCR0.fn} script provided in the
+{\bf R} package \mbox{\tt scrbook}.
 
 For purposes here, we ran $1000$ burn-in and $1000$ post-burn-in
 iterations, and 3 chains,
@@ -1331,18 +1331,19 @@ object \mbox{\tt out} is produced we print a summary of the results as
 follows:
 {\small
 \begin{verbatim}
-> print(out,digits=3)
+> print(out,digits=2)
 Inference for Bugs model at "SCR0a.txt", fit using WinBUGS,
  3 chains, each with 2000 iterations (first 1000 discarded)
  n.sims = 3000 iterations saved
-            mean     sd    2.5%     25%    50%     75%   97.5%  Rhat n.eff
-alpha0    -2.496  0.224  -2.954  -2.648  -2.48  -2.340  -2.091 1.013   190
-alpha1     2.442  0.419   1.638   2.145   2.44   2.721   3.303 1.005   530
-sigma      NEED RESULTS WITH SIGMA HERE .....
-deviance 292.803 21.155 255.597 277.500 291.90 306.000 339.302 1.006   380
-.
+           mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
+alpha0    -2.50  0.22  -2.95  -2.65  -2.48  -2.34  -2.09 1.01   190
+alpha1     2.44  0.42   1.64   2.15   2.44   2.72   3.30 1.00   530
+sigma      0.46  0.04   0.39   0.43   0.45   0.48   0.55 1.00   530
+deviance 292.80 21.16 255.60 277.50 291.90 306.00 339.30 1.01   380
+
+...
  [some output deleted]
-.
+...
 \end{verbatim}
 }
 We know the data were generated with \mbox{\tt alpha0} $= -2.5$ and
@@ -1350,13 +1351,16 @@ We know the data were generated with \mbox{\tt alpha0} $= -2.5$ and
 data-generating values and we probably feel pretty good about the
 performance of the Bayesian analysis and MCMC algorithm that {\bf WinBUGS}
 cooked-up based on our sample size of 1 data set.  It is worth noting
-that the Rhat statistics indicate reasonable convergence but, as a
+that the 
+\mbox{\tt Rhat} statistics indicate reasonable convergence but, as a
 practical matter, we might choose to run the MCMC algorithm for
 additional time to bring these closer to 1.0 and to increase the
 effective posterior sample size (\mbox{\tt n.eff}). Other summary output includes
 ``deviance'' and related things including the deviance information
-criterion (DIC). We discuss these things in Chapts. \ref{chapt.mcmc}
-and \ref{chapt.gof}.
+criterion (DIC). We discuss general issues of convergence and other
+MCMC considerations in Chapt. \ref{chapt.mcmc}, and DIC and model
+selection in 
+Chapt. \ref{chapt.gof}.
 
 
 
@@ -1366,16 +1370,16 @@ and \ref{chapt.gof}.
 In all real applications $N$ is unknown.
  We handled this
 important issue in Chapt. \ref{chapt.closed} using the method of data augmentation
-which we apply here to achieve a realistic analysis of model SCR0. As
+(DA) which we apply here to achieve a realistic analysis of model SCR0. As
 with the basic closed population models considered previously, we
-formulate the problem here by augmenting our observed data set with a
+formulate the problem  by augmenting our observed data set with a
 number of ``all-zero'' encounter histories - what we referred to in
 Chapt. \ref{chapt.closed} as potential individuals. If $n$ is the number of observed
 individuals, then let $M-n$ be the number of potential individuals in
-the data set. For the basic $y_{ij}$ data structure (individuals x
-traps encounter frequencies) we simply add additional rows of all-zero
-observations to that data set. This is because such
-``individuals'' are unobserved, and therefore necessarily have
+the data set. For the basic $y_{ij}$ data structure ($n$ individual $\times$
+$J$ traps encounter frequencies) we simply add additional rows of all-zero
+observations to that data set. Because such
+``individuals'' are unobserved, they  therefore necessarily have
 $y_{ij}=0$ for all $j$.  A data set, say with 4 traps and 6 individuals,
 augmented with 4 pseudo-individuals therefore might look like this:
 {\small
@@ -1400,7 +1404,7 @@ For the augmented data, we introduce a set of binary latent variables
 (the data augmentation variables), $z_{i}$, and the model is extended
 to describe $\Pr(z_{i} = 1)$ which is, in the context of this problem,
 the probability that an individual in the augmented data set is a
-member of the population that was sampled. In other words, if $z_{i}=1$
+member of the population of size $N$  that was exposed to sampling. In other words, if $z_{i}=1$
 for one of the all-zero encounter histories, this is implied to be
 a sampling zero whereas observations for which $z_{i}=0$ are
 ``structural zeros'' under the model.
@@ -1412,21 +1416,24 @@ distribution on $N$.  Practically speaking, it should be sufficiently
 large so that the posterior distribution for $N$ is not truncated. On
 the other hand, if it is too large then unnecessary calculations are
 being done. An approach to choosing $M$ by trial-and-error is
-indicated. You can take a ballpark estimate of the probability that an
-individual is captured at all during the study, say $\tilde{p}$, which
-is related to the ``per sample'' encounter probability, $p$, by
-$\tilde{p} = 1-(1-p)^{K}$, obtain $N$ as $n/\tilde{p}$, and then set
-$M = 2*N$, as a first guess. Do a short MCMC run and then consider
+indicated. 
+%You can take a ballpark estimate of the probability that an
+%individual is captured at all during the study, say $\tilde{p}$, which
+%is related to the ``per sample'' encounter probability, $p$, by
+%$\tilde{p} = 1-(1-p)^{K}$, obtain $N$ as $n/\tilde{p}$, and then set
+%$M = 2*N$, as a first guess. 
+Do a short MCMC run and then consider
 whether you need to increase $M$. See Chapt. \ref{chapt.mcmc} for an
 example of this. \citet[][ch. 6]{kery_schaub:2011} provide an
 assessment of choosing $M$ in closed population models.
-
-Analysis by data augmentation removes $N$ as an explicit parameter of
+The useful thing about DA
+is that it removes $N$ as an explicit parameter of
 the model. Instead, $N$ is a derived parameter, computed by $N=
 \sum_{i=1}^{M} z_{i}$. Similarly, {\it density}, $D$, is also a
-derived parameter computed as $D=N/area({\cal S})$. For our
-simulator, we're using an $8 \times 8$ state-space and thus we will
-compute $D$ as $D=N/64$.
+derived parameter computed as $D=N/area({\cal S})$. 
+%For our
+%simulator, we're using an $8 \times 8$ state-space and thus we will
+%compute $D$ as $D=N/64$.
 
 \subsection{Analysis using data augmentation in WinBUGS}
 
@@ -1486,7 +1493,7 @@ and executing {\bf WinBUGS} looks much the same as before except with more
 or differently named arguments.
 {\small
 \begin{verbatim}
-## Data augmentation stuff
+## Data augmentation 
 M<-200
 y<-rbind(y,matrix(0,nrow=M-nind,ncol=ncol(y)))
 z<-c(rep(1,nind),rep(0,M-nind))
