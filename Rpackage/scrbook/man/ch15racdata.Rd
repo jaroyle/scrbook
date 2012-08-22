@@ -20,12 +20,10 @@ $telID: chr [1:500] "FALSE" "FALSE" "TRUE" "TRUE" ...
 $locs : List of 38
 $mi   : num [1:6] 17 6 4 2 2 2
 $mall : num [1:6] 
-$nSSp :List of 5, owin window [package spatstat]
-$SSp  : Formal class 'SpatialPolygonsDataFrame' [package "sp"] with 5 slots
-$inits: function () 
+$SSp  : Formal class 'SpatialPolygonsDataFrame' [package "sp"] with 5 slots 
 }
 \details{
-to run inits function you need to load package spatstat
+need package sp
 }
 
 \source{
