@@ -11,17 +11,18 @@ a barrier island within Cape Lookout National Seashore, North Carolina.
 \usage{data(ch15racdata)}
 \format{
 list of 11:
-n    : num [1:20, 1:6] 
-X    : num [1:20, 1:2]
-y    : num [1:104, 1:20, 1:6] 0 0 0 0 0 0 0 0 0 0 ...
-M    : num 500
-Eff  : num [1:500, 1:20, 1:6] 1.86 1.86 1.86 1.86 1.86 ...
-telID: chr [1:500] "FALSE" "FALSE" "TRUE" "TRUE" ...
-locs : List of 38
-mi   : num [1:6] 17 6 4 2 2 2
-mall : num [1:6] 
-SSp  : Formal class 'SpatialPolygonsDataFrame' [package "sp"] with 5 slots
-inits: function () 
+racdata$n    : num [1:20, 1:6] 
+$X    : num [1:20, 1:2]
+$y    : num [1:104, 1:20, 1:6] 0 0 0 0 0 0 0 0 0 0 ...
+$M    : num 500
+$Eff  : num [1:500, 1:20, 1:6] 1.86 1.86 1.86 1.86 1.86 ...
+$telID: chr [1:500] "FALSE" "FALSE" "TRUE" "TRUE" ...
+$locs : List of 38
+$mi   : num [1:6] 17 6 4 2 2 2
+$mall : num [1:6] 
+$nSSp :List of 5, owin window [package spatstat]
+$SSp  : Formal class 'SpatialPolygonsDataFrame' [package "sp"] with 5 slots
+$inits: function () 
 }
 \details{
 to run inits function you need to load package spatstat
