@@ -25,7 +25,7 @@ for (t in 1:T){
 iv<-(1:104)[apply(y,1,sum)>0]
 lc<-NULL
 for (i in 1:length(iv)){
-lc[i]<-(1:J)[apply(y[iv[i],,],1,sum)>0]
+lc[i]<-(1:R)[apply(y[iv[i],,],1,sum)>0]
 S[iv[i],]<-X[lc[i],]
 }
 
