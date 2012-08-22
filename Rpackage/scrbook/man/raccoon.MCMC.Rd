@@ -56,6 +56,34 @@ raccoon.MCMC <- function(n,X,Eff,y,M, niters,SSp,collar, locs,mi,mall, inits)
 XXXXX
 }
 
+\example{
+#use raccoon.MCMC to run a single MCMC chain for raccoon data from Ch15
+
+data(ch15racdata)
+library(spatstat)
+library(mvtnorm)
+library(coda)
+
+#create spatial window to draw random points within state space
+newSSp <- as(racdata$SSp, "SpatialPolygons")
+nSSp<-as.owin(newSSp)
+
+#set up inits function
+inits=function(){list(theta=runif(1,0.2,0.8), lam0=c( rep(runif(1, .05, .1), 2), 
+			    rep(runif(1, .05, .1), 2), rep(runif(1, .05, .1), 2)  ),
+                      xz=runifpoint(racdata$M, win=nSSp), w=rbinom(racdata$M,1,.5),
+			    psi=runif(1,.2,.8) )}  
+
+#run raccoon model
+out<-raccoon.MCMC(n=racdata$n,y=racdata$y, X=racdata$X, mi=racdata$mi, 
+                  mall=racdata$mall, M=racdata$M,Eff=racdata$Eff, 
+                  collar=racdata$telID, locs=racdata$locs, niters=200,
+                  inits=inits(), SSp=racdata$SSp)
+
+#look at output, remove XX iterations as burn-in
+mod<-mcmc(out)
+summary(window(out, start=10001))
+}
 \author{
 Rahel Sollmann, Richard Chandler, J. Andy Royle
 }
