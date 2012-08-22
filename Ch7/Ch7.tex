@@ -1455,10 +1455,29 @@ ${\cal S}$, because we know our terrestrial study species does not occur there.
 Or the study takes place in a clearly defined area such as an island. 
 
 As mentioned before, this situation is difficult to handle in {\bf WinBUGS}.
-XXXX In some simple cases we can adjust the state space by setting one of the
-coordinates of ${\bf s}_{i}$ to be some function of the other. 
+In some simple cases we can adjust the state space by setting one of the
+coordinates of ${\bf s}_{i}$ to be some function of the other and reject candidate ${\bf s}_{i}$ that do not fall within this modified state space. 
 In this manner, we can cut off corners of the rectangle to approximate 
-the actual state space. XXXX 
+the actual state space\footnote{This idea was pitched to us by Mike Meredith, from WCS Malaysia}. To visualize this approach, plot the following rectangle, representing your state space polygon, and line, representing, for example, the approximation of a shore line:
+\begin{verbatim}
+xlim<-c(-5,5)
+ylim<-c(-7,7)
+plot(xlim, ylim, type='n')
+abline(a=4, b=0.4)
+\end{verbatim}
+The Y coordinates limiting your state space to the habitat that si suitable to the species you study can now be expressed as a linear function of the X coordinates, in this case, $Y=4+0.4 \times X$.
+Toinclude this new limit in our WinBUGS model, we need to change the following:
+\begin{verbatim}
+#draw SX and SY as before
+SX[i]~dunif(xlim[1],xlim[2])
+SY[i]~dunif(ylim[1],ylim[2])
+#calculate upper limit for Y given X
+ymax[i]<-4+0.4*SX[i]
+# use step function to see if location [SX, SY] is below the Y limit (pIn = 1) or not (pIn = 0)
+pIn[i] <- step(ymax[i] - SY[i])
+In[i] ~ dbern(pIn[i])
+\end{verbatim}
+{\tt In} is a vector of $M$ 1's, passed as data to the model. If pIn = 0, the likelihood will be 0 and the candidate [SX, SY] pair will be rejected. If pIn = 1, this bit of the likelihood is equal to 1, and whether or not the the candidate pair of coordinates is accepted depends only on capture history of $i$. This approach can be very useful in some situations but is clearly restricted by the functional form of the relationship between SX and SY that it requires.
 
 In {\bf R}, we are much more flexible, as we can 
 use the actual state-space polygon to constrain our ${\bf s}_i$. 
