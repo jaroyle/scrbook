@@ -1187,7 +1187,7 @@ analyze data from 3 standard formats:
 \item[(2)] The maximally informative 3-dimensional array, for which we
   establish here the convention that it has dimensions \mbox{\tt nind}
   $\times$ \mbox{\tt K} $\times$ \mbox{\tt ntraps}.
-\item[(3)] We use a compact format - the ``SCR flat format'' - which
+\item[(3)] We use a compact format - the ``encounter data file'' -- which
   we describe below in section \ref{scr0.sec.wolverine}.
 \end{itemize}
 To simulate data in the most informative format - the ``3-d array'' -
@@ -1407,7 +1407,14 @@ the probability that an individual in the augmented data set is a
 member of the population of size $N$  that was exposed to sampling. In other words, if $z_{i}=1$
 for one of the all-zero encounter histories, this is implied to be
 a sampling zero whereas observations for which $z_{i}=0$ are
-``structural zeros'' under the model.
+``structural zeros'' under the model.  Under DA, we also express the
+Binomial observation model {\it conditional on} $z_{i}$ as follows:
+\[
+	y_{ij} \sim \mbox{Bin}(K, z_{i}*p_{ij})
+\]
+where we see that the binomial probability evaluates to 0 if $z_{i}=0$
+(so $y_{ij}$ is a fixed 0 in that case)
+and evaluates to $p_{ij}$ if $z_{i} = 1$.
 
 How big does the augmented data set have to be? We discussed this
 issue in Chapt. \ref{chapt.closed} where we noted that the size of the
@@ -1445,7 +1452,7 @@ with no all-zero encounter histories. After harvesting the data we
 produce the {\bf WinBUGS} model specification which now includes $M$
 encounter histories including the augmented potential individuals, the
 data augmentation parameters $z_{i}$, and the data augmentation
-parameter $\psi$. {\bf XXX Need to re-run with sigma inserted XXXX}
+parameter $\psi$. 
 {\small
 \begin{verbatim}
 data<-simSCR0.fn(discard0=TRUE,sd=2013)
@@ -1453,6 +1460,7 @@ y<-data$Y
 traplocs<-data$traplocs
 nind<-nrow(y)
 X<-data$traplocs
+K<-data$K
 J<-nrow(X)
 Xl<-data$xlim[1]
 Yl<-data$ylim[1]
@@ -1510,7 +1518,7 @@ inits <- function(){
 }
 
 library("R2WinBUGS")
-parameters <- c("alpha0","alpha1","sigma","N")
+parameters <- c("alpha0","alpha1","sigma","N","D")
 nthin<-1
 nc<-3
 nb<-1000
@@ -1519,16 +1527,27 @@ out <- bugs (data, inits, parameters, "SCR0a.txt", n.thin=nthin,n.chains=nc,
  n.burnin=nb,n.iter=ni,debug=TRUE,working.dir=getwd())
 \end{verbatim}
 }
+Note the differences in this new {\bf WinBUGS} model with that
+appearing in the known-$N$ version -- there is not much!  The loop
+over individuals goes up to $M$ now, and there is a model component
+for the DA variables $z$. We are also computing some derived
+parameters: population size $N({\cal S})$ is computed by summing up
+all of the data augmentation variables $z_{i}$ (as we've done
+previously in Chapt. \ref{chapt.closed}) and density, $D$, is also a
+derived parameter, being a function of $N$.  The input data has
+changed slightly too, as the augmented data set has more rows to
+include excess all-zero encounter histories. Previously we knew that
+$N=100$ but in this analysis we pretend not to know $N$, but think
+that $N=200$ is a good upper bound;
 
-{\bf Remarks}:  (1) Note the differences in this new {\bf WinBUGS} model
-with that appearing in the known-$N$ version.  (2) Also the input data
-has changed - the augmented data set has more rows of
-all-zero encounter histories. Previously we knew that $N=100$ but in this analysis we
-pretend not to know $N$, but think that $N=200$ is a good upper bound;
-(3) Population size $N({\cal S})$ is a derived parameter, being computed by
-summing up all of the data augmentation variables $z_{i}$ (as we've
-done previously in Chapt. \ref{chapt.closed}); (4) Density, $D\equiv D({\cal S})$, is also a derived
-parameter. Summarizing the output from {\bf WinBUGS} produces:
+This analysis can be run directly once \mbox{\tt scrbook} is loaded,
+by issuing the following commands
+\begin{verbatim}
+library("scrbook")
+data<-simSCR0.fn(discard0=TRUE,sd=2013)
+out1<-SCR0bayes(data,M=200,engine="winbugs",ni=2000,nb=1000)
+\end{verbatim}
+Summarizing the output from {\bf WinBUGS} produces:
 {\small
 \begin{verbatim}
 > print(out1,digits=2)
@@ -1538,17 +1557,13 @@ Inference for Bugs model at "SCR0a.txt", fit using WinBUGS,
            mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
 alpha0    -2.57  0.23  -3.04  -2.72  -2.56  -2.41  -2.15 1.01   320
 alpha1     2.46  0.42   1.63   2.16   2.46   2.73   3.33 1.02   120
+sigma      0.46  0.04   0.39   0.43   0.45   0.48   0.55 1.02   120
 N        113.62 15.73  86.00 102.00 113.00 124.00 147.00 1.01   260
 D          1.78  0.25   1.34   1.59   1.77   1.94   2.30 1.01   260
-sigma      0.46  0.04   0.39   0.43   0.45   0.48   0.55 1.02   120
 deviance 302.60 23.67 261.19 285.47 301.50 317.90 354.91 1.00  1400
-
-For each parameter, n.eff is a crude measure of effective sample size,
-and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
-
-DIC info (using the rule, pD = var(deviance)/2)
-pD = 279.9 and DIC = 582.5
-DIC is an estimate of expected predictive error (lower deviance is better).
+...
+[some output deleted]
+...
 \end{verbatim}
 }
 \begin{comment}
@@ -1569,7 +1584,7 @@ as to reduce the MC error to a tolerable level. What constitutes
 tolerable is up to the investigator. Certainly less than 1\% is called
 for. 
 \end{comment}
-The Rhat statistic (discussed in secs. \ref{glms.sec.convergence} and
+The \mbox{\tt Rhat} statistic (discussed in secs. \ref{glms.sec.convergence} and
 \ref{mcmc.sec.mcmcsummary}) for this analysis indicates satisfactory
 convergence. 
 %As a general rule, Rhat gets closer to 1 (and Monte Carlo error decreases)
@@ -1580,6 +1595,7 @@ previous results obtained for the known-$N$ case, and also not too
 different from the data-generating values. The posterior of $N$
 overlaps the data-generating value substantially.
 
+\begin{comment}
 We note that these results were obtained from a fit of the actual
 data-generating model, i.e., that based on the half-normal detection
 model, to a single simulated data set. Sometimes it is useful to
@@ -1591,7 +1607,7 @@ although we provide the {\bf R} script \mbox{\tt SCR0bayes} in the
 {\bf R} package \mbox{\tt scrbook}.  Those results are given below. We
 see that the estimate of $N$, the main parameter of interest, is not
 too dissimilar from that obtained under the correct model, convergence
-is worse (as measured by Rhat) which may not have anything to do with
+is worse (as measured by \mbox{\tt Rhat}) which may not have anything to do with
 the model being wrong, and the posterior deviance favors the correct
 model (it is smaller) while, interestingly, the DIC does not.  We
 consider the effectiveness of DIC for carrying-out model selection in
@@ -1616,7 +1632,7 @@ pD = 256.0 and DIC = 566.4
 DIC is an estimate of expected predictive error (lower deviance is better).
 \end{verbatim}
 }
-
+\end{comment}
 
 \subsection{Implied Home Range Area}
 
@@ -1630,17 +1646,18 @@ model (Eq. \ref{scr0.eq.hazard}); (3) the negative exponential model
 and (4) the logit model (Eq. \ref{scr0.eq.logit}).
 We modified the function \mbox{\tt  SCR0bayes} for this purpose which
 you should be able to do with little difficulty. We fit each model to
-the same simulated  data set using \winbugs, based only on 1000
+the same simulated  data set using {\bf WinBUGS}, based only on 1000
 post-burn-in samples and 3 chains, which produced the posterior
 summaries given in Tab. \ref{scr0.tab.implied}.
-
+\begin{comment}
 XXXXXXXXXXXXXXXXX
 We could use the MCMC histories of parameters to compute the posterior
 mean of the ehra too.....
 XXXXXXXXXXXXXXXXXXXX
-Comment: wow, the implied home range area can be pretty different thre
-is only minor differences in estimated N.
-We emphasize that sigma means a different thing under every model. 
+\end{comment}
+The main thing we see is that, while the implied home range area can
+vary substantially, there 
+are smaller differences in the estimated $N$ and hence $D$. 
 
 
 \begin{table}
@@ -1657,13 +1674,11 @@ $\alpha_0$  &  -2.57 &  -2.60 & -1.51 & -0.47 \\
 $\alpha_1$  &  2.46  & 2.56  & 3.59  & 3.86 \\
 N           & 113.62& 114.16 &119.69& 118.29 \\
 D           & 1.78  & 1.78  & 1.87  & 1.85 \\
-$\sigma$    & 0.46  & 0.45 &  0.28  &  -- \\
+%$\sigma$    & 0.46  & 0.45 &  0.28  &  -- \\
 hra         & 3.85  & 3.78 &  5.51  & 2.64 \\
 \end{tabular}
 \label{scr0.tab.implied}
 \end{table}
-
-
 
 
 
@@ -1675,7 +1690,7 @@ There are two other popular {\bf BUGS} engines in widespread use: {\bf
   R}. {\bf OpenBUGS} can be used instead of {\bf WinBUGS} by changing
 the package option in the \mbox{\tt bugs} call to \mbox{\tt
   package=OpenBUGS}.  {\bf JAGS} can be called using the function
-\mbox{\tt jags()} in package \mbox{\tt R2JAGS} which has nearly the
+\mbox{\tt jags()} in package \mbox{\tt R2jags} which has nearly the
 same arguments as \mbox{\tt bugs()}.  We prefer to use the {\bf R}
 library \mbox{\tt rjags} \citep{plummer:2009} which has a slightly
 different implementation that we demonstrate here as we reanalyze the
@@ -1688,12 +1703,12 @@ samples cannot be used for inference.  Then the Markov chains are
 updated using \mbox{\tt coda.samples()} to obtain posterior samples
 for analysis, as follows:
 \begin{verbatim}
-jm<- jags.model("SCR0a.txt", data=data, inits=inits, n.chains=nc, n.adapt=nb))
-jm<- coda.samples(jm, parameters, n.iter=ni-nb, thin=nthin)
+jinit<- jags.model("SCR0a.txt", data=data, inits=inits, n.chains=nc, n.adapt=nb))
+jout <- coda.samples(jinit, parameters, n.iter=ni-nb, thin=nthin)
 \end{verbatim}
 We find that {\bf JAGS} seems to be 20-30\% faster (and often more)
 for the basic SCR model which you can evaluate using the function
-\mbox{\tt SCR0bayes} in the {\bf R} package \mbox{\tt
+\mbox{\tt SCR0bayes} provided with the {\bf R} package \mbox{\tt
   scrbook}. \citet{hobbs:2011} provides a good introduction to
 ecological modeling with {\bf JAGS} which we recommend.
 
@@ -1716,7 +1731,7 @@ here is based on the analysis of \citet{royle_etal:2011jwm}.
 
 \begin{figure}
 \begin{center}
-\includegraphics[height=3in]{Ch4/figs/wolverinelocs}
+\includegraphics[height=6.5in,width=4.8in]{Ch4/figs/wolverinelocs}
 \end{center}
 \caption{
 Wolverine camera trap locations from \citet{magoun_etal:2011}.
@@ -1728,72 +1743,98 @@ legends in the actual figure and put this into the figure legend
 \end{figure}
 
 To carry-out an analysis of these data, we require the matrix of trap
-coordinates and the encounter history data.  We store data in the
-``scr flat format'' (see sec.  \ref{scr0.sec.formats} above), an
-efficient file format which is easily manipulated and also used as the
-input file format in {\bf SPACECAP} \citep{gopalaswamy_etal:2012} and
-in the {\bf R} package \mbox{\tt SCRbayes} \citep{russell_etal:2012}.
+coordinates and the encounter history data.  We usually store data in
+2 distinct data files which contain all the information needed for an
+analysis. These files are
+\begin{itemize}
+\item[$\bullet$] The encounter data file (EDF) containing a record of which
+  traps and when each individual encounter occurred.
+\item[$\bullet$] The trap deployment file (TDF) which contains the
+  coordinates of each trap, along with information 
+ indicating which sample
+  occasions each trap was operating.
+\end{itemize}
+
+{\flushleft \bf Encounter Data File (EDF)} -- 
+We store the encounter data in the
+an efficient file format which is easily manipulated. The file
+structure is a simple matrix with 4 columns, those being: (1) sessID: the trap
+session or year. For a single-year study (as considered here) this
+should be an integer  that is constant for all records; (2) indID: the
+individual identity, being an integer from $1$ to $n$ (repeated for
+multiple captures of the same individual) indicating which
+individual the record (row) of the matrix belongs to; (3) sampID: The integer sample
+occasion which generated the record, and (4) trapID: the trap identity, an
+integer from 1 to $J$, the number of traps.  The structure of the EDF
+is the same as used in the \mbox{\tt secr} package (Efford XXXXXXXX)
+and similar to that used
+in the {\bf SPACECAP} \citep{gopalaswamy_etal:2012}, and
+\mbox{\tt SCRbayes} \citep{russell_etal:2012} packages, both of which 
+have a 3-column format (trapID, indID, sampID).
+
 To illustrate this format, the wolverine data are available in the
 package \mbox{\tt scrbook} by typing:
 \begin{verbatim}
 data(wolverine)
 \end{verbatim}
-which contains a list having elements \mbox{\tt wcaps} and \mbox{\tt
-  wtraps}.  The ``encounter data file'' \mbox{\tt wcaps} has 3 columns
-and 115 rows, each representing a unique encounter event including the
+which contains a list having elements \mbox{\tt wcaps} (the EDF) and \mbox{\tt
+  wtraps} (the TDF). 
+We see that  \mbox{\tt wcaps} has 
+ 115 rows, each representing a unique encounter event including the
 trap identity, the individual identity and the sample occasion index
-(\mbox{\tt sample}).  The first 10 rows of this matrix are as follows:
+(\mbox{\tt sample}).  The first 5 rows of \mbox{\tt wcaps} are:
 {\small
 \begin{verbatim}
-> wolverine$wcaps[1:10,]
-       trapid individual sample
-  [1,]      1          2    127
-  [2,]      1          2    128
-  [3,]      1          2    129
-  [4,]      1         18    130
-  [5,]      2          3    106
-  [6,]      2         18    104
-  [7,]      5          5     73
-  [8,]      5          5     89
-  [9,]      6         18    117
- [10,]      6         18    118
+> wolverine$wcaps[1:5,]
+     year individual day trap
+[1,]    1          2 127    1
+[2,]    1          2 128    1
+[3,]    1          2 129    1
+[4,]    1         18 130    1
+[5,]    1          3 106    2
 \end{verbatim}
 }
-Each row is a unique 
-individual/trap encounter, and the 3 variables (columns) are: 
-\mbox{\tt trapid} -- an
-integer that runs from \mbox{\tt 1:ntraps}, \mbox{\tt individual} runs from
-\mbox{\tt 1:nind} and
-\mbox{\tt sample} 
-runs from \mbox{\tt 1:nperiods}. Often (as the case here) \mbox{\tt
-  sample} 
-will
-correspond to daily sample intervals. The variable \mbox{\tt trapid} will have to
+To reiterature the structure, the variable \mbox{\tt year} is in
+integer indicating the year or session of the encounter. All these
+data come from a single year (2008) and so \mbox{\tt year} is set to
+1. Variable \mbox{\tt individual} is an integer identity of each
+individual captured, \mbox{\tt day} is the sample occasion of capture
+(in this case, the sample occasions correspond to days), and \mbox{\tt
+  trap} is the integer trap identity. 
+Often, the variable \mbox{\tt trapid} will have to
 correspond to the row of a matrix containing the trap coordinates - in
-this case the file \mbox{\tt wtraps} which we describe further below.
+this case the TDF file \mbox{\tt wtraps} which we describe further below.
+
+{\bf 
+I THINK WE SHOULD PUT ALL THIS INFO INTO A DATA CLASS WITH SOME
+  CONSTRUCTOR FUNCTION. I WILL WORK ON THAT. EDF, TDF + State-space +
+  K(reps) + ??? -- "scr" data type. 
+}
 
 Note that the information provided in this encounter data file
 \mbox{\tt wcaps} does not represent a completely informative summary
 of the data. For example, if no individuals were captured in a certain
 trap or during a certain period, then this compact data format will
-have no record. Thus we will need to know \mbox{\tt ntraps} and
-\mbox{\tt nperiods} when reformatting this SCR data format into a 2-d
+have no record. Thus we will need to know $J$, the number of traps,
+{\it and} $K$, the number of sample occasions
+when reformatting this SCR data format into a 2-d
 encounter frequency matrix or 3-d array. In addition, the encounter
 data file does not provide information about which periods each trap
 was operated. This additional information is also necessary as the
 trap-specific sample sizes must be passed to {\bf BUGS} as data. We
-provide this information in a 2nd data file, along with the trap
-coordinates, in the ``trap deployment'' file which is described below.
+provide this information along with trap
+coordinates, in the ``trap deployment file" (TDF)
+ which is described below.
 
 For our purposes we need to convert the \mbox{\tt wcaps} file into the
-$\mbox{\tt nind} \times \mbox{\tt ntraps}$ (or $n \times J$) array of
+ $n \times J$ array of
 binomial encounter frequencies, although more general models might
 require an encounter-history formulation of the model which requires a
 full 3-d array.  To obtain our encounter frequency matrix, we do this
 the hard way by first converting the encounter data file into a 3-d
 array and then summarize to trap totals. We have a handy function
 \mbox{\tt SCR23darray.fn} which takes the compact encounter data file
-with optional arguments \mbox{\tt ntraps} and \mbox{\tt nperiods}, and
+with optional arguments \mbox{\tt ntraps} and \mbox{\tt nsamples}, and
 converts it to a 3-d array, and then we use the {\bf R} function
 \mbox{\tt apply} to summarize over the ``sample'' period dimension (by
 convention here, this is the 2nd dimension). To apply this to the
@@ -1811,16 +1852,16 @@ maximally informative 3-d data format but, here, we analyze the
 summarized data.
 
 
+{\flushleft \bf Trap Deployment File (TDF)} --
 The other important information needed to fit SCR models is the ``trap
-deployment'' file which provides the additional information not
-contained in the encounter data file. The traps file has \mbox{\tt
-  nperiods} $+ 3$ columns. The first column is assumed to be a trap
+deployment file'' (TDF)  which provides the additional information not
+contained in the encounter data file. The traps file has $K + 3$ columns. The first column is assumed to be a trap
 identifier, columns 2 and 3 are the easting and northing coordinates
 (assumed to be in a Euclidean coordinate system), and columns 4 to
-(\mbox{\tt nperiods} + 3) are binary indicators of whether each trap
-was operational in each time period. The first 10 rows (out of 37) and
+$K + 3$ are binary indicators of whether each trap
+was operational during each sample occasion. The first 10 rows (out of 37) and
 10 columns (out of 167) of the trap deployment file for the wolverine
-data are:
+data are shown as follows:
 {\small
 \begin{verbatim}
 wolverine$wtraps[1:10,1:10]
@@ -1855,7 +1896,7 @@ each trap and a vector $K$ containing the number of days that each trap
 was operational. We now have all the information required to fit a
 basic SCR model in {\bf BUGS}.
 
-Summarizing these data files for the wolverine study, we see that 21
+Summarizing the data for the wolverine study, we see that 21
 unique individuals were captured a total of 115 times. Most
 individuals were captured 1-6 times, with 4, 1, 4, 3, 1, and 2
 individuals captured 1-6 times, respectively.  In addition, 1
@@ -1881,11 +1922,11 @@ and total encounter frequencies.
 \begin{table} [htp]
   \caption{Individual frequencies of capture for wolverines captured
     in camera traps in Southeast Alaska in 2008. Rows index unique
-    trap frequencies XXXX traps or trap frequencies ??? XXXX
+    traps of capture for each individual 
 and columns represent total number of captures
     (e.g., we captured 4 individuals 1 time, necessarily in only 1
     trap; we captured 3 individuals 3 times but in 2 different traps).
-%% This differs by 1 from Royle et al. 2011 table.
+\footnote{ This may differ by 1 from Royle et al. 2011 table. Check this}
 }
 \centering
 \begin{tabular}{c c c c c c c c c c c}
@@ -1909,18 +1950,20 @@ No. of traps & 1 & 2 & 3 & 4 & 5 & 6 & 8 & 10 &13 &14 \\
 \subsection{Fitting the model in WinBUGS}
 
 For illustrative purposes here we fit the simplest SCR model with the
-half-normal distance function although we revisit these data with more
+Gaussian distance function although we revisit these data with more
 complex models in later chapters. The model is summarized by the
 following 4 elements:
 \begin{itemize}
 \item[(1)] $y_{ij}|{\bf s}_{i} \sim \mbox{Bin}(K, z_{i}\; p_{ij})$
 \item[(2)] $p_{ij} = p_{0} \exp(-\alpha1 \; ||{\bf s}_{i}-x_{j}||^2)$
-\item[(3)] $ {\bf s}_{i} \sim \mbox{Unif}({\cal S})$
-\item[(4)] $ z_{i} \sim \mbox{Bern}(\psi)$
+\item[(3)] ${\bf s}_{i} \sim \mbox{Unif}({\cal S})$
+\item[(4)] $z_{i} \sim \mbox{Bern}(\psi)$
 \end{itemize}
-
 We assume customary flat priors on the structural (hyper-) parameters
-of the model, $\alpha_{0} = \mbox{logit}(p_{0})$, $\alpha_{1}$ and $\psi$.  It remains to define the
+of the model, $\alpha_{0} = \mbox{logit}(p_{0})$, $\alpha_{1}$ and
+$\psi$.  
+
+It remains to define the
 state-space ${\cal S}$. For this, we nested the trap array (Fig.
 \ref{scr0.fig.wolverinelocs}) in a
  rectangular state-space extending $20$ km beyond the traps in each cardinal
@@ -1942,6 +1985,7 @@ based on
 buffers from 1.0 to 5.0 units on the scaled coordinate system (10 km to
 50 km). In the {\bf R} package \mbox{\tt scrbook} we provide a
 function
+XXXXXXXXXXXXXXXXXXXX FIX THIS FUNCTION NOW XXXXXXXXXXXXXXXXXXXXXXX
 \mbox{\tt wolvSCR0.fn} which will fit the basic SCR model. For
 example, to fit the model in 
 {\bf WinBUGS} using data augmentation with $M=300$ potential individuals,
