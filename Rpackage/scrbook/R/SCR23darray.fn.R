@@ -16,7 +16,7 @@ cap.period<-caps[,3]
 
 y<-array(0,c(nind,nperiods,ntraps))
 
-tmp<-cbind(caps[,2],cap.period,caps[,1])
+tmp<-cbind(caps[,2],cap.period,caps[,4])
 y[tmp]<-1
 y
 }
