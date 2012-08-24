@@ -822,7 +822,7 @@ non-stationary point processes.
 Another alternative is slice sampling
 \citep{neal:2003}. In slice sampling, we sample uniformly from the
 area under the plot of $[\theta|y]$. Considering a single univariate
-theta. Let's define an auxiliary variable, $U \sim \mbox{Unif}(0,
+$\theta$. Let's define an auxiliary variable, $U \sim \mbox{Unif}(0,
 [\theta|y])$. Then, $\theta$ can be sampled from the vertical slice
 of $[\theta|y]$ at $U$ (Fig. \ref{mcmc.fig.slicesample}):
 \[
@@ -857,14 +857,14 @@ conditional distributions within a Gibbs sampling setup.
 
 By now you have seen MCMC samplers for some simple GL(M)M's. Now, to
 ease you into more complex models, we construct our own MCMC algorithm
-using a Metropolis-within-Gibbs sampler for the non-spatial Model with
-individual heterogeneity in capture probability $M_{h}$, developed in
+using a Metropolis-within-Gibbs sampler for the non-spatial model with
+individual heterogeneity in capture probability, model $M_{h}$, developed in
 Chapt. \ref{chapt.closed}.
 
 To recapitulate: Under the non-spatial model, each of the $n$ observed
 individuals is either detected (1) or not (0) during each of $K$
 sampling occasions. We estimate $N$ using data augmentation and have a
-Bernoulli model for the zero-inflation variables $z_{i}$. 
+Bernoulli model for the data augmentation variables $z_{i}$. 
 \[
 z_{i} \sim \mbox{Bernoulli}(\psi)
 \]
@@ -882,7 +882,7 @@ probability $p_{i}$. Here we assume
 
 As usual, we have to go through two general steps before we write the MCMC algorithm:
 \begin{itemize}
-\item[  (1)] Identify your model with all its components (including
+\item[  (1)] Identify the model with all its components (including
     priors)
 \item[  (2)] Recognize and express the full conditional distributions for
     all parameters
@@ -920,7 +920,7 @@ are as follows:
 
 {\bf (2)} for $z_{i}$:
 \[
-[z_{i} | y_{i}, p_{i}, \psi] \propto [y_{i}|z_{i} \times p_{i}] \mbox{Bern}(z_{i}|\psi)
+[z_{i} | y_{i}, p_{i}, \psi] \propto [y_{i}|z_{i} \times p_{i}] \mbox{Bernoulli}(z_{i}|\psi)
 \]
 
 {\bf (3)} For $\mu_{p}$:
@@ -935,7 +935,7 @@ are as follows:
 
 {\bf (5)} For $\psi$:
 \[
-[\psi|z_{i}] \sim \propto \left\{ \prod_{i} [z_{i}|\psi] \right\} \mbox{Beta}(1,1)
+[\psi|z_{i}] \propto \left\{ \prod_{i} [z_{i}|\psi] \right\} \mbox{Beta}(1,1)
 \]
 Remember that \mbox{Beta}(1,1) is equivalent to \mbox{Uniform}(0,1). The beta distribution is the conjugate prior to the binomial and 
 Bernoulli distributions and the general form of a full conditional of a beta-binomial model 
@@ -945,7 +945,7 @@ with $x_{i} \sim \mbox{Bernoulli} (p) $ and $p \sim \mbox{Beta}(a,b)$ is
 \]
 In our case that means
 \[
-[\psi|z_{i}] \sim \mbox{Beta}(1 + \sum z_{i}, 1 + M - \sum z_{i})
+[\psi|z_{i}] \propto \mbox{Beta}(1 + \sum z_{i}, 1 + M - \sum z_{i})
 \]
 
 What we've done here is identify each of the full conditional
@@ -972,12 +972,10 @@ p[kp]<-p.cand[kp]
 lp[kp]<-lp.cand[kp]
 \end{verbatim}
 
-Updating the $z_{i}$ is essentially analogous to updating the $p_{i}$
-(although they can be updated directly from their
-full-conditional). The parameters $\mu_{p}$ and $\sigma_{p}$ are also updated using MH steps (see the code for $\mu_{p}$ below). In truth, we could also sample $\mu_{p}$
+The parameters $\mu_{p}$ and $\sigma_{p}$ are also updated using MH steps (see the code for $\mu_{p}$ below). In truth, we could also sample $\mu_{p}$
 and $\sigma_{p}^{2}$ directly with certain choices of prior
 distributions. For example, if $\mu_{p} \sim \mbox{Normal}(0, 1000)$
-then the full conditional for $\mu_{p}$ is also normal (see
+then the full conditional for $\mu_{p}$ is also Normal (see
 sec. \ref{mcmc.sec.gibbs}), etc..
 
 \begin{verbatim}
@@ -993,12 +991,15 @@ if(runif(1)<exp(llcand-ll)) {
 }
 \end{verbatim}
 
-Finally, for $\psi$ we can easily sample directly from the beta distribution:
+For $\psi$ we can easily sample directly from the beta distribution:
 
 \begin{verbatim}
 psi<-rbeta(1, sum(z) + 1, M-sum(z) + 1)
 \end{verbatim}
 
+To update the $z_{i}$ we have opted for a MH updater 
+(although they could be updated directly from their
+full-conditional). Since $z_{i}$ can only take the values of 0 or 1, we generate candidate values using \verb#z.cand<-ifelse(z==1,0,1)#.
 You can check out the full code by invoking \mbox{\tt modelMh()} from the {\bf R} package \mbox{\tt scrbook}.
 
 \section{MCMC algorithm for model SCR0}
@@ -1011,7 +1012,7 @@ any individual, site or time specific covariates) with both a Poisson
 and a Binomial encounter process.  As usual, we will have to go
 through two general steps before we write the MCMC algorithm:
 \begin{itemize}
-\item[  (1)] Identify your model with all its components (including
+\item[  (1)] Identify the model with all its components (including
     priors)
 \item[  (2)] Recognize and express the full conditional distributions for
     all parameters
@@ -1030,7 +1031,7 @@ ${\bf s}_i$, are uniformly distributed across the state space ${\cal S}$,
 \[
 {\bf s}_i  \sim \mbox{Uniform}({\cal S})
 \]
-and that the number of times individual $i$ encounters trap $j$, $y_{ij}$, is a random Poisson variable with mean $\lambda_{ij}$,
+and that the number of times individual $i$ encounters trap $j$, $y_{ij}$, is a Poisson variable with mean $\lambda_{ij}$,
 \[
 y_{ij} \sim \mbox{Poisson}(\lambda_{ij})
 \]
@@ -1044,7 +1045,7 @@ ${\bf x}_{j}$, say $d_{ij} = ||{\bf s}_{i} - {\bf x}_{j}||$, of the half-normal 
 where $\lambda_0$ is the baseline trap encounter rate at $d_{ij}=0$ and $\sigma$ controls the shape of the half-normal function.
 
 In order to estimate the number of ${\bf s}_i$ in ${\cal S}$ (or any
-subset of ${\cal S}$), $N$, we use data augmentation (sec. \ref{closed.sec.da}) and create $M-n$ all-0 encounter histories, where $n$ is the number of individuals we observed and $M$ is a somewhat arbitrary number that is larger than $N$. We estimate $N$ by summing over the auxiliary data augmentation variables, $z_i$, which is 1 if the individual is part of the population and 0 if not, and assume that $z_i$ is a random Bernoulli variable,
+subset of ${\cal S}$), $N$, we use data augmentation (sec. \ref{closed.sec.da}) and create $M-n$ all-zero encounter histories, where $n$ is the number of individuals we observed and $M$ is a somewhat arbitrary number that is larger than $N$. We estimate $N$ by summing over the auxiliary data augmentation variables, $z_i$, which is 1 if the individual is part of the population and 0 if not, and assume that $z_i$ is a Bernoulli random variable,
 \[
 z_{i} \sim \mbox{Bernoulli}(\psi)
 \]
@@ -1055,19 +1056,19 @@ To link the two model components, we modify our trap encounter model to
 \]
 The model has the following structural parameters, for which we need to specify priors:
 \begin{itemize}
-\item[ $\psi$:] the $\mbox{Uniform}(0,1)$ is required as part of the data augmentation procedure and in general is a natural choice of an uninformative prior for a probability. It will also lead to conjugacy as we saw in the example of model Mh, so that we can update $\psi$ directly from its full conditional distribution using Gibbs sampling.
+\item[ $\psi$:] the $\mbox{Uniform}(0,1)$ is required as part of the data augmentation procedure and in general is a natural choice of an uninformative prior for a probability. It will also lead to conjugacy as we saw in the example of model $M_h$, so that we can update $\psi$ directly from its full conditional distribution using Gibbs sampling.
 \item[ ${\bf s}_{i}$:] since ${\bf s}_{i}$ is a pair of coordinates it is two-dimensional and we use a uniform prior limited by the extent of our state-space over both dimensions.
 \item[ $\sigma$:] we can conceive several priors for $\sigma$ but let's assume an improper prior, one that is Uniform over $(-\infty, \infty)$. We will see why this is convenient when we construct the full conditionals for $\sigma$.
 \item[ $\lambda_{0}$:] analogous, we will use a $\mbox{Uniform}(-\infty, \infty)$ improper prior for $\lambda_{0}$.
 \end{itemize}
-The parameter that is the objective of our modeling, $N$, is a derived parameter that we can simply obtain by summing all $z_i$:
+The parameter that is the objective of our modeling, $N$, is a derived parameter that we can obtain by summing all $z_i$:
 \[
 N = \sum_{i=1}^{M} z_{i}
 \]
 
 {\bf Step 2 -- Construct the full conditionals:}
 Having completed step 1, let's look at the full conditional distributions for some of these parameters.
-We find that with improper priors, full conditionals are proportional only to the likelihood of the observations; for example, take the movement parameter $\sigma$:
+We find that with improper priors, full conditionals are proportional only to the likelihood of the observations; for example, consider $\sigma$:
 \[
 [\sigma|{\bf s}, \lambda_{0}, {\bf z}, {\bf y}] \propto \left\{ \prod_{i} [y_{i}| {\bf
     s}_{i}, \lambda_{0}, z_{i}, \sigma] \right\}  [\sigma]
@@ -1099,7 +1100,7 @@ use MH steps for
 all of these parameters. Similar to the random intercepts in our
 Poisson GLMM, we update each ${\bf s}_i$ individually. Note that to be fully
 correct, the full conditional for ${\bf s}_i$ contains both the likelihood and
-prior component, since we did not specify an improper, but a Uniform
+prior component, since we did not specify an improper, but a proper Uniform
 prior on ${\bf s}_i$. However, with a Uniform distribution the probability
 density of any value is 1/(upper limit - lower limit) =
 constant. Thus, the prior components are identical for both the
@@ -1134,12 +1135,10 @@ the term has to be taken into account when updating $z_i$:
             }
         }
 \end{verbatim}
-
-$\psi$
- is a hyperparameter of the model, with an uninformative prior 
+The parameter $\psi$ is a hyperparameter of the model, with an uninformative prior 
  distribution of $\mbox{Uniform}(0,1)$ or $\mbox{Beta}(1,1)$, so that
 \[
-[psi|{\bf z}] \propto \mbox{Beta}(1 + \sum_i z_i, 1 + M-\sum_i z_i)
+[\psi|{\bf z}] \propto \mbox{Beta}(1 + \sum_i z_i, 1 + M-\sum_i z_i)
 \]
 
 
@@ -1157,7 +1156,7 @@ y_{ij} \sim \mbox{Binomial} (p_{ij}, K)
 \]
 Where $p_{ij}$ is some function of distance between ${\bf s}_{i}$ and trap location ${\bf x}_{j}$. Here we use:
 \[
-p_{ij}=1-exp(-\lambda_{ij})
+p_{ij}=1-\mbox{exp}(-\lambda_{ij})
 \]
 Recall from Chapt. \ref{chapt.glms} that this is the complementary log-log (cloglog) link function, which constrains $p_{ij}$ 
 to fall between 0 and 1.
@@ -1188,7 +1187,7 @@ Another possibility is to model variation in the individual and site
 specific detection probability,  $p_{ij}$, directly, without any 
 transformation, such that
 \[
-p_{ij} = p_0 \times exp(-d_{ij}^2/(2\sigma^2))
+p_{ij} = p_0 \times \mbox{exp}(-d_{ij}^2/(2\sigma^2))
 \]
 and $p_0 \in [0,1]$.
 This formulation is analogous to how detection probability is modeled 
@@ -1258,7 +1257,7 @@ mod0<-SCR0binom.cl(y=Xaug, X=trapmat, M=M, xl=xl, xu=xu, yl=yl,
 Before, we used simple {\bf R} commands to look at model results. 
 However, there is a specific {\bf R} package to summarize MCMC 
 simulation output and perform some convergence diagnostics -- package 
-coda \citep{plummer_etal:2006}. Download and install coda, then 
+coda \citep{plummer_etal:2006}. Download and install {\tt coda}, then 
 convert your model output to an mcmc object
 \begin{verbatim}
   chain<-mcmc(mod0)
@@ -1273,7 +1272,7 @@ Start by looking at time series plots of your Markov chains using
  similar to what we did before using the \verb#hist()# and \verb#plot()# 
  commands. Fig. \ref{mcmc.fig.timeseries} shows an example of these plots for $\sigma$ and $\lambda_0$. Time series plots will tell 
  you several things:
-First, recall from Sect. \ref{mcmc.sec.mh} that the way the chains move 
+First, recall from sec. \ref{mcmc.sec.mh} that the way the chains move 
 through the parameter space gives you an idea of whether your MH 
 steps are well tuned. If chains were constant over many iterations 
 you would need to decrease the tuning parameter of the (Normal) 
@@ -1286,7 +1285,7 @@ parameter so that the parameter space is explored more efficiently.
 \begin{center}
 \includegraphics[height=3in]{Ch7/figs/timeseries}
 \end{center}
-\caption{Time series and posterior density plots for $\sigma$ and $\lambda_0$.}
+\caption{Time series and posterior density plots for $\sigma$ and $\lambda_0$ for the Fort Drum black bear data.}
 \label{mcmc.fig.timeseries}
 \end{figure}
 
@@ -1304,7 +1303,7 @@ There may not be enough information in your data to estimate model parameters an
 \begin{center}
 \includegraphics[height=3in]{Ch7/figs/timeseries2}
 \end{center}
-\caption{Time series and posterior density plots of $\psi$ and $N$ for the bear data set truncated by the upper limit of $M$ (500).}
+\caption{Time series and posterior density plots of $\psi$ and $N$ for the Fort Drum black bear data truncated by the upper limit of $M$ (500).}
 \label{mcmc.fig.timeseries2}
 \end{figure}
 
@@ -1316,8 +1315,8 @@ be part of evaluating your model output. If you use {\bf WinBUGS}
  through the \mbox{\tt R2WinBUGS} package, the \verb#print()# command 
  will automatically return the effective sample size for all monitored 
  parameters. In the coda package there are several functions you can use 
- to do so. \verb#effectiveSize()# will directly give you an estimate 
- of the effective sample size for you parameters:
+ to do so. The function \verb#effectiveSize()# will directly give you an estimate 
+ of the effective sample size for the parameters:
 \begin{verbatim}
 effectiveSize(chain)
     sigma      lam0       psi         N 
@@ -1338,7 +1337,7 @@ In the present case we see that autocorrelation is especially high for the
 parameter $\sigma$ and our effective sample size for this parameter is 
 3! 
 This means we would have to run the model for much longer to 
-obtain a reasonable effective sample size. Unfortunately, with many SCR models we observe high degrees of serial autocorrelation. For now, let's continue using this small set of samples to continue looking at the output.
+obtain a reasonable effective sample size. Unfortunately, with many SCR data sets we observe high degrees of serial autocorrelation. For now, let's continue using this small number of samples to look at the output.
 
 
 \subsection{Summary results}
@@ -1432,8 +1431,8 @@ rejectionRate(chain)
      sigma       lam0        psi          N 
 0.42988598 0.78775755 0.00000000 0.03160632 
 \end{verbatim}
- Recall (\ref{mcmc.sec.mh}) that rejection rates should lie between 0.2 and 0.8, so our tuning seems to have been appropriate here. $\psi$ is never rejected since we update it with Gibbs sampling, where all candidate values are kept. And since $N$ is the sum of all $z_i$, all it takes for $N$ to change from one iteration to the next are small changes in the z-vector, so the rejection rate of $N$ is always low.
-If you have run several parallel chains, you can combine them into a single mcmc object using the \verb#mcmc.list()# command on the individual chains (note that each chain has to be converted to an mcmc object before combining them with \verb#mcmc.list()#). You can then easily obtain the Gelman-Rubin diagnostic \citep{gelman_etal:2004}, in {\bf WinBUGS} called R-hat, using \verb#gelman.diag()#, which 
+ Recall (sec. \ref{mcmc.sec.mh}) that rejection rates should lie between 0.2 and 0.8, so our tuning seems to have been appropriate here. Draws of the parameter $\psi$ are never rejected since we update it with Gibbs sampling, where all candidate values are kept. And since $N$ is the sum of all $z_i$, all it takes for $N$ to change from one iteration to the next are small changes in the z-vector, so the rejection rate of $N$ is always low.
+If you have run several parallel chains, you can combine them into a single mcmc object using the \verb#mcmc.list()# command on the individual chains (note that each chain has to be converted to an mcmc object before combining them with \verb#mcmc.list()#). You can then easily obtain the Gelman-Rubin diagnostic \citep{gelman_etal:2004}, in {\bf WinBUGS} called Rhat, using \verb#gelman.diag()#, which 
 will indicate if all chains have converged to the same stationary distribution.
 For details on these and other functions, see the \mbox{\tt coda} manual, 
 which can be found (together with the package) on the CRAN mirror.
@@ -1462,7 +1461,7 @@ plot(xlim, ylim, type='n')
 abline(a=4, b=0.4)
 \end{verbatim}
 The Y coordinates limiting your state space to the habitat that si suitable to the species you study can now be expressed as a linear function of the X coordinates, in this case, $Y=4+0.4 \times X$.
-Toinclude this new limit in our WinBUGS model, we need to change the following:
+Toinclude this new limit in our {\bf WinBUGS} model, we need to change the following:
 \begin{verbatim}
 #draw SX and SY as before
 SX[i]~dunif(xlim[1],xlim[2])
@@ -1477,12 +1476,12 @@ In[i] ~ dbern(pIn[i])
 {\tt In} is a vector of $M$ 1's, passed as data to the model. If pIn = 0, the likelihood will be 0 and the candidate [SX, SY] pair will be rejected. If pIn = 1, this bit of the likelihood is equal to 1, and whether or not the the candidate pair of coordinates is accepted depends only on capture history of $i$. This approach can be very useful in some situations but is clearly restricted by the functional form of the relationship between SX and SY that it requires.
 
 In {\bf R}, we are much more flexible, as we can 
-use the actual state-space polygon to constrain our ${\bf s}_i$. 
+use the actual state-space polygon to constrain ${\bf s}_i$. 
 To illustrate that, let's look at a camera 
 trapping study of raccoons (\emph{Procyon lotor}) conducted 
 on South Core Banks, a barrier island within Cape Lookout National Seashore, North Carolina 
 (details of the sudy can be found in \citet{sollmann_etal:inprepecology} and in Chapt. \ref{chapt.partialID} where we present the analysis of this data set with spatial mark-resight models). Since camera-traps were spread across the entire length of the island, we set the state space to be delineated by the shore line of the island (Fig. \ref{mcmc.fig.raccooncamera}), which clearly cannot easily be approximated as a rectangle. 
-Instead, within {\bf R} we can simply use an actual shapefile of the island. 
+Instead, within {\bf R} we can use an actual shapefile of the island. 
 
 \begin{figure}
 \begin{center}
@@ -1492,7 +1491,7 @@ Instead, within {\bf R} we can simply use an actual shapefile of the island.
 \label{mcmc.fig.raccooncamera}
 \end{figure}
 
-In other circumstances you may still want to create your state space as before, by adding some buffer to your trapping grid, but you may find that the resulting rectangle includes water bodies, paved parking lots or any other kind of habitat you know is never used by the species you study. 
+In other circumstances you may still want to create the state space as before, by adding some buffer to your trapping grid, but you may find that the resulting rectangle includes water bodies, paved parking lots or any other kind of habitat you know is never used by the species you study. 
 In order to precisely describe the state-space, these features need to be 
 removed. You can create a precise state-space polygon in {\bf ArcGIS} and 
 read it into {\bf R}, or create the polygon directly within {\bf R}, by intersecting two shape files -- one of the rectangle defining the outer limits of your state-space state and one of the landscape feature you want to remove.
@@ -1545,7 +1544,7 @@ To include this polygon into our MCMC sampler we need one last spatial
 {\bf R} package, \mbox{\tt sp} \citep{pebesma_bivand:2011}, which has a 
 function, \verb#over()#, which allows us to check if a pair of coordinates 
 falls within a polygon or not. All we have to do is embed this new check 
-into the updating steps for ${\bf s}$:
+into the updating steps for the $s_i$:
 \begin{verbatim}
     #draw candidate value
 Scand <- as.matrix(cbind(rnorm(M, S[,1], 2), rnorm(M, S[,2], 2)))
@@ -1560,7 +1559,7 @@ for(i in 1:M) {
 ... [rest of the updating step remains the same]
 \end{verbatim}
 Note that it is much more time-efficient to draw all $M$ candidate values 
-for $s$ and check once if they fall within the state-space, rather than 
+for {\bf $s$} and check once if they fall within the state-space, rather than 
 running the \verb#over()# command for every individual pair of 
 coordinates. To make sure that our initial values for {\bf s} also fall 
 within the polygon of ${\cal S}$, we use the function \verb#runifpoint()# 
