@@ -398,7 +398,7 @@ We will formalize the unknown-$N$ problem next.
 
 Here we build on the previous introduction to integrated likelihood
 but we consider now the case in which $N$ is unknown. We will see that
-adapting the analysis based on the known-$N$ model is really
+adapting the analysis based on the known-$N$ model is 
 straightforward for the more general problem. The main distinction is
 that we don't observe the all-zero encounter history so we have to
 make sure we compute the probability for that encounter history which
@@ -411,7 +411,8 @@ ${N \choose n}$ ways to realize a sample of size $n$. The
 combinatorial term involves the unknown $n_{0}$ and thus it must be
 included in the likelihood.
 
-Therefore, we take the following 3 components: (1) the marginal
+Therefore, to compute the likelihood, we require 
+the following 3 components: (1) the marginal
 probability of each ${\bf y}_{i}$ as before,
 \[
   [{\bf y}_{i}|{\bm \alpha}] = 
@@ -427,14 +428,14 @@ the probability of an all-0 encounter history:
  the marginal likelihood has this form:
 \[
  {\cal L}({\bm \alpha}, n_{0}| {\bf y})  = \frac{N!}{n! n_{0}!}
- \left\{ \prod_{i}  [{\bf y}_{i}|{\bm \alpha}] \right\}
+ \left\{ \prod_{i=1}^{n}  [{\bf y}_{i}|{\bm \alpha}] \right\}
  (\pi_{0})^{n_{0}}.
 \]
 This is discussed in \citet[][p. 379]{borchers_efford:2008} as the
 conditional-on-$N$ form of the likelihood -- we might also call it
 ``binomial form'' because of its appearance. 
 
-Operationally then, things proceed much as before: 
+Operationally, things proceed much as before: 
 We compute the marginal probability of each observed ${\bf y}_{i}$,
 i.e., by removing the latent ${\bf s}_{i}$ by integration. In
 addition, we 
@@ -444,7 +445,6 @@ accomplish this by ``padding'' the data set with a single encounter
 history having $y_{n+1,j}=0$ for all traps $j=1,2,\ldots,J$. Then we
 be sure to include the combinatorial term in the likelihood or
 log-likelihood computation. We demonstrate this shortly.
-
 To analyze a specific case, we'll read in our fake data set (simulated
 using the parameters given above). To set some things up in our
 workspace we do this:
@@ -452,17 +452,16 @@ workspace we do this:
 data<-simSCR0.fn(discard0=TRUE,sd=2013)
 y<-data$Y
 nind<-nrow(y)
-X<-data$traplocs
+traplocs<-data$traplocs
 J<-nrow(X)
 K<-data$K
 \end{verbatim}
 Recall that these data were generated with $N=100$, on an $8 \times 8$ unit
-state-space representing the trap locations (${\bf X}$) buffered by 2 units.
+state-space representing the trap locations  buffered by 2 units.
 
 As before, the likelihood is defined in the {\bf R} workspace as an
 {\bf R}
-function, \mbox{\tt intlik2} (contained in the package \mbox{\tt
-  scrbook}),
+function, \mbox{\tt intlik2}, 
  which takes an argument being the unknown parameters of the
 model and additional arguments as prescribed. In particular, 
  we provide the encounter history matrix ${\bf y}$, the trap locations
@@ -515,7 +514,7 @@ the gradient, and the numerical Hessian which is useful for obtaining
 asymptotic standard errors (see below):
 \begin{verbatim}
 starts<-c(-2.5,2,log(4))
-frog<-nlm(intlik2,starts,hessian=TRUE,y=y,X=X,delta=.2,ssbuffer=2)
+frog<-nlm(intlik2,starts,hessian=TRUE,y=y,X=traplocs,delta=.2,ssbuffer=2)
 
 There were 50 or more warnings (use warnings() to see the first 50)
 
@@ -542,8 +541,14 @@ expect for a single realization. We usually will present an estimate of uncertai
 with this MLE which we can obtain by inverting the Hessian. Note that
 $Var(\hat{N}) = n + \mbox{Var}(\hat{n}_{0})$.
 Since we
-have parameterized the model in terms of log($n_{0}$) we use a delta
-approximation to obtain the variance on the scale of $n_{0}$ as
+have parameterized the model in terms of log($n_{0}$) we use the delta
+method\footnote{
+We found a good set of notes on the delta approximation on Dr. David
+Patterson's ST549 notes: 
+\url{http://www.math.umt.edu/patterson/549/Delta.pdf}
+}
+\citep[][Appendix F4]{williams_etal:2002}
+ to obtain the variance on the scale of $n_{0}$ as
 follows:
 \begin{verbatim}
 (exp(4.2328)^2)*solve(frog$hessian)[3,3]
@@ -597,14 +602,16 @@ Further extensions: It should be straightforward to
 
 \subsection{Integrated Likelihood using the model under data augmentation } 
 
-Note that this likelihood analysis is based on the standard likelihood
+The likelihood analysis developed in the previous sections
+is based on the likelihood
 in which $N$ (or $n_{0}$) is an explicit parameter. This is usually called
-the ``joint likelihood'' or ``unconditional likelihood''.  We could also
-express the joint likelihood using data augmentation, replacing the
+the ``full likelihood'' or sometimes ``unconditional likelihood''.  
+We could also
+express the  likelihood using data augmentation, replacing the
 parameter $N$ with $\psi$ \citep[e.g., see Sec. 7.1.6][for an example]{royle_dorazio:2008}.
 We don't go into detail here, but we note that the
 likelihood under data augmentation is a zero-inflated binomial
-mixture – precisely an occupancy type model \citep{royle:2006}.
+mixture -- precisely an occupancy type model \citep{royle:2006}.
 Thus, while it is possible to carryout likelihood analysis of
 models under data augmentation, we primarily advocate data
 augmentation for Bayesian analysis.
@@ -635,28 +642,27 @@ trap-specific covariate with only 2 values), and also encounter
 probability varies over time in the form of a quadratic seasonal response.
 We consider models with behavioral response or fixed covariates in
 Chapt. \ref{chapt.covariates}.
-Although the integrated likelihood routines we provided above can be
+The integrated likelihood routines we provided above can be
 modified directly for such cases, which we leave to the interested
 reader to investigate. 
 
 Sex-specificity is more difficult to deal with since sex is not known
 for uncaptured individuals (and sometimes not even for all captured
 individuals).  To analyze such models, we do Bayesian analysis of the
-joint likelihood facilitated by the use of data augmentation
-\citep{gardner_etal:2010jwm,russell_etal:2012}. For covariates that are
-not fixed and known for all individuals, it is somewhat more
+joint likelihood using  data augmentation
+\citep{gardner_etal:2010jwm,russell_etal:2012}, discussed further in
+Chapt. \ref{chapt.covariates}. For such covariates (i.e., that are
+not fixed and known for all individuals), it is somewhat more
 challenging to do MLE for these based on the joint likelihood as we
 have developed above. Instead it is more conventional to use what is
 colloquially referred to as the ``Huggins-Alho'' type model which is
 one of the approaches taken in the software package \mbox{\tt secr}
-\citep[][see Sec. \ref{mle.sec.secr}]{efford:2011}. This idea is
+\citep[][]{efford:2011} which we describe
+in sec. \ref{mle.sec.secr} below. This idea is
 motivated by thinking about unequal probability sampling methods known
 as Horvitz-Thompson sampling \citep[e.g.,
-see][]{overton_stehman:1995}.  We don't use that method anywhere in
-this book because it represents a paradigm shift in the inference
-framework which is done historically only for convenience (i.e., ease
-of constructing an estimator) and not for philosophical or theoretical
-reasons.
+see][]{overton_stehman:1995}.  
+
 
 
 \section{Classical model selection and assessment}
@@ -681,8 +687,7 @@ distance functions. As a result, we believe that doing too much model
 selection will invariably lead to over-fitting and thus over-statement
 of precision. This is the main reason that we haven't loaded you down
 with a basket of models for detection probability so far, although we
-discuss many possibilities in Chapt. \ref{chapt.gof} where we also
-discuss focus more attention on methods and applications of model selection.
+discuss many possibilities in Chapt. \ref{chapt.covariates}.
 
 
 {\bf Goodness-of-fit} -- For many standard capture-recapture models,
@@ -692,8 +697,10 @@ statistical tests. Similar strategies can be applied to SCR models
 using expected cell-frequencies based on the marginal distribution of
 the observations. Also, because computing MLEs is somewhat more
 efficient in many cases compared to Bayesian analysis, it is also
-sometimes easy to use bootstrap methods\footnote{I'm not sure if there
-  are references in the context of SCR models for this stuff....???}.
+sometimes easy to use bootstrap methods although, at the present time,
+we don't know of any applications of goodness-of-fit testing for SCR
+models based on likelihood inference\footnote{WE NEED TO LOOK INTO THIS!!}.
+
 
 %Bayesian goodness-of-fit, which we take up in more detail in
 %Chapt. \ref{chapt.gof}, is almost always addressed with Bayesian
@@ -714,14 +721,18 @@ Here we compute the MLEs for the wolverine data using an expanded
 version of the function we developed in the previous section. To
 accommodate that each trap might be operational a variable number of
 nights, we provided an additional argument to the likelihood function
-(allowing for a vector $K$), which requires also a modification to the
+(allowing for a vector ${\bf K}= (K_{1},\ldots,K_{J})$), which requires also a modification to the
 construction of the likelihood.  In addition,
 we accommodate  the state-space is a general rectangle, and
 we included a line in the code to compute the state-space area which
 we apply below for computing density.  The more general function
 (\mbox{\tt intlik3}) is given in the {\bf R} package \mbox{\tt scrbook}. 
 %It has a general
-%purpose wrapper named \mbox{\tt scr}\footnote{Not written yet} which has other capabilities too. 
+%purpose wrapper named \mbox{\tt scr}\footnote{Not written yet} which
+%has other capabilities too.
+Incidentally, this function also returns the area of the state-space for a given set
+of parameter values, as an attribute to the function value, which will
+be used in converting $\hat{N}$ to $\hat{D}$.
 To use this function to obtain the MLEs for the wolverine camera trap
 study, we execute the following commands (note: these are in the help
 file and will execute if you type \mbox{\tt example(intlik3)}:
@@ -733,7 +744,7 @@ data("wolverine")
 traps<-wolverine$wtraps
 traplocs<-traps[,1:2]/10000
 K.wolv<-apply(traps[,3:ncol(traps)],1,sum)
-traps<-cbind(1:nrow(traps),traps)  # pad an ID variable
+traps<-cbind(1:nrow(traps),traps)  # pad an arbitrary trap ID variable
 y3d<-SCR23darray.fn(wolverine$wcaps,traps)
 y2d<-apply(y3d,c(1,3),sum)
 
@@ -766,18 +777,14 @@ $iterations
 }
 Of course we're interested in obtaining an estimate of population size
 for the prescribed state-space, or density, and associated measures of
-uncertainty which we do using the delta method\footnote{
-We found a good set of notes on the delta approximation on Dr. David
-Patterson's ST549 notes: 
-\url{http://www.math.umt.edu/patterson/549/Delta.pdf}
-}
+uncertainty which we do using the delta method
 \citep[][Appendix F4]{williams_etal:2002}.
 To do all of that we need to manipulate the output of
 \mbox{\tt nlm} since we have our  estimate in terms of $\mbox{\tt
   log(n0)}$. We execute the following commands:
 {\small 
 \begin{verbatim}
-area<-attr(intlik3(starts,y=y2d,K=K.wolv,X=traplocs,delta=.2,ssbuffer=2),"SSarea")
+frog<-nlm(intlik3,starts,hessian=TRUE,y=y2d,K=K.wolv,X=traplocs,delta=.2,ssbuffer=2)
 Nhat<-nrow(y2d)+exp(frog$estimate[3])
 area<-attr(intlik3(starts,y=y2d,K=K.wolv,X=traplocs,delta=.2,ssbuffer=2),"SSarea")
 Dhat<- Nhat/area
@@ -793,10 +800,10 @@ SE
 } 
 So our estimate of density is $0.55$ individuals per ``standardized
 unit'' which is 100 $km^2$, because we divided UTM coordinates by
-10000.  So this is about 5.5 individuals per 1000 $km^2$ (the units
-reported by \citep{royle_etal:2011jwm}), with a SE of around 1.09
+10000.  So this is about 5.5 individuals per 1000 $km^2$,
+with a SE of around 1.09
 individuals.  This compares closely with $5.77$
-reported\footnote{check this!!!} in
+reported in
 sec. \ref{scr0.sec.wolverine} based on Bayesian
 analysis of the model.
 
