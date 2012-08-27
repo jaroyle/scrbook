@@ -14,68 +14,56 @@ Likelihood Analysis of Spatial Capture-Recapture Models
 %%   requires code from Rahel
 \vspace{.3in}
 
-
-
-In this book we mainly focus on Bayesian analysis of spatial
+We have so far mainly focused on Bayesian analysis of spatial
 capture-recapture models. And, in the previous chapters we learned how
 to fit some basic spatial capture-recapture models using a Bayesian
 formulation of the models analyzed in BUGS engines including {\bf
   WinBUGS} and {\bf JAGS}.  Despite our focus on Bayesian analysis, it
-is instructive to develop the basic conceptual and methodological
-ideas behind classical analysis based on likelihood methods and
-frequentist inference.  
-This has been the approach taken by
+is instructive to develop the basic concepts and ideas behind
+classical analysis based on likelihood methods and frequentist
+inference for SCR models. This has been the approach taken by
 \citet{borchers_efford:2008, dawson_efford:2009} and related papers.
-Simple SCR models can be analyzed
-fairly easily using such methods and, including even some classes of
-models that we have not been able to fit using Bayesian methods. One
-such class of models are those
-that account for ecological distance in the detection model,
-which we cover in  Chapt. \ref{chapt.ecoldist}).
+Therefore, in this chapter, we provide some conceptual and technical
+foundation for likelihood-based analysis of spatial capture-recapture
+models. We recognized earlier (Chapt. \ref{chapt.scr0}) that SCR
+models are versions of binomial (or other) GLMs, but with random
+effects, i.e., GLMMs. These models are routinely analyzed by
+likelihood methods. In particular, likelihood analysis is based on the
+integrated likelihood in which the random effects are removed by
+integration from the likelihood. In SCR models, the 2-dimensional
+coordinate, ${\bf s}$, is a bivariate random effect. Beyond that,
+there is little difference between likelihood analysis of SCR models
+and ordinary GLMMs.
 
-
-This chapter provides some conceptual and technical footing for
-likelihood-based analysis of spatial capture-recapture models. We
-recognized earlier (Chapt. \ref{chapt.scr0}) that SCR models are versions of
-binomial (or other) GLMs, but with random effects, i.e., GLMMs. These
-models are 
-routinely analyzed by likelihood methods. In particular, likelihood
-analysis is based on the integrated likelihood in which the random
-effects are removed by integration from the likelihood. In SCR models,
-the 2-dimensional coordinate, ${\bf s}$, is a
-bivariate random effect. 
-
-In this chapter, we show that it is
-straightforward to compute the maximum likelihood estimates (MLE) for
-SCR models by integrated likelihood. We develop the MLE framework
-using {\bf R}, and we also provide a basic introduction to an {\bf R} package
-\mbox{\tt secr} \citep{efford:2011} which is based on the stand-alone
-package 
-{\bf DENSITY} \citep{efford_etal:2004}.
- To set the context we analyze the SCR model
-here when $N$ is known because, in that case, it is precisely a GLMM and
-does not pose any difficulty at all. We generalize the model to allow
-for unknown $N$ using both conventional ideas based on the ``joint
-likelihood'' \citep[e.g.,][]{borchers_etal:2002}
-and also using a formulation
-based on data augmentation.  We obtain the MLEs for 
-the SCR model from the wolverine camera trapping study \citep{magoun_etal:2011}
- analyzed in previous chapters to compare/contrast the
-results.
+We will show here that it is straightforward to compute the maximum
+likelihood estimates (MLE) for SCR models by integrated or marginal
+likelihood. We develop the MLE framework using {\bf R}, and we also
+provide a basic introduction to an {\bf R} package \mbox{\tt secr}
+\citep{efford:2011} which mostly does likelihood analysis of SCR
+models (see also the the stand-alone package {\bf DENSITY}
+\citep{efford_etal:2004}).  To set the context for likelihood analysis
+of SCR models, we first analyze the SCR model here when $N$ is known
+because, in that case, it is precisely a GLMM and does not pose any
+difficulty at all. We generalize the model to allow for unknown $N$
+using both conventional ideas based on the ``joint likelihood''
+\citep[e.g.,][]{borchers_etal:2002} and also using a formulation based
+on data augmentation.  We obtain the MLEs for the SCR model from the
+wolverine camera trapping study \citep{magoun_etal:2011} analyzed in
+previous chapters to compare/contrast the results.
 
 \section{MLE with known N}
 
 We noted in Chapt. \ref{chapt.scr0} that, with $N$ known, the basic SCR model is a
 type of binomial regression with a random effect. For such models we
-can easily obtain maximum likelihood estimators of model parameters
+can  obtain maximum likelihood estimators of model parameters
 based on integrated likelihood. The integrated likelihood is based on
 the marginal distribution of the data $y$ in which the random effects
-are removed by integration. Conceptually, our model is a specification
-of the conditional-on-${\bf s}$ model $[y|{\bf s},\alpha]$ and we have
+are removed by integration. Conceptually, our SCR model is a specification
+of the conditional-on-${\bf s}$ model $[y|{\bf s},{\bm \alpha}]$ and we have
 a ``prior distribution'' for ${\bf s}$, say $[{\bf s}]$, and the
 marginal distribution of the data $y$ is
 \[
-[y|\alpha] =  \int_{\bf s} [y|{\bf s},\alpha][{\bf s}] d{\bf s}.
+[y|{\bm \alpha}] =  \int_{\bf s} [y|{\bf s},{\bm \alpha}][{\bf s}] d{\bf s}.
 \]
 When viewed as a function of $\alpha$ for purposes of estimation, the
 marginal distribution $[y|\alpha]$ is often referred to as the {\it
@@ -86,10 +74,11 @@ the simplest SCR model with known-$N$ in order to understand the
 underlying mechanics and basic concepts. These are directly relevant to
 the manner in which many capture-recapture models are classically
 analyzed, such as model $M_h$, and individual covariate models (see
-Chapt. \ref{chapt.closed} and  \citet[][chapt. 6]{royle_dorazio:2008}). To develop the integrated
-likelihood for SCR models, we first identify the conditional
-likelhiood. 
+Chapt. \ref{chapt.closed}).
 
+ To develop the integrated
+likelihood for SCR models, we first identify the conditional-on-${\bf s}$
+likelhiood. 
 The observation model for each encounter observation $y_{ij}$,
 specified conditional on ${\bf s}_{i}$, is 
 \begin{equation}
@@ -97,14 +86,14 @@ y_{ij}| {\bf s}_{i} \sim \mbox{Binomial}(K, p_{\alpha}({\bf x}_{j},{\bf s}_{i}))
 \label{mle.eq.cond-on-s}
 \end{equation}
 where we have indicated the dependence of $p_{ij}$ on ${\bf s}$ and
-parameters $\alpha$
+parameters ${\bm \alpha}$
 explicitly.
 For the random effect we have ${\bf s}_{i} \sim  \mbox{Uniform}({\cal
   S})$.
 The joint distribution of the data for individual $i$ is the product
 of $J$ such terms (i.e., contributions from each of $J$ traps).
 \[
-  [{\bf y}_{i} | {\bf s}_{i} , \alpha] = 
+  [{\bf y}_{i} | {\bf s}_{i} , {\bm \alpha}] = 
   \prod_{j=1}^{J} \mbox{Binomial}(K, p_{\alpha}({\bf x}_{j},{\bf s}_{i}) )
 \]
 We note this assumes that encounter of individual $i$ in each
@@ -119,8 +108,8 @@ as
 the likelihood. That
 is, we compute:
 \[
-  [y|\alpha] = 
-\int_{{\cal S}}  [ {\bf y}_{i} |{\bf s}_{i}, \alpha] g({\bf s}_{i}) d{\bf s}_{i}
+  [y|{\bm \alpha}] = 
+\int_{{\cal S}}  [ {\bf y}_{i} |{\bf s}_{i}, {\bm \alpha}] g({\bf s}_{i}) d{\bf s}_{i}
 \]
 In most SCR models, $g({\bf s}) = 1/||{\cal S}||$ (but see Chapt. \ref{chapt.state-space} for
 alternative specifications).
@@ -128,14 +117,15 @@ alternative specifications).
 The joint likelihood for all $N$ individuals, assuming independence of
 encounters among individuals, is the product of $N$ such terms:
 \[
-{\cal L}(\alpha | {\bf y}_{1},{\bf y}_{2},\ldots, {\bf y}_{N}) =     \prod_{i=1}^{N}
-[{\bf y}_{i}|\alpha]
+{\cal L}({\bm \alpha} | {\bf y}_{1},{\bf y}_{2},\ldots, {\bf y}_{N}) =     \prod_{i=1}^{N}
+[{\bf y}_{i}|{\bm \alpha}]
 \]
 We emphasize that two independence assumptions are explicit in this
 development: independence of trap-specific encounters within
 individuals and also independence among individuals. In particular,
 this would only be valid when individuals are not physically
-restrained or removed upon capture, and when traps do not ``fill up''.
+restrained or removed upon capture, and when traps do not ``fill up''
+(i.e., this is model SCR0, from Chapt. \ref{chapt.scr0}).
 
 The key operation for computing the likelihood is solving a
 2-dimensional integration problem. There are some general purpose {\bf
@@ -157,13 +147,13 @@ integrand on a regular grid of points of equal area and compute the
 average of
 the integrand over that grid of points. 
 Let $u=1,2,\ldots,nG$ index a grid of
-$nG$ points, ${\bf s}_{u}$,  where the area of grid cell $u$ is
+$nG$ points, ${\bf s}_{u}$,  where the area of grid cells is
 constant, say $A$.
 In this case, the integrand, i.e., the marginal pmf of 
 ${\bf y}_{i}$, is approximated by  
 \begin{equation}
-         [{\bf y}_{i}|\alpha] = \frac{1}{nG} \sum_{u=1}^{nG}  [ {\bf
-            y}_{i} |{\bf s}_u, \alpha]
+         [{\bf y}_{i}|{\bm \alpha}] = \frac{1}{nG} \sum_{u=1}^{nG}  [ {\bf
+            y}_{i} |{\bf s}_u, {\bm \alpha}]
 \label{mle.eq.intlik}
 \end{equation}
 
@@ -171,7 +161,7 @@ This is a specific case of the general expression that could be used
 for approximating the integral for any arbitrary (bivariate or otherwise)
 distribution $g({\bf s})$. The general case is
 \[
-[y]  = \frac{A}{nG} \sum_{u} [y|{\bf s}_{u}] [{\bf s}_{u}]
+[y|{\bm \alpha}]  = \frac{A}{nG} \sum_{u} [y|{\bf s}_{u},{\bm \alpha}] [{\bf s}_{u}]
 \]
  In the present context it happens that  $[{\bf s}] = (1/A)$
 and thus the grid-cell area cancels in the above
@@ -189,7 +179,7 @@ optimization based on the integrated likelihood using simulated data
  (i.e., following that from Chapt. \ref{chapt.scr0}). Using \mbox{\tt simSCR0.fn}
  we simulate data for 100 individuals and a 25 trap array
 laid out in a $5 \times 5$ grid of unit spacing.  The specific encounter
-model is the half-normal model. The 100 activity centers were
+model is the Gaussian model. The 100 activity centers were
 simulated on a state-space defined by a $8 \times 8$ square 
 within which the
 trap array was centered (thus the trap array is buffered by 2
@@ -204,8 +194,7 @@ data<-simSCR0.fn(discard0=FALSE,sd=2013)
 y<-data$Y
 traplocs<-data$traplocs
 nind<-nrow(y)
-X<-data$traplocs
-J<-nrow(X)
+J<-nrow(traplocs)
 K<-data$K
 Xl<-data$xlim[1]
 Yl<-data$ylim[1]
@@ -213,20 +202,19 @@ Xu<-data$xlim[2]
 Yu<-data$ylim[2]
 \end{verbatim}
 }
-Now we need to define the integration grid, say ${\bf G}$, which we do with
+{\flushleft Now } we need to define the integration grid, say ${\bf G}$, which we do with
 the following set of {\bf R} commands (here, \mbox{\tt delta} is the grid spacing):
 {\small
 \begin{verbatim}
 delta<- .2
 xg<-seq(Xl+delta/2,Xu-delta/2,by=delta) 
 yg<-seq(Yl+delta/2,Yu-delta/2,by=delta) 
-npix<-length(xg)          # assumes xg and yg same dimension here
-area<- (Xu-Xl)*(Yu-Yl)/((npix)*(npix)) # don’t need area for anything
+npix<-length(xg)          # assumes square state-space here
 G<-cbind(rep(xg,npix),sort(rep(yg,npix)))
 nG<-nrow(G)
 \end{verbatim}
 }
-In this case, the integration grid is set up as a grid with spacing
+{\flushleft In this case}, the integration grid is set up as a grid with spacing
 $\delta = 0.2$ which produces a $40 \times 40$ grid of points for evaluating the
 integrand if the state-space buffer is set at 2.
 
@@ -236,13 +224,13 @@ in general, you would read these files into {\bf R}, e.g., from a .csv
 file.  In addition to these data objects, we need to have defined the
 quantities $G$ and $nG$ associated with the integration grid.
 However, instead of worrying about making all of these objects and
-keeping track of them we just put that code above into the likelihood
+keeping track of them we just put that code above into a
 function, say \mbox{\tt intlik1}, and pass $\delta$ as an additional
 (optional) argument and a few other things that we need such as the
 boundary of the state-space over which the integration (summation) is
-being done. This function is available in the package \mbox{\tt
-  scrbook}, use {\tt ?intlik1} at the {\bf R} prompt for the help file
-with the code which is reproduced here:
+being done. This function is available in the \mbox{\tt
+  scrbook} package (use {\tt ?intlik1} at the {\bf R} prompt).
+ The code is reproduced here:
 
 {\small 
 \begin{verbatim}
@@ -283,7 +271,7 @@ nv<-c(rep(1,length(lik.marg)-1),n0)
 }
 
 
-The function accepts as input the encounter history matrix, $y$, the
+The function \mbox{\tt intlik1} accepts as input the encounter history matrix, $y$, the
 trap locations, $X$, and the state-space buffer. This allows us to
 vary the state-space buffer and easily evaluate the sensitivity of the
 MLE to the size of the state-space.  Note that we have a peculiar
@@ -350,9 +338,9 @@ the variance-covariance matrix using the command:
 > solve(frog$hessian)
 \end{verbatim}
 
-It is worth drawing attention to the fact that the estimates are
+It is worth drawing attention to the fact that the estimates are slightly
 different than the Bayesian estimates reported previously in
-Chapt. \ref{chapt.scr0}.  How can that be?!  There are several reasons
+sec. \ref{scr0.sec.winbugs1}.   There are several reasons
 for this.  First Bayesian inference is based on the posterior
 distribution and it is not generally the case that the MLE should
 correspond to any particular value of the posterior distribution. If
@@ -362,12 +350,13 @@ Bayesians almost always report posterior {\it means} and so there will
 typically be a discrepancy there. Secondly, we have implemented an
 approximation to the integral here and there might be a slight bit of
 error induced by that. We will evaluate that shortly. Third, the
-Bayesian analysis by MCMC is subject to some amount of Monte Carlo
+Bayesian analysis by MCMC is itself subject to some amount of Monte Carlo
 error which the analyst should always be aware of in practical
 situations.  All of these different explanations are likely
 responsible for some of the discrepancy. Accounting for these, we see
 general consistency between the two estimates.
 
+\begin{comment} 
 To compute the integrated likelihood we used a discrete representation
 of the state-space so that the integral could be approximated as a
 summation over possible values of ${\bf s}$ with each value being
@@ -380,8 +369,9 @@ model in order to be able to modify the state-space in a flexible
 manner. In that case, we could use the discretized state-space as the
 integration grid and just feed it into our integrated likelihood
 routine. 
+\end{comment}
 
-In summary, we note that, for the basic SCR model, integrated
+In summary, for the basic SCR model, integrated
 likelihood is a really easy calculation when $N$ is known. Even for $N$
 unknown it is not too difficult, and we will do that shortly.
 However, if you can solve the known-$N$ problem then you should be able
@@ -390,8 +380,8 @@ $N$ and computing the results for each value and then making a plot of
 the log-likelihood or AIC and choosing the value of $N$ that produces
 the best log-likelihood or AIC. As a homework problem we suggest that
 the reader take the code given above and try to estimate $N$ without
-modifying the code by just repeatedly calling that code for
-different values of $N$ and trying to deduce the best value.
+modifying the code by just repeatedly applying it for 
+different values of $N$ in attempt to deduce the best value.
 We will formalize the unknown-$N$ problem next.
 
 %The
