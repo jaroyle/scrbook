@@ -310,7 +310,7 @@ occasions.
 However, in some cases, we might sample over longer time frames and expect the date to be important for a
 variety of reasons.  For example, if we have camera traps running for
 an entire year and we expect mating behavior or denning behavior to
-change the behavioral patterns of individuals. Instead of fitting a model with $k$ baseline detection probabilities, we can include date as a linear (or quadratic, \ldot) effect. An example can be found in 
+change the behavioral patterns of individuals. Instead of fitting a model with $k$ baseline detection probabilities, we can include date as a linear (or quadratic, \ldots) effect. An example can be found in 
 \citet{kery_etal:2011} who incorporated a day of year covariate, both as a linear and a quadratic effect, into their
 SCR model of European wildcats; the data had been collected over a year
 long period and cat behavior was expected to vary seasonally thus
@@ -423,21 +423,23 @@ an array, $C_{ijk}$, that indicates if an individual $i$ has been
 previously captured in trap $j$ at time $k$.  We then include this in
 the model in the exact same form as above:
 \[
-logit(p_{ijk}) = \alpha_{0} + \alpha_1*||s[i]-x[j]|| + \alpha_2*C_i,j,k
+logit(p_{ijk}) = \alpha_{0} + \alpha_1*||{\bf s}_{i}-{\bf x}_{j}||^{2} + \alpha_2*C_i,j,k
 \]
 
 
 \subsection{Individual Covariates}
 
-Individual covariates are those which are measured or measurable on
+Individual covariates are those which are measured (or measurable) on
 individuals, so we get to observed them only for the captured
-individuals. Sex is a simple example of an individual covariate. It can be the
-case that it is missing for some captured individuals because
-frequently, in practice, we only imperfectly determine gender of many
-species.  The sex of an individual can influence many aspects of its ecology and behavior, including, for example its home range size. This is
+individuals. Sex is a simple example of an individual covariate. 
+% It can be the
+% case that it is missing for some captured individuals because
+% frequently, in practice, we only imperfectly determine gender of many
+% species.  
+The sex of an individual can influence many aspects of its ecology and behavior, including, for example its home range size. This is
 common in studies of carnivores where females often have smaller home ranges than
 males \citep{gardner_etal:2010jwm, sollmann_etal:2011}. Additionally, we may find differences in
-the baseline detection between males and females because females may move around less frequently, or possibly because they are less likely to use landscape structures that researchers may target with sampling devices in order to increase sample size, such as roads \citep[e.g.]{salom-perez_etal:2007}. 
+the baseline detection between males and females because females may move around less frequently, or possibly because they are less likely to use landscape structures that researchers may target with sampling devices in order to increase sample size, such as roads \citep[e.g.][]{salom-perez_etal:2007}. 
 
 
 Thus, we can imagine that sex may impact both the baseline encounter
@@ -445,7 +447,7 @@ probability $\alpha_{0}$ and the typical home range
 size, so that
 $\alpha_{1}$ might be sex-specific also.  The fully sex-specific model is:
 \[
-logit(p_{ijk}) = \alpha_{0,sex_{i}} + \alpha_{1, sex_{i}}*||s[i]-x[j]|| + \alpha_2*C_{i,j,k}
+logit(p_{ijk}) = \alpha_{0,sex_{i}} + \alpha_{1, sex_{i}}*||{\bf s}_{i}-{\bf x}_{j}||^{2}  
 \]
 where $sex_{i}$ is a binary vector indicating the sex of
 each individual (1 = male, 2 = female).  While we might know the sex of all
@@ -473,6 +475,8 @@ mixture model carried out in secr in Section 8.4.4.
 
 \section{Bayesian Analysis of covariates}
 
+XXXXX TOO MUCH R CODE FOR MY TASTE; HAPPY TO BREAK IT DOWN IF YOU AGREE XXX
+
 To demonstrate how to incorporate various types of covariates using
 {\bf JAGS}, we will again return to the data collected during the
 Ft. Drum bear study.  This data set was first introduced in Chapt. \ref{chapt.closed},
@@ -486,7 +490,7 @@ we will show throughout the chapter.
 \subsection{Detection functions}
 
 We start here by presenting the basic SCR model with no covariates and
-the half normal distance function.
+the half normal distance function. The following block of code loads the necessary {\bf R} packages, sets up the data, writes the model, defines MCMC run specifications (e.g., initial values, number of chains, etc.) and, finally, runs the so specified model in {\bf JAGS}.  
 
 {\small
 \begin{verbatim}
@@ -585,7 +589,7 @@ what effective trap area to use.
 We can also see that the 97.5\%
 percentile for $N$ is 621, thus not reaching our $M=650$ value, but
 close enough that we may want to check that $N$ is not truncated by
-this level of data augmentation.  In addition to checking the percentiles, we can also see from \ref{fig.9.1}, the histogram of $N$,that $N$ shows no signs of truncation.  We could also increase
+this level of data augmentation.  In addition to checking the percentiles, we can also see from \ref{fig.9.1}, the histogram of $N$, that $N$ shows no signs of truncation.  We could also increase
 M as another check that our data augmentation is sufficient.
 
 
@@ -697,7 +701,7 @@ For this, we can use the same data set up as in the previous
 section and modify our {\bf JAGS} code to now allow $\alpha_0$ to be
 estimated for each time period $k$ either using an index vector or
 dummy variables XXXXX index variables and dummy variables need defined
-somewhere XXXXXXXX XXXXXXXX I think richard should have a section on that in Ch2 XXXXXXXXXX.  In order to estimate time
+somewhere XXXXXXXX XXXXXXXX I think richard should have a section on that in Ch1b XXXXXXXXXX.  In order to estimate time
 specific baseline detection, we need to use the 3-d data array (called \mbox{\tt Yaug} in our
 code) which
 has dimension
@@ -706,7 +710,7 @@ We use \mbox{\tt Yaug} as opposed to \mbox{\tt y} (the 2-d version of the data),
  because we need to have the occasion specific trap
 encounter histories in order to estimate time effects.
 We also update our
-initial values so that there are $K=8$ values generated for $\alpha0$. This
+initial values so that there are $K=8$ values generated for $\alpha_0$. This
 ultimately means that we have to put in another nested for loop in our
 code and the computation time will increase quite a bit (this model
 may take up to 15 hours or more on your machine to obtain a sufficient
@@ -818,11 +822,11 @@ global response (i.e., was the individual previously captured in any trap) or
 as a local response (i.e., was the animal previously captured in this
 trap).  To do this, we have to first
 construct an indicator of whether an animal has been capture before or not.  For
-example, if C[i,j,k] = 1, then individual i has been captured at trap j
+example, if $C_{ijk} = 1$, then individual $i$ has been captured at trap $j$
  at least once during
 sample occasions $1 \dots k-1$.  Specifying the trap at which the individual was
 previously captured would allow us to estimate the local behavioral response.  If
-we condensed this array to a matrix of individual by occasion, where C[i,k] = 1 indicates
+we condensed this array to a matrix of individual by occasion, where $C_{ik} = 1$ indicates
 that individual i was previously captured at any trap at least once during
 sample occasions $1 \dots k-1$, then we
 could model the global behavioral response.
@@ -832,7 +836,7 @@ capture histories ($\mbox{\tt nind} \times \mbox{\tt ntraps} \times
 \mbox{\tt nreps}$) as we did for the time-varying encounter probability
 model.
 Here, we demonstrate the local behavioral response model and start by constructing the
-indicator of previous capture array C[i,j,k].
+indicator of previous capture array $C_{ijk}$.
 
 XXXXX please put this in the R package XXXXXX
 
@@ -886,11 +890,20 @@ XXX it is running in JAGS right now XXXX
 XXX Definitely faster, but not THAT fast XXX
 
 \subsection{Sex Effects}
+Specifying a fully sex specific model for {\bf JAGS} is very similar to the time-specific model shown above: we need to use an index or dummy variable to let both $\alpha_0$ and $sigma$ be estimated separately for males and females. The main difference arise from the fact that we do not observe sex for the augmented individuals, which means, we have missing observations of the covariate for those augmented individuals. As a result, sex has to be estimated for those unobserved individuals as part of the model. In Bayesian inference, missing data are essentially treated like parameters, which means that we need to specify a prior distribution for the missing data. With only two possible outcomes, sex can be regarded as a Bernoulli random variable where $[sex = male] \sim Bernoulli(\pi)$ (we could equally well specify it as $[sex = female] \sim Bernoulli(\pi)$). The parameter $\pi$ can be seen as the sex ratio of the population and since it is something we want to estimate (a hyperparameter of the model), we again have to specify a prior for $\pi$. To express our lack of knowledge about the parameter and account for the fact that being a probability, it can only take values between 0 and 1, we choose $\pi \sim Uniform(0,1)$.  
+
+In both {\bf JGAS} or {\bf BUGS} missing data are specified as {\tt NA}. In terms of setting up the data that means we need to create a vector of length $M$ with the first $n$ elements being 0 if individual $i$ is a female, or 1 if $i$ is a male (for the Ft. Drum black bear data we can extract this information from XXX HOW IS BEARSEX GONNA GO INTO THE R PACKAGE???? XXXX), and the subsequent $M-n$ elements being {\tt NA}.  It is generally a good idea to provide starting values for the missing data, but we cannot provide starting values for observed data; in this case where one vector (or other object) contains both observed and missing data, initial values for the observed data have to be specified as {\tt NA}. The code snippet below shows you how to set up the  data including the{\tt sex} vector and the initial values function, as well as the {\JAGS} model specifications (the remainder of the code is identical to what we've shown before).
+
 
 {\small
 \begin{verbatim}
 bearsex<-read.csv("bearsex.csv")   #we read in the sex data for captured individual
 sex<-c(as.numeric(bearsex[,2])-1, rep(NA, nz))
+data0<-list(y=Yaug,M=M,K=K, J=ntraps, Xl=Xl, Yl=Yl, Xu=Xu, Yu=Yu, X=X, area=areaX)
+params<-c('psi','p0','N', 'D', 'sigma', 'pi')
+inits =  function() {list(z=zst,psi=runif(1), s=Sst, SEX=c(rep(NA, n), rbinom(nz, 1,0.5)),pi=runif(1), sigma=runif(2,2,3),alpha0=runif(2)) }
+
+XXX JUST FILLED THIS STUFF ABOVE IN, NEVER RAN THIS XXXXX
 
 cat("
 model {
@@ -922,8 +935,12 @@ N<-sum(z[])
 D<-N/area
 }
 ",file = "SCRsex.txt")
+\end{verbatim}
+}
 
-
+Running the fully sex specific model produces the follwing output: 
+{\small
+\begin{verbatim}
 > summary(outSCRsex)
 
 Iterations = 501:20500
@@ -948,13 +965,15 @@ sigma[2]   2.682  0.389 1.588e-03      0.0119850
 
 
 Our estimate of density is still very similar, and while the baseline detection was not very different
-between males and females, we can see that they had very different sigma estimates (note that the BCIs do not
-overlap).  
+between males and females, we can see that they had very different $\sigma$ estimates (note that the BCIs do not
+overlap XXXX WHERE ARE THE BCIS? XXXX).  
 
 
 
 
 \section{Likelihood analysis in SECR}
+
+XXX THIS ENTIRE PARAGRAPH IS UNCLEAR - WHY IS IT THERE AND WHAT DOES IT WANT TO SAY? XXXX
 
 Before we describe the types of covariates and demonstrate how to
 implement them, a brief note about the different inference approaches.
@@ -965,11 +984,11 @@ with $N$ removed by integration (as described in
 Chapt. \ref{chapt.closed} XXXXXX specific section XXXXX).
 However, likelihood analysis
 based on the conditional likelihood is often done in practice and, in
-particular, in the {\tt secr} package.  A variant of the conditional
+particular, in the {\tt secr} package. XXX THIS SENTENCE ISNT CLEAR TO ME XXXX A variant of the conditional
 likelihood which is kind of distinct and relevant to the individual
 covariates is the ``Huggins-Alho'' idea which is based on thinking
 about Horwitz-Thompson estimators involving unequal probabilities of
-sampling.
+sampling. XXX I DONT THINK THIS MEANS ANYTHING TO MOST READERS WITHOUT ADDITIONAL EXPLANATION XXX 
 
 
 
@@ -977,17 +996,17 @@ XXX we nee to figure out this verbatim stuff to center the tilde XXXX
 
 The package \mbox{\tt secr} allows the user to simulate data and fit a
 suite of models with various detection functions and covariate
-responses.  As we saw in Chapt. \ref{chapt.mle}, \secr uses the standard \R model
+responses.  As we saw in Chapt. \ref{chapt.mle}, \secr~ uses the standard \R model
 specification framework, defining the dependent and independent
 variable relationship using tildes
 (e.g., \Verb+y ~ x+).
-Thus, in \secr we
+Thus, in \secr~ we
 might have \verb+g0 ~ behavior+ or \verb+sigma ~ time+;
 when left unspecified or set
 to 1 (e.g., \verb+g0 ~ 1+), this will default to a model with no
 covariates
 (i.e., constant parameter values).
-Additionally, we can specify covariates in \secr
+Additionally, we can specify covariates in \secr~
 on density (see Chapt. \ref{chapt.ipp}),
 which are set for example as \verb+D ~ habitat+.
 
@@ -1007,8 +1026,9 @@ seconds and 5 minutes to run on your computer (possibly a little
 longer or shorter given the specifics of your machine).  To refresh
 your memory, we being by fitting a basic
 model with no covariates and a bivariate normal detection model in
-\secr to the Ft. Drum bear study data:
+\secr~ to the Ft. Drum bear study data:
 
+XXXXX HOW IS THE CVS DATA FILE GOING INTO THE R PACKAGE? XXX
 {\small
 \begin{verbatim}
 trapmat<-read.csv("FDtrapmat.csv")
@@ -1062,20 +1082,17 @@ sigma   log 1.972951e+03 1.275652e+02 1.738351e+03 2.239211e+03
 }
 
 
-XXXX this is the first and only time I used ``reminder" in the chapter,
- so I think it might be okay here but I can remove itXXXX
-Just as a reminder XXXX lets use the word and phrases involving
-``reminder'' less XXXXXX, \mbox{\tt secr} returns density in terms of
+Remember that \mbox{\tt secr} returns density in terms of
 individuals per
 hectare, so we must multiply this $D$ by 100 to see the estimate as
 individuals per $km^2$.  In doing so, the resulting density is 0.166
-individuals / $km^2$, which very similar to that found in sec. XXXXX
+individuals/$km^2$, which very similar to that found in sec. \ref{} XXXXX
 latex tag here XXXX ($D = 0.167$)
 using {\bf JAGS} for the equivalent detection model. In fact, the difference
 is only 0.001 suggesting that in this case the two frameworks provide consistent
 results.
 
-In the \secr package, the detection functions are specified
+In the \secr~ package, the detection functions are specified
 by changing the ``\mbox{\tt detectfn}'' option (an integer code)
 within the \mbox{\tt secr.fit} command.  Table
 \ref{covariates.tab.detmodels} shows the possible detection functions
@@ -1118,8 +1135,8 @@ mean of
 $\sigma$ is about $1.1$
  which is very different from the half-normal model where the
  mean of $\sigma$ was $1.97$.
-These results are consistent with the what we saw in the Bayesian
-analysis of the model where the poster mean of $\sigma$ under the negative
+These results are consistent with what we saw in the Bayesian
+analysis of the model where the posterior mean of $\sigma$ under the negative
 exponential model was $1.12$ and under the half normal was $1.99$.
 
 
@@ -1129,22 +1146,15 @@ function in scrbook? XXXXXX
 
 \subsection{Time-Varying Encounter Probability}
 
-The \mbox{\tt secr} package easily fits the SCR equivalent of model
+The \mbox{\tt secr} package easily fits both the SCR equivalent of model
 $M_{t}$ where each
-occasion has its own detection probability. This is reasonable when
-there are very few sampling occasions but becomes an unwieldy model
-with lots of parameters, in general, if sample occasions are very
-frequent (e.g., daily). In some cases it might make sense to have a
-smooth function of time to reflect season variation in encounter
-probability as shown above. We also saw previously that such models are easy
-to fit in {\bf JAGS}.  The package \secr fits the classical
-time-effects type of model with $K$ distinct parameters (\secr uses 't' to denote
-this in the command call) and a linear
-trend over occasions (\secr uses 'T' to denote this in the command call).
-\secr will then automatically fit a time
-specific encounter probability (either factor based or linear) based on the use
-of lower or upper case 't'.  For example, we simply use \verb+g0~t+ in
-our model expression to implement eq. XX   XXget eq. refXX
+occasion has its own detection probability, as well as a linear
+trend in baseline detection over occasions. For the classical
+time-effects type of model with $K$ distinct parameters \secr~ uses 't' to denote
+this in the command call, whereas for a linear
+trend over occasions \secr~ uses 'T'.
+For example, we simply use \verb+g0~t+ in
+our model expression to implement eq. \ref{XX}   XXget eq. refXX
 
 
 {\small
@@ -1184,6 +1194,8 @@ for the
 detection probability of each time period after the initial time
 $(t1)$.
  We can back calculate each of the values using:
+ XXXX THESE DETECTIONS LOOK VERY DIFFERENT FROM THE JAGS ONES WHERE THEY STABILIZE AROUND 0.12 XXXX
+ XXX ACTUALLY, YOU SURE IT'S NOT plogis(-2.8248967 + oef(beart)[2,1]) AND SO ON? XXX
 {\small
 \begin{verbatim}
 >plogis(coef(beart)[2,1])    #this pulls out time t = 2
@@ -1210,8 +1222,8 @@ balances that initial low detection probability.
 
 \subsection{Behavior}
 
-The secr package allows one to incorporate a simple trap response
-rather easily (we called this the 'global behavioral model' above).
+The {\Ttt secr} package allows one to incorporate a simple trap response
+ (we called this the 'global behavioral model' above) just as easily as it was to incorporate a time effect .
 Without reorganizing our data, we can just take
 the basic model and change the model call to:
 {\small
@@ -1244,8 +1256,8 @@ g0    logit 4.915745e-02 1.411255e-02 2.781168e-02 8.544641e-02
 sigma   log 1.959156e+03 1.230875e+02 1.732381e+03 2.215617e+03
 \end{verbatim}
 }
-The package \secr does not provide the fitted value for the detection
-probability of individuals that were not observed and so we have to
+The package \secr~ does not provide the fitted value for the detection
+probability of individuals that have been previously observed (or, in terms of traditional capture-recapture, the probability of recapture) and so we have to
 compute this by evaluating the encounter probability model explicitly.
 Here, the baseline
 detection probability is $0.049$ and for those individuals that have
@@ -1258,12 +1270,13 @@ Thus, encounter probability for individuals previously captured is
 almost 3 times greater than that of individuals
 not previously captured.  We see that the
 estimated density increases over the model with no behavioral effect
-(posterior mean $0.23
-bears/km2$ versus $0.16 bears/km2$ in model SCR0).
+(posterior mean 0.23
+bears/$km^2$ versus 0.16 bears/$km^2$ in model SCR0).
+XXX HOW DOES THAT COMPARE TO JAGS? XXX
 
 It is not only easy to incorporate a global trap response model, but also just as simple to
 incorporate a trap specific behavioral response (as in
-\citet{royle_etal:2009}).  To do so, we use just modify the
+\citet{royle_etal:2009}).  To do so, we use just modify
 the behavioral code from above from using a ``b" to ``bk".
 
 XXX I might remove this part, but left it for reference right now XXX
@@ -1285,18 +1298,18 @@ sigma      7.859917 0.09660444  7.670576  8.049258
 
 Additionally, we can have additive effects within \secr.  For example, behavioral and time effects can be both incorporated by writing the standard linear regression type code within the model call:
 XXX we need to figure out how to center the tidles in the line XXXXX
-\[
+\begin{verbatim}
 bearbt=secr.fit (bearcapt, model = list(D~1, g0~b + t, sigma~1), buffer = 20000)
-\]
+\end{verbatim}
 
-This particular code specifies a model with a global behavioral response and a factorial time trend in g0.
+This particular code specifies a model with a global behavioral response and a factorial time trend in $g_0$.
 
 
 \subsection{Sex Effects}
 
-Incorporating sex effects into models with \secr can be done a few
+Incorporating sex effects into models with \secr~ can be done a few
 different ways.  Due to the approach, individuals that
-are of unknown sex must be removed from the dataset,
+are of unknown sex must be removed from the dataset.
 The most common way to include
 sex is to code it into ``session'', providing two sessions that
 represent males and females.  This is specified using the model list
@@ -1367,7 +1380,7 @@ we gotta have one, preferably with some missing data, since this is a
 nice feature of the bayesian version of the models. }
 XXXXX
 
-
+XXX I DON'T LIKE HAVING THIS SUBSECTION RIGHT BEFORE THE HETEROGENEITY SECTION; BETTER TO KEEP IT ALL IN ONE SECTION IN MY OPINION XXX
 \subsection{Individual heterogeneity}
 
 Individual heterogeneity is .... XXX blah blah blah some general
