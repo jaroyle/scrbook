@@ -47,6 +47,7 @@ Modeling Encounter Probability
 
 
 XXXX SUGGESTED NEW INTRO PARAGRAPH, originals commented out but still in TEX file XXXX
+
 In previous chapters we showed how to fit basic spatial
 capture-recapture models using Bayesian analysis (in {\bf WinBUGS} or
 {\bf JAGS};
@@ -74,7 +75,7 @@ Most detection functions include a baseline encounter
 rate termed $\lambda_0$ XXX $p_0$ ??? XXX and a shape parameter
 termed $\sigma$, which takes on different interpretations depending on
 the selected function. 
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 In this chapter, we generalize the basic SCR model to accommodate both alternative detection functions as well as
 many different kinds of covariates. We focus on the Binomial encounter
@@ -104,7 +105,7 @@ chapter, we will continue to develop an analysis of the black bear
 study introduced in \ref{Chapter 3}, using the software
 \jags.  We also
 consider likelihood analysis of many of these models; to do so, we
-will demonstrate the use of the R package \secr and how to do model
+will demonstrate the use of the R package \secr~ and how to do model
 comparison with AIC.
 There are other types of covariates that we do {\it not} cover in this
 chapter. For example, there are covariates that vary across the
@@ -140,7 +141,9 @@ possible, including a logit model of the form:
 \end{equation}
 
 However, there's nothing preventing us from constructing a myriad of
-other models for encounter probability.
+other models for encounter probability, as long as detection decreases with distance (otherwise $N$ would be unidentifiable). The most commonly used detection
+functions are also those used in the distance sampling literature: the
+half-normal, the hazard, and the negative exponential.
 The negative exponential model is: XXshould p0 be alpha0 here?XX
 \[
 p_{ij} = p_{0}*\exp(-\alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||)
@@ -152,9 +155,6 @@ XX hazard rate is Hayes and Buckland (1983), but not sure which Buckland we want
 \[
 p_{ij} = p_{0}*\exp(-\alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||^{\theta} )
 \]
-The most commonly used detection
-functions are also those used in the distance sampling literature: the
-half-normal, the hazard, and the negative exponential.
 The {\bf R} package
 {\tt secr} allows the user to access 12 different detection models, of which
 some are only used for simulating data (see \ref{covariates.tab.detmodels}). These detection
@@ -171,7 +171,7 @@ choosing any one of over any other. We do describe more
 realistic models in Chapt. XXXXX.
 
 
-\begin{table}
+\begin{table}[ht]
 \centering
 \caption{Distance functions available in \secr.  (Table taken from the secr
 help files). Notation deviates from that used in the text.
@@ -179,7 +179,7 @@ In this table $g_{0}$ is the baseline encounter rate or probability
 parameter used in \secr but this is equivalent to our $alpha_{0}$ or
 $\lambda_{0}$ depending on context XXX or $p_0$ XXX. $d$ is distance defined as we have done throughout,
 as the distance between the activity center and the trap.
-One can read more on this specific table by loading the \secr package and using the
+One can read more on this specific table by loading the \secr~ package and using the
 {\tt help} command in {\bf R} ({\tt?detectfn}).
 }
 \begin{tabular}{cccl}
@@ -215,8 +215,7 @@ Code & Name & Parameters & Function  \\ \hline
 
 By changing the detection function and the specification of
 $\alpha_1$, we can basically create any distance function for the
-data, as long as detection decreases with distance (otherwise $N$ would be unidentifiable).
-It is important to note that $\sigma$ is not comparable under
+data. It is important to note that $\sigma$ is not comparable under
 these different distance functions for detection.  Additionally, the
 relationship between $\sigma$ and home range radius does not have
 a precise definition under alternative distance functions.  We
@@ -244,7 +243,7 @@ the covariates are almost always incompletely observed (if at all).
 The lone exception is the behavioral response which is known for all
 individuals, captured or not (an animal never captured/observed has never been captured before).  We noted may times before that space
 itself (i.e., the activity centers) is a type of individual
-covariate and this notation actualy helped us derive the fully spatial capture-recapture model from the traditional, non-spatial model (Chapt. \ref{chapt.scr0}). We do not get to observe the activity center for any
+covariate and this notation actually helped us derive the fully spatial capture-recapture model from the traditional, non-spatial model (Chapt. \ref{chapt.scr0}). We do not get to observe the activity center for any
 individuals, but for individuals that are encountered we get to
 observe some information about it in the form of which traps the
 individual was encountered in.
@@ -267,8 +266,9 @@ where $C_{ijk}$ is some covariate and
 $\alpha_2$ is the coefficient to be estimated.
  How we define specific covariates (e.g., trap specific
 versus individual specific) will influence exactly how we include them
-in the model.  For example, $C$ might vary by
-individual, trap, sampling occasion or combinations of these.
+in the model. We will see specific examples in the following sections.  
+%For example, $C$ might vary by
+%individual, trap, sampling occasion or combinations of these.
 
 
 
@@ -292,7 +292,7 @@ In the first case,
  we allow each sampling
 occasion, $k$, to have its own baseline detection probability, e.g.,
 \[
-cloglog(p_{0,k}) = \alpha_{0,k}
+\mbox{cloglog}(p_{0,k}) = \alpha_{0,k}
 \]
 so that
 \[
@@ -304,17 +304,15 @@ probabilities.  Thus, if we had 4 sampling occasions, we will have 4
 different baseline detection probabilities.  We imagine that
 time-specificity of $p_{0}$ would be most useful 
 in situations where we have just a few sampling
-occasions or we do not expect a pattern in the timing of the
+occasions (if we have many this formulation will dramatically increase the number of parameters to be estimated) or we do not expect a pattern in the timing of the
 occasions.
 
-XXXXXXX CHECK BACK XXXXXXXXXXXXXXXXXXXX 
-However, in many cases, we might expect the date to be important for a
+However, in some cases, we might sample over longer time frames and expect the date to be important for a
 variety of reasons.  For example, if we have camera traps running for
 an entire year and we expect mating behavior or denning behavior to
-change the behavioral patterns of individuals, then we might want to incorporate
-date as a linear or quadratic effect.  This is the reason that
-\citet{kery_etal:2011} incorporated a day of year covariate into their
-model of European wildcats; the data had been collected over a year
+change the behavioral patterns of individuals. Instead of fitting a model with $k$ baseline detection probabilities, we can include date as a linear (or quadratic, \ldot) effect. An example can be found in 
+\citet{kery_etal:2011} who incorporated a day of year covariate, both as a linear and a quadratic effect, into their
+SCR model of European wildcats; the data had been collected over a year
 long period and cat behavior was expected to vary seasonally thus
 influencing the detection probabilities.  In these cases, we would
 specifically incorporate day of year (Date) as a continuous covariate
@@ -337,7 +335,7 @@ In some studies it makes sense to model encounter probability as a
 function of local or trap-specific covariates. These can be one of two
 types: genuine trap covariates that describe the trap or encounter site,
 such as whether a trap is baited or not, or how many traps were set at a sampling location,
-or what kind of bait, etc.. Or they can be local covariates that
+or what kind of bait was used, etc.. Or they can be local covariates that
 describe the likelihood that an animal would use the habitat in the
 vicinity of the trap.
 We imagine that these covariates, of either type, should affect
@@ -347,27 +345,35 @@ baseline encounter probability.
 %type varies (e.g., different camera models are used in a camera
 %trapping study), or because of the habitat type (e.g., if the trap is
 %located on a road/trail).  
-
 For example, \citet{sollmann_etal:2011}
 found a large difference in the detection probability of jaguars due to traps
-being located on roads which the animals were using to travel along as
+being located on roads, which the animals were using to travel along, as
 opposed to traps placed off roads.  In this case, the trap
 type is a binary variable - on/off road,
-(another binary variable could be baited/non-baited).  We write this such that:
+(another binary variable could be baited/non-baited).  We can write this such that:
 {\bf 
 XXX BETH: you have logit throughout here, but all of the WinBUGS codes
 are NOT logit.
 }
+% \[
+% logit(p_{ijk}) = \alpha_{0,type_j} + \alpha_1*||{\bf s}_{i}-{\bf x}_{j}||^{2}
+% + \alpha_{2} \mbox{\tt type}_{j}
+% \]
 \[
-logit(p_{ijk}) = \alpha_{0} + \alpha_1*||{\bf s}_{i}-{\bf x}_{j}||^{2}
-+ \alpha_{2} \mbox{\tt type}_{j}
+logit(p_{ijk}) = \alpha_{0,type_j} + \alpha_1*||{\bf s}_{i}-{\bf x}_{j}||^{2}
 \]
 Here, we use an indicator variable, ``type'', that will be a numeric
 value for the trap-specific covariate.  Thus for our example of on/off
 road, we would have $type_j = 1$ if trap j is on a road and $type_j
-= 2$ otherwise.  This general set up also allows for more than 2 categories,
-say if 3 or 4 different camera models were used, in which case ``type'' would be a categorical variable.
-
+= 2$ otherwise, and we would estimate two separate $alpha_{0}$ - one for on-road and one for off-road cameras.  This general set up also allows for more than 2 categories,
+say if 3 or 4 different camera models were used, in which case we would estimate as many $alpha_{0}$ as we have categories in ``type''. Note that instead of modeling several intercepts, we could also specify the model in terms of effects of trap type; in this case, for the 2-category example above, we would specify our ``type'' vector as $type_j = 0$ if trap j is on a road and $type_j
+= 1$ otherwise, and write our model such that
+\[
+logit(p_{ijk}) = \alpha_{0} + \alpha_1*||{\bf s}_{i}-{\bf x}_{j}||^{2}
++ \alpha_{2} \mbox{\tt type}_{j}
+\]
+Now, $\alpha_{0}$ is the baseline detection probability (on the logit scale) for traps with $type_j = 0$ and $\alpha_{2}$ is the effect on baseline detection of a trap being of type = 1. While these models yield identical results, sometimes one parameterization might work better than the other in {\bf WinBUGS} or {\bf JAGS} \citep{kery_}
+ 
 If the trap-specific covariate describes local conditions, e.g., of
 the habitat, this suggests a more fundamental role of encounter
 probability as being related to space usage or resource
