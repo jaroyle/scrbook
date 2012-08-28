@@ -65,7 +65,8 @@ covariates such as habitat type.
 inhomogeneous point process model for SCR models, and our approach is
 similar to theirs with the exception that we will use a binomial
 rather than a Poisson model because the binomial model is
-easily integrated into our data augmentation scheme and is consistent
+easily integrated into our MCMC algorithm %data augmentation scheme
+and is consistent
 with the objective of determining how a {\it fixed} number of activity
 centers are distributed with respect to covariates.
 
@@ -74,7 +75,7 @@ models within our MCMC algorithm is simple---we
 replace the uniform prior with a prior describing the
 distribution of the $N$ activity centers conditional on the
 covariates. Development of this prior, which does not have a
-standard form, is a central component of this chapter. First we will
+standard form, is a central component of this chapter. First we %will
 begin with a review of homogeneous point process models.
 
 
@@ -88,6 +89,7 @@ analysis of point processes, it is helpful to compare it with
 the binomial model that we use in our SCR models. The
 primary descriptor of the homogeneous point process model is the
 ``intensity'' parameter, $\mu$ which describes the expected number
+% start with \mu(x)???? Or, wait for inhomogeneous case?
 of points in an infinitesimally small area. The intensity
 parameter can also be used to determine the expected number of points
 in any region $B$ of the state-space $\cal{S}$. To denote this, we say
@@ -95,14 +97,18 @@ that the expected number of points in region $B \in \cal{S}$ is
 $\mathbb{E}[n(B)] = A(B)\mu$ where $A(B)$ is the area of region $B$.  In words,
 the expected number of points in $B$ is simply the area of $B$
 multiplied by the intensity parameter. One property
-of the Poisson model is that if we divide the entire state-space into
-$k=1,\dots,K$ disjunct regions, the vector of counts $\bf n(B)$ are
+of the Poisson model is that if we divide the entire state-space into $K$
+%$k=1,\dots,K$
+disjunct regions, the vector of counts $\{ n(B_k): k=1,\dots,K \}$ are
 independent and identically distributed, ({\it i.i.d.}). This is one
 of the distinctions between the Poisson model and the binomial model,
-for which the counts $n(B_k)$ are not {\it i.i.d.} as we will explain
-shortly. This difference is also related to another distinction
-between the two models, namely that the binomial model
-conditions on the number of points to be simulated $N$; whereas under
+for which the counts $\{n(B_k)\}$ are not {\it i.i.d.}, as we will explain
+shortly.
+
+The two models also differ in how they regard the number of points
+$N$. %This difference is also related to another distinction
+%between the two models, namely that
+The binomial model conditions on $N$, \textit{i.e.}, $N$ is fixed; whereas under
 the Poisson model $N$ is random. Here is some simple \R~code to
 illustrate this point.
 
@@ -129,39 +135,36 @@ the binomial model is not; rather, it
 is more common to consider a discrete state-space, such as a grid with
 with $K$ pixels. Under the binomial model, the number of points in
 each region is $n(B_k) \sim Bin(N, p_k)$
-where $p_k = A(B)/A(\cal{S})$, \emph{i.e.} $p_k$ is simply the fraction of
+where $p_k = A(B)/A(\cal{S})$, \emph{i.e.} $p_k$ is simply the proportion of
 the state-space area in $B_k$. This discrete space representation of
 the binomial point process is shown in Fig.~\ref{ch9.fig.homo}. The
 state-space in this case is the unit square, and thus the probability of a
 point falling in each of the 25 disjunct regions is $p_k = 1/25$ and
 the expected counts are simply $\mathbb{E}(n(B_k)) = Np_k$. In
-the figure $N=50$ and consequently we would expect 2 points per pixel, which
+the figure $N=50$, and consequently, we would expect 2 points per pixel, which
 happens to be the empirical mean of the data in
 Fig.~\ref{ch9.fig.homo}. Note also that these counts are not
-independent realizations from a binomial distribution since $\sum_k
+independent realizations from a binomial distribution since $\sum_{k=1}^K
 n(B_k) = N$. Instead, the model for the entire vector
-is ${\bf n(B)} \sim \mbox{Multin}(N, {\mathbf{\pi}} = (p_1, p_2, \dots,
-p_K))$ \citep{illian_etal:2008}. The dependence among counts has virtually
+is ${\bf n(B)} \sim \mbox{Multin}(N, {\bm{\pi}} = \{p_1, p_2, \dots,
+p_K \})$ \citep{illian_etal:2008}. The dependence among counts has virtually
 no practical consequence when the number of pixels is large. For
-example, if we have 100 pixels, the number of points in one pixels
-tells you very little about the expected number of points in another
+example, if there are 100 pixels, the number of points in one pixels
+carries very little about the expected number of points in another
 pixel. However, if there are only 2 pixels, then clearly the number of
-points in one pixel tells you exactly how many will occur in the
+points in one pixel allows one to determine how many points will occur in the
 remaining pixel. To gain familiarity with the multinomial distribution
 and the discrete representation of space, use the \verb+rmultinom+
 function in \R~to simulate counts similar to those shown in
 Fig.~\ref{ch9.fig.homo}, for example using commands
 such as:
-\begin{comment}  I find that reading R code with under-scores ``_'' is rather
-difficult. and especially in this case with both periods and under-scores!
-\end{comment}
 \begin{verbatim}
-n.B_k <- rmultinom(1, size=50, prob=rep(1/25, 25))
-matrix(n.B_k, 5, 5)
+n.Bk <- rmultinom(1, size=50, prob=rep(1/25, 25))
+matrix(n.Bk, 5, 5)
 \end{verbatim}
 
 
-\begin{figure}
+\begin{figure}[ht]
 \centering
 \includegraphics[width=5in,height=2.5in]{Ch11/figs/homoPlots}
 \label{ch9.fig.homo}
@@ -177,10 +180,11 @@ are almost always represented in a discrete-space format called
 definition of the prior for an activity center from ${\bf s}_i \sim
 \mbox{Unif}(\cal{S})$ to ${\bf s}_i \sim \mbox{Multin}(1, \mathbf{\pi})$. In the
 latter case, the activity center is simply defined as an integer
-representing pixel ``id''. Note also that the multinomial distribution
-with an index of 1 (\emph{i.e.} \verb+size=1+ in \verb+rmultinom+)
-is referred to as the categorical distribution,
-which we will frequently use in the \verb+BUGS+ language.
+representing pixel ``id''.
+%Note also that the multinomial distribution
+%with an index of 1 (\emph{i.e.} \verb+size=1+ in \verb+rmultinom+)
+%is referred to as the categorical distribution,
+%which we will frequently use in the \verb+BUGS+ language.
 
 
 
@@ -191,11 +195,13 @@ model is developed conditional on $N$. The primary distinction is that
 the uniform distribution is replaced with another distribution
 allowing for the intensity parameter to vary spatially. To arrive at
 this new distribution, replace the scalar intensity parameter $\mu$
-with the function $\mu(x, {\bm \beta})$, where $\bm \beta$ is a 
+with the function $\mu(x, {\bm \beta})$, where $\bm \beta$ is a
 vector of coefficients describing the effects of
-spatially-referenced covariates on the point process intensity.
-Since an intensity must be strictly
-positive, it is natural to model $\mu(x, \beta)$ using the log-link.
+spatially-referenced covariates on the point process intensity. In
+what follows, we will often abbreviate the intensity function as $\mu(x)$ by
+dropping the vector of coefficients. Since an intensity must be strictly
+positive, and because the logarithm is the canonical link function of the Poisson
+generalized linear model, it is natural to model $\mu(x, \beta)$ as
 \[
 \log(\mu(x, \beta)) = \sum_{j=1}^J \beta_j v_j(x), \quad  x \in \cal{S}
 \]
@@ -239,7 +245,8 @@ uniform prior allows us to fit inhomogeneous binomial point process
 models to spatial capture-recapture data. We can also use this
 distribution to obtain the expected number of individuals in any given
 region. Specifically, the proportion of $N$ expected to occur in any
-region $B$ when heterogeneity in density is present is $p(B) = \int_B
+region $B$ %when heterogeneity in density is present
+is $p(B) = \int_B
 f(x, \beta)\, \mathrm{d}x$. These are
 also the multinomial cell probabilities if the regions are
 disjoint and compose the entire state-space. We provide an example in
@@ -249,8 +256,8 @@ As a practical matter, note that the integral in the
 denominator of $f(x, \beta)$ is evaluated over space, and since we always regard
 space as two-dimensional, this is a two-dimensional integral that can
 be approximated using the methods discussed in
-Chapter~\ref{chapt.poisson-mn}. These methods include
-Monte Carlo integration, Gaussian quadrature, etc... Alternatively, if
+Chapter~\ref{chapt.poisson-mn}, which include
+Monte Carlo integration and Gaussian quadrature. Alternatively, if
 our state-space covariates are in raster format, \emph{i.e} they are
 in discrete space, the integral can be replaced with a sum over
 all pixels,
@@ -258,7 +265,7 @@ all pixels,
 f(x, \beta) = \frac{\mu(x, \beta)}{\sum_{x \in \mathcal{S}} \mu(x, \beta)\, \mathrm{d}x}
 \label{eq.pdf.dipp.d}
 \end{equation}
-which is much more efficient computationally.
+which is much more efficient computationally (but see note Sect~\ref{sec:})
 
 We now have all the tools needed to fit inhomogeneous point process
 (IPP) models. If we refer to the distribution for the
@@ -290,12 +297,12 @@ In the next sections we walk through a few examples, building up from
 the simplest case where we actually observe the activity centers as
 though they were data. In the second example, we fit our new model to simulated
 data in which density is a function of a single continuous
-covariate. To build upon the developments in the previous chapter, we
+covariate. \hl{To build upon the developments in the previous chapter, we
 further consider the plausible case where a state-space covariate is also a
-covariate of ecological distance. A small simulation study indicates
-that both effects can be estimated. Example four shows an analysis in discrete space using
+covariate of ecological distance.} A small simulation study indicates
+that both effects can be estimated. A fourth example shows an analysis in discrete space using
 both \secr~\citep{efford:2011} and \jags~\citep{plummer:2003}. In the
-last example, we model the intensity of
+fifth and final example, we model the intensity of
 activity centers for a real dataset collected on jaguars
 (\emph{Panthera onca}) in Argentina.
 
@@ -392,7 +399,7 @@ while(count <= 100) {
 \end{small}
 
 
-\begin{figure}
+\begin{figure}[ht]
 \centering
 \includegraphics[width=5in,height=2.5in]{Ch11/figs/heteroPlots}
 \label{ch9.fig.hetero}
@@ -405,7 +412,8 @@ The simulated data are shown in Fig~\ref{ch9.fig.hetero}. High elevations
 are represented by light green and low elevations by dark green. The
 activity centers of 100 animals are shown as
 points, and it is clear that these simulated animals prefer the high
-elevations.  Perhaps they are mountain goats. The underlying model describing this preference is
+elevations.  %Perhaps they are mountain goats.
+The underlying model describing this preference is
 $\log(\mu(x)) = \exp(\beta \times elev(x))$
 where $\beta=2$ is the parameter to be estimated.
 
@@ -446,12 +454,12 @@ estimate these latent parameters.
 
 One of the nice things about hierarchical models is that they allow us
 to break a problem up into a series of simple conditional
-models. Thus,
+sub-models. Thus,
 we can simply add the methods described above into our existing MCMC
-algorithm to simulate the posteriors of $\beta$ conditional on the
+algorithm to simulate the posterior distributions of $\beta$ conditional on the
 simulated values of $\mathbf{s}$. To demonstrate, we will continue with
 the previous example. Specifically, we will overlay a grid of
-traps upon the map shown in Fig.~\ref{ch9.fig.hetero}. We will then
+traps on the map shown in Fig.~\ref{ch9.fig.hetero}. We will then
 simulate capture histories conditional upon the activity
 centers. Then, we will attempt to estimate the activity center
 locations as though we did not know where they were, as is the case in
@@ -498,46 +506,45 @@ Now that we have a simulated capture-recapture dataset $y$, and we have
 augmented it to create the new data object $yz$, we are ready to
 begin sampling from the posteriors. A commented Gibbs sampler written
 in \R~is available in the accompanying \R~package \scrbook~(see
-?scrIPP). There are two small parts of the
-\R~code that distinguish it from previous code we have shown to
-fit homogeneous point processes. First, we need to update the parameter
-${\bf \beta}$ conditional on all other parameters in the model. The code to
-do so is: \begin{comment} need cite to Ch 2 or 7 on MCMC for this \end{comment}
-
-\begin{small}
-\begin{verbatim}
-# Denominator of f(x, beta). Integral of mu(x, beta) over space
-D1 <- cuhre(2, 1, mu, lower=c(xlims[1], ylims[1]),
-            upper=c(xlims[2], ylims[2]), beta=beta1)$value
-# Compute the denominator again using a proposed beta1
-beta1.cand <- rnorm(1, beta1, tune[3])
-D1.cand <- cuhre(2, 1, mu, lower=c(xlims[1], ylims[1]),
-                 upper=c(xlims[2], ylims[2]), beta=beta1.cand)$value
-# Compute log(f(x))
-ll.beta1 <- sum(  beta1*elev.fn.v(S) - log(D1) )
-ll.beta1.cand <- sum( beta1.cand*elev.fn.v(S) - log(D1.cand) )
-if(runif(1) < exp(ll.beta1.cand - ll.beta1) )  {
-     beta1<-beta1.cand
-}
-\end{verbatim}
-\end{small}
-Next, we need to put the new prior on the activity centers:
+?scrIPP).
 \begin{comment} see Ch 7 MCMC for SCR and cite some section of that \end{comment}
-\begin{small}
-\begin{verbatim}
-# Compute the prior for s_i and a candidate. denominator is constant
-prior.S <- beta1*elev(S[i,1], S[i,2]) # - log(D1)
-prior.S.cand <- beta1*elev(Scand[1] + Scand[2]) # - log(D1)
-if(runif(1)< exp((ll.S.cand+prior.S.cand) - (ll.S+prior.S))) {
-    S[i,] <- Scand
-    lam <- lam.cand
-    D[i,] <- dtmp
-    }
-\end{verbatim}
-\end{small}
-
+% There are two small parts of the
+% \R~code that distinguish it from previous code we have shown to
+% fit homogeneous point processes. First, we need to update the parameter
+% ${\bf \beta}$ conditional on all other parameters in the model. The code to
+% do so is: %\begin{comment} need cite to Ch 2 or 7 on MCMC for this \end{comment}
+% \begin{small}
+% \begin{verbatim}
+% # Denominator of f(x, beta). Integral of mu(x, beta) over space
+% D1 <- cuhre(2, 1, mu, lower=c(xlims[1], ylims[1]),
+%             upper=c(xlims[2], ylims[2]), beta=beta1)$value
+% # Compute the denominator again using a proposed beta1
+% beta1.cand <- rnorm(1, beta1, tune[3])
+% D1.cand <- cuhre(2, 1, mu, lower=c(xlims[1], ylims[1]),
+%                  upper=c(xlims[2], ylims[2]), beta=beta1.cand)$value
+% # Compute log(f(x))
+% ll.beta1 <- sum(  beta1*elev.fn.v(S) - log(D1) )
+% ll.beta1.cand <- sum( beta1.cand*elev.fn.v(S) - log(D1.cand) )
+% if(runif(1) < exp(ll.beta1.cand - ll.beta1) )  {
+%      beta1<-beta1.cand
+% }
+% \end{verbatim}
+% \end{small}
+% Next, we need to put the new prior on the activity centers:
+% \begin{small}
+% \begin{verbatim}
+% # Compute the prior for s_i and a candidate. denominator is constant
+% prior.S <- beta1*elev(S[i,1], S[i,2]) # - log(D1)
+% prior.S.cand <- beta1*elev(Scand[1] + Scand[2]) # - log(D1)
+% if(runif(1)< exp((ll.S.cand+prior.S.cand) - (ll.S+prior.S))) {
+%     S[i,] <- Scand
+%     lam <- lam.cand
+%     D[i,] <- dtmp
+%     }
+% \end{verbatim}
+% \end{small}
 We can apply this modified sampler to our data using the
-following \R~commands.
+following \R~commands:
 \begin{small}
 \begin{verbatim}
 set.seed(3434)
@@ -547,10 +554,10 @@ plot(mcmc(fm1$out))
 rejectionRate(mcmc(fm1$out))
 \end{verbatim}
 \end{small}
-
 We obtain posterior
-distributions summarized in Table~\ref{ch9.tab.simIPP}. Mixing is good, and as usual,
-life is very nice when we are working with simulated data.
+distributions summarized in Table~\ref{ch9.tab.simIPP}.
+%Mixing is good, and as usual,
+%life is very nice when we are working with simulated data.
 
 \begin{table}[b]
 \centering
@@ -598,7 +605,7 @@ using using the code shown on the help page
 activity centers in each pixel, generated from a single realization of
 the inhomogeneous point process model with intensity
 $\mu(x) = 2 \times \mbox{elev}(x)$.
-\begin{figure}
+\begin{figure}[ht]
 \centering
 \includegraphics[width=3in,height=3in]{Ch11/figs/discrete}
 \label{ch9.fig.discrete}
@@ -660,8 +667,8 @@ to the raster data as a ``habitat mask''. \R~code to
 fit the models using \secr~and \jags~is available in \scrbook---see
 \verb#help(ch9secrYjags)#. Results of the
 comparison are shown in Table \ref{ch9:tab:secrYjags} and are
-very similar as expected. 
-\begin{comment} 
+very similar as expected.
+\begin{comment}
 \hl{ANDY, is there any point in discussing
   the slight differences?}
   YES: If we can explain it. Could it be MC error alone?
@@ -748,7 +755,7 @@ conditions described above. Rather incredibly, we see that it is
 possible to estimate both parameters with high accuracy
 (Fig~\ref{ch9.fig.sim}).
 
-\begin{figure}
+\begin{figure}[ht]
 \centering
 \includegraphics[width=4in,height=2in]{Ch11/figs/scrDEDsim}
 \caption{Histograms of parameter estimates from 500 simulations under
@@ -792,7 +799,7 @@ related species, protected areas have
 been established and three levels of protection are
 recognized in the study region as depicted in Fig.~\ref{ch9.fig.jaguarCts}.
 
-\begin{figure}
+\begin{figure}[ht]
 \centering
 \includegraphics[width=3in,height=3in]{Ch11/figs/jaguarCountMap}
 \label{ch9.fig.jaguarCts}
@@ -859,7 +866,7 @@ working. Density was $>$26 times higher in the national park than in the
 unprotected area. Fig.~\ref{ch9:fig:Dsurface} shows the estimated
 density surface.
 
-\begin{figure}
+\begin{figure}[ht]
 \centering
 \includegraphics[width=3in,height=3in]{Ch11/figs/Dsurface34}
 \label{ch9:fig:Dsurface}

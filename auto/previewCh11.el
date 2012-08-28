@@ -9,6 +9,7 @@
      "secr"
      "scrbook")
     (TeX-run-style-hooks
+     "bm"
      "color"
      "soul"
      "verbatim"
