@@ -58,7 +58,8 @@ sense for many types of DNA sampling (e.g., based on hair snares)
 because distinct visits to sampled locations or devices cannot be
 differentiated. However, many encounter methods or devices make it
 possible to encounter an individual some arbitrary number of times
-during any particular sampling episode. That is, we might observe
+during any particular sampling episode XXXX EFFORD CITE XXXXXX. 
+That is, we might observe
 encounter frequencies $y_{ijk}>1$
 for individual $i$, trap $j$ and
 sampling interval $k$.  As an example, if a camera device is
@@ -71,7 +72,8 @@ frequency data.  In general, any discrete probability mass function
 could be used for this purpose, including the standard models for
 count data used throughout ecology, the Poisson and negative
 binomial.  Here we focus on using the Poisson
-model only.
+model only although other count frequency models are possible XXX
+EFFORD ciTE XXXX.
 
 Let $y_{ijk}$ be the frequency of encounter for
 individual $i$, in trap $j$, during occasion $k$, then assume:
@@ -101,14 +103,26 @@ where, if we set $\alpha_{0} \equiv log(\lambda_{0})$, and, if
 $g({\bf x},{\bf s}) \equiv exp(-\alpha_{1} d({\bf x},{\bf s})^2)$
 (i.e., the Gaussian model), then:
 \begin{equation}
- log(\lambda_{ij}) = \alpha_{0} - \alpha_{1} d({\bf x}_{j},{\bf s}_{i})^{2}
+ log(\lambda_{ij}) = \alpha_{0} + \alpha_{1} d({\bf x}_{j},{\bf s}_{i})^{2}
 \label{poisson-mn.eq.lp}
 \end{equation}
 which is the same linear predictor as we have seen for the Bernoulli
-model in Chapt. \ref{chapt.scr0}. 
+model in Chapt. \ref{chapt.scr0}.  We can accommodate covariates at
+the level of individual-, trap- or sample occasion by including them
+on the baseline encounter rate parameter $\lambda_{0}$. For example,
+if $C_{j}$ is some covariate that depends on trap only, then we have:
+\[
+log(\lambda_{0,ijk}) = \alpha_{0} + \alpha_{2} C_{j}
+\]
+and therefore covariates on the logarithm of baseline encounter
+probability appear also as linear effects on $\lambda_{ij}$.  We don't
+get into too much discussion of general covariate models here, but see
+Chapt. \ref{chapt.covariates} for a more comprehensive development of
+such models along with examples. 
 
-For the simplest model in which we have covariates that vary across
-the replicate samples $k$, we can aggregate the observed data by the
+
+For a  model in which we have covariates that vary across
+the sample occasions  $k$, we can aggregate the observed data by the
 property of compound additivity of the Poisson distribution (if $x$ and
 $y$ are $iid$ Poisson with mean $\lambda$ then $x+y$ is Poisson with
 mean $2\lambda$). Therefore,
@@ -255,7 +269,7 @@ generally be possible to diagnose distinct ``independent'' scat
 samples. Under this model the data are only binary encounters and we
 might therefore choose a model of the form:
 \[
- cloglog(p_{ij}) = log(\lambda0)  + log(g({\bf x},{\bf s}))
+\mbox{ cloglog}(p_{ij}) = \log(\lambda0)  + \log(g({\bf x},{\bf s}))
 \]
 \begin{comment}
 This example shows us that the choice of link function is typically
@@ -337,7 +351,8 @@ of heterogeneity, analogous to the class of models considered by
 \section{Analysis of the Poisson SCR model in BUGS}
 
 We consider the simplest possible model here in which we have no
-covariates that vary over replicate samples $k$ so that we work with
+covariates that vary over sample occasions  $k=1,2,\ldots,K$ 
+so that we work with
 the aggregated individual- and trap-specific encounters:
 \[
 y_{ij} = (\sum_{k=1}^{K} y_{ijk}) =  \mbox{Poisson}(K  \lambda_{ij})
@@ -350,13 +365,13 @@ g({\bf x}_{j},{\bf s}_{i}) = exp( -d({\bf x}_{j}, {\bf
 \]
 so that 
 \[
-log( \lambda_{ij})  =\alpha_{0} - \alpha_{1} d({\bf x}_{j}, {\bf s}_{i})^2
+log( \lambda_{ij})  =\alpha_{0} + \alpha_{1} d({\bf x}_{j}, {\bf s}_{i})^2
 \]
 where $\alpha_{0} = log(\lambda_{0})$ and $\alpha_1 = 1/(2\sigma^2)$.
 
 
 As usual, we approach Bayesian analysis of these
-models using data augmentation (section \ref{closed.sec.da}).
+models using data augmentation (sec. \ref{closed.sec.da}).
 Under data augmentation, we introduce a collection of all-zero encounter
 histories to bring the total size of the data set up to $M$, and a corresponding
 set of data augmentation variables $z_{i} \sim \mbox{Bern}(\psi)$. Then
@@ -366,8 +381,10 @@ y_{ij} \sim  \mbox{Poisson}(z_{i} K  \lambda_{ij})
 \]
 which evaluates to a point mass at $y=0$ if $z=0$.  In other words, the
 observation model under data augmentation is a zero-inflated Poisson
-model which is easily analyzed by Bayesian methods, e.g., in one of the BUGS
-dialects, or even using likelihood methods (which we neglect here).
+model which is easily analyzed by Bayesian methods, e.g., in one of
+the {\bf BUGS}
+dialects, or  using likelihood methods, which we neglect here although
+the same principles as in Chapt. \ref{chapt.mle} apply.
 
 
 \subsection{Simulating Data and Fitting the Model}
@@ -477,7 +494,7 @@ out1 <- bugs (data, inits, parameters, "SCR-Poisson.txt", n.thin=nthin,n.chains=
  n.burnin=nb,n.iter=ni,working.dir=getwd(),debug=TRUE)
 \end{verbatim}
 }
-Or using {\bf JAGS}  we do this instead:
+{\flushleft Or using {\bf JAGS}  we do this instead: }
 {\small
 \begin{verbatim}
 library(rjags)
@@ -485,7 +502,8 @@ fm <- jags.model("SCR-Poisson.txt", data=data, inits=inits, n.chains=nc, n.adapt
 out2 <- coda.samples(jm, parameters, n.iter=ni, thin=nthin)
 \end{verbatim}
 }
-Summarizing the output from the {\bf WinBUGS}  run produces the following output:
+{\flushleft 
+Summarizing } the output from the {\bf WinBUGS}  run produces the following:
 {\small
 \begin{verbatim}
 > print(out1,digits=2)
@@ -507,7 +525,7 @@ deviance 329.95 21.92 290.00 314.20 329.50 344.40 375.80 1.00  1700
 
 We don't provide a real example of a Poisson SCR model here although
 we use this observation model for an analysis of some data in Chapt.
-\ref{chapt.searchencounter}.
+\ref{chapt.searchencounter}. {\bf XXXX DO WE DO THIS ANYWHERE? XXXXX}
 
 \begin{comment}
 \subsection{Exercise}
