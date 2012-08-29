@@ -1030,16 +1030,28 @@ and run models in \mbox{\tt secr}, you must download the package and
 load it in
 {\bf R}.
 \begin{verbatim}
- install.packages("secr"�)
+ install.packages("secr")
  library(secr)
 \end{verbatim}
 \mbox{\tt secr} allows the user to simulate data and fit a suite of models with
-various detection functions and covariate responses.  \mbox{\tt secr}
+various detection functions and covariate responses. It also contains
+a number of helpful constructor functions for creating objects of the
+proper class that are recognized by other \mbox{\tt secr}
+functions. We provide a brief overview of the capabilities here, but
+the \mbox{\tt secr} help manual can be accessed with the command:
+\begin{verbatim}
+ RShowDoc("secr-manual", package = "secr")
+\end{verbatim}
+
+
+The main model-fitting function in   \mbox{\tt secr} is called
+\mbox{\tt secr.fit}, which 
 makes use of the
 standard {\bf R} model specification framework with tildes. To specify
 a model we use the 
 function \mbox{\tt secr.fit}. As an example, the equivalent of our
-basic model SCR0  is fitted as follows:
+basic model SCR0  is fitted as follows: {\bf XXXX need centered tildes
+  here XXXXX}
 \begin{verbatim}
  secr.fit(capturedata, model = list(D~1, g0~1, sigma~1), buffer = 20000)
 \end{verbatim}
@@ -1057,13 +1069,68 @@ Chapt. \ref{chapt.covariates}.
 
 Before we can fit the models, the data must first be packaged properly
 for 
-\mbox{\tt secr}.  Two input files are required: trap layout (location and
+\mbox{\tt secr}.  
+We require data files that contain two types of information:
+trap layout (location and
 identification information for each trap), which is equivalent to our
 trap deployment file (TDF) described in sec. \ref{scr0.sec.wolverine}
 and the capture data file containing 
 sampling session, animal identification, trap day, and trap
-location,  similar in information content to our encounter data file (EDF).
-\mbox{\tt secr} requires that you specify the trap type. For 
+location,  equivalent in information content to our encounter data file (EDF).
+There are three important constructor functions that help package-up
+your 
+data for use in \mbox{\tt secr}:
+\mbox{\tt read.traps},
+\mbox{\tt make.capthist} and
+\mbox{\tt read.mask}. 
+We provide a brief description of each here, but apply them to our
+wolverine camera trapping data in the next section:
+\begin{itemize}
+\item[(1)] 
+\mbox{\tt read.traps}: This function points to an external file or
+{\bf R} data object containing the trap coordinates, and other
+information, and also requires specification of the type of encounter
+devices (described in the next section). A typical application of this
+function would be:
+\begin{verbatim}
+trapfile<-read.traps(data=traps,detector="proximity")
+\end{verbatim}
+
+\item[(2)] \mbox{\tt make.capthist}: This function takes the EDF and combines it
+with trap information, and the number of sampling occasions. A typical
+application looks like this:
+\begin{verbatim}
+capturedata<-make.capthist(enc.data,trapfile1,fmt="trapID",noccasions=165)
+\end{verbatim}
+See \mbox{\tt ?make.capthist} for definition of distinct file
+formats. Specifying  \mbox{\tt fmt = trapID}  is equivalent to our EDF format.
+\item[(3)] \mbox{\tt read.mask}: If there is a habitat mask
+  available 
+(as described in sec. \ref{mle.sec.shapefile}), then this function
+will organize it so that \mbox{\tt secr.fit} knows what to do with it.
+The function accepts either an external file name (see \mbox{\tt
+  ?read.mask} for details of the structure) or a $G\times 2$ {\bf R} file
+containing the coordinates of the mask. A typical application looks
+like:
+\begin{verbatim}
+grid<-read.mask(data=grid)
+\end{verbatim}
+\end{itemize}
+These constructor functions produce output that can then be used in
+the fitting of models using \mbox{\tt secr.fit}.
+
+\subsection{Encounter device types and detection models}
+
+The
+\mbox{\tt secr} package requires that you specify the type of encounter
+device. 
+Instead of of 
+describing models by their statistical distribution (Bernoulli,
+Poisson, etc..), 
+ \mbox{\tt secr} 
+uses certain operational classifications of detector types including
+'proximity', 'multi', 'single', 'polygon' and 'signal'.
+For 
 camera trapping/hair snares we might consider `proximity' detectors or `count'
 detectors.  The `proximity' detector type allows, at most, one
 detection of each individual at a particular detector on any occasion
@@ -1072,13 +1139,14 @@ model, or model SCR0).
 The `count' detector designation allows repeat encounters of each
 individual at a particular detector on any occasion.  There are other
 detector types that one can select such as: `polygon' detector type
-which allows for a trap to be a sampled polygon (e.g., see Chapt. \ref{chapt.searchencounter}), e.g., scat surveys,
+which allows for a trap to be a sampled polygon
+\citep{royle_young:2008} which we discuss further in Chapt. \ref{chapt.searchencounter},
 and 'signal' detector which allows for traps that have a strength
-indicator, e.g., acoustic arrays.  
+indicator, e.g., acoustic arrays \citep{dawson_efford:2009}.
 %The detector types `single' and
 %'multi' can be confusing as 'multi' seems like it would appropriate
 %for something like a camera trap, but instead 
-These two designations
+The detector types 'single' and 'multi' 
 refer to traps that retain individuals, thus precluding the ability
 for animals to be captured in other traps during the sampling
 occasion.  The 'single' type indicates trap that can only catch one
@@ -1086,13 +1154,6 @@ animal at a time (single-catch traps), while 'multi' indicates traps that may ca
 than one animal at a time (multi-catch). These are both variations of
 the multinomial encounter models described in
 Chapt. \ref{chapt.poisson-mn}.
-The other detector types allowed are ‘proximity’, ‘count’, and
-‘polygon’. To understand these, consult
-the \mbox{\tt secr} help manual, which can be accessed in {\bf R} after
-installing the \mbox{\tt secr} package by using the command:
-\begin{verbatim}
- RShowDoc("secr-manual", package = "secr")
-\end{verbatim}
 
 As with all SCR models, \mbox{\tt secr} fits a detection function relating
 the probability of detection to the distance of a detector from an
@@ -1117,7 +1178,6 @@ per hectare.  Thus to make comparisons between \mbox{\tt secr} and other models,
 we will often have to convert the density to the same units.  Also,
 note that $\sigma$ is returned in units of meters.
 
-
 Most of the detection functions available in \mbox{\tt secr} contain
 some kind of a scale parameter which is usually labeled
 $\sigma$. However, we caution that the meaning of this parameter
@@ -1129,8 +1189,7 @@ implicit model of space-usage and fitted encounter models should be
 converted to a common currency such as ``area used.'' 
 
 
-
-\subsection{ Analysis using the \mbox{\tt secr} package}
+\subsection{Analysis using the \mbox{\tt secr} package}
 
 To demonstrate the use of the \mbox{\tt secr} package, we will show
 how to do the same analysis on the wolverine study as shown in
@@ -1152,24 +1211,16 @@ In addition to providing the EDF,  we must tell \mbox{\tt secr}
 information about the traps which is formated as a matrix with column labels
 'trapID', 'x' and 'y', the last two being the coordinates of each
 trap, with additional columns representing the operational state of
-each trap during each occasion (1=operational, 0=not). We must also
-communicate the type 
-of trapping device being used 
-so that \mbox{\secr} uses the correct likelihood for the data. Instead
-of 
-describing models by their statistical distribution, 
- \mbox{\tt secr} 
-accepts the type of 
-detector used ('proximity', 'multi', etc.) when reading in the
-trap location information.  
+each trap during each occasion (1=operational, 0=not). 
 
 We demonstrate these differences now by
-walking through the wolverine example in \mbox{\tt secr}.
+walking through an analysis of the wolverine camera trapping data
+using  \mbox{\tt secr}.
 To read in
-the trap locations and other related information, such as if the trap
-is operational during a sampling occasion.  The \mbox{\tt secr}
-package reads in the trap data through a command called ``\mbox{\tt
-  read.traps}'', which requires the detector type as input.  The
+the trap locations and other related information, iwe make use of the
+constructor function \mbox{\tt read.traps} which also requires that we
+specify the detector type.
+The
 detector type is important because it will determine the likelihood
 that \mbox{\tt secr} will use to fit the model.  Here, we have
 selected ``proximity'' which corresponds to the Bernoulli encounter
@@ -1181,54 +1232,77 @@ library("secr")
 library("scrbook")
 data("wolverine")
 
-traps<-as.matrix(wolverine$wtraps)
-dimnames(traps)<-list(NULL,c("trapID","x","y",paste("day",1:164,sep="")))
-traps<-as.data.frame(traps)
-trapfile<-read.traps(data=traps,detector="proximity")
+traps<-as.matrix(cbind(1:37,wolverine$wtraps)) 
+dimnames(traps)<-list(NULL,c("trapID","x","y",paste("day",1:165,sep="")))
+traps1<-as.data.frame(traps[,1:3])
+trapfile1<-read.traps(data=traps1,detector="proximity")
 \end{verbatim}
 }
 Here we note that trap coordinates are extracted from the wolverine
 data but we do {\it not} standardize them here. This is because
 \mbox{\tt secr} defaults to coordinate scaling of meters which is the
-standard scaling for the wolverine data. 
+standard scaling for the wolverine data. Note that we add a 'trapID' column to
+the trap coordinates and provide appropriate column labels to the
+'traps' matrix. 
+An important aspect of the
+wolverine study is that while the camera traps were operated over a
+165 day period, each trap was operational during only a portion of
+that period. We need to provide the trap operation information which
+is contained in the columns to the right of the trap coordinates in
+our standard TDF. Unfortunately, this is less easy to do in \mbox{\tt
+  secr}, which requires an external file with a single long string of
+1's and 0's indicating the days in which each trap was operational (1)
+or not (0). We can create this external file and then read it back in
+using these commands:
+\begin{verbatim}
+hold<-rep(NA,nrow(traps))
+for(i in 1:nrow(traps)){
+hold[i]<-paste(traps[i,4:ncol(traps)],collapse="")
+}
+traps1<- cbind(traps[,1:3],"usage"=hold)
+
+write.table(traps1, "traps.txt", row.names=FALSE, col.names=FALSE)
+trapfile2<-read.traps("traps.txt",detector="proximity") 
+\end{verbatim}
 
 After reading in the trap data, we now need to create the encounter matrix
-or array.  The \mbox{\tt secr} package does this through the use of the
-\mbox{\tt make.capthist} command, where we provide the capture histories in raw
-data format (each line contains the session, identification number,
-occasion, and trap id for only 1 individual).  This is the format that
-was shown in the data input file ``\mbox{\tt wcaps}'', and we only need a line or
-two to organize the data into the order that the make.capthist command
-wants.  In creating the capture history, we provide also the trapfile
-with the trap information, and the format (e.g., here \mbox{\tt fmt= ``trapID''})
-so that \mbox{\tt secr} knows how to match the encounters to the trap, and
-finally, we provide the number of occasions:
+or array using the
+\mbox{\tt make.capthist} command, where we provide the capture
+histories in EDF format, which is the existing format of
+the data input file \mbox{\tt wcaps}.
+In creating the capture history, we provide also the trapfile created
+previously, the format (e.g., here EDF format is \mbox{\tt fmt=
+  ``trapID''}), 
+and finally, we provide the number of occasions. We also set up a
+habitat mask using the $2 \times 2$ $km$ grid which we used previously
+in the analysis of the wolverine data and then pass the relevant
+objects to \mbox{\tt secr.fit} as follows:
 {\small 
 \begin{verbatim}
 wolv.dat<-wolverine$wcaps
 dimnames(wolv.dat)<-list(NULL,c("Session","ID","Occasion","trapID"))
 wolv.dat<-as.data.frame(wolv.dat)
-wolvcapt<-make.capthist(wolv.dat,trapfile,fmt="trapID",noccasions=165)
+wolvcapt2<-make.capthist(wolv.dat,trapfile2,fmt="trapID",noccasions=165)
+gr2<-(as.matrix(wolverine$grid2))
+dimnames(gr2)<-list(NULL,c("x","y"))
+wolv.secr2<-secr.fit(wolvcapt2,model=list(D~1, g0~1, sigma~1), buffer=20000,mask=gr2)
 \end{verbatim}
 }
-The function  \mbox{\tt secr.fit} will fit the model. We are using the
-basic model (SCR0), so we do not need to make any specifications in
+We are using the 
+basic ``proximity detector'' model (SCR0), so we do not need to make any specifications in
 the command line except for the providing the buffer size (in $m$).  To
 specify different models, you can change the default
 \verb#D~1, g0~1, sigma~1#, which the interested reader can do with
-very little difficulty.
+very little difficulty. We provide all of these commands and
+additional analyses in the \mbox{\tt scrbook} package with the
+function called \mbox{\tt secr_wolverine}. Printing the output object
+produces the following (slightly edited):
 
 {\small
 \begin{verbatim}
- wolv.secr<-secr.fit(wolvcapt,model=list(D~1, g0~1, sigma~1), buffer=20000)
+wolv.secr2
 
- wolv.secr
-
-
-
-
-secr.fit( capthist = wolvcapt, model = list(D ~ 1, g0 ~ 1, sigma ~ 1), buffer = 20000 )
-secr 2.3.1, 09:41:03 29 Aug 2012
+secr 2.3.1, 15:52:45 29 Aug 2012
 
 Detector type     proximity 
 Detector number   37 
@@ -1238,57 +1312,34 @@ y-range           6296796 6361803 m
 N animals       :  21  
 N detections    :  115 
 N occasions     :  165 
-Mask area       :  1037069 ha 
+Mask area       :  987828.1 ha 
 
 Model           :  D~1 g0~1 sigma~1 
 Fixed (real)    :  none 
 Detection fn    :  halfnormal 
 Distribution    :  poisson 
 N parameters    :  3 
-Log likelihood  :  -746.754 
-AIC             :  1499.508 
-AICc            :  1500.92 
+Log likelihood  :  -602.9207 
+AIC             :  1211.841 
+AICc            :  1213.253 
 
 Beta parameters (coefficients) 
-           beta   SE.beta        lcl       ucl
-D     -9.749576 0.2302783 -10.200913 -9.298238
-g0    -4.275735 0.1584610  -4.586313 -3.965158
-sigma  8.699202 0.0786894   8.544973  8.853430
+           beta    SE.beta       lcl       ucl
+D     -9.390124 0.22636698 -9.833795 -8.946452
+g0    -2.995611 0.16891982 -3.326688 -2.664535
+sigma  8.745547 0.07664648  8.595323  8.895772
 
 Variance-covariance matrix of beta parameters 
                   D            g0        sigma
-D      0.0530281019  0.0005468597 -0.005226898
-g0     0.0005468597  0.0251098852 -0.005885204
-sigma -0.0052268977 -0.0058852041  0.006192022
+D      0.0512420110 -0.0004113326 -0.003945371
+g0    -0.0004113326  0.0285339045 -0.006269477
+sigma -0.0039453711 -0.0062694767  0.005874683
 
 Fitted (real) parameters evaluated at base levels of covariates 
        link     estimate  SE.estimate          lcl          ucl
-D       log 5.831940e-05 1.360971e-05 3.713640e-05 9.158542e-05
-g0    logit 1.371121e-02 2.142902e-03 1.008756e-02 1.861207e-02
-sigma   log 5.998123e+03 4.727203e+02 5.140849e+03 6.998354e+03
-
-
-
-XXXX OLD RESULTS BELOW THIS LINE
-
-
-Beta parameters (coefficients) 
-           beta    SE.beta        lcl       ucl
-D     -9.749576 0.23027860 -10.200913 -9.298238
-g0    -4.275735 0.15846099  -4.586313 -3.965158
-sigma  8.699202 0.07868942   8.544974  8.853430
-
-Variance-covariance matrix of beta parameters 
-                  D            g0        sigma
-D      0.0530282320  0.0005468918 -0.005226919
-g0     0.0005468918  0.0251098856 -0.005885208
-sigma -0.0052269186 -0.0058852077  0.006192025
-
-Fitted (real) parameters evaluated at base levels of covariates 
-       link     estimate  SE.estimate          lcl          ucl
-D       log 5.831941e-05 1.360973e-05 3.713638e-05 9.158548e-05
-g0    logit 1.371121e-02 2.142902e-03 1.008756e-02 1.861207e-02
-sigma   log 5.998123e+03 4.727205e+02 5.140849e+03 6.998355e+03
+D       log 8.354513e-05 1.915674e-05 5.360894e-05 1.301982e-04
+g0    logit 4.762453e-02 7.661601e-03 3.466689e-02 6.509881e-02
+sigma   log 6.282651e+03 4.822512e+02 5.406315e+03 7.301037e+03
 \end{verbatim}
 }
 
@@ -1299,31 +1350,20 @@ the parameter estimates.
 Under the fitted (real) parameters, we find $D$, the density, given in
 units of individuals/hectare (1 hectare = 10000 $m^2$).  To convert this
 into individuals/1000 $km^2$, we multiply by 100000, thus our density
-estimate is 5.83 individuals/1000 $km^2$.  $\sigma$ is given in units of
-meters, to convert to kilometers, we divide by 1000, which puts $\sigma$
-at 5.99 $km$.  Both of these estimates are very similar to those
-provided in sec. \ref{scr0.sec.wolverine} for the buffer size equal to
-20 $km$\footnote{How come the MLEs are different from what I computed
-  above?  What is sigma from back there? That section is missing
-  I think}.
+estimate is 8.35 individuals/1000 $km^2$.  $\sigma$ is given in units of
+meters, and so this corresponds to
+ 6.283 $km$.  Both of these estimates are very similar to those
+obtained in our likelihood analysis summarized in Tab. \ref{mle.tab.wolverine}
+which, for the $2 \times 2$ $km$ grid, we obtained $\hat{D} = 8.31$
+and, accounting for the scale difference (1 unit = 10000 $m$ in the
+previous analysis), $\hat{\sigma} = \sqrt{1/(2\hat{\alpha}_{1})}*10000
+= 6.289$ $km$. 
+These differences between Tab. \ref{mle.tab.wolverine} and those
+produced by \mbox{\tt secr} are likely due to subtle differences in  internal
+tuning of optimization algorithms, starting values or other numerical settings.
 
-In particular, we reported a density of $D=5.77$ (posterior mean) and
-$\sigma = 0.64$ (posterior mean) which was for a state-space where a
-standard unit was 10 km (is this true?) 
 
-\begin{verbatim}
-Was going to compare secr estimates to the WinBUGS estimates....
 
-Buffer = 20 km
-           mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
-psi        0.20  0.05   0.12   0.17   0.20   0.23   0.30    1 16000
-sigma      0.64  0.06   0.54   0.60   0.63   0.67   0.76    1  1200
-p0         0.06  0.01   0.04   0.05   0.06   0.06   0.08    1  1900
-N         59.84 11.89  40.00  51.00  59.00  67.00  86.00    1 20000
-D          5.77  1.15   3.86   4.92   5.69   6.46   8.29    1 20000
-alpha1     1.26  0.21   0.87   1.11   1.25   1.40   1.71    1  1200
-deviance 411.01 12.36 389.10 402.30 410.20 418.80 437.50    1  1500
-\end{verbatim}
 
 
 
