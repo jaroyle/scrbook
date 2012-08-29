@@ -426,11 +426,12 @@ the probability of an all-0 encounter history:
 \]
 (3) The combinatorial term: ${N \choose n}$. Then, 
  the marginal likelihood has this form:
-\[
+\begin{equation}
  {\cal L}({\bm \alpha}, n_{0}| {\bf y})  = \frac{N!}{n! n_{0}!}
  \left\{ \prod_{i=1}^{n}  [{\bf y}_{i}|{\bm \alpha}] \right\}
  (\pi_{0})^{n_{0}}.
-\]
+\label{mle.eq.binomialform}
+\end{equation}
 This is discussed in \citet[][p. 379]{borchers_efford:2008} as the
 conditional-on-$N$ form of the likelihood -- we might also call it
 ``binomial form'' because of its appearance. 
@@ -1011,7 +1012,7 @@ somehow. Comment on the practical implication of this level of precision.
 \end{comment}
 
 
-\section{Program DENSITY and the R package \mbox{\tt secr} }
+\section{DENSITY and the R package \mbox{\tt secr} }
 \label{mle.sec.secr}
 
 {\bf DENSITY} is a software program developed by \citet{efford:2004}
@@ -1083,8 +1084,11 @@ for animals to be captured in other traps during the sampling
 occasion.  The 'single' type indicates trap that can only catch one
 animal at a time (single-catch traps), while 'multi' indicates traps that may catch more
 than one animal at a time (multi-catch). These are both variations of
-the multinomial encounter models described in Chapt. \ref{chapt.poisson-mn}. For a full review of the detector types,
-one should look at the help manual, which can be accessed in {\bf R} after
+the multinomial encounter models described in
+Chapt. \ref{chapt.poisson-mn}.
+The other detector types allowed are ‘proximity’, ‘count’, and
+‘polygon’. To understand these, consult
+the \mbox{\tt secr} help manual, which can be accessed in {\bf R} after
 installing the \mbox{\tt secr} package by using the command:
 \begin{verbatim}
  RShowDoc("secr-manual", package = "secr")
@@ -1095,7 +1099,7 @@ the probability of detection to the distance of a detector from an
 individual activity center. \mbox{\tt secr} allows the user to specify one of a
 variety of detection functions including the commonly used
 half-normal, hazard rate, and exponential.  There are 12 different
-functions (see {\bf Table XXXX} in Chapt. \ref{chapt.covariates}), but
+functions (see Tab. \ref{covariates.tab.detmodels} Chapt. \ref{chapt.covariates}), but
 some are only available for simulating data.
 %, and one
 %should be cautious when using different detection functions as the
@@ -1138,20 +1142,25 @@ For example, in sec. \ref{scr0.sec.wolverine} we introduced a standard
 data format for the encounter data file (EDF) and trap deployment file
 (TDF). The EDF shares the same format as that used by the \mbox{\tt
   secr} package with 1 row for every encounter observation and 4 columns representing 
-trap session, individual identity, sample occassion, and trap identity.
+trap session ('Session'), individual identity ('ID'), sample occasion
+('Occasion'), and trap identity ('trapID').
 For a standard closed population study that takes place during a
-single season, the "session" column
+single season, the 'Session' column
 in our case is all 1s, to indicate a single primary sampling
 occasion. 
 In addition to providing the EDF,  we must tell \mbox{\tt secr}
-information about the traps which is formated as a matrix with columns
-``trap ID'', and the (x,y) coordinates of each trap, and also the type
+information about the traps which is formated as a matrix with column labels
+'trapID', 'x' and 'y', the last two being the coordinates of each
+trap, with additional columns representing the operational state of
+each trap during each occasion (1=operational, 0=not). We must also
+communicate the type 
 of trapping device being used 
-so that the correct likelihood is used in the analysis.  Instead of
+so that \mbox{\secr} uses the correct likelihood for the data. Instead
+of 
 describing models by their statistical distribution, 
  \mbox{\tt secr} 
 accepts the type of 
-detector used (such as "proximity", "multi", etc.) when reading in the
+detector used ('proximity', 'multi', etc.) when reading in the
 trap location information.  
 
 We demonstrate these differences now by
@@ -1171,10 +1180,9 @@ during each sampling occasion:
 library("secr")
 library("scrbook")
 data("wolverine")
-traps<-wolverine$wtraps
 
-traps<-as.matrix(traps[,1:3])
-dimnames(traps)<-list(NULL,c("trapID","x","y"))
+traps<-as.matrix(wolverine$wtraps)
+dimnames(traps)<-list(NULL,c("trapID","x","y",paste("day",1:164,sep="")))
 traps<-as.data.frame(traps)
 trapfile<-read.traps(data=traps,detector="proximity")
 \end{verbatim}
@@ -1197,8 +1205,7 @@ so that \mbox{\tt secr} knows how to match the encounters to the trap, and
 finally, we provide the number of occasions:
 {\small 
 \begin{verbatim}
-wolv.dat<-wolverine$wcaps[,c(2,3,1)]  # different order than SCR!!!
-wolv.dat<- cbind(rep(1,nrow(wolv.dat)),wolv.dat)
+wolv.dat<-wolverine$wcaps
 dimnames(wolv.dat)<-list(NULL,c("Session","ID","Occasion","trapID"))
 wolv.dat<-as.data.frame(wolv.dat)
 wolvcapt<-make.capthist(wolv.dat,trapfile,fmt="trapID",noccasions=165)
@@ -1217,8 +1224,11 @@ very little difficulty.
 
  wolv.secr
 
+
+
+
 secr.fit( capthist = wolvcapt, model = list(D ~ 1, g0 ~ 1, sigma ~ 1), buffer = 20000 )
-secr 2.3.1, 14:20:38 05 Mar 2012
+secr 2.3.1, 09:41:03 29 Aug 2012
 
 Detector type     proximity 
 Detector number   37 
@@ -1240,6 +1250,29 @@ AIC             :  1499.508
 AICc            :  1500.92 
 
 Beta parameters (coefficients) 
+           beta   SE.beta        lcl       ucl
+D     -9.749576 0.2302783 -10.200913 -9.298238
+g0    -4.275735 0.1584610  -4.586313 -3.965158
+sigma  8.699202 0.0786894   8.544973  8.853430
+
+Variance-covariance matrix of beta parameters 
+                  D            g0        sigma
+D      0.0530281019  0.0005468597 -0.005226898
+g0     0.0005468597  0.0251098852 -0.005885204
+sigma -0.0052268977 -0.0058852041  0.006192022
+
+Fitted (real) parameters evaluated at base levels of covariates 
+       link     estimate  SE.estimate          lcl          ucl
+D       log 5.831940e-05 1.360971e-05 3.713640e-05 9.158542e-05
+g0    logit 1.371121e-02 2.142902e-03 1.008756e-02 1.861207e-02
+sigma   log 5.998123e+03 4.727203e+02 5.140849e+03 6.998354e+03
+
+
+
+XXXX OLD RESULTS BELOW THIS LINE
+
+
+Beta parameters (coefficients) 
            beta    SE.beta        lcl       ucl
 D     -9.749576 0.23027860 -10.200913 -9.298238
 g0    -4.275735 0.15846099  -4.586313 -3.965158
@@ -1259,6 +1292,10 @@ sigma   log 5.998123e+03 4.727205e+02 5.140849e+03 6.998355e+03
 \end{verbatim}
 }
 
+The object returned by \mbox{\tt secr.fit} provides extensive default
+output when printed. Much of this is basic descriptive information
+about the model, the traps, or the encounter data. We focus here on
+the parameter estimates.
 Under the fitted (real) parameters, we find $D$, the density, given in
 units of individuals/hectare (1 hectare = 10000 $m^2$).  To convert this
 into individuals/1000 $km^2$, we multiply by 100000, thus our density
@@ -1312,7 +1349,9 @@ deviates slightly from the binomial form we presented in sec.
 mention the binomial form).
 Specifically, the likelihood that \mbox{\tt secr} implements is that based on removing
 $N$ from the likelihood by integrating the binomial likelihood
-(Eq. XXX above) over a Poisson prior for $N$ -- what we will call a
+(Eq. 
+\ref{mle.eq.binomialform}
+above) over a Poisson prior for $N$ -- what we will call a
 Poisson-integrated likelihood as opposed to the 
 conditional-on-$N$ (binomial-form) considered previously. 
 
