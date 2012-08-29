@@ -602,6 +602,7 @@ Further extensions: It should be straightforward to
 
 
 \subsection{Integrated Likelihood using the model under data augmentation } 
+\label{mle.sec.intlikDA}
 
 The likelihood analysis developed in the previous sections
 is based on the likelihood
@@ -1241,7 +1242,7 @@ trapfile1<-read.traps(data=traps1,detector="proximity")
 Here we note that trap coordinates are extracted from the wolverine
 data but we do {\it not} standardize them here. This is because
 \mbox{\tt secr} defaults to coordinate scaling of meters which is the
-standard scaling for the wolverine data. Note that we add a 'trapID' column to
+extant scaling of the wolverine trap coordinates. Note that we add a 'trapID' column to
 the trap coordinates and provide appropriate column labels to the
 'traps' matrix. 
 An important aspect of the
@@ -1279,23 +1280,34 @@ in the analysis of the wolverine data and then pass the relevant
 objects to \mbox{\tt secr.fit} as follows:
 {\small 
 \begin{verbatim}
+#
+# grab the encounter data file and format it:
+#
 wolv.dat<-wolverine$wcaps
 dimnames(wolv.dat)<-list(NULL,c("Session","ID","Occasion","trapID"))
 wolv.dat<-as.data.frame(wolv.dat)
 wolvcapt2<-make.capthist(wolv.dat,trapfile2,fmt="trapID",noccasions=165)
+
+# grab the habitat mask (2 x 2 km) and format it:
+#
 gr2<-(as.matrix(wolverine$grid2))
 dimnames(gr2)<-list(NULL,c("x","y"))
+
+# To fit the model we use secr.fit:
+#
 wolv.secr2<-secr.fit(wolvcapt2,model=list(D~1, g0~1, sigma~1), buffer=20000,mask=gr2)
 \end{verbatim}
 }
 We are using the 
 basic ``proximity detector'' model (SCR0), so we do not need to make any specifications in
-the command line except for the providing the buffer size (in $m$).  To
+the command line because we have specified the detector type using the
+constructor function \mbox{\tt read.traps},
+except to provide the buffer size (in $m$).  To
 specify different models, you can change the default
 \verb#D~1, g0~1, sigma~1#, which the interested reader can do with
 very little difficulty. We provide all of these commands and
 additional analyses in the \mbox{\tt scrbook} package with the
-function called \mbox{\tt secr_wolverine}. Printing the output object
+function called \mbox{\tt secr\_wolverine}. Printing the output object
 produces the following (slightly edited):
 
 {\small
@@ -1350,17 +1362,24 @@ the parameter estimates.
 Under the fitted (real) parameters, we find $D$, the density, given in
 units of individuals/hectare (1 hectare = 10000 $m^2$).  To convert this
 into individuals/1000 $km^2$, we multiply by 100000, thus our density
-estimate is 8.35 individuals/1000 $km^2$.  $\sigma$ is given in units of
+estimate is 8.35 individuals/1000 $km^2$.  The parameter $\sigma$ is given in units of
 meters, and so this corresponds to
- 6.283 $km$.  Both of these estimates are very similar to those
+ $6.283$ $km$.  Both of these estimates are very similar to those
 obtained in our likelihood analysis summarized in Tab. \ref{mle.tab.wolverine}
 which, for the $2 \times 2$ $km$ grid, we obtained $\hat{D} = 8.31$
+with a SE of $100000 \times 
+1.915674e-05 = 1.9156$
 and, accounting for the scale difference (1 unit = 10000 $m$ in the
 previous analysis), $\hat{\sigma} = \sqrt{1/(2\hat{\alpha}_{1})}*10000
 = 6.289$ $km$. 
-These differences between Tab. \ref{mle.tab.wolverine} and those
+The difference in the MLE between Tab. \ref{mle.tab.wolverine} and those
 produced by \mbox{\tt secr} are likely due to subtle differences in  internal
-tuning of optimization algorithms, starting values or other numerical settings.
+tuning of optimization algorithms, starting values or other numerical
+settings. In addition, see the next section.
+On the other hand, the SE is slightly larger based on \mbox{\tt secr}
+which is due to a subtle difference in the interpretation of $D$ under
+the \mbox{\tt secr} model (See below). 
+
 
 
 
@@ -1381,19 +1400,17 @@ packages.
 
 \subsection{Likelihood Analysis in the \mbox{\tt secr} Package}
 
-The \mbox{\tt secr} package does likelihood analysis of SCR models for most
-classes of models using the likelihood formulation developed in 
-\citep{borchers_efford:2008} which 
-deviates slightly from the binomial form we presented in sec.
-\ref{mle.sec.Nunknown} above (though \citet{borchers_efford:2008}
-mention the binomial form).
-Specifically, the likelihood that \mbox{\tt secr} implements is that based on removing
-$N$ from the likelihood by integrating the binomial likelihood
-(Eq. 
-\ref{mle.eq.binomialform}
-above) over a Poisson prior for $N$ -- what we will call a
-Poisson-integrated likelihood as opposed to the 
-conditional-on-$N$ (binomial-form) considered previously. 
+The \mbox{\tt secr} package does likelihood analysis of SCR models for
+most classes of models as developed by
+\citet{borchers_efford:2008}. Their formulation deviates slightly from
+the binomial form we presented in sec.  \ref{mle.sec.Nunknown} above
+(though \citet{borchers_efford:2008} mention the binomial form).
+Specifically, the likelihood that \mbox{\tt secr} implements is that
+based on removing $N$ from the likelihood by integrating the binomial
+likelihood (Eq.  \ref{mle.eq.binomialform} above) over a Poisson prior
+for $N$ -- what we will call the {\it Poisson-integrated likelihood} as
+opposed to the conditional-on-$N$ ({\it binomial-form}) considered
+previously.
 
 To develop the Poisson-integrated likelihood 
 we compute the marginal
@@ -1404,30 +1421,30 @@ to arrive at the  marginal likelihood in the binomial-form:
  {\cal L}({\bm \alpha},n_{0} | {\bf y})  = \frac{N!}{n! n_{0}!} 
  \left\{ \prod_{i}  [{\bf y}_{i}|{\bm \alpha}] 
 \right\}
- (\pi_{0})^{n_{0}}
+ \pi_{0}^{n_{0}}
 \]
 Now, what \citet{borchers_efford:2008} do is
 assume that $N \sim \mbox{Poisson}(\Lambda)$ and they do a further level
 of marginalization over this prior distribution:
 \[
-\sum_{n0=0}^{\infty}  
+\sum_{n_{0}=0}^{\infty}  
 \frac{N!}{n! n_{0}!} 
  \left\{ \prod_{i}  [{\bf y}_{i}|{\bm \alpha}] \right\}
- (\pi_{0})^{n_{0}}
-\frac{exp(-\Lambda) \Lambda^{N}}{N!}
+ \pi_{0}^{n_{0}}
+\frac{\exp(-\Lambda) \Lambda^{N}}{N!}
 \]
-Thus we note there are two marginalizations
- going on here -- the
-integration to remove the latent variables ${\bf s}$ and then
+We emphasize there are two marginalizations
+ going on here: (1) the
+integration to remove the latent variables ${\bf s}$; and, (2) 
 summation to remove the parameter $N$. 
 This produces exactly this likelihood:
 \[
-{\cal L}_{2} = 
+{\cal L}_{2}({\bm \alpha}, \Lambda | {\bf y}) = 
  \left\{ \prod_{i}  [{\bf y}_{i}|{\bm \alpha}] \right\}  \Lambda^{n}   \exp( - \Lambda \pi_{0} )
 \]
 which is Eq. 2 of \citet{borchers_efford:2008} except for notational
-differences, and this 
-looks like our likelihood Eq. XXXX except with 
+differences. It also resembles the binomial-form of the likelihood in
+Eq. \ref{mle.eq.binomialform} except with 
 $\Lambda^{n}   exp( - \Lambda \pi_{0} )$ replacing the combinatorial
 term and the $\pi_{0}^{n_{0}}$ term. We provide a function for
 computing this in the \mbox{\tt scrbook} package called \mbox{\tt
@@ -1438,30 +1455,34 @@ Poisson-integrated likelihood with that from the binomial form.
 The essential distinction between our MLE and Borchers and Efford
 as implemented in \mbox{\tt secr}
 is whether you keep $N$ in the model or remove it by
-integration over a Poisson prior. If you have prescribed a state-space explicitly then
-there is no difference at all, or at least there shouldn't be. That
-is, the estimators should be very similar. Perhaps the difference is: N
-is the actual realized population size whereas $\lambda$ is the
-expected value of that. We probably want to estimate N in most
-cases. Numerically we think these will be the same under the Poisson
-model used to compute the marginal likelihood but perhaps the error is
-different?
+integration over a Poisson prior. If you have prescribed a state-space
+explicitly with a sufficiently larger buffer, then we imagine there
+should be hardly any difference at all between the MLEs obtained by
+either the Poisson-integrated likelihood or the binomial-form of the likelihood.
+There is a subtle distinction in the sense that under the binomial
+form, we estimate the realized population size $N$ for the state-space
+whereas, for the Poisson-integrated form we estimate the {\it prior} 
+expected value which would apply to a hypothetical new study of a
+similar population.
 
-Both models assumes ${\bf s}$ is uniformly distributed over space, but
+
+Both models (likelihoods) assume ${\bf s}$ is uniformly distributed over space, but
 for the binomial model we  make no additional assumption about $N$
 whereas we assume $N$ is Poisson using the formulation in \mbox{\tt
   secr} from 
 \citep{borchers_efford:2008}.
-
 Using data augmentation we could do a similar kind of integration but 
 integrate $N$ over a binomial ($M,\psi$) prior. So obviously this is
-approximately the same as M gets large. However, doing a Bayesian
+approximately the same as $M$ gets large. However, doing a Bayesian
 analysis by MCMC ,  we obtain an
 estimate of both $N$ and the parameter controlling its expected value
 $\psi$ which are, in fact, both identifiable from the data even using
 likelihood analysis \citep{royle_etal:2007}.   That said we can integrate N
-out completely and just estimate $\psi$ as we noted in Section XXX
-above (and from RD book). 
+out completely and just estimate $\psi$ as we noted in sec.
+\ref{mle.sec.intlikDA} above.
+And we could make a prediction for a new study which would be based on
+the posterior distribution of $M \psi$ which, we imagine, should have
+slightly larger uncertainty associated with it. 
 
 
 
@@ -1500,22 +1521,24 @@ or leave out.
 
 \section{Summary and Outlook}
 
-In this chapter, we showed that classical analysis of SCR models based
-on likelihood methods is a relatively simple proposition.  Analysis is
-based on the so-called integrated likelihood in which the individual
+In this chapter, we discussed basic concepts
+related to classical analysis of SCR models based
+on likelihood methods. Analysis is
+based on the so-called integrated or marginal likelihood in which the individual
 activity centers (random effects) are removed from the
 conditional-on-{\bf s} likelihood by integration. We showed how to construct
 the integrated likelihood and fit some simple models in the {\bf R}
 programming language.  In addition, likelihood analysis for some broad
-classes of SCR models can be accomplished in the software package
-{\bf DENSITY} 
-or the {\bf R}
-library \mbox{\tt secr} which we provided an illustration of here. In later
+classes of SCR models can be accomplished using the
+{\bf R}
+library \mbox{\tt secr} which we provided a brief introduction of. In
+later 
 chapters we provide more detailed analyses of SCR data likelihood
 methods and the
 \mbox{\tt secr}
 package.
 
+\begin{comment}
 To compute the marginal (integrated) likelihood we have to precisely describe the
 state-space of the underlying point process. In practice, this leads
 to a ``buffer'' around the trap array. We note that this is not really a
@@ -1530,11 +1553,12 @@ matter, it will typically be the case that, while estimates of $N$
 increase with the area of the state-space (as they should!), estimates of density
 stabilize. This is not a feature of the classical methods based on
 using model $M_0$ or model $M_h$ and buffering the trap array.
+\end{comment}
 
 Why or why not use likelihood inference exclusively? For certain
 specific models, it is probably more computationally efficient to
-produce MLEs (e.g., see Chapt. \ref{chapt.ecoldist}). However, {\bf BUGS} is extremely flexible in terms of
-describing models, although it sometimes can be quite slow. We can
+produce MLEs (for an example see Chapt. \ref{chapt.ecoldist}). However, {\bf BUGS} is extremely flexible in terms of
+describing models, although it sometimes can be quite inefficient. We can
 devise models in the {\bf BUGS} language easily that we cannot fit in
 \mbox{\tt secr}. E.g.,
 random individual effects of various types
@@ -1543,11 +1567,12 @@ handle missing covariates in complete generality and seamlessly, and
 impose arbitrary distributions on random variables. Moreover, models
 can easily be adapted to include auxiliary data types. For example, we
 might have camera trapping and genetic data and we can describe the
-models directly in {\bf BUGS} and fit a joint model. For the MLE we have
+models directly in {\bf BUGS} and fit a joint model \citep{gopalaswamy_etal:2012}. For the MLE we have
 to write a custom new piece of code for each model or hope someone has
-done it for us.  Later we consider open population models which are
+done it for us, although you should be able to do this with the tools
+we have provided here.  Later we consider open population models which are
 straightforward to develop in {\bf BUGS} but, so far, there is no
-available platform for doing MLE although we imagine one could develop
+available platform for doing MLE of such models, although we imagine one could develop
 this.  On
 the other hand, likelihood analysis makes it easy to do
 model-selection by AIC and in some cases compute standard errors or
@@ -1560,19 +1585,21 @@ benefits of Bayesian analysis have been discussed elsewhere (XXXXXXXX Chapter
 2? BPA book? Link and Barker?) and we believe these are compelling.
 \end{comment}
 
+\begin{comment}
 In summary, basic SCR models are easy to implement by either
-likelihood or Bayesian methods but some users will 
+likelihood or Bayesian methods but some users might
 realize much more flexibility in model development using existing
 platforms for Bayesian analysis. While these tend to be slow
 (sometimes excruciatingly slow), this will probably not be an
 impediment in most problems, especially at some near point in the
-future.  Since we spent a lot of time here talking about specific
+future as computers continue to improve.  
+Since we spent a lot of time here talking about specific
 technical details on how to implement likelihood analysis of SCR
 models, we provided a corresponding treatment in the next chapter on
 how to devise MCMC algorithms for SCR models. This is a bit more
 tedious and requires more coding, but is not technically challenging
 (except perhaps to develop highly efficient algorithms which we don't
 excel at).
-
+\end{comment}
 
 
