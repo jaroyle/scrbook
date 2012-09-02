@@ -6,7 +6,8 @@ lev<-length(unique(site))     #number of sites
 alpha<-runif(lev,-5,5)#initial values alpha
 beta<-runif(1,0,5)#initial value beta
 mu_alpha<-mean(alpha)
-sig_alpha<-sd(alpha)
+var_alpha<-var(alpha)
+var0<-sig0^2
 
 out<-matrix(nrow=niter, ncol=3)
 colnames(out)<-c('mu_alpha','sig_alpha','beta')
@@ -22,9 +23,9 @@ alphaUps<-0
 for (i in 1:lev) { 
 alpha.cand<-rnorm(1, alpha[i], delta_alpha)
 loglike<- sum(dpois (y[site==i], exp(alpha[i] + beta*x[site==i]), log=TRUE))  
-logprior<- dnorm(alpha[i], mu_alpha,sig_alpha, log=TRUE)
+logprior<- dnorm(alpha[i], mu_alpha, sqrt(var_alpha), log=TRUE)
 loglike.cand<- sum(dpois (y[site==i], exp(alpha.cand + beta *x[site==i]), log=TRUE))
-logprior.cand<- dnorm(alpha.cand,  mu_alpha,sig_alpha, log=TRUE)
+logprior.cand<- dnorm(alpha.cand,  mu_alpha,sqrt(var_alpha), log=TRUE)
 if (runif(1)< exp((loglike.cand+logprior.cand) -(loglike+logprior))) {
 alpha[i]<-alpha.cand
 alphaUps<-alphaUps+1
@@ -49,16 +50,16 @@ beta<-beta.cand
 
 ###########update mu_alpha using Gibbs sampling
 abar<-mean(alpha)
-mun<- (sig_alpha/(sig_alpha+lev*sig0))*mu0 + (lev*sig0/(sig_alpha+lev* sig0))*abar 
-sign <- (sig_alpha*sig0)/ (sig_alpha+lev*sig0)
-mu_alpha<-rnorm(1,mun, sqrt(sign))
+mun<- (var_alpha/(var_alpha+lev*var0))*mu0 + (lev*var0/(var_alpha+lev* var0))*abar 
+varn <- (var_alpha*var0)/ (var_alpha+lev*var0)
+mu_alpha<-rnorm(1,mun, sqrt(varn))
 
-#update sig_alpha using Gibbs sampling
+#update var_alpha using Gibbs sampling
 an<-lev/2 + a0
 bn<- 0.5 * (sum((alpha-mu_alpha)^2)) +b0
-sig_alpha<-1/rgamma(1,shape=an, rate=bn)
+var_alpha<-1/rgamma(1,shape=an, rate=bn)
 
-out[iter,]<-c(mu_alpha, sqrt(sig_alpha), beta)
+out[iter,]<-c(mu_alpha, sqrt(var_alpha), beta)
 
 }
 

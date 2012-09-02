@@ -52,15 +52,15 @@ beta<- (1/(2*sigma*sigma) )
 #sigma<- sqrt(1/(2*beta))
 psi ~ dunif(0,1)
 for(i in 1:M){
- w[i]~dbern(psi)
+ z[i]~dbern(psi)
  s[i,1]~dunif(Xl,Xu)
- s[i,2]~dunif(Yl,Yu) 
+ s[i,2]~dunif(Yl,Yu)
 }
 for(i in 1:M){
 for(j in 1:ntraps){
-   mu[i,j]<-w[i]*p[i,j]
- ncaps[i,j]~ dbin(mu[i,j],K[j]) 
- dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2) 
+   mu[i,j]<-z[i]*p[i,j]
+ ncaps[i,j]~ dbin(mu[i,j],K[j])
+ dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2)
   p[i,j]  <-  p0*exp( - beta*dd[i,j] )
 ncapsnew[i,j]~dbin(mu[i,j],K[j])
 err[i,j]<-  pow(pow(ncaps[i,j],.5) - pow(K[j]*p[i,j],.5),2)
@@ -76,7 +76,7 @@ errnew[i,j]<- pow(pow(ncapsnew[i,j],.5) - pow(K[j]*p[i,j],.5),2)
 Xobs<-sum(err[,])
 Xnew<-sum(errnew[,])
 
-N<-sum(w[1:M])
+N<-sum(z[1:M])
 D<-N/area
 }
 ",fill=TRUE)
@@ -84,11 +84,11 @@ sink()
 
 data <- list ("ncaps","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area")
 sst<-sample(1:nrow(traplocs),M,replace=TRUE)
-wst<-c(rep(1,nind),rep(0,M-nind))
+zst<-c(rep(1,nind),rep(0,M-nind))
 inits <- function(){
-  list (sigma=runif(1,.4,1),p0=runif(1,.01,.2),w=wst)
+  list (sigma=runif(1,.4,1),p0=runif(1,.01,.2),z=zst)
 }
-parameters <- c("psi","sigma","p0","N","D","beta","s","w") ###,"Xobs","Xnew","s","w")
+parameters <- c("psi","sigma","p0","N","D","beta","s","z") ###,"Xobs","Xnew","s","w")
 out <- bugs(data, inits, parameters, "modelfile.txt", n.thin=1,n.chains=3, n.burnin=nb,n.iter=ni,working.dir=getwd(),debug=FALSE)
 out
 }
