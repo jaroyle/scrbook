@@ -45,12 +45,12 @@ secr_wolverine()
 
 ## The function is currently defined by the following set of commands:
 
-library("scrbook")
-library("secr")
-data("wolverine")
- traps<-as.matrix(cbind(1:37,wolverine$wtraps))   #[,1:3]
-dimnames(traps)<-list(NULL,c("trapID","x","y",paste("day",1:165,sep="")))
 
+library("secr")
+library("scrbook")
+data("wolverine")
+traps<-as.matrix(wolverine$wtraps)   #[,1:3]
+dimnames(traps)<-list(NULL,c("trapID","x","y",paste("day",1:165,sep="")))
 
 traps1<-as.data.frame(traps[,1:3])
 traps1$x<-as.numeric(as.character(traps1$x))
@@ -59,19 +59,7 @@ traps1$y<-as.numeric(as.character(traps1$y))
 # This seems to ignore the trap operation information
 trapfile1<-read.traps(data=traps1,detector="proximity")
 
-
-
-hold<-rep(NA,nrow(traps))
-for(i in 1:nrow(traps)){
-hold[i]<-paste(traps[i,4:ncol(traps)],collapse="")
-}
-traps1<- cbind(traps[,1:3],"usage"=hold)
-#
-# to make use of the trap operation information you have to do this I think:
-#
-write.table(traps1, "traps.txt", row.names=FALSE, col.names=FALSE)
-trapfile2<-read.traps("traps.txt",detector="proximity") 
-
+trapfile2<-scr2secr(scrtraps=traps,type="proximity")
 
 wolv.dat<-wolverine$wcaps
 dimnames(wolv.dat)<-list(NULL,c("Session","ID","Occasion","trapID"))

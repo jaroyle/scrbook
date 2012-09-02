@@ -39,7 +39,7 @@ suggest that are, therefore, actual morons.  Therefore we don't expect
 or hope to make assumptions that are ``correct'' in any way. Gelman
 and Shalizi (2010) say it this way: ``there is general agreement that,
 in this domain, all models in use are wrong -- not just merely
-falsibiable, but actually false.''
+falsibiable, but actually false.''\footnote{I like that quote}. 
 
 
 In the context of SCR models we discuss some specific methods of model
@@ -59,6 +59,9 @@ to the test of ``complete spatial randomness'' which Royle et
 al. (2011) applied to SCR models. Really this is a test of ``spatial
 randomness'' because CSR really means Poisson point process.
 
+
+
+\begin{comment}
 A few specific questions to resolve:
 \begin{itemize}
 \item[(1)]  Can AIC or DIC choose among detection models and does it matter?
@@ -72,7 +75,7 @@ Posterior model probabilities: Can we demo this?   With detection models?
 (clustering, regularity, uniformity) and misspecified encounter models
 -- do they show a lack of fit?
 \end{itemize}
-
+\end{comment}
 
 
 
@@ -113,8 +116,92 @@ encounter process. That is the question we will evaluate here.
 
 \section{Model Selection: General Strategies}
 
+We talk here of variable selection methods.  i.e., fixed effects. AIC
+is the standard for likelihood analysis of models and it is versatile
+and flexible for fixed effects.
+For Bayesian analysis we rely on different methods. We use the Kuo and
+Mallick idea \citep{kuo_mallick:1998}, 
+sometimes DIC although we are kind of against it for
+some reasons (see below).......
+There is a good review paper recently by \citet{ohara_sillanpaa:2009}
+that hits on these and many more. 
+
+
+\subsection{Scope of the model selection problem}
+
+There are two distinct classes of problems that we encounter in SCR
+models which might require some type of model selection or ranking
+effort: (1) Choosing among biological models and (2) choosing among
+different parametric encounter probability models. 
+
+\subsubsection{Choosing Biological models}
+
+Behavior, time of year, trap type (biated or not), seasonal variation
+in encounter probability, things that make a
+biological difference we should be able to choose among and these are
+probably secondary interests 
+in many capture-recaptuer studies, or secondary to estimating density
+at least.
+In terms of a given problem of density estimation, 
+the expectation is that it should make a big difference for covariate
+effects such as behavioral response and so forth which has been demonstrated in
+practice repeatedly. So we need to be able to make objective choices
+to deciding what should be in the model and what should not. 
+
+
+\subsubsection{Choosing detection models}
+
+Models of space usage so it makes sense to choose among them. But
+usually trap density is low and so we imagine one would have little or
+no power to detect different models. 
+
+likelihood analysis of such models.......  Maybe this holds for DIC or
+now, maybe this should be investigated.
+
+
+HERE WE SET UP A SIMULATION WITH 5 MODELS. FOR EACH MODEL WE SIMULATE
+A DATA SET AND FIT ALL 5 MODELS USING MLE AND USING JAGS. THATS 10
+MODEL FITS.  WE DO THAT 100 TIMES AND LOOK AT THE OUTPUT.
+THIS IS A TOTAL OF 1000 MODEL FITS FOR EACH ``TRUE MODEL''
+SO TO DO THIS FOR ALL 10 MODELS REQUIRES 10,000 FITS.
+QUESTION: SHOULD WE FIX ``AVERAGE E[n]''??????? I think so. This needs
+evaluated ahead of time.
+
+For all 5 models choose parameters: (1) same effective home range
+size; (2) same net capture probability.  e.g., 60\% of population for
+N=100 and N=200  (huge sample sizes).
+
+I have a 2x2 factorial arrangement in mind for a 7 x 7 grid of traps
+with unit spacing:
+\begin{verbatim}
+                     N=100              N=200
+
+sigma = 0.50   low spatial recaps      low spatial recaps
+               low n                   high n
+sigma = 1.00   high spatial recaps     high/high
+               low n
+\end{verbatim}
+
+There could be two dimensions to this study:
+
+(1)	Selection from among different detection models.
+E.g., Comparison of logit vs. cloglog and linear vs quadratic vs.
+log() distance functions.  That's 6 total models, for
+delta = 2, 3 and 4.  Why should DIC work?
+
+(3)	For each unique detection model, we simulate data under that model
+and fit all of the other models and compute DIC, variable weights and
+perhaps use likelihood to compute AIC and see how the results differ.
+
+Since all the detection models give about the same answer there's no
+point in acting like we're engaging in some profound act of pure
+science by doing model selection on detection functions.
+
+
+\subsection{AIC and \mbox{\tt secr}}
+
 If you're doing a classical analysis based on likelihood then model
-selection is easily accomplished using AIC \citep{burnham_anderson:xxxx}
+selection is easily accomplished using AIC \citep{burnham_anderson:2002}
 which we demonstrate below. The AIC of a model is simply twice the
 negative log-likelihood then penalized by the number of parameters
 \[
@@ -127,6 +214,20 @@ thumb or whatever and so we stick with basic AIC here.  We don't
 believe in model averaging parameters that do not have a consistent
 meaning across models. In the case of SCR models, it does make sense
 to model-average estimates of density and related quatnties.
+
+The {\bf R} package \mbox{\tt secr} computes and outputs AIC
+automatically for each model fitted and it provides some capabilities
+for producing a model selection table and doing model-averaging.
+As an example of that, we consider the black-bear models : WHICH
+MODELS? and here is the code for generating the AIC Table:
+\begin{verbatim}
+
+BETH or RAHEL?
+
+\end{verbatim}
+
+
+\subsection{Bayesian model selection}
 
 Model selection is somewhat less straightforward
 as a Bayesian and there is no such canned all-purpose method like AIC
@@ -143,7 +244,7 @@ problems, based on a number of basic considerations:
 hypothesis testing ideas -- i.e., if the posterior for a parameter overlaps
 zero or whatever then toss out the effect.
 \item[(2)] Posterior model probabilities: In some cases we can implement
-the "variable weights" idea from \citep{kuo_mallick:XXXXX}.
+the "variable weights" idea from \citep{kuo_mallick:1998}.
 The idea is introduce a latent variable $w \sim Bern(.5)$ and then
 construct  your model according to, for example,
 \[
@@ -307,93 +408,6 @@ the model-selection analysis.
 This can all be very  tedious to implement but
 produces posterior model probabilities which have a direct
 interpretation that is desireable.
-
-
-
-
-
-\subsection{Choosing Biological models}
-
-Behavior, time of year, trap type (biated or not), seasonal variation
-in encounter probability, things that make a
-biological difference we should be able to choose among
-
-Different model structures: e.g., with/without behavioral response.
-With/without some trap covariate. Other things?
-
-The expectation is that it should make a big difference for covariate
-effects such as Mb and so forth which has been demonstrated in
-practice repeatedly. So can we choose among those models effectively?
-Do an analysis of some data set by AIC and also DIC... Maybe the
-ovenbird data?
-
-A minor simulation: Simulated data with/without behavior
-
-SCR0
-SCR0 + Mb
-SCR0 + effort
-SCR0 + effort + Mb
-
-Compare by DIC
-Compare by model-weights.
-
-
-
-\subsection{Choosing detection models}
-
-
-models of space usage so it makes sense to choose among them. But
-usually trap density is low and so we imagine one would have little or
-no power to detect different models. 
-
-likelihood analysis of such models.......  Maybe this holds for DIC or
-now, maybe this should be investigated.
-
-
-
-HERE WE SET UP A SIMULATION WITH 5 MODELS. FOR EACH MODEL WE SIMULATE
-A DATA SET AND FIT ALL 5 MODELS USING MLE AND USING JAGS. THATS 10
-MODEL FITS.  WE DO THAT 100 TIMES AND LOOK AT THE OUTPUT.
-THIS IS A TOTAL OF 1000 MODEL FITS FOR EACH ``TRUE MODEL''
-SO TO DO THIS FOR ALL 10 MODELS REQUIRES 10,000 FITS.
-QUESTION: SHOULD WE FIX ``AVERAGE E[n]''??????? I think so. This needs
-evaluated ahead of time.
-
-For all 5 models choose parameters: (1) same effective home range
-size; (2) same net capture probability.  e.g., 60\% of population for
-N=100 and N=200  (huge sample sizes).
-
-I have a 2x2 factorial arrangement in mind for a 7 x 7 grid of traps
-with unit spacing:
-\begin{verbatim}
-                     N=100              N=200
-
-sigma = 0.50   low spatial recaps      low spatial recaps
-               low n                   high n
-sigma = 1.00   high spatial recaps     high/high
-               low n
-\end{verbatim}
-
-There could be two dimensions to this study:
-
-(1)	Selection from among different detection models.
-E.g., Comparison of logit vs. cloglog and linear vs quadratic vs.
-log() distance functions.  That's 6 total models, for
-delta = 2, 3 and 4.  Why should DIC work?
-
-(3)	For each unique detection model, we simulate data under that model
-and fit all of the other models and compute DIC, variable weights and
-perhaps use likelihood to compute AIC and see how the results differ.
-
-Since all the detection models give about the same answer there's no
-point in acting like we're engaging in some profound act of pure
-science by doing model selection on detection functions.
-
-
-
-
-
-
 
 
 
@@ -589,30 +603,6 @@ and we would have considerable information about all N point
 locations. Consequently, the uniform prior would have almost no
 influence at all.
 
-\section{Is SCR0 adequate for the wolverine data?}
-
-We used the posterior output from the wolverine model fitted previous
-to compute a relatively coarse version of a density map, using a 10 x
-10 grid (Figure XXX.YYY) and using a 30 x 30 grid (Figure XXYYZZ). A
-couple of things are noteworthy: First is that as we move away from
-"where the data live" - away from the trap array - we see that the
-density approaches the mean density (lambda = XX per grid cell …
-XXX.YYY how is this computed?). This is a property of the estimator
-when the "detection function" decreases sufficiently
-rapidly. Relatedly, it is also a property of statistical smoothers
-such as splines, kernel smoothers, and regression smoothers -
-predictions tend toward the global mean as the influence of data
-diminishes. Another way to think of it is that it is a consequence of
-the prior - which imposes uniformity, and as you get far away from the
-data, the predictions tend to the prior. The other thing to note about
-this map is that density is not 0 over water. This might be perplexing
-to some who are fairly certain that wolverines do not like
-water. However, there is nothing about the model that recognizes water
-from non-water and so the model predicts over water {\it as if} it
-were habitat similar to that within which the array is nested. But,
-all of this is ok as far as estimating density goes and, furthermore,
-we can compute valid estimates of N over any well-defined region which
-presumably wouldn't include water if we so choose.
 
 \section{Omnibus and Encounter Model Testing}
 
@@ -662,10 +652,42 @@ For each model we fitted each of the other 5 models.
 Computed each fit statistic, how often do we reject that the model fits?
 
 
-\subsection{Example: Black bear data? Wolverine data?}
+
+\section{Some examples: Wolverine}
+
+
+Wolverine study:
+Model selection --- 
+
+Goodness-of-fit
+Is SCR0 adequate for the wolverine data?
+
+We used the posterior output from the wolverine model fitted previous
+to compute a relatively coarse version of a density map, using a 10 x
+10 grid (Figure XXX.YYY) and using a 30 x 30 grid (Figure XXYYZZ). A
+couple of things are noteworthy: First is that as we move away from
+"where the data live" - away from the trap array - we see that the
+density approaches the mean density (lambda = XX per grid cell …
+XXX.YYY how is this computed?). This is a property of the estimator
+when the "detection function" decreases sufficiently
+rapidly. Relatedly, it is also a property of statistical smoothers
+such as splines, kernel smoothers, and regression smoothers -
+predictions tend toward the global mean as the influence of data
+diminishes. Another way to think of it is that it is a consequence of
+the prior - which imposes uniformity, and as you get far away from the
+data, the predictions tend to the prior. The other thing to note about
+this map is that density is not 0 over water. This might be perplexing
+to some who are fairly certain that wolverines do not like
+water. However, there is nothing about the model that recognizes water
+from non-water and so the model predicts over water {\it as if} it
+were habitat similar to that within which the array is nested. But,
+all of this is ok as far as estimating density goes and, furthermore,
+we can compute valid estimates of N over any well-defined region which
+presumably wouldn't include water if we so choose.
 
 
 
+\begin{comment}
 
 
 \section{A simulation study under alternatives}
@@ -759,11 +781,16 @@ SYS
 
 4.6.4. GoF under the inhibition process.
 
-
+\end{comment}
 
 
 \section{ Summary and Outlook  }
 
+
+There is nothing known at all about power to detect various
+departures.  There is some interesting and useful research to be done
+on this. Do we have power to detect departures and does it matter in
+terms of estimating $N$?
 
 Model fit: other ideas:
 Richard brings up a good point which is related to using
