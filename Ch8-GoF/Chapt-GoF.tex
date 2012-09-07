@@ -197,21 +197,38 @@ detections functions and we discourage people from doing that.
 \subsection{Model selection by AIC}
 \label{gof.sec.aic}
 
-If you're doing a classical analysis based on likelihood then model
+If you're doing  classical analysis based on likelihood then model
 selection is easily accomplished using AIC \citep{burnham_anderson:2002}
 which we demonstrate below. The AIC of a model is simply twice the
-negative log-likelihood then penalized by the number of parameters
+negative log-likelihood evaluated at the MLE,  penalized by the number of parameters
+($k$) in the model:
 \[
- AIC = -2 \mbox{\tt logLikelihood}  + 2 \mbox{\# parameters}
+ AIC = -2 \mbox{\tt logL}({\bf y}|\hat{\bm \theta})  + 2 k
 \]
-and models with small values of AIC are preferred. Now people do
-model-weighting of things by AIC, and there are various flavors for
-small-sample adjustment and so forth but we cannot provide strict guidelines
+Models with small values of AIC are preferred. 
+It is common to use a modified AIC referred to as $AIC_{c}$ for small
+sample sizes which is
+\[
+ AIC_{c}  = 
+-2 \mbox{\tt logL}({\bf y}|\hat{\bm \theta})  + \frac{2 k
+  (k+1)}{n-k-1}
+\]
+where $n$ is the sample size. 
+Two important problems with the use of $AIC$ and $AIC_{c}$ are that
+they don't apply directly to hierarchical models that contain random
+effects, unless they are computed directly from the marginal
+likelihood (for SCR models we can do this, see
+Chapt. \ref{chapt.mle}). Moreover, it is not clear what should be the
+effective sample size $n$ in calculation of $AIC_{c}$, as there can be
+covariates that affect individuals, that vary over time, or in space.
+We do not offer 
+strict guidelines
 as to when to use a small sample size adjustment or not.
+
 The {\bf R} package \mbox{\tt secr} computes and outputs AIC
 automatically for each model fitted and it provides some capabilities
-for producing a model selection table and also doing model-averaging
-which we recommend for obtaining estimates of density from multiple models.
+for producing a model selection table (function \mbox{\tt AIC})  and also doing model-averaging
+(function \mbox{\tt model.average}),  which we recommend for obtaining estimates of density from multiple models.
 We provide  an example of using \mbox{\tt secr}, to analyze the
 wolverine camera trapping data using 
  4 distinct models:
@@ -271,12 +288,14 @@ wolvcapt3<-make.capthist(wolv.dat,trapfile2,fmt="trapID",noccasions=165)
 \end{verbatim}
 }
 
+{\bf XXXX use model.average2 XXXXXX }
+
 Once the data are have been prepared in this way we use the 
 \mbox{\secr} model fitting function \mbox{\tt secr.fit} to fit a
 number of different models and then the function \mbox{\tt AIC} to
 package the models together and summarize them in the form of an AIC
 table, with rows of the table ordered from best to worst. The function
-\mbox{\tt model.average} performans AIC-based model-averaging of the
+\mbox{\tt model.average} performans AIC-based model-averaging of the 
 parameters specified by the \mbox{\tt realnames} variable (below this
 is demonstrated for density, $D$).  Together
 these commands and resulting output (abbreviated to fit on page) look like this:
@@ -824,19 +843,11 @@ Node statistics
 
 \section{Evaluating Goodness-of-Fit}
 
-Using classical inference methods, it is sometimes possible to
-identify a test statistic, with known asymptotic distribution, to
-evaluate goodness-of-fit using a chi-square statistic. Examples from
-the closed capture-recapture setting includes XXXXXX XXXXXXXX.  When
-this is not the case, goodness-of-fit is ususally assessed using
-bootstrap methods \citep{dixon:2002}. Using a bootstrap method
-we identify a fit
-statistic and we compute the value for which is more or less the
-standard approach, in general.  To date, we are unaware of any
-goodness-of-fit applications based on likelihood analysis of SCR
-models (XXX WE NEED TO DO SOME RESEARCH ON THIS XXXXX).  We give some
-ideas in sec. xxxxxx below.
-
+We estimate parameters, maybe fit a bunch of models and pick a
+desireable one or perhaps average estimates of density from a few
+models. An important questions is:
+Are the data we have consistent with realizations from the model which
+we just fitted?
 
 Conceptually, we can think of model selection as follows: if we simulate
 under that model, do the simulated realizations look like our data?
@@ -851,8 +862,6 @@ hypotheses embodied by that model. This is not really true... it could
 mean we're missing something, or many things. The basic model could be
 correct, just not having enough stuff in it. 
 
-
-
 For either Bayesian or classical inference, the basic strategy is to
 come up with a fit statistic that depends on the parameters and the
 data set, which we denote by $T({\bf y}, \theta)$, and then we compute
@@ -863,6 +872,19 @@ we simulate data sets conditional on the MLE $\hat{\theta}$. For
 Bayesian analysis we use the Bayesian p-value (Gelman et al. XXXXX) in
 which data sets are simulated for a posterior sample of $\theta$ which
 we briefly introduced in sec. 2.XXXXX.
+
+Using classical inference methods, it is sometimes possible to
+identify a test statistic, with known asymptotic distribution, to
+evaluate goodness-of-fit using a chi-square statistic. Examples from
+the closed capture-recapture setting includes XXXXXX XXXXXXXX.  When
+this is not the case, goodness-of-fit is ususally assessed using
+bootstrap methods \citep{dixon:2002}. Using a bootstrap method
+we identify a fit
+statistic and we compute the value for which is more or less the
+standard approach, in general.  To date, we are unaware of any
+goodness-of-fit applications based on likelihood analysis of SCR
+models (XXX WE NEED TO DO SOME RESEARCH ON THIS XXXXX).  We give some
+ideas in sec. xxxxxx below.
 
 One challenge with SCR models is there has not been a definitive or 
 general proposal for a fit statistic for use in computing the Bayesian
