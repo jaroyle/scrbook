@@ -377,6 +377,8 @@ model3b       D~session g0~1 sigma~session halfnormal    5 -632.5445 1275.089 12
 
 
 
+
+
 \subsection{Bayesian model selection}
 
 Model selection is somewhat less straightforward
@@ -409,11 +411,12 @@ We recommend using it if it leads to
 sensible results but also we think it should be calibrated to the
 extent possible for specific classes of models. 
 \item[(4)] Logical argument: For something like M/F differences it seems
-to make sense to leave the extra parameters in the model no matter what,
-because of course you expect , biologically, there to be a difference in
-these things. Thus the hypothesis test itself is meaningless (Doug Johnson
-wrote a paper on this kind of stuff once) and you would only reject the
-null because of low power anyhow.
+to make sense to leave an extra parameter in the model no matter what,
+because of course you expect, biologically, there to be a difference in
+these things. e.g., in the above example we don't really ever think
+that $psi_{sex} = 0.5$ and so we might not typically admit that model
+into our model set. Thus the hypothesis test itself is meaningless, a form
+of gratuitious hypothesis testing \citep{johnson:1999}.
 \end{itemize}
 
 In all modeling activities, as in life itself, the use of logical argument should not be under-utilized.
@@ -457,9 +460,66 @@ one-half the posterior variance of the deviance:
  p_{V} - Var(D(\theta)|{\bf y})/2.
 \]
 We think this is what JAGS and BUGS is doing but we're really not
-sure. Its not just us -- no one is.
+sure. Its not just us -- no one is.  There are 20 ways to implement or
+compute AIC depending on which packages you use. If you run jags with
+R2jags or use WinBUGS then it computes the cheap version by default. 
+If you run  jags through the rjags package then you have to compute
+DIC differently somehow. 
 
-XXX show model here with covariates.... XXXX
+
+We give the model here which we used to fit a bunch of models -- the 4
+mentioned above, but not ``Model 0'' which assumed $\psi_{sex} =
+0.5$. We have an R function in the scrbook repo to show how we can fit
+each model. It goes like this:
+
+\begin{verbatim}
+## SHOULD RENAME THIS FUNCTION
+> toad1<-wolvSCR0.fn(y3d,traps,wsex=wsex,nb=1000,ni=21000,delta=2,M=200,model=1)
+> toad2<-wolvSCR0.fn(y3d,traps,wsex=wsex,nb=1000,ni=21000,delta=2,M=200,model=2)
+> toad3<-wolvSCR0.fn(y3d,traps,wsex=wsex,nb=1000,ni=21000,delta=2,M=200,model=3)
+> toad4<-wolvSCR0.fn(y3d,traps,wsex=wsex,nb=1000,ni=21000,delta=2,M=200,model=4)
+\end{verbatim}
+
+The BUGS model specification for model 4 is shown in panel XXXX. We
+made a single R script that fit each of the 4 models by using a binary
+indicator variable fed to BUGS as data which would turn on/off each
+component of the model. Note that the baseline encounter probability
+is modeled on the logit-scale and the new parameter $alpha_{sex}$ (bad
+notation?) whereas we model the effect of sex on $\sigma$ not on the
+scale of $\sigma$ but rather on the ``effect scale'' -- i.e., the
+coefficient of distance. 
+XXXXX
+We should see if the other parameterization
+changes things XXXXX
+A final point: We have dunif(-3,3) priors. Check normal prior and
+check dunif(-5,5).  Check WinBUGS too.
+
+\begin{verbatim}
+# check notation and put this in a panel?
+alpha.sex ~ dunif(-3,3)
+beta.sex  ~ dunif(-3,3)
+sigma~dunif(0,50)
+logitp0~dnorm(0,.1)
+beta<- (1/(2*sigma*sigma) )
+psi ~ dunif(0,1)
+psi.sex  ~ dunif(0,1)
+for(i in 1:M){
+ wsex[i] ~ dbern(psi.sex)
+ w[i]~dbern(psi)
+ s[i,1]~dunif(Xl,Xu)
+ s[i,2]~dunif(Yl,Yu) 
+ logit(p0[i])<- logitp0 + alpha.sex*wsex[i]
+ log(beta.vec[i])<- log( beta ) + beta.sex*wsex[i]
+for(j in 1:ntraps){
+  mu[i,j]<-w[i]*p[i,j]
+  ncaps[i,j]~ dbin(mu[i,j],K[j]) 
+  dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2) 
+  p[i,j]  <-  p0[i]*exp( - beta.vec[i]*dd[i,j] )
+
+}
+}
+\end{verbatim}
+
 
 An issue is applying DIC to hierarchical models in which case the
 level of the hierarchcy matters. Do you condition on the random
@@ -472,118 +532,160 @@ we take a look at its use here to pick among fixed effects models.
 We did this for our wolverine data. We used the same 4 models as above
 and a 5th model which was the super-model containing all of them
 together. We're not sure what DIC means in that case but, whatever. 
+
+For DIC, small is better and so this suggests Model 2 is preferred. 
+What is this model?
+
  
 \begin{verbatim}
-model0 = no covariates , sex effect only (variable density of males/females)
-model1 = same + g0(sex)
-model2 = sigma(sex)
-model3 = g0(sex)+sigma(sex)
-## SHOULD RENAME THIS FUNCTION
-> toad0<-wolvSCR0.fn(y3d,traps,wsex=wsex,nb=1000,ni=21000,delta=2,M=200,model=0)
-> toad1<-wolvSCR0.fn(y3d,traps,wsex=wsex,nb=1000,ni=21000,delta=2,M=200,model=1)
-> toad2<-wolvSCR0.fn(y3d,traps,wsex=wsex,nb=1000,ni=21000,delta=2,M=200,model=2)
-> toad3<-wolvSCR0.fn(y3d,traps,wsex=wsex,nb=1000,ni=21000,delta=2,M=200,model=3)
-> toad5<-wolvSCR0.fn(y3d,traps,wsex=wsex,nb=1000,ni=21000,delta=2,M=200,model=5)
-> 
+           dev  np     dic
+Model 1  441.78 78.3  520.0
+Model 2  440.97 82.4  523.4  
+Model 3: 443.68 80.9  524.6
+Model 4: 441.07 77.3  518.3  <- better model
 
-XXXXXXXXXXXXXXX ALL NEEDS REDONE XXXXXXXXXXXXXXXXXX
-XXXX TALk about which scale to model covariates on sigma XXXXXXXXXXXXXXXXXXX
+DIC:  4, 1, 2, 3
+AIC:  2, 4, 1, 3
 
-> toad0$DIC
-[1] 515.5896
-> toad1$DIC
-[1] 512.7036
-> toad2$DIC
-[1] 514.2595
-> toad3$DIC
-[1] 511.5824   <- BEST MODEL HAS BOTH
-> toad4$DIC
-Error: object 'toad4' not found
-> toad5$DIC
-[1] 514.695
-> 
+table
+model  log(sigma) delta  alpha0  alpha.sex D  dev np DIC
+
+
+> toad1b
+Inference for Bugs model at "modelfile0.txt", fit using jags,
+ 3 chains, each with 11000 iterations (first 1000 discarded)
+ n.sims = 30000 iterations saved
+          mu.vect sd.vect    2.5%     25%     50%     75%   97.5%  Rhat n.eff
+D           5.834   1.138   3.856   5.012   5.784   6.555   8.290 1.001  9800
+N          60.521  11.805  40.000  52.000  60.000  68.000  86.000 1.001  9800
+X1new       9.704   2.759   5.177   7.719   9.411  11.365  15.962 1.001  6500
+X1obs      13.107   3.404   7.483  10.671  12.759  15.165  20.727 1.001  4300
+X3new      13.079   3.233   7.621  10.764  12.776  15.056  20.235 1.001 30000
+X3obs      21.259   2.195  17.590  19.707  21.050  22.582  26.146 1.001  6900
+Xnew       61.726   6.581  49.513  57.150  61.457  66.088  75.232 1.001  9900
+Xobs       89.291   6.105  78.264  84.972  89.043  93.251 101.988 1.001  7100
+alpha.sex  -0.014   1.730  -2.846  -1.523  -0.017   1.477   2.842 1.001 20000
+beta        1.258   0.208   0.881   1.112   1.247   1.393   1.689 1.001 15000
+beta.sex    0.008   1.735  -2.846  -1.491   0.013   1.521   2.845 1.001 10000
+logitp0    -2.816   0.179  -3.170  -2.935  -2.815  -2.697  -2.467 1.001  6500
+psi         0.305   0.067   0.188   0.258   0.300   0.347   0.448 1.001 15000
+psi.sex     0.520   0.103   0.320   0.449   0.520   0.592   0.720 1.001  7300
+sigma       0.637   0.054   0.544   0.599   0.633   0.671   0.753 1.001 15000
+deviance  441.776  12.513 419.615 433.006 441.021 449.721 468.423 1.002  3500
+
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+
+DIC info (using the rule, pD = var(deviance)/2)
+pD = 78.3 and DIC = 520.0
+DIC is an estimate of expected predictive error (lower deviance is better).
+> toad2b
+Inference for Bugs model at "modelfile0.txt", fit using jags,
+ 3 chains, each with 11000 iterations (first 1000 discarded)
+ n.sims = 30000 iterations saved
+          mu.vect sd.vect    2.5%     25%     50%     75%   97.5%  Rhat n.eff
+D           5.685   1.144   3.759   4.916   5.591   6.362   8.193 1.001  9700
+N          58.980  11.868  39.000  51.000  58.000  66.000  85.000 1.001  9700
+X1new       9.785   2.760   5.218   7.796   9.498  11.454  15.932 1.001 16000
+X1obs      12.403   3.362   6.852  10.005  12.052  14.427  19.861 1.001 30000
+X3new      13.146   3.280   7.587  10.812  12.852  15.172  20.343 1.001 30000
+X3obs      21.305   2.087  17.780  19.818  21.127  22.580  25.902 1.004   710
+Xnew       62.283   6.637  49.914  57.700  62.082  66.611  76.023 1.001 30000
+Xobs       89.161   6.105  78.063  84.883  88.888  93.103 101.987 1.002  2200
+alpha.sex  -0.755   0.348  -1.447  -0.985  -0.754  -0.522  -0.075 1.006   420
+beta        1.174   0.214   0.779   1.030   1.167   1.311   1.621 1.001  4200
+beta.sex    0.013   1.741  -2.846  -1.490   0.016   1.536   2.856 1.001  7400
+logitp0    -2.437   0.249  -2.914  -2.607  -2.440  -2.271  -1.945 1.005   520
+psi         0.297   0.067   0.182   0.250   0.292   0.339   0.442 1.001 10000
+psi.sex     0.564   0.104   0.354   0.492   0.567   0.638   0.757 1.001 16000
+sigma       0.661   0.063   0.555   0.618   0.654   0.697   0.801 1.001  4200
+deviance  440.973  12.851 418.369 431.914 440.121 449.058 468.333 1.003  1000
+
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+
+DIC info (using the rule, pD = var(deviance)/2)
+pD = 82.4 and DIC = 523.4
+DIC is an estimate of expected predictive error (lower deviance is better).
+> toad3b
+Inference for Bugs model at "modelfile0.txt", fit using jags,
+ 3 chains, each with 11000 iterations (first 1000 discarded)
+ n.sims = 30000 iterations saved
+          mu.vect sd.vect    2.5%     25%     50%     75%   97.5%  Rhat n.eff
+D           5.721   1.131   3.759   4.916   5.591   6.458   8.193 1.002  2700
+N          59.355  11.731  39.000  51.000  58.000  67.000  85.000 1.002  2700
+X1new       9.661   2.748   5.168   7.702   9.346  11.314  15.869 1.001 30000
+X1obs      13.050   3.415   7.419  10.621  12.680  15.101  20.724 1.001 16000
+X3new      13.125   3.224   7.653  10.817  12.838  15.142  20.203 1.001 15000
+X3obs      21.335   2.203  17.651  19.774  21.109  22.664  26.245 1.001 11000
+Xnew       62.261   6.680  49.860  57.651  61.992  66.637  76.052 1.001  4600
+Xobs       89.964   6.203  78.599  85.632  89.649  93.989 102.872 1.002  1700
+alpha.sex  -0.017   1.730  -2.855  -1.513  -0.019   1.477   2.852 1.001 30000
+beta        1.221   0.290   0.692   1.019   1.204   1.406   1.837 1.012   190
+beta.sex    0.022   0.346  -0.647  -0.205   0.016   0.241   0.734 1.013   170
+logitp0    -2.818   0.175  -3.163  -2.936  -2.816  -2.700  -2.477 1.003   870
+psi         0.299   0.066   0.184   0.252   0.294   0.341   0.441 1.002  3300
+psi.sex     0.526   0.110   0.311   0.449   0.526   0.604   0.739 1.002  1400
+sigma       0.654   0.084   0.522   0.596   0.644   0.700   0.850 1.012   190
+deviance  443.680  12.732 420.953 434.766 442.974 451.708 470.737 1.002  1400
+
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+
+DIC info (using the rule, pD = var(deviance)/2)
+pD = 80.9 and DIC = 524.6
+DIC is an estimate of expected predictive error (lower deviance is better).
+> toad4b
+Inference for Bugs model at "modelfile0.txt", fit using jags,
+ 3 chains, each with 11000 iterations (first 1000 discarded)
+ n.sims = 30000 iterations saved
+          mu.vect sd.vect    2.5%     25%     50%     75%   97.5%  Rhat n.eff
+D           5.647   1.119   3.759   4.820   5.494   6.362   8.097 1.004   780
+N          58.587  11.606  39.000  50.000  57.000  66.000  84.000 1.004   780
+X1new       9.794   2.789   5.230   7.779   9.480  11.494  16.065 1.001 15000
+X1obs      12.360   3.356   6.833   9.970  12.025  14.348  19.936 1.002  2600
+X3new      13.162   3.233   7.621  10.864  12.883  15.163  20.274 1.001 15000
+X3obs      21.378   2.070  17.890  19.920  21.181  22.639  25.949 1.001 30000
+Xnew       62.472   6.595  50.278  57.914  62.204  66.754  76.131 1.001  4800
+Xobs       88.559   6.070  77.548  84.319  88.227  92.445 101.274 1.003  1200
+alpha.sex  -0.788   0.344  -1.471  -1.022  -0.782  -0.552  -0.123 1.003   950
+beta        1.320   0.304   0.797   1.105   1.296   1.505   1.975 1.012   180
+beta.sex   -0.223   0.337  -0.898  -0.447  -0.216   0.006   0.426 1.010   230
+logitp0    -2.445   0.237  -2.894  -2.607  -2.449  -2.288  -1.966 1.002  1500
+psi         0.295   0.065   0.181   0.249   0.290   0.336   0.435 1.004   740
+psi.sex     0.535   0.110   0.317   0.459   0.536   0.612   0.743 1.001  7200
+sigma       0.628   0.074   0.503   0.576   0.621   0.673   0.792 1.012   180
+deviance  441.065  12.433 418.997 432.297 440.248 449.000 467.453 1.001  8300
+
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+
+DIC info (using the rule, pD = var(deviance)/2)
+pD = 77.3 and DIC = 518.3
+DIC is an estimate of expected predictive error (lower deviance is better).
 \end{verbatim}
 
+Summarize model parameters for each model...... estimates ... and
+deviance, np and DIC for each model. 
 The output from these models is summarized in Table XXXXX.
 These are based on 21000 iterations, 3 chains, 1000 discarded, 60k
 posterior samples.......
 what we see is: XYZ.....
+I think we get the same model by DIC as we get by AIC. This is super
+encouraging!
+
+
+
+
+
+
+
+
+
+
+
 
 \begin{verbatim}
-
-Model 0:
-> print(toad0,digits=2)
-Inference for Bugs model at "modelfile0.txt", fit using WinBUGS,
- 3 chains, each with 21000 iterations (first 1000 discarded)
- n.sims = 60000 iterations saved
-            mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
-beta.sex    0.00  1.74  -2.85  -1.50   0.01   1.51   2.85    1 56000
-alpha.sex   0.00  1.73  -2.85  -1.50   0.00   1.51   2.86    1 60000
-psi         0.27  0.06   0.17   0.23   0.27   0.31   0.39    1 60000
-psi.sex     0.52  0.10   0.32   0.45   0.52   0.59   0.72    1  9000
-sigma      24.34 14.59   1.72  11.34  24.07  36.94  48.71    1 12000
-logitp0    -2.87  0.17  -3.21  -2.99  -2.88  -2.76  -2.53    1  2800
-N          54.11  9.53  38.00  47.00  53.00  60.00  75.00    1 53000
-D           5.22  0.92   3.66   4.53   5.11   5.78   7.23    1 52000
-deviance  446.58 11.75 425.90 438.30 445.80 454.10 471.70    1  6100
-DIC info (using the rule, pD = var(deviance)/2)
-pD = 69.0 and DIC = 515.6
-
-> print(toad1,digits=2)
-Inference for Bugs model at "modelfile0.txt", fit using WinBUGS,
- 3 chains, each with 21000 iterations (first 1000 discarded)
- n.sims = 60000 iterations saved
-            mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
-beta.sex   -0.01  1.73  -2.85  -1.51  -0.02   1.49   2.85    1 60000
-alpha.sex  -0.79  0.35  -1.48  -1.02  -0.79  -0.56  -0.11    1  8100
-psi         0.28  0.06   0.18   0.24   0.27   0.31   0.40    1  3600
-psi.sex     0.56  0.10   0.36   0.49   0.56   0.63   0.75    1  1700
-sigma      24.67 14.42   1.87  11.93  24.44  37.19  48.71    1 60000
-logitp0    -2.46  0.26  -2.95  -2.63  -2.46  -2.29  -1.94    1 13000
-N          54.87  9.72  38.00  48.00  54.00  61.00  76.00    1  2900
-D           5.29  0.94   3.66   4.63   5.21   5.88   7.33    1  2900
-deviance  443.21 11.79 422.20 434.90 442.50 450.70 468.20    1 10000
-DIC info (using the rule, pD = var(deviance)/2)
-pD = 69.5 and DIC = 512.7
-
-> print(toad2,digits=2)
-Inference for Bugs model at "modelfile0.txt", fit using WinBUGS,
- 3 chains, each with 21000 iterations (first 1000 discarded)
- n.sims = 60000 iterations saved
-            mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
-beta.sex    0.01  1.71  -2.83  -1.46   0.01   1.49   2.84    1 46000
-alpha.sex  -0.01  1.73  -2.85  -1.51  -0.01   1.49   2.84    1 60000
-psi         0.28  0.06   0.17   0.24   0.27   0.31   0.39    1  3000
-psi.sex     0.53  0.10   0.32   0.45   0.53   0.60   0.72    1 12000
-sigma      25.64 14.00   2.19  13.80  25.67  37.68  48.75    1 15000
-logitp0    -2.87  0.17  -3.21  -2.99  -2.87  -2.75  -2.52    1  1500
-N          54.54  9.52  38.00  48.00  54.00  60.00  75.00    1  3200
-D           5.26  0.92   3.66   4.63   5.21   5.78   7.23    1  3200
-deviance  446.36 11.66 425.80 438.10 445.60 453.80 471.20    1  4200
-DIC info (using the rule, pD = var(deviance)/2)
-pD = 67.9 and DIC = 514.3
-DIC is an estimate of expected predictive error (lower deviance is better).
-
-> print(toad3,digits=2)
-Inference for Bugs model at "modelfile0.txt", fit using WinBUGS,
- 3 chains, each with 21000 iterations (first 1000 discarded)
- n.sims = 60000 iterations saved
-            mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
-beta.sex    0.16  1.67  -2.76  -1.22   0.21   1.60   2.86    1 60000
-alpha.sex  -0.80  0.34  -1.48  -1.03  -0.80  -0.57  -0.13    1  3700
-psi         0.28  0.06   0.18   0.24   0.27   0.31   0.40    1  3000
-psi.sex     0.56  0.10   0.36   0.49   0.57   0.64   0.76    1  5200
-sigma      26.33 13.93   2.20  14.71  26.62  38.33  48.88    1  7300
-logitp0    -2.45  0.25  -2.94  -2.62  -2.45  -2.28  -1.94    1  1300
-N          55.04  9.67  38.00  48.00  54.00  61.00  76.00    1  2400
-D           5.31  0.93   3.66   4.63   5.21   5.88   7.33    1  2400
-deviance  443.04 11.71 422.30 434.80 442.30 450.50 468.10    1  9000
-DIC info (using the rule, pD = var(deviance)/2)
-pD = 68.5 and DIC = 511.6
-DIC is an estimate of expected predictive error (lower deviance is better).
-
-
-
 
 > print(toad5,digits=2)
 Inference for Bugs model at "modelfile5.txt", fit using WinBUGS,
@@ -618,8 +720,6 @@ DIC is an estimate of expected predictive error (lower deviance is better).
 \end{verbatim}
 
 
-For DIC, small is better and so this suggests Model 2 is preferred. 
-What is this model?
 
 
 \begin{comment}
@@ -648,6 +748,25 @@ On Thu, May 24, 2012 at 9:57 AM, Jeffrey Royle <jaroyle@gmail.com> wrote:
 > I still can't compute Plummer's version using JAGS -- I think maybe I need
 > to update my JAGS version or something.
 \end{comment} 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 \subsection{Model selection indicator variables}
 
@@ -1092,9 +1211,33 @@ compute this for {\it each} iteration of the MCMC algorithm to provide
 an assessment of model fit.
 WHY FREEMAN TUKEY XXX FROM CHAPT 2 XXXXXX
 
-Statistic 3: We look also at Trap frequencies
 
-Statistic 2: Individual frequencies
+
+\subsubsection{Statistic 2: Trap frequencies}
+
+Thinking of SCR models  as spatial counts at trap locations it makes
+sense that the SCR model is basically just a spatial model of counts
+\citep{chandler_royle:2012}. So we should pick models that provide
+good predictions of trap totals.
+This suggests the following statistic:
+\[
+ bleen
+\]
+
+In this context of a spatial prediction model it
+makes sense to think of 
+cross-validation. 
+Cross-validation is a standard
+method of fitting spatial models such as kriging and splines. So we
+could as well use cross-validation based on the TRAP-SPECIFIC
+frequencies or some other measure.  We should try that here.
+
+
+\subsubsection{Statistic 1: Individual frequencies}
+
+SCR model is a model for heterogeneity for which individual encounter
+frequencies are the sufficient statistic [not really but close]. so we
+propose to use a statistic based on that.
 
 If model has time effects then y[i,j] is binary ... we recommend
 computing individual/trap or individual or trap summaries using an
@@ -1253,20 +1396,31 @@ SYS
 \section{ Summary and Outlook  }
 
 
-There is nothing known at all about power to detect various
+We offered some general strategies for model selection and model
+checking. 
+We recommend model averaging over a small set of distinct models for
+estimating density. But we think using a single model or the best
+model for asessing the importance of effects is probably ok despite
+that the SE's will be biased. 
+
+We think the selection ideas we talked about are probably ok, although
+some more work is needed on Bayesian model selection to make it more
+useful.  The GoF is pretty experimental. There is not a lot of
+guidance in the literature on GoF in SCR models. 
+There is essentially nothing known at all about power to detect various
 departures.  There is some interesting and useful research to be done
 on this. Do we have power to detect departures and does it matter in
-terms of estimating $N$?
+terms of estimating $N$? Our specific analyses suggest not, but we
+know of no theory or specific empirical study that has addressed this
+issue. 
 
-Model fit: other ideas:
-Richard brings up a good point which is related to using
-cross-validation.  Given that SCR models are a type of model for
-spatialy correlation, modeling spatial dependence in counts, similar
-to the Wolpert and Ickstadt idea, why not use techniques commonly used
-in spatial models for SCR models?  Cross-validation is a standard
-method of fitting spatial models such as kriging and splines. So we
-could as well use cross-validation based on the TRAP-SPECIFIC
-frequencies or some other measure.  We should try that here.
+
+
+
+
+
+
+
 
 \subsection{What to do if CSR rejected?}
 
