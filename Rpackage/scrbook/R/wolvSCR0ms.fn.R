@@ -1,5 +1,8 @@
 wolvSCR0ms.fn <-
-function(y3d,traps,wsex,nb=1000,ni=2000,delta=2,M=200,model=1){
+function(y3d,traps,wsex,nb=1000,ni=2000,delta=2,M=200,model=1,parm="a"){
+# parm a = effect on log(sigma)
+# parm b = effect on 1/(2*sigma*sigma)
+
 library("R2WinBUGS")
 
 # trapping grid scaled appropriately
@@ -8,7 +11,7 @@ mingridx<-min(traplocs[,1])
 mingridy<-min(traplocs[,2])
 traplocs[,1]<-traplocs[,1] -min(traplocs[,1])
 traplocs[,2]<-traplocs[,2]- min(traplocs[,2])
-traplocs<-traplocs/10000 
+traplocs<-traplocs/10000
 # units of 10 km
 ntraps<- nrow(traplocs)
 
@@ -45,7 +48,7 @@ ncaps<- apply(y3d,c(1,3),sum)
 
 
 
-
+if(parm=="b"){
 sink("modelfile0.txt")
 cat("
 model {
@@ -61,15 +64,15 @@ for(i in 1:M){
  wsex[i] ~ dbern(psi.sex)
  w[i]~dbern(psi)
  s[i,1]~dunif(Xl,Xu)
- s[i,2]~dunif(Yl,Yu) 
+ s[i,2]~dunif(Yl,Yu)
  logit(p0[i])<- logitp0 +  mod[1]*alpha.sex*wsex[i]
 log(beta.vec[i])<- log( beta ) + mod[2]*wsex[i]*beta.sex
 for(j in 1:ntraps){
    mu[i,j]<-w[i]*p[i,j]
 mu2[i,j]<- mu[i,j]*K[j]
- ncaps[i,j]~ dbin(mu[i,j],K[j]) 
- dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2) 
- 
+ ncaps[i,j]~ dbin(mu[i,j],K[j])
+ dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2)
+
  p[i,j]  <-  p0[i]*exp( - beta.vec[i]*dd[i,j] )
 ncapsnew[i,j]~dbin(mu[i,j],K[j])
 err[i,j]<-  pow(pow(ncaps[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
@@ -103,6 +106,96 @@ D<-N/area
 }
 ",fill=TRUE)
 sink()
+}
+
+if(parm=="a"){
+sink("modelfile0.txt")
+cat("
+model {
+alpha.sex ~ dunif(-3,3)
+beta.sex  ~ dunif(-3,3)
+sigma~dunif(0,50)
+logitp0~dnorm(0,.1)
+beta<- (1/(2*sigma*sigma) )
+psi ~ dunif(0,1)
+psi.sex  ~ dunif(0,1)
+
+for(i in 1:M){
+ wsex[i] ~ dbern(psi.sex)
+ w[i]~dbern(psi)
+ s[i,1]~dunif(Xl,Xu)
+ s[i,2]~dunif(Yl,Yu)
+ logit(p0[i])<- logitp0 +  mod[1]*alpha.sex*wsex[i]
+log(sigma.vec[i])<- log(sigma) + mod[2]*wsex[i]*beta.sex
+beta.vec[i]<- 1/(2*sigma.vec[i]*sigma.vec[i])
+for(j in 1:ntraps){
+   mu[i,j]<-w[i]*p[i,j]
+mu2[i,j]<- mu[i,j]*K[j]
+ ncaps[i,j]~ dbin(mu[i,j],K[j])
+ dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2)
+
+ p[i,j]  <-  p0[i]*exp( - beta.vec[i]*dd[i,j] )
+ncapsnew[i,j]~dbin(mu[i,j],K[j])
+err[i,j]<-  pow(pow(ncaps[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
+errnew[i,j]<- pow(pow(ncapsnew[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
+}
+
+
+expected[i]<- sum(mu2[i,])
+nsum[i]<- sum(ncaps[i,])
+nsumnew[i] <- sum(ncapsnew[i,])
+
+err1[i]<- pow( pow(nsum[i],.5)  - pow(expected[i],0.5),2)
+err1new[i]<- pow( pow(nsumnew[i],.5) - pow(expected[i],0.5),2)
+}
+for(j in 1:ntraps){
+traptotals[j]<- sum(ncaps[1:M,j])
+traptotalsnew[j]<-sum(ncapsnew[1:M,j])
+expectedtrap[j]<- sum( mu[,j]) *K[j]
+err3[j]<- pow( pow(traptotals[j],.5) - pow(expectedtrap[j],.5),2)
+err3new[j]<- pow( pow(traptotalsnew[j],.5) - pow(expectedtrap[j],.5),2)
+}
+X3obs<- sum(err3[])
+X3new<- sum(err3new[])
+X1obs<- sum(err1[])
+X1new<- sum(err1new[])
+Xobs<-sum(err[,])
+Xnew<-sum(errnew[,])
+
+N<-sum(w[1:M])
+D<-N/area
+}
+",fill=TRUE)
+sink()
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 sink("modelfile5.txt")
@@ -122,7 +215,7 @@ for(i in 1:M){
  wsex[i] ~ dbern(psi.sex)
  w[i]~dbern(psi)
  s[i,1]~dunif(Xl,Xu)
- s[i,2]~dunif(Yl,Yu) 
+ s[i,2]~dunif(Yl,Yu)
  logit(p0[i])<- logitp0 +  mod[1]*frog[i]
 frog[i]<- alpha.sex*wsex[i]
 
@@ -131,9 +224,9 @@ beta.vec[i]<- beta0 + mod[2]*wsex[i]*beta.sex
 for(j in 1:ntraps){
    mu[i,j]<-w[i]*p[i,j]
 mu2[i,j]<- mu[i,j]*K[j]
- ncaps[i,j]~ dbin(mu[i,j],K[j]) 
- dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2) 
- 
+ ncaps[i,j]~ dbin(mu[i,j],K[j])
+ dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2)
+
  p[i,j]  <-  p0[i]*exp( - beta.vec[i]*dd[i,j] )
 ncapsnew[i,j]~dbin(mu[i,j],K[j])
 err[i,j]<-  pow(pow(ncaps[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
@@ -184,7 +277,7 @@ for(i in 1:M){
  wsex[i] ~ dbern(psi.sex)
  w[i]~dbern(psi)
  s[i,1]~dunif(Xl,Xu)
- s[i,2]~dunif(Yl,Yu) 
+ s[i,2]~dunif(Yl,Yu)
  logit(p0[i])<- logitp0 +  mod[1]*frog[i]
 frog[i]<- alpha.sex*wsex[i]
 
@@ -195,9 +288,9 @@ beta.vec[i]<- 1/(2*sigma[i]*sigma[i])
 for(j in 1:ntraps){
    mu[i,j]<-w[i]*p[i,j]
 mu2[i,j]<- mu[i,j]*K[j]
- ncaps[i,j]~ dbin(mu[i,j],K[j]) 
- dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2) 
- 
+ ncaps[i,j]~ dbin(mu[i,j],K[j])
+ dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2)
+
  p[i,j]  <-  p0[i]*exp( - beta.vec[i]*dd[i,j] )
 ncapsnew[i,j]~dbin(mu[i,j],K[j])
 err[i,j]<-  pow(pow(ncaps[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
