@@ -94,3 +94,9 @@ curve(dnorm(x, mean, SD), 45, 75, add=TRUE, lwd=2)
 dev.off()
 
 
+
+
+
+
+set.seed(0343)
+mean(rbinom(10000, 9, 0.35))
