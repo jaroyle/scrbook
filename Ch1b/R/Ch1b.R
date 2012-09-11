@@ -97,6 +97,20 @@ dev.off()
 
 
 
-
+# Monte Carlo average
 set.seed(0343)
 mean(rbinom(10000, 9, 0.35))
+
+
+
+
+# Expected value
+set.seed(344)
+integrate(function(x) x*dnorm(x, 3, 1), -Inf, Inf)
+
+
+# Expected value
+set.seed(344)
+integrate(function(x) x*dnorm(x, 3, 1), -Inf, Inf)
+
+

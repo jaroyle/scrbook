@@ -95,7 +95,8 @@ for probability distributions such as this. Sometimes you will see
 $\text{Pr}(X=x|K,p)$ expressed as $f(x|K,p)$ or $f(x; K,p)$ or
 $p(x|K,p)$ or $\pi(x|K,p)$ or $\mathbb{P}(x|K,p)$ or $[x|K,p]$ or even
 just $[x]$! Just remember that these expressions all have the same
-meaning. We will try to use bracket notation (the last two examples)
+meaning---they are all probability density functions. We will try to
+use bracket notation (the last two examples)
 throughout because it is the most concise.
 
 In cases where $x$ is continuous, we refer to
@@ -191,7 +192,7 @@ expected values and variance. The expected value,
 which we will denote $\mathbb{E}[X]$, can be thought of as the average
 value of a very large sample from the specified distribution. For
 example, a poor man's way of finding the expected values of a binomial
-distribution with $K=20$ trials and $p=0.35$ can be implemented in~\R using
+distribution with $K=20$ trials and $p=0.35$ can be implemented in \R~using:
 \begin{verbatim}
 > mean(rbinom(10000, 20, 0.3))
 [1] 6.9865
@@ -202,16 +203,61 @@ thus we don't need to resort to such approximations. For instance, the
 expected value of the binomial distribution is $\mathbb{E}[x] = Kp =
 20 \times 0.35 = 7$. In this case, it happens to take an integer
 value, but such is not necessary, even for discrete random
-variables. T
+variables.
 
-The variance of a random variable describes the amount of variation
-around the expected value. Specifically, $\text{Var}(X) = \mathbb{E}[(x -
+A more formal definition of an expected value is the average of all
+possible values of the random variable, weighted by their
+probabilities. For continuous random variables, this weighted average
+is found via integration:
+\begin{equation}
+  \mathbb{E}(X) = \int_{-\infty}^{\infty} x[x] \, \text{d}{x}.
+  \label{modeling:eq:EXc}
+\end{equation}
+For example, if $[x]$ is normally distributed with mean 3 and unit
+variance, we could find the expected value using the following code.
+\begin{verbatim}
+> integrate(function(x) x*dnorm(x, 3, 1), -Inf, Inf)
+3 with absolute error < 0.00033
+\end{verbatim}
+Of course, the mean \textit{is} the expected values for the normal
+distributions, so we didn't need to compute the integral, but the
+point is that Eq.~\ref{modeling:eq:EXc} is generic. For discrete
+random variables, the expected value is found by summation rather than
+integration:
+\begin{equation}
+  \mathbb{E}(X) = \sum_{x} x[x].
+  \label{modeling:eq:EXd}
+\end{equation}
+Earlier we approximted the expected value of the binomial distribution
+with $K=20$ trials and $p=0.35$ by taking a Monte Carlo
+average. Eq.~\ref{modeling:eq:EXd} let's us
+find the exact answer, as done using this bit of \R~code:
+\begin{verbatim}
+> sum(dbinom(0:100, 20, 0.35)*0:100)
+[1] 7
+\end{verbatim}
+This is great. But of what use is it? Well, there are many. One very
+important concept to understand is that when we fit (generalized
+linear) models, we are modeling the expected value of some random
+variable. For example, in Poisson regression, we model $\lambda$, the
+expected value of the Poisson random variable, which may be a function
+of environmental variables.
+
+The ability to model the expected value of a random variable gets us
+very far, but we also need a model for the variance of the random
+variable. The variance describes the amount of variation
+around the expected value. Specifically, $\text{Var}(X) = \mathbb{E}[(X -
 \mathbb{E}(X))^2]$. Clearly, if the variance is zero, the variable is
 not random.
 
+\subsection{Dealing with $>1$ Random Variable}
 
-
-Marginal distributions
+So far we have focused our attention on a single random variable,
+$X$. However, in ecology, we often are interested in multiple random
+variables and the interactions between them. Earlier, we discussed an
+example where $X$ was the number of fish caught after 20 casts. But
+what if $X$ depends upon $Y$, the number of other fisherman at the
+hole on that day?
 
 Conditional distributions
 
