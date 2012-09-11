@@ -487,9 +487,12 @@ The function uses {\bf JAGS} by default for the fitting, using the \mbox{\tt
 XXX provide the results from the log(sigma) parameterization in the
 text but comment  on whether there is a difference.
 XXXX
+need to run WinBUGS to check
+XXXX
+need to run different priors. 
 }
 
-The BUGS model specification for model 4 is shown in panel XXXX. We
+The {\bf BUGS} model specification for model 4 is shown in panel XXXX. We
 made a single R script that fit each of the 4 models by using a binary
 indicator variable fed to BUGS as data which would turn on/off each
 component of the model. Note that the baseline encounter probability
@@ -504,11 +507,10 @@ A final point: We have dunif(-3,3) priors. Check normal prior and
 check dunif(-5,5).  Check WinBUGS too.
 
 \begin{verbatim}
-# check notation and put this in a panel?
 alpha.sex ~ dunif(-3,3)
 beta.sex  ~ dunif(-3,3)
 sigma~dunif(0,50)
-logitp0~dnorm(0,.1)
+alpha0~dnorm(0,.1)
 beta<- (1/(2*sigma*sigma) )
 psi ~ dunif(0,1)
 psi.sex  ~ dunif(0,1)
@@ -517,8 +519,9 @@ for(i in 1:M){
  w[i]~dbern(psi)
  s[i,1]~dunif(Xl,Xu)
  s[i,2]~dunif(Yl,Yu) 
- logit(p0[i])<- logitp0 + alpha.sex*wsex[i]
- log(beta.vec[i])<- log( beta ) + beta.sex*wsex[i]
+ logit(p0[i])<- alpha0 + alpha.sex*wsex[i]
+ log(sigma.vec[i])<- log(sigma) + beta.sex*wsex[i]
+ beta.vec[i]<- 1/(2*sigma.vec[i]*sigma.vec[i])
 for(j in 1:ntraps){
   mu[i,j]<-w[i]*p[i,j]
   ncaps[i,j]~ dbin(mu[i,j],K[j]) 
@@ -706,6 +709,75 @@ prior for parameters is fixed at the posterior distribution under the
 full model \citep{aitkin:1991}. At a minimum, one should evaluate
 posterior model probabilities under different vague prior
 specifications.
+
+
+\begin{verbatim}
+
+
+> toad5<-wolvSCR0ms.fn(y3d,traps,wsex=wsex,nb=1000,ni=21000,delta=2,M=200,model=5,parm="a")
+
+> toad5
+Inference for Bugs model at "modelfile5.txt", fit using jags,
+ 3 chains, each with 21000 iterations (first 1000 discarded)
+ n.sims = 60000 iterations saved
+          mu.vect sd.vect    2.5%     25%     50%     75%   97.5%  Rhat n.eff
+D           5.726   1.136   3.759   4.916   5.591   6.458   8.193 1.003   870
+N          59.401  11.781  39.000  51.000  58.000  67.000  85.000 1.003   870
+X1new       9.749   2.749   5.220   7.775   9.476  11.414  15.907 1.001 60000
+X1obs      12.625   3.376   7.055  10.214  12.279  14.652  20.162 1.001 12000
+X3new      13.145   3.239   7.657  10.823  12.863  15.149  20.264 1.001 48000
+X3obs      21.253   2.099  17.706  19.773  21.059  22.519  25.947 1.003  1200
+Xnew       61.993   6.585  49.762  57.391  61.773  66.325  75.435 1.002  3000
+Xobs       89.062   6.053  77.987  84.848  88.782  92.973 101.710 1.002  1400
+alpha.sex  -0.472   1.138  -2.574  -1.016  -0.689  -0.270   2.586 1.001 60000
+beta.sex    0.016   1.671  -2.841  -1.356   0.028   1.403   2.840 1.001 60000
+logitp0    -2.579   0.285  -3.082  -2.791  -2.595  -2.380  -2.004 1.001  5000
+mod[1]      0.632   0.482   0.000   0.000   1.000   1.000   1.000 1.001  6300
+mod[2]      0.073   0.260   0.000   0.000   0.000   0.000   1.000 1.006  1300
+psi         0.299   0.066   0.184   0.252   0.294   0.341   0.443 1.003  1000
+psi.sex     0.542   0.104   0.338   0.471   0.544   0.614   0.741 1.002  3300
+sigma       0.650   0.059   0.547   0.609   0.645   0.687   0.777 1.005   510
+deviance  440.660  12.494 418.328 431.871 439.912 448.644 467.077 1.003  1100
+
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+
+DIC info (using the rule, pD = var(deviance)/2)
+pD = 77.9 and DIC = 518.6
+DIC is an estimate of expected predictive error (lower deviance is better).
+
+
+
+> mod<-toad5$BUGSoutput$sims.list$mod
+> mod<-paste(mod[,1],mod[,2])
+> table(mod)
+mod
+  0 0   0 1   1 0   1 1 
+20599  1488 35026  2887 
+> table(mod)/length(mod)
+mod
+       0 0        0 1        1 0        1 1 
+0.34331667 0.02480000 0.58376667 0.04811667 
+> 
+
+\end{verbatim}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 Another approach to implementing model indicator variables is 
  to introduce a categorical model identity variable
@@ -922,38 +994,36 @@ computed for perfect data sets simulated under the correct model.  In
 the case of classical inference, we use a parametric bootstrap where
 we simulate data sets conditional on the MLE $\hat{\theta}$. For
 Bayesian analysis we use the Bayesian p-value \citep{gelman_etal:2006}
-in
-which data sets are simulated for a posterior sample of $\theta$ which
-we briefly introduced in sec. \ref{glms.sec.gov}.
-Using classical inference methods, it is sometimes possible to
-identify a test statistic of theoretical merit, perhaps with a known asymptotic distribution.
- Examples from
-the closed capture-recapture setting includes XXXXXX XXXXXXXX.  When
-this is not the case, goodness-of-fit is ususally assessed using
-bootstrap methods \citep{dixon:2002}. Using a bootstrap method
-we identify a fit
-statistic and we compute the value for which is more or less the
-standard approach, in general.  To date, we are unaware of any
-goodness-of-fit applications based on likelihood analysis of SCR
-models (XXX WE NEED TO DO SOME RESEARCH ON THIS XXXXX) although the
-approach is standard in distance sampling XXX REF HERE ??? XXXX. For
-example, the package \mbox{\tt unmarked} \citep{fiske_chandler:2012}
-contains generic bootstrapping methods for all of the hierarchical
-models fitted, including distance sampling
+in which data sets are simulated for a posterior sample of $\theta$
+which we briefly introduced in sec. \ref{glms.sec.gov}.  Using
+classical inference methods, it is sometimes possible to identify a
+test statistic of theoretical merit, perhaps with a known asymptotic
+distribution.  Examples from the closed capture-recapture setting
+includes XXXXXX XXXXXXXX.  When this is not the case, goodness-of-fit
+is ususally assessed using bootstrap methods \citep{dixon:2002}. Using
+a bootstrap method we identify a fit statistic and we compute the
+value for which is more or less the standard approach, in general.  To
+date, we are unaware of any goodness-of-fit applications based on
+likelihood analysis of SCR models (XXX WE NEED TO DO SOME RESEARCH ON
+THIS XXXXX) although the approach is standard in distance sampling XXX
+REF HERE ??? XXXX. For example, the package \mbox{\tt unmarked}
+\citep{fiske_chandler:2012} contains generic bootstrapping methods for
+all of the hierarchical models fitted, including distance sampling
 \citep[e.g.,][]{sillett_etal:2012}.
 
 
 One challenge with SCR models is there has not been a definitive or 
 general proposal for a fit statistic for use in computing the Bayesian
 p-value although a few specialized implementations of Bayesian p-values
-have been provided (Royle 2009; Gardner et al. 2010 ???).
+have been provided \citep{royle_etal:2009,royle_etal:2011mee, gopalaswamy_etal:2012ecol,gopalaswamy_etal:2012mee,russell_etal:2012}. 
 As a general matter, we recommend use of Bayesian p-values but caution
 that there is not general expectation to support how well they should
-do, in general. As such, one should expect to do some kind of custom
-evaluation for every use of such methods if the ability to reject
-under specific departures from the model is of paramount interest.
+do, in general. As such, one might consider doing some kind of custom
+evaluation or calibration when using such methods,  if the power of
+the test (ability to reject
+under specific departures from the model) is of paramount interest.
 This is not a weakness of a Bayesian approach because the same issue
-applies in doing parametric bootstrapping.
+applies in using bootstrap approaches.
 
 
 
@@ -961,34 +1031,21 @@ applies in doing parametric bootstrapping.
 \subsection{The Two Components of Model Fit}
 
 For SCR models,
-there are at least two components to model fit for most models,
+there are at least two distinct components to model fit for most models,
 making an omnibus measure of fit difficult to describe.
-First we can consider whether the model explains the observation
-process - we can evaluate this based on the encounter frequencies of
-individuals {\it conditional} on ${\bf s}_{1}, \ldots, {\bf s}_{N}$
-Second, we might also be
-interested in evaluating the hypothesis concerning the distribution of
-the activity centers. For the simple model developed in this chapter,
+First, we consider whether the model explains the observation
+process, which we can evaluate  based on the encounter frequencies of
+individuals {\it conditional} on the underlying point process ${\bf s}_{1}, \ldots, {\bf s}_{N}$
+Second, we can 
+evaluate whether the specific assumptions about the point process
+appear consistent with the data. 
+ For the simple model of independence and uniformity, 
 this is the assumption of {\it complete spatial randomness} (CSR)
-which we consider in section XXX.YYY below. Actually, as we noted in
-sec. XXX this is not strictly CSR per se because of the binomial
-assumption on $N$ but we refer to it as that because it is essentially
-equivalent. And besides we generate the reference distribution within
-the context of a Bayesian p-value.
-
-We propose analyzing the separate elements of fit individually.
-To evaluate fit of the detection component of the model, we consider
-two distinct fit statistics based on the individual encounter
-frequencies and also the trap encounter frequencies.
-
-I think inference about Density is going to be insensitive to
-departures from CSR but probably somewhat sensitive to bad models for
-the observation process.  Why do I think this? Well spatial variation
-is not important to inference about the aggregate population size, but
-it is relevant to "within population" inference, such as predicting on
-small areas.  Conversely, inference about total population size is
-known to be highly sensitive to the observation model (Dorazio and
-Royle 2003; Link 2003).
+which we consider in section XXX.YYY below. Actually, 
+this is not strictly CSR per se because of the binomial
+assumption on $N$ but we refer to it as that because it is practically
+equivalent in most cases.
+We propose analyzing the two elements of fit individually.
 
 
 
@@ -1071,7 +1128,7 @@ vincinity of the trap array.
 Therefore we recoommend computing these fit statistics in the vicinity
 of the trap array only.
 
-\subsection{Computing the cell counts}
+\subsubsection{Computing the cell counts}
 
 In chapter 4 we talked about computing summaries of individual
 locations, such as for producing a density map. We need these for the
@@ -1102,9 +1159,10 @@ locations. Consequently, the uniform prior would have almost no
 influence at all.
 
 
-\section{Omnibus and Encounter Model Testing}
+\subsection{Adequacy of Encounter Probability Model}
 
-For the case where there are no time-varying covariates, we can
+We first considewr the case 
+ where there are no time-varying covariates. In this case, we can 
 summarize the data by individual and trap-specific counts
 $y_{ij}$. Conditional on ${\bf s}_{i}$,
 the expected value under any encounter model is:
@@ -1119,10 +1177,11 @@ Define
 \[
  T_{1}({\bf y}, \theta) = \sum_{i}\sum_{j} e_{ij}^{2}
 \]
-This is conditional on ${\bf s}$ and conditional on ${\bf z}$ and we
+This is conditional on ${\bf s}$ and conditional on the data
+augmentation variables ${\bf z}$. We 
 compute this for {\it each} iteration of the MCMC algorithm to provide
 an assessment of model fit.
-WHY FREEMAN TUKEY XXX FROM CHAPT 2 XXXXXX
+
 
 
 
@@ -1327,19 +1386,20 @@ terms of estimating $N$? Our specific analyses suggest not, but we
 know of no theory or specific empirical study that has addressed this
 issue. 
 
+Effect of non-fitting models ..... 
+I think inference about Density is going to be insensitive to
+departures from CSR but probably somewhat sensitive to bad models for
+the observation process.  Why do I think this? Well spatial variation
+is not important to inference about the aggregate population size, but
+it is relevant to "within population" inference, such as predicting on
+small areas.  Conversely, inference about total population size is
+known to be highly sensitive to the observation model (Dorazio and
+Royle 2003; Link 2003).
 
-
-
-
-
-
-
-
-\subsection{What to do if CSR rejected?}
-
+What if CSR is rejected?
 What can we do? We don't know….. depends on the laternative and how sensitive estimates are?
 
-
+Power of the test?
 
 
 
