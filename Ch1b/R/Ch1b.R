@@ -105,12 +105,15 @@ mean(rbinom(10000, 9, 0.35))
 
 
 # Expected value
-set.seed(344)
 integrate(function(x) x*dnorm(x, 3, 1), -Inf, Inf)
 
 
 # Expected value
-set.seed(344)
-integrate(function(x) x*dnorm(x, 3, 1), -Inf, Inf)
+sum(dbinom(0:100, 20, 0.35)*0:100)
 
 
+# Variance
+set.seed(340)
+20*0.35*(1-0.35)             # Population variance
+x <- rbinom(100000, 20, 0.35)
+mean((x-mean(x))^2)          # Monte Carlo approximation

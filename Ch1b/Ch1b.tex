@@ -236,19 +236,47 @@ find the exact answer, as done using this bit of \R~code:
 > sum(dbinom(0:100, 20, 0.35)*0:100)
 [1] 7
 \end{verbatim}
-This is great. But of what use is it? Well, there are many. One very
+This is great. But of what use is it? One very
 important concept to understand is that when we fit (generalized
 linear) models, we are modeling the expected value of some random
 variable. For example, in Poisson regression, we model $\lambda$, the
-expected value of the Poisson random variable, which may be a function
+expected value of a Poisson random variable, which may be a function
 of environmental variables.
 
 The ability to model the expected value of a random variable gets us
 very far, but we also need a model for the variance of the random
-variable. The variance describes the amount of variation
-around the expected value. Specifically, $\text{Var}(X) = \mathbb{E}[(X -
-\mathbb{E}(X))^2]$. Clearly, if the variance is zero, the variable is
+variable. The variance %is itself a type of expected value; one that
+describes the amount of variation around the expected
+value. Specifically, $\text{Var}(X) = \mathbb{E}((X -
+\mathbb{E}(X))^2)$. Clearly, if the variance is zero, the variable is
 not random.
+
+For some distributions, notably the normal distribution, the variance
+is a parameter to be estimated. Thus, in ordinary linear regression,
+we estimate both the mean (expected value) of the random variable
+$\mu$ (which may be a function of covariates) and the variance
+$\sigma^2$, or similarly the residual standard error $\sigma$. For
+other distributions, the variance is not an explicity parameter to be
+estiamted, and instead, the mean to variance ratio is fixed. In the
+case of the Poisson distribution, the mean is equal to the
+variance. This is often viewed as a restriction because in ecology
+count data often have a variance greater than the mean. However, much
+of this variation can be ``explained'' by modeling the mean as a
+function of covarites. Still, in cases where extra-Poisson variation
+exists, other distributions such as the negative binomial or
+zero-inflated Poisson distribution may be required. A similar
+situation is true for the binomial distribuiton---the variance is
+determined by the two parameters $K$ and $p$, $Var(X) = Kp(1-p)$. Thus
+in our earlier example with $K=20$ and $p=0.35$, the variance is
+4.55. Toying around with these ideas using random number generators
+may be helpful. Here is some code
+\begin{verbatim}
+> 20*0.35*(1-0.35)             # Population variance
+[1] 4.55
+> x <- rbinom(100000, 20, 0.35)
+> mean((x-mean(x))^2)          # Monte Carlo approximation
+[1] 4.545525
+\end{verbatim}
 
 \subsection{Dealing with $>1$ Random Variable}
 
@@ -257,7 +285,9 @@ $X$. However, in ecology, we often are interested in multiple random
 variables and the interactions between them. Earlier, we discussed an
 example where $X$ was the number of fish caught after 20 casts. But
 what if $X$ depends upon $Y$, the number of other fisherman at the
-hole on that day?
+hole on that day? When $X$ depends upon $Y$, we need to think about
+the \textit{conditional distribution} $[X|Y]$, read ``the probability
+distribution of $X$ conditional on $Y$.''
 
 Conditional distributions
 
@@ -354,10 +384,16 @@ true probability mass function as is shown here:
 REFER TO ESTIMATION SECTION HERE
 
 \begin{table}
-  \begin{tabular}[t]{lllll}
+  \begin{tabular}[t]{lccccc}
     \hline
-    Distribution & Notation & Probability function & Mean and Variance
+    Distribution & Notation & pdf/pmf & Mean & Variance
     & \R~function \\
+    \hline
+    Poisson & $x \sim \text{Pois}(\lambda)$ &
+    $\exp(-\lambda )\lambda^x/x!$ & $\lambda$ & $\lambda$ &
+    \verb+dpois+ \\
+    Bernoulli & $x \sim \text{Bern}(p)$ & $p^x(1-p)^{1-x}$ & $p$ &
+    $p(1-p)$ & \verb+dbinom+ \\
     \hline
   \end{tabular}
   \label{modeling.tab.pdfs}
