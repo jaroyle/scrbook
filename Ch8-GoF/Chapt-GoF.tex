@@ -6,7 +6,7 @@ Model Selection and Assessment
 
 \vspace{.3in}
 
-Our purpose in life is to analyze models. By ``analyze'' we mean one
+Our purpose in life is to analyze models. By that, we mean one 
 or more of the following basic 4 tasks: estimate parameters, make
 predictions of unobserved random variables (e.g., of density),
 evaluate the relative merits of different models or choosing a best
@@ -24,39 +24,50 @@ selection and assessment, and focus on a few specific application
 contexts such as choosing among certain covariates, or other aspects
 of model structure.  We discuss the use of AIC and DIC for this
 purpose, and also the ``indicator model selection'' approach of
-\citet{kuo_mallick:1998}.  For model checking or assessment we rely
-exclusively on Bayesian p-values (REF XYZ) to evaluate
-"goodness-of-fit". Part of the challenge thus far is coming up with
-good fit statistics, and there does not appear to be any guidance on
-this in the literature.
- We break the problem up into 2 components which we attack
-separately (Royle et al. 2011): Does the observation model fit?  Does
-the uniformity assumption appear adequate? The latter has a huge
-amount of precedent in the ecological literature as it is equivalent
-to the test of ``complete spatial randomness'' which Royle et
-al. (2011) applied to SCR models. Really this is a test only of a form
-of ``spatial randomness'' because CSR implies the use of a Poisson
-point process which, as we discussed, is not universally adopated in
-our implementation of SCR models.
+\citet{kuo_mallick:1998}.  To check model adequacy, or whether a specific model provides
+a satisfactory description of our data set (i.e., ``goodness-of-fit''), we rely 
+exclusively on Bayesian p-values \citep{gelman_etal:2006}.
+For checking  adequacy of SCR models, 
+part of the challenge is coming up with good summaries of model fit, 
+and there does not appear to be any guidance on
+this in the literature.  Following \citet{royle_etal:2011mee}, we break the problem up into 2 components
+which we attack separately: (1) Does the encounter 
+model fit? (2) Does the uniformity assumption appear adequate? The latter
+component of model fit has a huge amount of precedent in the ecological literature as it is
+analogous to the classical 
+problem of testing  ``complete spatial randomness.'' 
+% Really this is a test only of a
+%form of ``spatial randomness'' because CSR implies the use of a
+%Poisson point process which, as we discussed, is not universally
+%adopated in our implementation of SCR models.
 
 A basic problem with these two objectives of model selection and model
 assessment is their simultaneous use implies a kind of contradiction
 which we call the
-{\it model selectors paradox}: we carryout inference using parametric inference paradigms
-which suppose that the model is properly specified. that is,
+{\it model selectors paradox}: Inferences are always achieved using
+standard paradigms of parametric inference (Bayesian or frequentist)
+which asssert that the model is properly specified. That is, we assume
+that the model is 
 truth. This is paradoxical because we all know that ``all models are
 wrong'' but possibly, ``some are useful'' In fact, the notion that an
-``assumption'' could even be correct is an oxymoron and people who
-suggest that are, therefore, actual morons.  Therefore we don't expect
+``assumption'' could even be correct is itself something of an oxymoron.
+Therefore we don't expect
 or hope to make assumptions that are ``correct'' in any way. Gelman
 and Shalizi (2010) say it this way: ``there is general agreement that,
 in this domain, all models in use are wrong -- not just merely
-falsibiable, but actually false.''\footnote{I like that quote}. 
+falsifiable, but actually false.''
+We should therefore refrain from over-stating the relevance of any model. 
 
-We apply these ideas of model selection and assessment to the
-wolverine data --- sex specificity of parameters and behavioral
-response -- and black bear data?
-
+In this chapter we develop basic strategies of model selection and
+model assessment or checking using both likelihood methods (as
+implemented in the \mbox{\tt secr} package) and also Bayesian
+analysis.  We apply these methods to the wolverine camera trapping
+data to investigate sex specificity of model parameters and whether
+there is a behavioral response to encounter. We note that individuals
+are drawn to the camera trap devices by food bait and therefore it
+stands to reason that once an individual discovers a trap, it might
+return subsequently for that benefit, a response commonly referred to
+as ``trap happiness.''
 
 
 
@@ -117,18 +128,22 @@ encounter process. That is the question we will evaluate here.
 \end{comment}
 
 
-\section{Model Selection: General Strategies}
+\section{General Strategies for Model Selection}
 
-We talk here of variable selection methods.  i.e., fixed effects. AIC
-is the standard for likelihood analysis of models and it is versatile
-and flexible for fixed effects.
-For Bayesian analysis we rely on different methods.
+We review a number of standard methods of model selection that apply
+to ``variable selection'' problems. That is, when our set of models
+consists of distinct covariate effects and they represent constraints
+of some larger model achieved by setting some of the parameter values
+to 0. 
+For classical analysis based on likelihood,  model selection by 
+AIC is the standard approach \citep{burnham_anderson:2002}.
+For Bayesian analysis we rely on a number of different methods.
 We demonstrate the use of DIC here for variable selection problems although we recommend against its
 general use (see below).
 We use the Kuo and
 Mallick indicator variable selection approach
  \citep{kuo_mallick:1998} which, although its implementation in the
- BUGS packages can be tempramental, it produces direct statemtns of
+ {\bf BUGS} packages can be tempramental, it produces direct statemtns of
  posterior model probabilities which we think are the most useful, and
  leads directly to model-averaged estimates of density.
 There is a good review paper recently by \citet{ohara_sillanpaa:2009}
@@ -136,7 +151,7 @@ that hits on these and many more related ideas for variable selection.
 We have not done a comprehensive evaluation of these different methods
 for effect and efficiency.
 In addition to \citet{ohara_sillanpaa:2009} we also recommend
-\citet[][Chapt. XXXX]{link_barker:2010}
+\citet[][Chapt. 7]{link_barker:2010}
 for general information on model selection and assessment.
 
 
@@ -144,8 +159,10 @@ for general information on model selection and assessment.
 
 There are two distinct classes of problems that we encounter in SCR
 models which might require some type of model selection or ranking
-effort: (1) Choosing among models that represent distinct, meaningful biological hypotheses; and, (2) choosing among
-different parametric encounter probability models.  
+effort: (1) Choosing among models that represent distinct, meaningful
+biological hypotheses; and, (2) choosing among different parametric
+encounter probability models. We believe that the importance of model
+selection depends on which type of problem we have.
 
 {\flushleft {\bf Choosing among biological models:}}
 SCR models that represent extensions of the basic null model by
@@ -180,33 +197,185 @@ detections functions and we discourage people from doing that.
 
 
 
-\subsection{AIC and \mbox{\tt secr}}
+\subsection{Model selection by AIC}
+\label{gof.sec.aic}
 
-If you're doing a classical analysis based on likelihood then model
+If you're doing  classical analysis based on likelihood then model
 selection is easily accomplished using AIC \citep{burnham_anderson:2002}
 which we demonstrate below. The AIC of a model is simply twice the
-negative log-likelihood then penalized by the number of parameters
+negative log-likelihood evaluated at the MLE,  penalized by the number of parameters
+($k$) in the model:
 \[
- AIC = -2 logL  + 2 np
+ AIC = -2 \mbox{\tt logL}({\bf y}|\hat{\bm \theta})  + 2 k
 \]
-and models with small values of AIC are preferred. Now people do
-model-weighting of things by AIC, and there are various flavors for
-small-sample adjustment and so forth. We don't advocate for rules of
-thumb or whatever and so we stick with basic AIC here.  We don't
-believe in model averaging parameters that do not have a consistent
-meaning across models. In the case of SCR models, it does make sense
-to model-average estimates of density and related quatnties.
+Models with small values of AIC are preferred. 
+It is common to use a modified AIC referred to as $AIC_{c}$ for small
+sample sizes which is
+\[
+ AIC_{c}  = 
+-2 \mbox{\tt logL}({\bf y}|\hat{\bm \theta})  + \frac{2 k
+  (k+1)}{n-k-1}
+\]
+where $n$ is the sample size.  Two important problems with the use of
+$AIC$ and $AIC_{c}$ are that they don't apply directly to hierarchical
+models that contain random effects, unless they are computed directly
+from the marginal likelihood (for SCR models we can do this, see
+Chapt. \ref{chapt.mle}). Moreover, it is not clear what should be the
+effective sample size $n$ in calculation of $AIC_{c}$, as there can be
+covariates that affect individuals, that vary over time, or in space.
+We do not offer strict guidelines as to when to use a small sample
+size adjustment or not.
 
 The {\bf R} package \mbox{\tt secr} computes and outputs AIC
 automatically for each model fitted and it provides some capabilities
-for producing a model selection table and doing model-averaging.
-As an example of that, we consider the black-bear models : WHICH
-MODELS? and here is the code for generating the AIC Table:
-\begin{verbatim}
+for producing a model selection table (function \mbox{\tt AIC}) and
+also doing model-averaging (function \mbox{\tt model.average}), which
+we recommend for obtaining estimates of density from multiple models.
+We provide an example of using \mbox{\tt secr}, to analyze the
+wolverine camera trapping data using 4 distinct models to accommodate
+various types of sex specificity (see sec. XXXXX):
+\begin{itemize}
+\item[ Model 1:] model SCR0 with constant parameter
+values for both male and female wolverines but with a parameter
+$\psi_{sex}$ the population proportion of males;
+\item[ Model 2:] sex-specific intercept
+$p_{0}$ but constant $\sigma$; 
+\item[ Model 3:] sex-specific $\sigma$ but constant
+$p_{0}$ 
+\item[ Model 4:] sex-specific $p_{0}$ {\it and} $\sigma$. 
+\end{itemize}
+To fit these models we use the multi-session formulation provided by
+\mbox{\tt secr} (introduced in sec. \ref{mle.sec.multisession}), which
+allows one to model sesssion-specific effects on density, baseline
+encounter probability, $g_{0}$ in \mbox{\tt secr}, and also the scale
+parameter $\sigma$ of the encounter probability model. Using this
+formulation, we define the ``session'' variable to be a sex code and
+thus session-specific parameters represent sex-specific parameters.
+For example, if we model session-specific density, $D$, then this
+corresponds to Model 1 in our list above.  We note that this suggests
+one additional model which we haven't itemized above, that being the
+model with {\it no} sex effect on any parameter, which is equivalent
+to fixing $\psi_{sex} = 0.5$ instead of estimating it. We will label
+this last model ``Model 0'' and include it in our analysis below, even
+though we may not generally think of this as a natural candidate
+model.
 
+Here are the {\bf R} commands for loading the wolverine data and doing
+a slight bit of formatting to prepare the data objects for analysis by
+\mbox{\secr}. The key difference from our analysis in
+Chapt. \ref{chapt.mle} is, here, we grab the wolverine sex information
+(\mbox{\tt wolverine\$wsex}) which is a 0/1 indicator (1=male). We add
+1 to that and then use it to define the ``Session'' variable based on sex.
+The {\bf R} commands are as follows:
+{\small
+\begin{verbatim}
+library("secr")
+library("scrbook")
+data("wolverine")
+traps<-as.matrix(wolverine$wtraps)   
+dimnames(traps)<-list(NULL,c("trapID","x","y",paste("day",1:165,sep="")))
+
+trapfile2<-scr2secr(scrtraps=traps,type="proximity")
+
+gr<-as.matrix(wolverine$grid2)
+dimnames(gr)<-list(NULL,c("x","y"))
+gr2<-read.mask(data=gr)
+
+wolv.dat<-wolverine$wcaps
+dimnames(wolv.dat)<-list(NULL,c("Session","ID","Occasion","trapID"))
+wolv.dat[,1]<-wolverine$wsex[wolv.dat[,2]]+1
+wolv.dat<-as.data.frame(wolv.dat)
+wolvcapt3<-make.capthist(wolv.dat,trapfile2,fmt="trapID",noccasions=165)
 \end{verbatim}
-We provide an AIC table for the wolverine camera trapping data in
-sec. XXXX below. 
+}
+
+
+Once the data are have been prepared in this way we use the 
+\mbox{\tt secr} model fitting function \mbox{\tt secr.fit} to fit a
+number of different models and then the function \mbox{\tt AIC} to
+package the models together and summarize them in the form of an AIC
+table, with rows of the table ordered from best to worst. The function
+\mbox{\tt model.average} performans AIC-based model-averaging of the 
+parameters specified by the \mbox{\tt realnames} variable (below this
+is demonstrated for the parameter density, $D$).  Because this
+function defaults to averaging by AICc, we slightly modified
+this function (called \mbox{\tt model.average2}) to do model averaging
+by either  AIC or AICc as specified by the user. Together
+these commands and resulting output (abbreviated to fit on page) look like this:
+{\small 
+\begin{verbatim}
+XXX note to reader: I will delete some horizontal output XXXXX
+
+model0<-secr.fit(wolvcapt3,model=list(D~1, g0~1, sigma~1), buffer=20000)
+model1<-secr.fit(wolvcapt3,model=list(D~session, g0~1, sigma~1), buffer=20000)
+model2<-secr.fit(wolvcapt3,model=list(D~session, g0~session, sigma~1), buffer=20000)
+model3<-secr.fit(wolvcapt3,model=list(D~session, g0~1, sigma~session), buffer=20000)
+model4<-secr.fit(wolvcapt3,model=list(D~session, g0~session, sigma~session), buffer=20000)
+
+> AIC (model0,model1,model2,model3,model4)
+                                    model   detectfn npar    logLik      AIC     AICc dAICc  AICwt
+model0                   D~1 g0~1 sigma~1 halfnormal    3 -627.2603 1260.521 1261.932 0.000 0.5831
+model2       D~session g0~session sigma~1 halfnormal    5 -624.9051 1259.810 1263.810 1.878 0.2280
+model1             D~session g0~1 sigma~1 halfnormal    4 -627.2365 1262.473 1264.973 3.041 0.1275
+model4 D~session g0~session sigma~session halfnormal    6 -624.6632 1261.326 1267.326 5.394 0.0393
+model3       D~session g0~1 sigma~session halfnormal    5 -627.2358 1264.472 1268.472 6.540 0.0222
+
+> model.average (model0,model1,model2,model3,model4,realnames="D")
+              estimate  SE.estimate          lcl          ucl
+session=1 2.707190e-05 7.913577e-06 1.544474e-05 4.745224e-05
+session=2 2.927423e-05 8.270402e-06 1.700631e-05 5.039193e-05
+\end{verbatim}
+}
+
+{\bf XXX we should provide parameter estimates and SE's in a table XXXXX}
+
+The default output of estimated density is in individuals per ha, so
+we have to scale this up to something more reasonable. To get into
+units of per 1000 $km^2$ we need to mulitply by 100 to get to units of
+$km^2$ and then 1000. This produces an estimated density of 
+about 2.71 for \mbox{\tt session=1} (females) and 2.93 for
+\mbox{\tt session=2} (males).
+
+We don't agree with the use of AICc here and think its better to use
+AIC, in general. This is because its not clear what the effective
+sample size is. While we have 21 individuals in the data set, most of
+the model structure has to do with encounter probability samples and
+for that there are 100s of observations. We note that the AIC and AICc
+results are not consistent.
+By looking at the best model by AIC, we find that the model
+with estimated sex ratio and sex specific $g_{0}$ is preferred (Model 2). This
+is just slightly better than the model with a fixed sex ratio of
+$\psi_{sex} = 0.50$.
+
+
+We do the same things with the mask which excludes ocean. 
+Results are given in Tab. XXX along with the previous models without a mask.
+We see AIC is much better for the model without the mask -- it is ok
+to have this because we recognize the mask as changing the random
+effects distribution and the results should be sensitive to that. That
+said, we don't like the non-mask model because it makes sense to
+exclude the water area from the state-space  of ${\bf s}$.
+For females the model-averaged density is 3.88 individuals per 1000 $km^2$ and for
+females the model-averaged density estimate is 4.46 individuals per
+1000 $km^2$:
+\begin{verbatim}
+> model.average (model0b,model1b,model2b,model3b,model4b,realnames="D")
+
+              estimate  SE.estimate          lcl          ucl
+session=1 3.876615e-05 1.189102e-05 2.153795e-05 6.977518e-05
+session=2 4.459658e-05 1.323696e-05 2.523280e-05 7.882022e-05
+\end{verbatim}
+
+
+\begin{verbatim}
+> AIC (model0b,model1b,model2b,model3b,model4b)
+                                     model   detectfn npar    logLik      AIC     AICc dAICc  AICwt
+model2b       D~session g0~session sigma~1 halfnormal    5 -629.0482 1268.096 1272.096 0.000 0.4421
+model4b D~session g0~session sigma~session halfnormal    6 -628.3490 1268.698 1274.698 2.602 0.1204
+model0b                   D~1 g0~1 sigma~1 halfnormal    3 -632.5813 1271.163 1272.574 0.478 0.3481
+model1b             D~session g0~1 sigma~1 halfnormal    4 -632.5574 1273.115 1275.615 3.519 0.0761
+model3b       D~session g0~1 sigma~session halfnormal    5 -632.5445 1275.089 1279.089 6.993 0.0134
+\end{verbatim}
 
 
 
@@ -216,28 +385,25 @@ sec. XXXX below.
 
 Model selection is somewhat less straightforward
 as a Bayesian and there is no such canned all-purpose method like AIC
-although the Deviance Information Criterion (DIC)
-\citep{spiegelhalter_etal:2002} was meant to be such a thing. But
-there seems to be too many types of DIC, no consistent version
-reported across platforms, and highly variable effectiveness at using
-DIC. Even the high-end statisticians don't have a unified front on the
-practical issues related to the use of DIC.
 As such we recommend more of a pragmatic approach, in general, for all
 problems, based on a number of basic considerations:
 \begin{itemize}
-\item[(1)] For a small number of fixed effects we recommend a standard
-hypothesis testing ideas -- i.e., if the posterior for a parameter overlaps
-zero or whatever then toss out the effect.
-\item[(2)] Posterior model probabilities: In some cases we can implement
-the "variable weights" idea from \citep{kuo_mallick:1998}.
-The idea is introduce a latent variable $w \sim Bern(.5)$ and then
-construct  your model according to, for example,
+\item[(1)] For a small number of fixed effects we think it is
+  reasonable to adopt a conventional
+``hypothesis testing'' approach -- i.e., if the posterior for a parameter overlaps
+zero substantially, then it is probably reasonable to discard that effect.
+\item[(2)] Calculation of posterior model probabilities: In some cases we can implement
+methods which allow calculation of posterior model probabilities. One
+such idea is the indicator variable selection idea from
+\citet{kuo_mallick:1998}.
+The idea is introduce a latent variable $I \sim \mbox{Bern}(.5)$ and
+expand the model to include the variable $I$ as follows:
 \[
- logit(p) = a + w*\beta*covariate
+ \mbox{logit}(p_{ijk}) = \alpha_{0} + I*\alpha_{1}*x_{ijk}.
 \]
-There are examples in \citep{royle_dorazio:2008}
- (perhaps Marc has an example in the new BPA book?)
-\item[(3)] DIC -- the Deviance Information Criterion.
+The importance of the covariate $x$ is then measured by the posterior
+probability that $I=1$.  
+\item[(3)] DIC -- the Deviance Information Criterion:
 Bayesian model selection is now routinely carried-out using the
 Deviance Information
 Criterion (DIC; Spiegelhalter et al. 2002) although its effectiveness
@@ -245,30 +411,128 @@ in hierarchical models depends very much on the manner in which it is
 constructed \citep{millar:2009}.
 We recommend using it if it leads to
 sensible results but also we think it should be calibrated to the
-extent possible for specific classes of models.  For most SCR models
-it is easier and understandable to look at whether parameters appear
-to be important based on their magnitude and posterior variance.
+extent possible for specific classes of models. 
 \item[(4)] Logical argument: For something like M/F differences it seems
-to make sense to leave the extra parameters in the model no matter what,
-because of course you expect , biologically, there to be a difference in
-these things. Thus the hypothesis test itself is meaningless (Doug Johnson
-wrote a paper on this kind of stuff once) and you would only reject the
-null because of low power anyhow.
+to make sense to leave an extra parameter in the model no matter what,
+because of course you expect, biologically, there to be a difference in
+these things. e.g., in the above example we don't really ever think
+that $psi_{sex} = 0.5$ and so we might not typically admit that model
+into our model set. Thus the hypothesis test itself is meaningless, a form
+of gratuitious hypothesis testing \citep{johnson:1999}.
 \end{itemize}
-
 In all modeling activities, as in life itself, the use of logical argument should not be under-utilized.
 
-\subsection{Deviance Information Criterion}
+\subsection{Deviance Information Criterion (DIC) }
 
-DIC might work for selection among various classes of
-fixed effects models.
-Problem is: there are different flavors of DIC and they seem to
-perform differently. And  furthermore it doesn't seem good for
-choosing among hierarchical structures....................
+AIC makes the use of likelihood methods  convenient for problems where
+likelihood estimation is achievable. 
+For Bayesian analysis, the 
+development of  Deviance Information Criterion (DIC)
+\citep{spiegelhalter_etal:2002} seemed like a general-purpose
+equivalent for a brief 
+period of time after its invention.  However, 
+there seems to be too many types of DIC, and no consistent version
+is reported across computing platforms, and practical calibration
+has indicated highly variable effectiveness of 
+DIC. Even the high-end statisticians don't have a unified front on 
+practical issues related to the use of DIC.
+That said, it is still widely reported and, we think, probably
+reasonable for certain classes of fixed effects models. 
 
-What is the DIC for a SCR model? The models are just
-binomial or Poisson regressions and so we can define the DIC as
- -loglikelihood().  But what about the data augmentation part?
+
+Deviance is negative 2 times the loglikelihood. i.e.,
+for a given model with parameters $\theta$:
+$Dev(\theta) = -2*log(y|\theta)$
+the DIC is defined as the posterior mean of the deviance plus a 
+measure of model complexity, $p_{D}$:
+\[
+ DIC = \overline{Dev}(\theta) + p_{D}
+\]
+AS $p_{D}$ does not have a clear definition in hierarchical models
+with latent structure, the standard definition of $p_{D}$ is
+\[
+ p_{d} = \overline{Dev}(\theta) - Dev(\bar{\theta})
+\]
+where the 2nd term is the deviance evaluated at the posterior mean of
+the parameter(s). The $p_{D}$ here is interpreted as the effective
+number of parameters in the model. 
+Gelman et al. (2004) suggest a different version of $p_{D}$ based on
+one-half the posterior variance of the deviance:
+\[
+ p_{V} - Var(Dev(\theta)|{\bf y})/2.
+\]
+We think this is what {\bf WinBUGS} and {\bf JAGS} are doing if you
+run them through \mbox{\tt R2WinBUGS} and \mbox{\tt R2jags}, respectively.
+It is less easy to get DIC summaries from \mbox{\tt rjags}, so we have
+used \mbox{\tt R2jags} in our analysis here. 
+
+
+We did a Bayesian analysis of the 4 models 
+mentioned above (models 1 - 4, but not ``Model 0'' which assumed $\psi_{sex} =
+0.5$). We have an {\bf R} function called \mbox{\tt wolvSCR0ms.fn}
+ in the \mbox{\tt scrbook} package which will fit each model.
+The function uses {\bf JAGS} by default for the fitting, using the \mbox{\tt
+  R2jags} package.  Here is how we obtain the results each model:
+{\small
+\begin{verbatim}
+> toad1<-wolvSCR0ms.fn(y3d,traps,wsex=wsex,nb=1000,ni=21000,delta=2,M=200,model=1)
+> toad2<-wolvSCR0ms.fn(y3d,traps,wsex=wsex,nb=1000,ni=21000,delta=2,M=200,model=2)
+> toad3<-wolvSCR0ms.fn(y3d,traps,wsex=wsex,nb=1000,ni=21000,delta=2,M=200,model=3)
+> toad4<-wolvSCR0ms.fn(y3d,traps,wsex=wsex,nb=1000,ni=21000,delta=2,M=200,model=4)
+\end{verbatim}
+}
+
+
+{\bf
+XXX provide the results from the log(sigma) parameterization in the
+text but comment  on whether there is a difference.
+XXXX
+}
+
+The BUGS model specification for model 4 is shown in panel XXXX. We
+made a single R script that fit each of the 4 models by using a binary
+indicator variable fed to BUGS as data which would turn on/off each
+component of the model. Note that the baseline encounter probability
+is modeled on the logit-scale and the new parameter $alpha_{sex}$ (bad
+notation?) whereas we model the effect of sex on $\sigma$ not on the
+scale of $\sigma$ but rather on the ``effect scale'' -- i.e., the
+coefficient of distance. 
+XXXXX
+We should see if the other parameterization
+changes things XXXXX
+A final point: We have dunif(-3,3) priors. Check normal prior and
+check dunif(-5,5).  Check WinBUGS too.
+
+\begin{verbatim}
+# check notation and put this in a panel?
+alpha.sex ~ dunif(-3,3)
+beta.sex  ~ dunif(-3,3)
+sigma~dunif(0,50)
+logitp0~dnorm(0,.1)
+beta<- (1/(2*sigma*sigma) )
+psi ~ dunif(0,1)
+psi.sex  ~ dunif(0,1)
+for(i in 1:M){
+ wsex[i] ~ dbern(psi.sex)
+ w[i]~dbern(psi)
+ s[i,1]~dunif(Xl,Xu)
+ s[i,2]~dunif(Yl,Yu) 
+ logit(p0[i])<- logitp0 + alpha.sex*wsex[i]
+ log(beta.vec[i])<- log( beta ) + beta.sex*wsex[i]
+for(j in 1:ntraps){
+  mu[i,j]<-w[i]*p[i,j]
+  ncaps[i,j]~ dbin(mu[i,j],K[j]) 
+  dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2) 
+  p[i,j]  <-  p0[i]*exp( - beta.vec[i]*dd[i,j] )
+
+}
+}
+\end{verbatim}
+
+
+An issue is applying DIC to hierarchical models in which case the
+level of the hierarchcy matters. Do you condition on the random
+effects, or do you use the deviance based on the marginal likelihood?
 The current Conventional Wisdom is that DIC doesn't really work so
 well in hierarchical models (    ). But there doesn't really seem to be
 general theory to support this. It seems maybe like its ok sometimes. So
@@ -277,113 +541,194 @@ we take a look at its use here to pick among fixed effects models.
 We did this for our wolverine data. We used the same 4 models as above
 and a 5th model which was the super-model containing all of them
 together. We're not sure what DIC means in that case but, whatever. 
- 
-\begin{verbatim}
-model0 = no covariates , sex effect only (variable density of males/females)
-model1 = same + g0(sex)
-model2 = sigma(sex)
-model3 = g0(sex)+sigma(sex)
-
-
-> toad0<-wolvSCR0.fn(y3d,traps,wsex=wsex,nb=1000,ni=21000,delta=2,M=200,model=0)
-> toad1<-wolvSCR0.fn(y3d,traps,wsex=wsex,nb=1000,ni=21000,delta=2,M=200,model=1)
-> toad2<-wolvSCR0.fn(y3d,traps,wsex=wsex,nb=1000,ni=21000,delta=2,M=200,model=2)
-> toad3<-wolvSCR0.fn(y3d,traps,wsex=wsex,nb=1000,ni=21000,delta=2,M=200,model=3)
-> toad5<-wolvSCR0.fn(y3d,traps,wsex=wsex,nb=1000,ni=21000,delta=2,M=200,model=5)
-> 
-WRONG STUFF
-> toad0$DIC
-[1] 520.7581
-> toad1$DIC
-[1] 518.4011
-> toad2$DIC
-[1] 517.8942
-> toad3$DIC
-[1] 520.1612
-> toad5$DIC
-[1] 519.1475
-
-Model 0:
-            mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
-beta.sex   -0.01  1.73  -2.85  -1.50  -0.01   1.49   2.85    1 60000
-alpha.sex   0.00  1.73  -2.85  -1.50   0.00   1.50   2.85    1 60000
-psi         0.30  0.07   0.19   0.25   0.30   0.34   0.45    1 25000
-psi.sex     0.52  0.10   0.32   0.45   0.52   0.59   0.72    1 60000
-sigma       0.64  0.06   0.54   0.60   0.64   0.67   0.76    1  3100
-logitp0    -2.82  0.18  -3.17  -2.94  -2.82  -2.70  -2.48    1 12000
-N          60.03 11.89  40.00  52.00  59.00  67.00  86.00    1 17000
-D           5.79  1.15   3.86   5.01   5.69   6.46   8.29    1 17000
-beta        1.25  0.21   0.87   1.10   1.24   1.38   1.70    1  3100
-deviance  441.95 12.56 419.70 433.10 441.20 449.90 468.50    1  6100
-DIC info (using the rule, pD = var(deviance)/2)
-pD = 78.8 and DIC = 520.8
-
-Model 1:
-            mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
-beta.sex    0.00  1.74  -2.85  -1.51  -0.01   1.52   2.86    1 35000
-alpha.sex  -0.74  0.34  -1.43  -0.97  -0.74  -0.51  -0.08    1 60000
-psi         0.30  0.07   0.18   0.25   0.29   0.34   0.44    1 15000
-psi.sex     0.56  0.10   0.36   0.49   0.56   0.63   0.75    1  1500
-sigma       0.66  0.06   0.56   0.62   0.65   0.69   0.79    1  6500
-logitp0    -2.45  0.25  -2.92  -2.62  -2.45  -2.28  -1.95    1 34000
-N          58.91 11.71  39.00  51.00  58.00  66.00  85.00    1 17000
-D           5.68  1.13   3.76   4.92   5.59   6.36   8.19    1 17000
-beta        1.18  0.21   0.80   1.03   1.17   1.31   1.61    1  6500
-deviance  440.17 12.51 417.80 431.40 439.50 448.10 466.70    1 10000
-DIC info (using the rule, pD = var(deviance)/2)
-pD = 78.2 and DIC = 518.4
-
-Model 2:
-            mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
-beta.sex    1.36  1.39  -2.33   0.71   1.73   2.44   2.95 1.05    58
-alpha.sex   0.01  1.73  -2.84  -1.48   0.01   1.51   2.86 1.00 60000
-psi         0.30  0.07   0.19   0.25   0.30   0.34   0.44 1.00  1000
-psi.sex     0.52  0.10   0.32   0.45   0.52   0.59   0.72 1.00 52000
-sigma       1.52  0.77   0.20   0.90   1.50   2.14   2.91 1.05    57
-logitp0    -2.82  0.18  -3.16  -2.94  -2.82  -2.70  -2.47 1.00 29000
-N          59.76 11.79  40.00  51.00  59.00  67.00  86.00 1.00   850
-D           5.76  1.14   3.86   4.92   5.69   6.46   8.29 1.00   850
-beta        1.23  3.20   0.06   0.11   0.22   0.61  12.87 1.05    57
-deviance  441.64 12.35 419.70 432.90 440.90 449.50 468.10 1.00  4100
-DIC info (using the rule, pD = var(deviance)/2)
-pD = 76.3 and DIC = 517.9
-
-Model 3:
-            mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
-beta.sex    1.50  1.33  -2.11   0.88   1.90   2.50   2.95 1.08    63
-alpha.sex  -0.74  0.35  -1.44  -0.97  -0.74  -0.50  -0.06 1.00  3400
-psi         0.30  0.07   0.18   0.25   0.29   0.34   0.44 1.00  9700
-psi.sex     0.56  0.10   0.35   0.49   0.56   0.63   0.75 1.00  1800
-sigma       1.65  0.79   0.22   1.02   1.68   2.27   3.02 1.08    65
-logitp0    -2.45  0.25  -2.93  -2.62  -2.45  -2.28  -1.94 1.00  1900
-N          59.16 11.95  39.00  51.00  58.00  66.00  86.00 1.00  7000
-D           5.70  1.15   3.76   4.92   5.59   6.36   8.29 1.00  7000
-beta        1.02  2.96   0.05   0.10   0.18   0.48   9.94 1.08    65
-deviance  440.35 12.64 417.90 431.50 439.50 448.30 467.30 1.00  3700
-DIC info (using the rule, pD = var(deviance)/2)
-pD = 79.8 and DIC = 520.2
-
-Model 5: 9/4/2012 -- NEED TO RERUN THIS HAD WRONG MODEL SPECIFICATION
-            mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
-mod[1]      0.61  0.49   0.00   0.00   1.00   1.00   1.00 1.00  1900
-mod[2]      0.61  0.49   0.00   0.00   1.00   1.00   1.00 1.04    64
-beta.sex    0.83  1.65  -2.64  -0.46   1.19   2.28   2.95 1.05    45
-alpha.sex  -0.46  1.17  -2.61  -1.04  -0.68  -0.24   2.62 1.00  3300
-psi         0.30  0.07   0.18   0.25   0.29   0.34   0.44 1.00 15000
-psi.sex     0.55  0.10   0.34   0.47   0.55   0.62   0.74 1.00  2300
-sigma       1.20  0.78   0.33   0.63   0.75   1.79   2.91 1.09    27
-logitp0    -2.58  0.29  -3.08  -2.80  -2.60  -2.38  -2.00 1.01   440
-N          59.47 11.81  40.00  51.00  58.00  67.00  86.00 1.00 21000
-D           5.73  1.14   3.86   4.92   5.59   6.46   8.29 1.00 21000
-beta        1.03  1.56   0.06   0.16   0.89   1.28   4.67 1.09    27
-deviance  440.58 12.54 418.20 431.80 439.80 448.50 467.20 1.00  4000
-DIC info (using the rule, pD = var(deviance)/2)
-pD = 78.6 and DIC = 519.1
-\end{verbatim}
-
 
 For DIC, small is better and so this suggests Model 2 is preferred. 
 What is this model?
+
+Summarize model parameters for each model...... estimates ... and
+deviance, np and DIC for each model. 
+The output from these models is summarized in Table XXXXX.
+These are based on 21000 iterations, 3 chains, 1000 discarded, 60k
+posterior samples.......
+what we see is: XYZ.....
+I think we get the same model by DIC as we get by AIC. This is super
+encouraging!
+
+ 
+\begin{verbatim}
+           dev  np     dic
+Model 1  441.78 78.3  520.0
+Model 2  440.97 82.4  523.4  
+Model 3: 443.68 80.9  524.6
+Model 4: 441.07 77.3  518.3  <- better model
+
+DIC:  4, 1, 2, 3
+AIC:  2, 4, 1, 3
+
+table
+model  log(sigma) delta  alpha0  alpha.sex D  dev np DIC
+
+
+> toad1b
+Inference for Bugs model at "modelfile0.txt", fit using jags,
+ 3 chains, each with 11000 iterations (first 1000 discarded)
+ n.sims = 30000 iterations saved
+          mu.vect sd.vect    2.5%     25%     50%     75%   97.5%  Rhat n.eff
+D           5.834   1.138   3.856   5.012   5.784   6.555   8.290 1.001  9800
+N          60.521  11.805  40.000  52.000  60.000  68.000  86.000 1.001  9800
+X1new       9.704   2.759   5.177   7.719   9.411  11.365  15.962 1.001  6500
+X1obs      13.107   3.404   7.483  10.671  12.759  15.165  20.727 1.001  4300
+X3new      13.079   3.233   7.621  10.764  12.776  15.056  20.235 1.001 30000
+X3obs      21.259   2.195  17.590  19.707  21.050  22.582  26.146 1.001  6900
+Xnew       61.726   6.581  49.513  57.150  61.457  66.088  75.232 1.001  9900
+Xobs       89.291   6.105  78.264  84.972  89.043  93.251 101.988 1.001  7100
+alpha.sex  -0.014   1.730  -2.846  -1.523  -0.017   1.477   2.842 1.001 20000
+beta        1.258   0.208   0.881   1.112   1.247   1.393   1.689 1.001 15000
+beta.sex    0.008   1.735  -2.846  -1.491   0.013   1.521   2.845 1.001 10000
+logitp0    -2.816   0.179  -3.170  -2.935  -2.815  -2.697  -2.467 1.001  6500
+psi         0.305   0.067   0.188   0.258   0.300   0.347   0.448 1.001 15000
+psi.sex     0.520   0.103   0.320   0.449   0.520   0.592   0.720 1.001  7300
+sigma       0.637   0.054   0.544   0.599   0.633   0.671   0.753 1.001 15000
+deviance  441.776  12.513 419.615 433.006 441.021 449.721 468.423 1.002  3500
+
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+
+DIC info (using the rule, pD = var(deviance)/2)
+pD = 78.3 and DIC = 520.0
+DIC is an estimate of expected predictive error (lower deviance is better).
+> toad2b
+Inference for Bugs model at "modelfile0.txt", fit using jags,
+ 3 chains, each with 11000 iterations (first 1000 discarded)
+ n.sims = 30000 iterations saved
+          mu.vect sd.vect    2.5%     25%     50%     75%   97.5%  Rhat n.eff
+D           5.685   1.144   3.759   4.916   5.591   6.362   8.193 1.001  9700
+N          58.980  11.868  39.000  51.000  58.000  66.000  85.000 1.001  9700
+X1new       9.785   2.760   5.218   7.796   9.498  11.454  15.932 1.001 16000
+X1obs      12.403   3.362   6.852  10.005  12.052  14.427  19.861 1.001 30000
+X3new      13.146   3.280   7.587  10.812  12.852  15.172  20.343 1.001 30000
+X3obs      21.305   2.087  17.780  19.818  21.127  22.580  25.902 1.004   710
+Xnew       62.283   6.637  49.914  57.700  62.082  66.611  76.023 1.001 30000
+Xobs       89.161   6.105  78.063  84.883  88.888  93.103 101.987 1.002  2200
+alpha.sex  -0.755   0.348  -1.447  -0.985  -0.754  -0.522  -0.075 1.006   420
+beta        1.174   0.214   0.779   1.030   1.167   1.311   1.621 1.001  4200
+beta.sex    0.013   1.741  -2.846  -1.490   0.016   1.536   2.856 1.001  7400
+logitp0    -2.437   0.249  -2.914  -2.607  -2.440  -2.271  -1.945 1.005   520
+psi         0.297   0.067   0.182   0.250   0.292   0.339   0.442 1.001 10000
+psi.sex     0.564   0.104   0.354   0.492   0.567   0.638   0.757 1.001 16000
+sigma       0.661   0.063   0.555   0.618   0.654   0.697   0.801 1.001  4200
+deviance  440.973  12.851 418.369 431.914 440.121 449.058 468.333 1.003  1000
+
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+
+DIC info (using the rule, pD = var(deviance)/2)
+pD = 82.4 and DIC = 523.4
+DIC is an estimate of expected predictive error (lower deviance is better).
+> toad3b
+Inference for Bugs model at "modelfile0.txt", fit using jags,
+ 3 chains, each with 11000 iterations (first 1000 discarded)
+ n.sims = 30000 iterations saved
+          mu.vect sd.vect    2.5%     25%     50%     75%   97.5%  Rhat n.eff
+D           5.721   1.131   3.759   4.916   5.591   6.458   8.193 1.002  2700
+N          59.355  11.731  39.000  51.000  58.000  67.000  85.000 1.002  2700
+X1new       9.661   2.748   5.168   7.702   9.346  11.314  15.869 1.001 30000
+X1obs      13.050   3.415   7.419  10.621  12.680  15.101  20.724 1.001 16000
+X3new      13.125   3.224   7.653  10.817  12.838  15.142  20.203 1.001 15000
+X3obs      21.335   2.203  17.651  19.774  21.109  22.664  26.245 1.001 11000
+Xnew       62.261   6.680  49.860  57.651  61.992  66.637  76.052 1.001  4600
+Xobs       89.964   6.203  78.599  85.632  89.649  93.989 102.872 1.002  1700
+alpha.sex  -0.017   1.730  -2.855  -1.513  -0.019   1.477   2.852 1.001 30000
+beta        1.221   0.290   0.692   1.019   1.204   1.406   1.837 1.012   190
+beta.sex    0.022   0.346  -0.647  -0.205   0.016   0.241   0.734 1.013   170
+logitp0    -2.818   0.175  -3.163  -2.936  -2.816  -2.700  -2.477 1.003   870
+psi         0.299   0.066   0.184   0.252   0.294   0.341   0.441 1.002  3300
+psi.sex     0.526   0.110   0.311   0.449   0.526   0.604   0.739 1.002  1400
+sigma       0.654   0.084   0.522   0.596   0.644   0.700   0.850 1.012   190
+deviance  443.680  12.732 420.953 434.766 442.974 451.708 470.737 1.002  1400
+
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+
+DIC info (using the rule, pD = var(deviance)/2)
+pD = 80.9 and DIC = 524.6
+DIC is an estimate of expected predictive error (lower deviance is better).
+> toad4b
+Inference for Bugs model at "modelfile0.txt", fit using jags,
+ 3 chains, each with 11000 iterations (first 1000 discarded)
+ n.sims = 30000 iterations saved
+          mu.vect sd.vect    2.5%     25%     50%     75%   97.5%  Rhat n.eff
+D           5.647   1.119   3.759   4.820   5.494   6.362   8.097 1.004   780
+N          58.587  11.606  39.000  50.000  57.000  66.000  84.000 1.004   780
+X1new       9.794   2.789   5.230   7.779   9.480  11.494  16.065 1.001 15000
+X1obs      12.360   3.356   6.833   9.970  12.025  14.348  19.936 1.002  2600
+X3new      13.162   3.233   7.621  10.864  12.883  15.163  20.274 1.001 15000
+X3obs      21.378   2.070  17.890  19.920  21.181  22.639  25.949 1.001 30000
+Xnew       62.472   6.595  50.278  57.914  62.204  66.754  76.131 1.001  4800
+Xobs       88.559   6.070  77.548  84.319  88.227  92.445 101.274 1.003  1200
+alpha.sex  -0.788   0.344  -1.471  -1.022  -0.782  -0.552  -0.123 1.003   950
+beta        1.320   0.304   0.797   1.105   1.296   1.505   1.975 1.012   180
+beta.sex   -0.223   0.337  -0.898  -0.447  -0.216   0.006   0.426 1.010   230
+logitp0    -2.445   0.237  -2.894  -2.607  -2.449  -2.288  -1.966 1.002  1500
+psi         0.295   0.065   0.181   0.249   0.290   0.336   0.435 1.004   740
+psi.sex     0.535   0.110   0.317   0.459   0.536   0.612   0.743 1.001  7200
+sigma       0.628   0.074   0.503   0.576   0.621   0.673   0.792 1.012   180
+deviance  441.065  12.433 418.997 432.297 440.248 449.000 467.453 1.001  8300
+
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+
+DIC info (using the rule, pD = var(deviance)/2)
+pD = 77.3 and DIC = 518.3
+DIC is an estimate of expected predictive error (lower deviance is better).
+\end{verbatim}
+
+
+
+
+
+
+
+
+
+
+
+
+\begin{verbatim}
+
+> print(toad5,digits=2)
+Inference for Bugs model at "modelfile5.txt", fit using WinBUGS,
+ 3 chains, each with 21000 iterations (first 1000 discarded)
+ n.sims = 60000 iterations saved
+            mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
+mod[1]      0.67  0.47   0.00   0.00   1.00   1.00   1.00    1  1300
+mod[2]      0.48  0.50   0.00   0.00   0.00   1.00   1.00    1 42000
+beta.sex    0.05  1.71  -2.83  -1.42   0.06   1.53   2.85    1 12000
+alpha.sex  -0.53  1.10  -2.53  -1.06  -0.74  -0.35   2.53    1  3000
+psi         0.28  0.06   0.17   0.24   0.27   0.31   0.40    1 11000
+psi.sex     0.55  0.11   0.34   0.48   0.55   0.62   0.74    1  3300
+sigma      25.21 14.32   1.81  12.82  25.33  37.51  48.77    1  7200
+logitp0    -2.59  0.30  -3.12  -2.83  -2.61  -2.38  -1.98    1   860
+N          54.86  9.86  38.00  48.00  54.00  61.00  77.00    1 16000
+D           5.29  0.95   3.66   4.63   5.21   5.88   7.42    1 16000
+Xobs       91.39  5.55  81.39  87.50  91.08  94.92 103.20    1 60000
+Xnew       64.69  6.10  53.39  60.50  64.49  68.71  77.23    1 60000
+X1obs      12.48  3.34   6.96  10.09  12.12  14.51  19.94    1 52000
+X1new       9.76  2.75   5.21   7.78   9.48  11.42  15.91    1 60000
+X3obs      21.59  2.06  18.17  20.12  21.39  22.84  26.21    1  8000
+X3new      13.20  3.28   7.67  10.86  12.90  15.23  20.41    1 60000
+deviance  444.43 11.86 423.40 436.10 443.60 452.00 469.90    1 14000
+
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+
+DIC info (using the rule, pD = var(deviance)/2)
+pD = 70.3 and DIC = 514.7
+DIC is an estimate of expected predictive error (lower deviance is better).
+> 
+\end{verbatim}
+
+
 
 
 \begin{comment}
@@ -411,77 +756,105 @@ On Thu, May 24, 2012 at 9:57 AM, Jeffrey Royle <jaroyle@gmail.com> wrote:
 >
 > I still can't compute Plummer's version using JAGS -- I think maybe I need
 > to update my JAGS version or something.
-\end{comment}
+\end{comment} 
 
-\subsection{Model selection indicator variables}
 
-A convenient way to deal with model selection problems in Bayesian
-analysis by MCMC is
+
+
+
+\subsection{Bayesian model averaging: indicator variables}
+
+A convenient way to deal with model selection and averaging problems in Bayesian
+analysis by MCMC is to use the method of model indicator variables
+\citep{kuo_mallick:1998} which allow us 
 to expand the model to include the set of prescribed models as
 specific reductions of a larger 
 model.
-For a model set in which all submodels are nested subsets of the one larger
-model, such as for models containing explicit covariates,
+This has been demonstrated in some specific capture-recapture models
+in 
+Royle 2009, sec. 3.xxx in \citep{royle_dorazio:2008},
+and in the context of SCR by 
+ Tobler et al. (in review XXXXX need to find this paper XXXXXXX).
+Using this method, the model-averaged parameters are produced by
+default.... we need to be careful of reporting parameters that don't
+have a common interpretation in the different models because it wont
+mean shit. e.g., if a regression parameter is in a model, then an
+MCMC draw is from the posterior but if the regression parameter is not
+in the model then it is a draw from the prior, and so we should think
+carefully about whether it makes sense to report an average of such a
+thing (in the vast majority of cases the answer is no). But some
+parameters like $N$ or density, $D$, do have a consistent
+interpretation and we support producing model-averaged results of
+those parameters.
+
+To implement the Kuo and Mallick approach,  
 we expand the model to include the latent
-variables say $I_{m}$ for each variable in the model that pre-multiply
-covariates. 
- The latent indicator variables
-are:
-%% RBC commented this out to avoid build error
-%\begin{eqnarray*}
-%w_{l} = \left\{ \begin{array} 1 \mbox{linear predictor includesn  covariable k} \\
-%                              0 \mbox{linear predictor does not
-%                                include covariable k}
-% \end{array}
-%\right.
-%\end{eqnarray*}
-being mutually independent with priors
+indicator variables say $I_{m}$, for  variable $M$ in the model, 
+such that 
+\begin{eqnarray*}
+I_{m} = \left\{ 
+\begin{array}{cc} 1 &  \mbox{ linear predictor includes  covariate $m$} \\
+                  0 & \mbox{ linear predictor does not
+                                include covariate $m$}
+ \end{array}
+\right.
+\end{eqnarray*}
+We assume that the indicator variables $I_{m}$
+are mutually independent with:
 \[
 I_m \sim \mbox{Bernoulli}(0.5).
 \]
 The
  expanded model has the linear predictor:
 \[
-logit(p_{ij}) = \alpha_{0} + \alpha_{1}I_{1} x_{1,ij} + \alpha_{2}I_{2} x_{2,ij} 
+\mbox{logit}(p_{ijk}) = \alpha_{0} + \alpha_{1}I_{1} C_{1,i} + \alpha_{2}I_{2} C_{2,ijk} 
 \]
-In this case, model identity is the sequence of $I$ variables
-defining unique models.
+where, lets suppose, $C_{1,i}$ is an individual level covariate such
+as sex, and $C_{2,ijk}$ is a behavioral response covariate which is individual- trap- and occasion-specific.
+We can assume a parallel model specification on the parameter $\sigma$
+which is liable to vary by individual level covariates such as sex:
+\[
+ log(\sigma_{i}) = \beta_{0} + \beta_{1} I_{3} C_{1,i}
+\]
 
-Model selection by this method was covered in
-various places -- e.g., Royle 2009, sec. 3.xxx in \citep{royle_dorazio:2008} and
-maybe in the Kery and Schaub book, and in the context of SCR by 
- Tobler et al. (in
-review).
+In this formulation of the model selection problem we can characterize
+unique models by the sequence of $I$ variables. In this case, each
+unique sequence $(I_{1},I_{2},I_{3})$ represents  a model, and we can
+tabulate the posterior frequencies of each model by post-processing
+the MCMC histories of $(I_{1},I_{2},I_{3})$ (we demonstrate this
+shortly). 
 
- This
-notion was suggested by Kuo and Mallick (1998).
+
 Conceptually, analysis of this expanded model within the data augmentation
-framework does not pose anyadditional difficulty. One
+framework does not pose any additional difficulty. One
 broader, technical consideration is that posterior model probabilities
 are well known to be sensitive to priors on parameters
-(e.g., Aitkin, 1991; Link and Barker, 2006; Link and Barker 2010,
-sec. 7.2.5) and vague priors
-are not usuallyinno cuous or “uninformative” when evaluating
-posterior model probabilities. The use of Akaike’s information
+\citep{aitkin_1991: link_barker:2006} and see also 
+\citep[][sec. 3.4.3]{royle_dorazio:2008} and \citep[][sec. 7.2.5]{link_barker:2010}.
+What might normally be viewed as 
+ vague or non-informative priors, 
+are not usually innocuous or uninformative when evaluating
+posterior model probabilities. The use of Akaike's information
 criterion seems to avoid this problem largely by imposing a
 specific and perhaps undesirable prior that is a function of
-the sample size (Kadane and Lazar, 2004). One solution to
-this problem is to compute posterior model probabilities under
+the sample size \citep{kadane_lazar:2004}. One solution 
+ is to compute posterior model probabilities under
 a model in which the prior for parameters is fixed at the
-posterior distribution under the full model (Aitkin, 1991).
+posterior distribution under the full model \citep{aitkin:1991}. At a
+minimum, one should evaluate posterior model probabilities under
+different vague prior specifications. 
 
-
-
-
-
-The other way is to introduce a categorical model identity variable
-which, so that 
- ``model identity'' is itself a parameter of the model.
-  For example, for
- different basic encounter probability models, we cannot specify the
-linear predictor of some general model in a manner that reduces to the
-various alternative models simply by switching binary variables on and
-off. For this case we do something like this:
+Another approach to implementing model indicator variables is 
+ to introduce a categorical model identity variable
+which, i.e., so that 
+ ``model identity'' is itself a parameter of the model and each
+ distinct model is associated with a unique covariate combination or
+ other set of model features. This is convenient especially when we
+ cannot specify the linear predictor as some general model that
+ reduces to various alternative sub-models simply by switching binary
+ variables on or off. In the context of SCR models, choosing among
+ different encounter probability models would be an example.
+ For this case we do something like this:
 \begin{verbatim}
  mod \sim \mbox{dcat}(probs[])
 \end{verbatim}
@@ -493,29 +866,91 @@ pi[i,j]<- bigpi[i,j,mod]
 y[i,j] ~ dbern(pi[i,j])
 \end{verbatim}
 (or something like that).
-
 As before the posterior probabilities can be highly sensitive to
 priors on the different model parameters and sometimes mixing is
 really poor.  
-
 But we give a JAGS script in the {\bf R} package
-\mbox{\tt scrbook} which has an example that works. For that we
-estimated each parameter in the models one-at-a-time and used the
-estimated posterior mean and variance as the prior distributions in
-the model-selection analysis.
+\mbox{\tt scrbook} which has an example that works.
+The model specificication for the wolverine data for 3 different
+encounter probability models is shown in panel XXXX: Gaussian
+detection probability; Gaussian hazard model; logistic model.
+The key things to note are that there are 3 intercepts and 3 different
+``beta'' parameters (related to inverse of the scale parameter). The
+parameters should not be regarded as equivalent across the models, so
+it is important to have them seperately estimated for each
+model..... Then we create a probability of encounter for each
+individual, trap {\it and} model so that the holder object 'p' in the
+model description is a 3-d array. (sometimes this would have to be a 4
+or 5-d array in more complex models with time effects, etc..)
 
-This can all be very  tedious to implement but
-produces posterior model probabilities which have a direct
-interpretation that is desireable.
+\begin{panel}[htp]
+\centering
+\rule[0.15in]{\textwidth}{.03in}
+%\begin{minipage}{5in}
+{\small
+\begin{verbatim}
+model {
+for(i in 1:3){
+  alpha0[i] ~ dnorm(0,.1)
+  beta[i] ~ dunif(0,2)
+  mod.probs[i]<- 1/3
+}
+psi ~ dunif(0,1)
+psi.sex  ~ dunif(0,1)
+catmod~dcat(mod.probs[])
+
+for(i in 1:M){
+ w[i]~dbern(psi)
+ s[i,1]~dunif(Xl,Xu)
+ s[i,2]~dunif(Yl,Yu) 
+ logit(beta0.vec[i,1])<- alpha0[1]
+ log(beta0.vec[i,2])<- alpha0[2]
+ beta0.vec[i,3]<- alpha0[3]
+
+ log(beta.vec[i,1])<- log( beta[1] ) 
+ log(beta.vec[i,2])<- log( beta[2] ) 
+ log(beta.vec[i,3])<- log( beta[3] ) 
+
+ for(j in 1:ntraps){
+   mu[i,j]<-w[i]*p[i,j,catmod]
+   ncaps[i,j]~ dbin(mu[i,j],K[j]) 
+   dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2) 
+ 
+   p[i,j,1]  <-  beta0.vec[i,1]*exp( - beta.vec[i,1]*dd[i,j] )
+   p[i,j,2] <-  1-exp(-beta0.vec[i,2]*exp( - beta.vec[i,2]*dd[i,j] ) )
+   logit(p[i,j,3])<- beta0.vec[i,3] - beta.vec[i,3]*dd[i,j]
+  }
+}
+N<-sum(w[1:M])
+D<-N/area
+}
+\end{verbatim}
+}
+%\end{minipage}
+\rule[-0.15in]{\textwidth}{.03in}
+\caption{
+Part of the BUGS specification
+of the indicator variable idea to choose among
+  different detection models..... this code is contained in an R
+  script in scrbook package called XXXXXX.
+}
+\label{gof.panel.modsel}
+\end{panel}
 
 
-
-
-We did this for the wolverine data with sex as a covariate on both
-sigma and the intercept. here are the results. rerun.
 
 
 \subsection{Wolverine stuff}
+
+
+
+We did a bunch of analysis previously with models that involved
+sex-specific parameters. Here we expand the model set to include a
+behavioral response. This is a little more difficult doing Bayesian
+analysis because we have to do the 3-d version of the model which can
+be a time-consuming task in WinBUGS. But lets do it anyway.
+There are in this case 8 models (right?)
+
 
 4 models with sex: DIC, model weights, AIC.
 
@@ -583,19 +1018,11 @@ Node statistics
 
 \section{Evaluating Goodness-of-Fit}
 
-Using classical inference methods, it is sometimes possible to
-identify a test statistic, with known asymptotic distribution, to
-evaluate goodness-of-fit using a chi-square statistic. Examples from
-the closed capture-recapture setting includes XXXXXX XXXXXXXX.  When
-this is not the case, goodness-of-fit is ususally assessed using
-bootstrap methods \citep{dixon:2002}. Using a bootstrap method
-we identify a fit
-statistic and we compute the value for which is more or less the
-standard approach, in general.  To date, we are unaware of any
-goodness-of-fit applications based on likelihood analysis of SCR
-models (XXX WE NEED TO DO SOME RESEARCH ON THIS XXXXX).  We give some
-ideas in sec. xxxxxx below.
-
+We estimate parameters, maybe fit a bunch of models and pick a
+desireable one or perhaps average estimates of density from a few
+models. An important questions is:
+Are the data we have consistent with realizations from the model which
+we just fitted?
 
 Conceptually, we can think of model selection as follows: if we simulate
 under that model, do the simulated realizations look like our data?
@@ -610,8 +1037,6 @@ hypotheses embodied by that model. This is not really true... it could
 mean we're missing something, or many things. The basic model could be
 correct, just not having enough stuff in it. 
 
-
-
 For either Bayesian or classical inference, the basic strategy is to
 come up with a fit statistic that depends on the parameters and the
 data set, which we denote by $T({\bf y}, \theta)$, and then we compute
@@ -619,9 +1044,23 @@ this for the observed data set, and then compare its value to that
 computed for perfect data sets simulated under the correct model.  In
 the case of classical inference, we use a parametric bootstrap where
 we simulate data sets conditional on the MLE $\hat{\theta}$. For
-Bayesian analysis we use the Bayesian p-value (Gelman et al. XXXXX) in
+Bayesian analysis we use the Bayesian p-value \citep{gelman_etal:2006}
+in
 which data sets are simulated for a posterior sample of $\theta$ which
 we briefly introduced in sec. 2.XXXXX.
+
+Using classical inference methods, it is sometimes possible to
+identify a test statistic, with known asymptotic distribution, to
+evaluate goodness-of-fit using a chi-square statistic. Examples from
+the closed capture-recapture setting includes XXXXXX XXXXXXXX.  When
+this is not the case, goodness-of-fit is ususally assessed using
+bootstrap methods \citep{dixon:2002}. Using a bootstrap method
+we identify a fit
+statistic and we compute the value for which is more or less the
+standard approach, in general.  To date, we are unaware of any
+goodness-of-fit applications based on likelihood analysis of SCR
+models (XXX WE NEED TO DO SOME RESEARCH ON THIS XXXXX).  We give some
+ideas in sec. xxxxxx below.
 
 One challenge with SCR models is there has not been a definitive or 
 general proposal for a fit statistic for use in computing the Bayesian
@@ -804,9 +1243,33 @@ compute this for {\it each} iteration of the MCMC algorithm to provide
 an assessment of model fit.
 WHY FREEMAN TUKEY XXX FROM CHAPT 2 XXXXXX
 
-Statistic 3: We look also at Trap frequencies
 
-Statistic 2: Individual frequencies
+
+\subsubsection{Statistic 2: Trap frequencies}
+
+Thinking of SCR models  as spatial counts at trap locations it makes
+sense that the SCR model is basically just a spatial model of counts
+\citep{chandler_royle:2012}. So we should pick models that provide
+good predictions of trap totals.
+This suggests the following statistic:
+\[
+ bleen
+\]
+
+In this context of a spatial prediction model it
+makes sense to think of 
+cross-validation. 
+Cross-validation is a standard
+method of fitting spatial models such as kriging and splines. So we
+could as well use cross-validation based on the TRAP-SPECIFIC
+frequencies or some other measure.  We should try that here.
+
+
+\subsubsection{Statistic 1: Individual frequencies}
+
+SCR model is a model for heterogeneity for which individual encounter
+frequencies are the sufficient statistic [not really but close]. so we
+propose to use a statistic based on that.
 
 If model has time effects then y[i,j] is binary ... we recommend
 computing individual/trap or individual or trap summaries using an
@@ -965,20 +1428,31 @@ SYS
 \section{ Summary and Outlook  }
 
 
-There is nothing known at all about power to detect various
+We offered some general strategies for model selection and model
+checking. 
+We recommend model averaging over a small set of distinct models for
+estimating density. But we think using a single model or the best
+model for asessing the importance of effects is probably ok despite
+that the SE's will be biased. 
+
+We think the selection ideas we talked about are probably ok, although
+some more work is needed on Bayesian model selection to make it more
+useful.  The GoF is pretty experimental. There is not a lot of
+guidance in the literature on GoF in SCR models. 
+There is essentially nothing known at all about power to detect various
 departures.  There is some interesting and useful research to be done
 on this. Do we have power to detect departures and does it matter in
-terms of estimating $N$?
+terms of estimating $N$? Our specific analyses suggest not, but we
+know of no theory or specific empirical study that has addressed this
+issue. 
 
-Model fit: other ideas:
-Richard brings up a good point which is related to using
-cross-validation.  Given that SCR models are a type of model for
-spatialy correlation, modeling spatial dependence in counts, similar
-to the Wolpert and Ickstadt idea, why not use techniques commonly used
-in spatial models for SCR models?  Cross-validation is a standard
-method of fitting spatial models such as kriging and splines. So we
-could as well use cross-validation based on the TRAP-SPECIFIC
-frequencies or some other measure.  We should try that here.
+
+
+
+
+
+
+
 
 \subsection{What to do if CSR rejected?}
 

@@ -540,7 +540,7 @@ nrow(y)+exp(4.2328)
 Which differs from the data-generating value ($N=100$) as we might
 expect for a single realization. We usually will present an estimate of uncertainty associated
 with this MLE which we can obtain by inverting the Hessian. Note that
-$Var(\hat{N}) = n + \mbox{Var}(\hat{n}_{0})$.
+$\mbox{Var}(\hat{N}) = n + \mbox{Var}(\hat{n}_{0})$.
 Since we
 have parameterized the model in terms of log($n_{0}$) we use the delta
 method\footnote{
@@ -1049,9 +1049,7 @@ The main model-fitting function in   \mbox{\tt secr} is called
 \mbox{\tt secr.fit}, which 
 makes use of the
 standard {\bf R} model specification framework with tildes. 
-{\bf XXX SAME AS FIRST SENTECE
-To specify a model we use the function \mbox{\tt secr.fit}. XXXX}
-As an example, the equivalent of our
+As an example, the equivalent of the
 basic model SCR0  is fitted as follows: {\bf XXXX need centered tildes
   here XXXXX}
 \begin{verbatim}
@@ -1097,12 +1095,11 @@ function would be:
 \begin{verbatim}
 trapfile<-read.traps(data=traps,detector="proximity")
 \end{verbatim}
-{\bf YOU HAVE trapfile ABOVE AND trapfile1 BELOW; MAYBE STANDARDIZE XXX}
 \item[(2)] \mbox{\tt make.capthist}: This function takes the EDF and combines it
 with trap information, and the number of sampling occasions. A typical
 application looks like this:
 \begin{verbatim}
-capturedata<-make.capthist(enc.data,trapfile1,fmt="trapID",noccasions=165)
+capturedata<-make.capthist(enc.data,trapfile,fmt="trapID",noccasions=165)
 \end{verbatim}
 See \mbox{\tt ?make.capthist} for definition of distinct file
 formats. Specifying  \mbox{\tt fmt = trapID}  is equivalent to our EDF format.
@@ -1111,12 +1108,12 @@ formats. Specifying  \mbox{\tt fmt = trapID}  is equivalent to our EDF format.
 (as described in sec. \ref{mle.sec.shapefile}), then this function
 will organize it so that \mbox{\tt secr.fit} knows what to do with it.
 The function accepts either an external file name (see \mbox{\tt
-  ?read.mask} for details of the structure) or a $G\times 2$ {\bf R} file
+  ?read.mask} for details of the structure) or a $nG \times 2$ {\bf R}
+object, say \mbox{\tt mask.coords},
 containing the coordinates of the mask. A typical application looks
 like:
 \begin{verbatim}
-{\bf XXXX Is that intetional that both the object and the data you read in are called grid? XXXX}
-grid<-read.mask(data=grid)
+grid<-read.mask(data=mask.coords)
 \end{verbatim}
 \end{itemize}
 These constructor functions produce output that can then be used in
@@ -1449,7 +1446,7 @@ This produces exactly this likelihood:
 which is Eq. 2 of \citet{borchers_efford:2008} except for notational
 differences. It also resembles the binomial-form of the likelihood in
 Eq. \ref{mle.eq.binomialform} except with 
-$\Lambda^{n}   exp( - \Lambda \pi_{0} )$ replacing the combinatorial
+$\Lambda^{n}   \exp( - \Lambda \pi_{0} )$ replacing the combinatorial
 term and the $\pi_{0}^{n_{0}}$ term. We provide a function for
 computing this in the \mbox{\tt scrbook} package called \mbox{\tt
   intlik3Poisson}. The help file for that function shows how to
@@ -1491,10 +1488,63 @@ slightly larger uncertainty associated with it.
 
 
 \subsection{Multi-Session Models in \mbox{\tt secr}}
+\label{mle.sec.multisession}
 
-models with a stratification or grouping variable .
-could be sites, years, or periods within a year, could also be ``sex''
+In practice we will often deal with SCR data that have some meaningful
+stratification or group structure.  For example, we might conduct
+mist-netting of birds on $K$ consecutive days, repeated, say, $T$ times
+during a year, or perhaps over $T$ years. Or we might collect data
+from
+ $R$ distinct trapping grids.  In these cases, we have $T$ or $R$
+ groups which we might reasonably regard as being samples of indepdent
+ populations. 
+While the groups might be distinct sites, year, or periods within
+years, they could also be other biological groups such as sex or age. 
+Conveniently, 
+\mbox{\tt secr} fits a specific model for stratified populations -- referred
+to as {\it multi-session} models. These models build on 
+the Poisson assumption which underlies the integrated likelihood used
+in \mbox{\tt secr} (as described in the previous section).  To
+understand the technical framework, let 
+$N_{g}$ be the population size of 
+group $g$ and {\it assume}
+\[
+ N_{g} \sim \mbox{Poisson}(\Lambda_{g}).
+\]
+Naturally, we model group-specific covariates on $\Lambda_{g}$:
+\[
+ log(\Lambda_{g}) = \beta_{0} + \beta_{1} z_{g}
+\]
+where $z_{g}$ is some group-specific covariate such as a categorical index to the group, or a trend variable, or a spatial 
+covariate, such as treatment effect or habitat structure, if the groups
+represent spatial units. 
+Under this model,  we can marginalize {\it all} $N_{g}$ parameters out
+of the likelihood to concentrate the likelihood on the parameters
+$\beta_{0}$ and $\beta_{1}$ precisely as discussed in the previous
+section. This Poisson hierarchical model 
+is the basis of the multi-session models in \mbox{\tt secr}.
 
+To implement a multi-session model (or stratified population model) in
+\mbox{\tt secr},
+we provide the relevant stratification information in the 
+ 'Session' variable of the input encounter data file (EDF). If
+ 'Session' has multiple values then a
+``multi-session'' object is created by default and session-specific variables can
+be described in the model. For example, if the session has 2 values
+for males and females then we have sex-specific densities , and
+baseline encounter probability $p_{0}$ (named $g_{0}$  in \mbox{\tt
+  secr}) by just doing this:
+\begin{verbatim}
+out<-secr.fit(wolvcapt,model=list(D~session, g0~session, sigma~1), buffer=20000)
+\end{verbatim}
+More detailed analysis is given in sec. \ref{gof.sec.aic} where we fit
+a number of different models and apply methods of model selection to
+obtain model-averaged estimates of density.
+
+We can also easily implement stratified population models in the
+various {\bf BUGS} engines using data augmentation
+\citep{converse_royle:2012,converse_royle:2013} which we address, with
+examples,  in Chapt. \ref{chapt.hscr}.
 
 
 \begin{comment}
