@@ -14,7 +14,7 @@ Data from the Fort Drum black bear hair snare study
 }
 \details{
 loads the Fort Drum beardata.
-A list with "trapmat", "bearArray" (3 d array), "flat" (secr format, with sessions coding for sex) and "sex" (sex of the individuals, 1=female, 2=male)
+A list with "trapmat", "bearArray" (3 d array), "flat" (2 d matrix, secr format, with sessions coding for sex) and "sex" (sex of the individuals, 1=female, 2=male)
 }
 \source{
 %%  ~~ reference to a publication or URL from which the data were obtained ~~
