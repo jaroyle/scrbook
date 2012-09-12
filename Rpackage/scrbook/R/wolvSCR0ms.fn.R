@@ -52,6 +52,7 @@ if(parm=="b"){
 sink("modelfile0.txt")
 cat("
 model {
+
 alpha.sex ~ dunif(-3,3)
 beta.sex  ~ dunif(-3,3)
 sigma~dunif(0,50)
