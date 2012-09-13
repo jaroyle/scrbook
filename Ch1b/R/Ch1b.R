@@ -122,15 +122,37 @@ mean((x-mean(x))^2)          # Monte Carlo approximation
 
 
 
-# Conditional distribution
+# Joint, marginal, conditional distributions
 
-X <- 0:20
-Y <- 0:10
-p <- plogis(-0.62 + -2*Y)
-p
-pmf2 <- matrix(NA, length(X), length(Y))
+X <- 0:20 # All possible values of X
+Y <- 0:10  # All possible values of Y
+lambda <- 0.6
+p <- plogis(-0.62 + -2*Y) # p as function of Y
+round(p,2)
+joint <- matrix(NA, length(X), length(Y))
+rownames(joint) <- paste("X=", X, sep="")
+colnames(joint) <- paste("Y=", Y, sep="")
 
+# Joint distribution [X,Y]
 for(i in 1:length(Y)) {
-    pmf2[,i] <- dbinom(X, 20, p[i])
+    joint[,i] <- dbinom(X, 20, p[i]) * dpois(Y[i], lambda)
 }
-round(pmf2,2)
+round(joint,2)
+sum(joint)  # As dictated by law of total probability
+
+# Marginal distributions [X] and [Y]
+margX <- rowSums(joint)
+round(margX, 2)
+
+margY <- colSums(joint)
+round(margY, 2)
+all(margY==dpois(Y,lambda)) # Y is independent of X, but not vice versa
+
+# Conditional distributions [X|Y] and [Y|X]
+XgivenY <- joint/matrix(margY, nrow(joint), ncol(joint), byrow=TRUE)
+round(XgivenY, 2)
+YgivenX <- joint/matrix(margX, nrow(joint), ncol(joint))
+round(YgivenX, 2)
+
+colSums(XgivenY)
+rowSums(YgivenX)

@@ -326,57 +326,180 @@ $X$. However, in ecology, we often are interested in multiple random
 variables and how they are related. Define $Y$ as a random variable
 whose realized values may or may not be independent of $X$. Inference
 about these two random variables can be made using the joint,
-marginal, and conditional distributions. The
-conditional distribution is the distribution of one variable, given a
-realized value of the other. In the case of two discrete random
-variables, the conditional distribution may be written as
-$[X=x|Y=y]$, i.e. the probability of $X$ taking on the value $x$
-given the realized value of $Y$ being $y$. For simplicity, we will
-write this as $[X|Y]$. Continuing with our
-previous example where $X$ was the number of shad caught after 20
-casts, now supposed that $X$ depends on $Y$, the number of fisherman
-competing at the hole. In such a case, we might expect that the
-probability of $x$ being high, decreases as $y$ increases. In other
-cases, we might ask questions like what is the expected number of birds likely
-to be captured in a mist-net \textit{given} that there are 10
-individuals in the population?
-%, i.e. ``the probability
-%distribution of $X$ given $Y$.'' We might also want to know the
-%distribution of $X$ \textit{un}conditional on $Y$, $[X]$, i.e.
-%the marginal distribution.
-Conditional distributions are defined as follows:
-\begin{equation*}
-  [X|Y] = \frac{[X,Y]}{[Y]} \qquad [Y|X] = \frac{[X,Y]}{[X]}
-\end{equation*}
+marginal, or conditional distributions---or, we may make use of all of
+them---it depends upon our question being asked. In the case of
+discrete random variables, the joint
+distribution is the probability that $X$ takes on the value $x$
+\textit{and} that $Y$ takes on the value $y$, which is written
+$[X=x,Y=y]$. To clarify this concept, let's go back to our previous
+example where $X$ was the number of fish caught after 20 casts, which
+we said was an independent and identically distributed (i.i.d.)
+binomial random variable. Now,
+let's suppose that $X$ depends on the random variable $Y$, which is
+the number of other fisherman at the hole. Specifically, let's say
+that the probability of catching a fish $p$ is related to $X$
+according to $\text{logit}(p) = -0.6 + -2y$. Furthermore, let's
+make the intuitive assumption that the number of fishermen at the hole
+is a Possion random variable with mean $0.6$, i.e. $x \sim
+\text{Poisson}(0.6)$. Our model is now fully specified, and so we can
+answer the question, ``what is the probability of catching $x$ fish
+\textit{and} of there being $y$ a-holes at the hole. This joint
+distribution is given by the product of the binomial pmf (with $p$
+determined by $y$), and the Poisson pmf with $\lambda=0.6$. The
+following \R~code creates the joint distribution.
+\begin{verbatim}
+> X <- 0:20 # All possible values of X
+> Y <- 0:10  # All possible values of Y
+> lambda <- 0.6
+> p <- plogis(-0.62 + -2*Y) # p as function of Y
+> round(p,2)
+ [1] 0.35 0.07 0.01 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
+> joint <- matrix(NA, length(X), length(Y))
+> rownames(joint) <- paste("X=", X, sep="")
+> colnames(joint) <- paste("Y=", Y, sep="")
+>
+> # Joint distribution [X,Y]
+> for(i in 1:length(Y)) {
++     joint[,i] <- dbinom(X, 20, p[i]) * dpois(Y[i], lambda)
++ }
+> round(joint,2)
+      Y=0  Y=1  Y=2  Y=3 Y=4 Y=5 Y=6 Y=7 Y=8 Y=9 Y=10
+X=0  0.00 0.08 0.08 0.02   0   0   0   0   0   0    0
+X=1  0.00 0.12 0.02 0.00   0   0   0   0   0   0    0
+X=2  0.01 0.08 0.00 0.00   0   0   0   0   0   0    0
+X=3  0.02 0.04 0.00 0.00   0   0   0   0   0   0    0
+X=4  0.04 0.01 0.00 0.00   0   0   0   0   0   0    0
+X=5  0.07 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=6  0.09 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=7  0.10 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=8  0.09 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=9  0.06 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=10 0.04 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=11 0.02 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=12 0.01 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=13 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=14 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=15 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=16 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=17 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=18 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=19 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=20 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
+\end{verbatim}
+This matrix tells us the probability of all possible combinations of
+$x$ and $y$, and as dicatated by the law of total probability, the sum
+of these probabilities is equal to 1.
 
-[Here is an example in R. Suppose the number of fisherman is Poisson
-distributed with mean...]
-
-Computing marginal distributions requires . In the case of continuous
-random variables we do this:
-\begin{equation*}
-  [X] = \int_{-\infty}^\infty [X|Y] \, \mathrm{d}Y \qquad
-  [Y] = \int_{-\infty}^\infty [Y|X] \, \mathrm{d}X
-\end{equation*}
-and for discrete random variables we replace the integral with a
-summation over all possible values of the
+Perhaps most fisherman don't care about joint distributions. But, a
+question that might be asked is ``what is the probability
+of catching 1 fish today?'' Well, we know that this depends upon the
+number of fisherman, but we don't know how many will show up
+today. This brings us to the marginal distribution, which is defined by
 \begin{equation*}
   [X] = \sum_Y [X|Y] \qquad
   [Y] = \sum_X [Y|X]
 \end{equation*}
+for discrete random variables, and
+\begin{equation*}
+  [X] = \int_{-\infty}^\infty [X|Y] \, \mathrm{d}Y \qquad
+  [Y] = \int_{-\infty}^\infty [Y|X] \, \mathrm{d}X
+\end{equation*}
+for continuous random variables. The key idea here is that to get the
+marginal distribution of $X$, we have to contemplate all possible
+values of $Y$. Computing marginal distributions is a key step in
+maximilizing likelihoods involving random effects, as will be
+demonstrated in Chapt.\ref{chapt.mle}. Here is some \R~code to compute
+the marginal distribution of $X$, i.e. the probability of $X=x$ fish:
+\begin{verbatim}
+> margX <- rowSums(joint)
+> round(margX, 2)
+ X=0  X=1  X=2  X=3  X=4  X=5  X=6  X=7  X=8  X=9 X=10 X=11 X=12 X=13 X=14
+0.18 0.14 0.09 0.05 0.05 0.07 0.09 0.10 0.09 0.06 0.04 0.02 0.01 0.00 0.00
+X=15 X=16 X=17 X=18 X=19 X=20
+0.00 0.00 0.00 0.00 0.00 0.00
+\end{verbatim}
+Bad news---the most likely value is $X=0$, but there is a simliar
+probability of catching 1 fish.
 
-This is important because when we maximize likelihoods with random
-effects, we always need to compute the marginal likelihood by
-integrating over the prior distribution.
+The last type of question we can ask about these two random variables
+relates to their conditional distributions. The
+conditional probability distribution is the distribution of one
+variable, given a realized value of the other. In the case of two discrete random
+variables, the conditional distribution may be written as
+$[X=x|Y=y]$, i.e. the probability of $X$ taking on the value $x$
+given the realized value of $Y$ being $y$. For simplicity, we will
+write this as $[X|Y]$. Conditional distributions are defined as follows:
+\begin{equation*}
+  [X|Y] = \frac{[X,Y]}{[Y]} \qquad [Y|X] = \frac{[X,Y]}{[X]}.
+\end{equation*}
+That is, the conditional distribution of $X$ given $Y$ is the joint
+distbution divided by the marginal distribution of $Y$.
+\begin{verbatim}
+> XgivenY <- joint/matrix(margY, nrow(joint), ncol(joint), byrow=TRUE)
+> round(XgivenY, 2)
+      Y=0  Y=1  Y=2  Y=3 Y=4 Y=5 Y=6 Y=7 Y=8 Y=9 Y=10
+X=0  0.00 0.25 0.82 0.97   1   1   1   1   1   1    1
+X=1  0.00 0.36 0.16 0.03   0   0   0   0   0   0    0
+X=2  0.01 0.25 0.02 0.00   0   0   0   0   0   0    0
+X=3  0.03 0.11 0.00 0.00   0   0   0   0   0   0    0
+X=4  0.07 0.03 0.00 0.00   0   0   0   0   0   0    0
+X=5  0.13 0.01 0.00 0.00   0   0   0   0   0   0    0
+X=6  0.17 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=7  0.18 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=8  0.16 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=9  0.12 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=10 0.07 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=11 0.03 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=12 0.01 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=13 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=14 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=15 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=16 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=17 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=18 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=19 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
+X=20 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
+\end{verbatim}
+Note that we have 11 probability distributions for $X$, one for each
+possible value of $Y$, and each pmf sums to unity as it should. Note
+also that if you show up at the hole and there are more than 2
+fisherman, you might want to head home (assuming you actually want to
+catch a fish).
+%Why is this? Well, remember that capture probability
+%declined as a function of the the number of fisherman.
 
-Earlier, we discussed an
-example where $X$ was the number of fish caught after 20 casts. But
-what if $X$ depends upon $Y$, the number of other fisherman at the
-hole on that day?
+These concepts are explained in more detail, and with more attention
+to detail, in other texts such as \citet{casella_burger:2001}, but hopefully, the
+code shown here complements the equations and makes it easier for
+non-statisticians to understand these concepts.
+
+The last point we wish
+to make in the section is that this simple toy example is an example
+of a hierarchical model, and we can put all the pieces together using
+the following notation:
+\begin{gather}
+  y \sim \text{Poisson}(0.6) \\
+  \text{logit}(p_y) = -0.6 + -2y \\
+  x|y \sim \text{Binomial}(20, p_y)
+\end{gather}
+From here on out, when you see such notation, you should immediately
+grasp the fact that $y$ is a random variable independent of $x$, but
+$x$ depends upon $y$ through $p$. Now you have the tools to make
+probability statements about the random variables in this system. The
+one caveat faced in reality is that we typically do not know the
+values of the parameters, and instead we have to estimate them.[DETAILS]
+
+
+
+
+
+
 
 \section{Common Probability Distributions}
 \label{sec.modeling.distributions}
 
+We got a little ahead of ourselves in the previous example by using
+the binomial and Poisson distributions without fully describing them.
 A solid understanding of the binomial, Poisson, multinomial, uniform,
 and normal distributions is absolutely essential throughout the
 remainder of the book. We will occasionally make use of other
@@ -573,25 +696,6 @@ model, which is the basis for many count based sampling me
 
 %\subsection{The Gamma Distribution}
 
-
-
-\section{Estimation}
-
-
-Maximum likelihood: point estimates, var-covar matrix, confidence
-intervals
-
-Bayesian: analytical, simulation (MCMC)
-
-
-
-
-\subsection{Modeling covariate effects}
-
-identity, log, logit, cloglog links
-
-
-Dummy variables
 
 
 
@@ -968,6 +1072,8 @@ acoustic detectors, ....
 
 
 
+
+
 %\begin{comment}
 \subsection{Models don't have political views!}
 
@@ -1087,8 +1193,27 @@ finished. That said,  Bayesian analysis is introduced at a
 level required to get through this book in Chapter 2.
 
 
-\subsection{Implementing hierarchical models}
+%\subsection{Implementing hierarchical models}
 
+
+
+\subsection{Estimation}
+
+
+Maximum likelihood: point estimates, var-covar matrix, confidence
+intervals
+
+Bayesian: analytical, simulation (MCMC)
+
+
+
+
+\subsection{Modeling covariate effects}
+
+identity, log, logit, cloglog links
+
+
+Dummy variables
 
 
 
