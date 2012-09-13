@@ -117,3 +117,20 @@ set.seed(340)
 20*0.35*(1-0.35)             # Population variance
 x <- rbinom(100000, 20, 0.35)
 mean((x-mean(x))^2)          # Monte Carlo approximation
+
+
+
+
+
+# Conditional distribution
+
+X <- 0:20
+Y <- 0:10
+p <- plogis(-0.62 + -2*Y)
+p
+pmf2 <- matrix(NA, length(X), length(Y))
+
+for(i in 1:length(Y)) {
+    pmf2[,i] <- dbinom(X, 20, p[i])
+}
+round(pmf2,2)
