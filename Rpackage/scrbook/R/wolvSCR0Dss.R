@@ -8,7 +8,7 @@ print(ssarea)
 
 
 # trapping grid scaled appropriately
-traplocs<-as.matrix(traps[,1:2])
+traplocs<-as.matrix(traps[,2:3])
 mingridx<-min(traplocs[,1])
 mingridy<-min(traplocs[,2])
 traplocs[,1]<-traplocs[,1] -min(traplocs[,1])
@@ -22,7 +22,7 @@ ntraps<- nrow(traplocs)
 
 Y<-y3d
 nz<-M-dim(Y)[1]
-MASK<-traps[,3:ncol(traps)]
+MASK<-traps[,4:ncol(traps)]
 Dmat<-as.matrix(dist(traplocs))
 nind<-dim(Y)[1]
 K<-dim(Y)[2]
