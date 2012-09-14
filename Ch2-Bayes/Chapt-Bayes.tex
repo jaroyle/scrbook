@@ -1,5 +1,5 @@
 \chapter{
-Bayesian Analysis of GL(M)Ms Using R/WinBUGS
+Introduction to GLMs and Bayesian Analysis
 }
 \markboth{Bayesian Analysis of GLMMS}{}
 \label{chapt.glms}
@@ -24,7 +24,7 @@ A major theme of this book is that spatial capture-recapture models
 are, for the most part, just generalized linear models (GLMs) wherein
 the covariate, distance between trap and home range center, is
 partially or fully unobserved  -- and therefore regarded as
-a random effect. Such models
+a random effect. Outside of capture-recapture, such models
 are usually referred to as Generalized Linear Mixed Models (GLMMs)
 and, therefore, SCR models can be thought of as a specialized type of
 GLMM. Naturally then, we should consider analysis of these slightly
@@ -34,12 +34,13 @@ develop a better understanding of spatial capture-recapture models.
 In this chapter, we consider classes of GLM models - Poisson and
 binomial (i.e., logistic regression) GLMs - that will prove to be
 enormously useful in the analysis of capture-recapture models of all
-kinds. Many readers are likely familiar with these models because
+kinds. Many readers are likely familiar with these models already because
 they represent probably
-the most generally useful models in all of Ecology and, as
+the most useful models in all of ecology and, as
 such, have received considerable attention in many introductory and
 advanced texts. We focus on them here in order to introduce the
-readers to the analysis of such models in {\bf R} and {\bf WinBUGS},
+readers to the analysis of such models in {\bf R} and {\bf WinBUGS} or
+{\bf JAGS},
 which we will
 translate directly to the analysis of SCR models in subsequent
 chapters.
@@ -48,30 +49,37 @@ Bayesian analysis is convenient for analyzing GLMMs because it allows
 us to work directly with the conditional model -- i.e., the model that
 is conditional on the random effects, using computational methods
 known as Markov chain Monte Carlo (MCMC). Learning how to do Bayesian
-analysis of GLMs and GLMMs in {\bf WinBUGS} is, in part, the purpose
-of this chapter.  While we use {\bf WinBUGS} to do the Bayesian
+analysis of GLMs and GLMMs using the {\bf BUGS} language is, in part, the purpose
+of this chapter. We focus here on the use of {\bf WinBUGS} because it
+is the most popular ``{\bf BUGS} engine''. However, later in the book
+we transition to another popular {\bf BUGS} engine known as {\bf
+  JAGS} \citep{plummer:2009} which stands for {\it Just Another Gibbs
+  Sampler}. For most of our purposes, the specification of models in
+either platform is the same, but {\bf JAGS} is under active
+development at the present time while {\bf WinBUGS} no longer is,
+having transitioned to 
+{\bf OpenBUGS} \citep{lunn_etal:2009} which is still in active
+development.  
+ While we use {\bf BUGS} of one sort or another to do the Bayesian
 computations, we organize and summarize our data and execute {\bf
-  WinBUGS} from within {\bf R} using the useful package \mbox{\tt
-  R2WinBUGS} \citep{sturtz_etal:2005}.  \citet{kery:2010}, and
-\citet{kery_schaub:2011} provide excellent introductions to the basics
-of Bayesian analysis and GLMs within {\bf WinBUGS} at an accessible level. 
+  WinBUGS} or {\bf JAGS} from within {\bf R} using the useful packages \mbox{\tt
+  R2WinBUGS} \citep{sturtz_etal:2005} or \mbox{\tt R2jags}.  \citet{kery:2010}, and
+\citet{kery_schaub:2011} provide excellent and accessible introductions to the basics
+of Bayesian analysis and GLMs using {\bf WinBUGS}.
 We don't want to
 be too redundant with those books and so we avoid a detailed
-treatment of Bayesian methodology - instead just providing a cursory
+treatment of Bayesian methodology and software usage - instead just providing a cursory
 overview so that we can move on and attack the problems we're most
 interested in related to spatial capture-recapture.  In addition,
 there are a number of texts that provide general introductions to
-Bayesian analysis, MCMC, and their applications in Ecology including
+Bayesian analysis, MCMC, and their applications in ecology including
 \citet{mccarthy:2007}, \citet{kery:2010}, \citet{link_barker:2010}, and
 \citet{king_etal:2009}.
 
 
 While this chapter is about Bayesian analysis of GLMMs, such models
-are routinely analyzed using likelihood methods too, as discussed by
-\citet{royle_dorazio:2008} and \citet{kery:2010}. 
-Indeed, likelihood
-analysis of such models is the primary focus of many applied
-statistics texts, some good ones being \citet{mccullagh_nelder:1989} and \citet{zuur_etal:2009}. Later in
+are routinely analyzed using likelihood methods too, 
+Later in
 this book, we will use likelihood methods to analyze SCR models but,
 for now, we concentrate on providing a basic introduction to Bayesian
 analysis because that is the approach we will use in a majority of
@@ -156,7 +164,7 @@ The generalized linear model (GLM) is an extension of standard linear
 models by allowing the response
 variable to have some distribution from the exponential family of
 distributions (i.e., not just normal). This includes the normal
-distribution but also dozens of others such as the Poisson, binomial,
+distribution but also others such as the Poisson, binomial,
 gamma, exponential, and many more. In addition, GLMS allow the
 response variable to be related to the predictor variables (i.e.,
 covariates) using a link function, which is usually nonlinear.  
@@ -185,41 +193,42 @@ covariates) using a link function, which is usually nonlinear.
 % the variance of $y$ is a function $V$ of the mean of $y$: $Var(y) =
 % V(\mu)$ (see below for examples).
 % XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX SEEMS REDUNDANT UP TO HERE XXXXXXXXXXXXXXXX
-
 The GLM consists of three components:
 \begin{itemize}
 \item[1.] A probability distribution for the dependent variable $y$,
 from the exponential family of probability distributions.
-\item[2.] A ``linear predictor'' $\eta = \beta_0 + x \beta_1$, where $x$ is the predictor variable.
+\item[2.] A ``linear predictor'' $\eta = \beta_0 + x \beta_1$, where
+  $x$ is a predictor variable (i.e., a covariate).
 \item[3.] A link function $g$ that relates the expected value of $y$, $E[y]$, to the linear predictor, $E[y] = \mu = g^{-1}(\eta)$. Therefore $g(E[y]) = \eta = \beta_0 + x \beta_1$ .
 \end{itemize}
-
-So $g(E[y])$ is assumed to be a linear function of the
+A key aspect of GLMs is that 
+$g(E[y])$ is assumed to be a linear function of the
 predictor variable(s), here $x$, with unknown parameters, here $\beta_0$ and $\beta_1$, to be
 estimated. In standard GLMs,
 the variance of $y$ is a function $V$ of the mean of $y$: $Var(y) =
 V(\mu)$ (see below for examples).
-
 As an example, a Poisson GLM posits that $y \sim \mbox{Poisson}(\lambda)$ with $E[y]
 =\lambda$ and usually the model for the mean is specified using the
 {\it log link function} by
 \[
-{\text log}(\lambda_{i}) = \beta_0 + \beta_{1} \times x_{i}
+{\text log}(\lambda_{i}) = \beta_0 + \beta_{1}  x_{i}
 \]
 The variance function is $\mbox{V}(y_{i}) = \lambda_{i}$.  
 
-To vizualize how a (Poisson) GLM works, use the {\bf R} code below.
+To see how a Poisson GLM works, use the {\bf R} code below to simulate
+some data and then estimate the parameters:
 \begin{verbatim}
 set.seed(13)
 n=100 #set sample size
-beta0<--2 # set intercept term
+beta0<- -2 # set intercept term
 beta1<- 1.5 #set coefficient
 x<-rnorm(n, 0,1) #generate a predictor variable, x
-linpred<-beta0+beta1*x # calculate the linear predictor of E[y]
+linpred<- beta0 + beta1*x # calculate the linear predictor of E[y]
 y<-rpois(n, exp(linpred), 1) # generate observations, y, from above model
 \end{verbatim} 
-
-Using the {\tt glm()} command fits a GLM to the data we just generated and returns estimates of $\beta_0$ and $\beta_1$, which are fairly close to the data generating values above:
+The {\bf R} function {\tt glm()} fits a GLM to the data we just
+generated and returns estimates of $\beta_0$ and $\beta_1$, which we
+see are fairly close to the data generating values above:
 \begin{verbatim}
 glm(y~1+x, family='poisson') #fit model
 
@@ -238,7 +247,7 @@ is the fixed sample size parameter and $E[y_{i}] = K*p_{i}$. Usually
 the model for the mean is specified using the {\it logit link
   function} according to
 \[
- \text {logit}(p_{i}) = \beta_{0} + \beta_{1} \times x_{i}
+ \text {logit}(p_{i}) = \beta_{0} + \beta_{1}  x_{i}
 \]
 Where $\text {logit}(u) = \text {log}(u/(1-u))$.  The inverse-logit function,
 consequently, is $\text {logit}^{-1}(u) =
@@ -248,7 +257,7 @@ A GLMM is the extension of GLMs to accommodate ``random
 effects''. Often this involves adding a normal random effect to the
 linear predictor, and so a simple example is:
 \[
- \log(\lambda_{i}) = \alpha_{i} + \beta_{1}*x_{i}
+ \log(\lambda_{i}) = \alpha_{i} + \beta_{1} x_{i}
 \]
 where
 \[
@@ -292,13 +301,13 @@ explicitly adopt that view or tend to fall into that point of view
 naturally.  Conversely, frequentists use probability in many different
 ways, but never to characterize uncertainty about
 parameters\footnote{To hear this will be shocking to some readers
-  perhaps.} Instead, frequentists use probability to characterize the
+  perhaps.}. Instead, frequentists use probability to characterize the
 behavior of {\it procedures} such as estimators or confidence
 intervals (see below). It is surprising that people readily
 adopt a philosophy of statistical inference in which the things you
 don't know (i.e., parameters) should {\it not} be regarded as random
 variables, so that, as a consequence, one cannot use probability to
-characterize ones state of knowledge about them.
+characterize one's state of knowledge about them.
 
 
 \subsection{Bayes' Rule}
@@ -329,7 +338,7 @@ random variable that denotes species presence $(z=1)$ or absence
 $(z=0)$, let $\Pr(z=1) = \psi$ where $\psi$ is usually called
 occurrence probability, ``occupancy'' \citep{mackenzie_etal:2002} or ``prevalence''.
 Let $y$ be the {\it observed} presence
-($y=1$) or absence ($y=0$) (or detection and non-detection, to be 100 \% correct), and let $p$ be the probability that a
+($y=1$) or absence ($y=0$) (or, strictly speaking, detection and non-detection), and let $p$ be the probability that a
 species is detected in a single survey at a site given that it is
 present. Thus, $\Pr(y=1|z=1)=p$. The interpretation of this is that,
 if the species is present, we will only observe it with
@@ -337,15 +346,15 @@ probability $p$. In addition, we assume here that $\Pr(y=1|z=0) =
 0$. That is, the species cannot be detected if it is not present which
 is a conventional view adopted in most biological sampling problems (but
 see \citet{royle_link:2006}).
-If we survey a site $T$ times but never detect the species,
+If we survey a site $K$ times but never detect the species,
 then this clearly does not imply that the species is not present
 ($z=0$) at this site (we could just fail to observe it every single time). Rather, our degree of belief in $z=0$ should be
 made with a probabilistic statement,
-$\Pr(z=1|y_1=0,\ldots,y_{T}=0)$. If the $T$ surveys are independent so
-that we might regard $y_{t}$ as $iid$ Bernoulli trials, then the total
+$\Pr(z=1|y_1=0,\ldots,y_{K}=0)$. If the $K$ surveys are independent so
+that we might regard $y_{k}$ as $iid$ Bernoulli trials, then the total
 number of detections, say $y$, is Binomial with probability $p$, and
 we can use Bayes' rule to compute the probability that the species is present
-given that it is not detected in $T$ samples. In words, the expression
+given that it is not detected in $K$ samples. In words, the expression
 we seek is:
 \[
 \Pr(\mbox{present} | \mbox{not detected}) = \frac{\Pr(\mbox{not detected} |
@@ -354,10 +363,10 @@ we seek is:
 Mathematically, this is
 \begin{eqnarray*}
 \Pr(z=1|y=0) &= &\frac{\Pr(y=0|z=1)\Pr(z=1)}{\Pr(y=0) } \\
-             &= & \frac{(1-p)^{T} \psi}{ (1-p)^T \psi + (1-\psi) }.
+             &= & \frac{(1-p)^{K} \psi}{ (1-p)^K \psi + (1-\psi) }.
 \end{eqnarray*}
 To apply this,
-suppose that $T=2$ surveys are done at a wetland for a species of
+suppose that $K=2$ surveys are done at a wetland for a species of
 frog, and the species is not detected there. Suppose further that $\psi
 = .8$ and $p = .5$ are obtained from a prior study.  Then the
 probability that the species is present at this site is
@@ -368,7 +377,7 @@ species wasn't observed there.
 
 In summary, Bayes' rule provides a simple linkage between the
 conditional probabilities $[y|z]$ and $[z|y]$, which is useful whenever
-one needs to deduce one from the other.
+we need to deduce one from the other.
 
 \subsection{Bayesian Inference}
 
@@ -381,10 +390,17 @@ variables - this includes data, latent variables, and also
 parameters. Classical (non-Bayesian) analysts sometimes object to
 regarding parameters as outcomes of random variables. Classically,
 parameters are thought of as ``fixed but unknown'' (using the
-terminology of classical statistics). Of course, in Bayesian analysis
-they are also unknown and, in fact, there is a single data-generating
-value and so they are also fixed. The difference is that this fixed
-but unknown value is regarded as having been generated from some
+terminology of classical statistics).
+Indeed, a common misunderstanding on the distinction between Bayesian and
+frequentist inference goes something like this ``in frequentist
+inference parameters are fixed but unknown but in a Bayesian analysis
+parameters are random.'' At best this is a sad caricature of the
+distinction and at worst it is downright wrong. 
+In Bayesian analysis the
+parameters are also unknown and, in fact, there is a single data-generating
+value of each parameter, and so they are also fixed.
+The difference is that the fixed
+but unknown values are  regarded as having been generated from some
 probability distribution. Specification of that probability
 distribution is necessary to carryout Bayesian analysis, but it is not
 required in classical frequentist inference.
@@ -430,21 +446,14 @@ require that we possess a mathematical understanding of $[y]$. This means,
 we never have to compute it or know what it looks like, or know
 anything specific about it.
 
-A common misunderstanding on the distinction between Bayesian and
-frequentist inference goes something like this ``in frequentist
-inference parameters are fixed but unknown but in a Bayesian analysis
-parameters are random.'' At best this is a sad caricature of the
-distinction and at worst it is downright wrong. A Bayesian
-assumes, just like a frequentist, that there was a single
-data-generating value of that parameter - a fixed, and unknown value
-that produced the given data set.
-The distinction between Bayesian and frequentist approaches is that
-Bayesians regard the parameter as a random variable, and its value as
-the outcome of a random variable, on par with the observations. This
-allows Bayesians to use probability to make direct probability
-statements about parameters. Frequentist inference procedures do not
-permit direct probability statements to be made about parameter
-values -- because parameters are not random variables!
+%A Bayesian
+%assumes, just like a frequentist, that there was a single
+%data-generating value of that parameter - a fixed, and unknown value
+%that produced the given data set.
+%The distinction between Bayesian and frequentist approaches is that
+%Bayesians regard the parameter as a random variable, and its value as
+%the outcome of a random variable, on par with the observations. 
+
 
 While we can understand the conceptual basis of Bayesian inference
 merely by understanding Bayes' rule -- that's really all there is to it
@@ -469,7 +478,13 @@ bias. If the expected value of $\hat{\theta}$, when averaged over
 realizations of $y$, is equal to $\theta$, then $\hat{\theta}$ is
 unbiased.
 
-The view of parameters as fixed constants and estimators as random variables
+The view of parameters as being random variables 
+allows Bayesians to use probability to make direct probability
+statements about parameters. Frequentist inference procedures do not
+permit direct probability statements to be made about parameter
+values.
+Instead, 
+the view of parameters as fixed constants and estimators as random variables
 leads to interpretations that are not so straightforward. For
 example confidence intervals having the interpretation ``95\%
 probability that the interval contains the true value" and p-values
@@ -506,12 +521,12 @@ usually very subjective and thus the result can wind up being very
 contentious, e.g., different investigators might report different
 results based on subjective assessments of prior information. Thus it is usually
 better to ``let the data speak'' and use priors that reflect absence
-of information beyond the data set being analyzed. An example for an uninformative prior is a Uniform(0,1) for a probability, or a Uniform(-$\infty$, $\infty$) (also called a ``flat'' or ``improper'' prior) for an unbounded continuous parameter. Alternatively, people use ``diffuse prior''; these contain some information, but (ideally) not enough to actually influence the posterior. An example for a diffuse prior could be a Normal distribution with a large standard deviation.
+of information beyond the data set being analyzed. An example for an uninformative prior is a Uniform(0,1) for a probability, or a Uniform(-$\infty$, $\infty$) (also called a ``flat'' or ``improper'' prior) for an unbounded continuous parameter. Alternatively, people use ``diffuse priors''; these contain some information, but (ideally) not enough to actually influence the posterior. An example for a diffuse prior could be a Normal distribution with a large standard deviation.
 
 But still the need occasionally arises to embody prior information or
 beliefs about a parameter formally into the estimation scheme.
  In SCR models we often have a parameter that is closely linked
-to ``home range radius'' and thus auxiliary information on the home
+to ``home range size'' and thus auxiliary information on the home
 range size of a species can be used as prior information, which may improve parameter estimation (e.g., see
 \citet{chandler_royle:2012} ; also Chapt. \ref{chapt.scr-unmarked}).
 
@@ -519,10 +534,11 @@ Other times the situation arises where a prior can inadvertently impose
 substantial information on a parameter and that is not desireable.
 For example, we use data augmentation
 to deal with the fact that $N$ is an unknown parameter
- \citep{royle_etal:2007} which is equivalent to imposing a $Binomial(M,\psi)$
+ \citep{royle_etal:2007} which is equivalent to imposing a $\mbox{Binomial}(M,\psi)$
  prior on $N$ for some integer $M$. One has to take care to make sure
  that $M$ is sufficiently large so as to not affect the posterior
- distribution on $N$ (see Fig. \ref{mcmc.fig.timeseries2}).
+ distribution on $N$ (see Fig. \ref{mcmc.fig.timeseries2}, and also
+ \citet[][Ch. 5]{kery_schaub:2011}).
 Another situation that we have
  to be careful of is that
 prior 
@@ -546,7 +562,7 @@ interest. A point estimate might be the posterior mean, median, mode,
 etc..  In many applications in this book, we will compute 95\%
 Bayesian confidence intervals using the 2.5\% and 97.5\% quantiles of the
 posterior distribution. For such intervals, it is correct to say
-$\Pr(L < \theta < U) = 0.95$. That is, "the probability that $\theta$
+$\Pr(L < \theta < U) = 0.95$. That is, ``the probability that $\theta$
 is between $L$ and $U$ is $0.95$". 
 
 As an
@@ -554,22 +570,20 @@ example, suppose we conducted a Bayesian analysis to estimate
 detection probability ($p$) of some species at a study site, and we
 obtained a posterior distribution of beta(20,10) for the parameter
 $p$. The following {\bf R} commands demonstrate how we make inferences based
-upon summaries of the posterior distribution. Fig. \ref{densityvsdetection.fig} shows the
-posterior along with the summary statistics.
-
+upon summaries of the posterior distribution:
 \begin{verbatim}
-> (post.median <- qbeta(0.5, 20, 10))
+> post.median <- qbeta(0.5, 20, 10)
 [1] 0.6704151
-> (post.95ci <- qbeta(c(0.025, 0.975), 20, 10))
+> post.95ci <- qbeta(c(0.025, 0.975), 20, 10)
 [1] 0.4916766 0.8206164
 \end{verbatim}
-
 Thus, we can state that there is a 95\% probability that $\theta$ lies
-between 0.49 and 0.82.
+between 0.49 and 0.82. Fig. \ref{densityvsdetection.fig} shows the
+posterior along with the summary statistics.
 
 \begin{figure}
 \begin{center}
-\includegraphics[height=2.5in]{Ch2/figs/densityvsdetection}
+\includegraphics[height=2.5in]{Ch2-Bayes/figs/densityvsdetection}
 %get figure file from Ch7 folder
 \end{center}
 \caption{Probability density plot of a hypothetical
@@ -981,7 +995,7 @@ we have the result shown in Fig. \ref{glms.fig.impliedprior}
 which looks nothing like a $Uniform(0,1)$ prior.
 \begin{figure}[htp]
 \begin{center}
-\includegraphics[height=3.3in]{Ch2/figs/implied_prior}
+\includegraphics[height=3.3in]{Ch2-Bayes/figs/implied_prior}
 \end{center}
 \caption{Implied prior for $p_{0} = exp(\beta_0)/(1+exp(\beta_0))$ 
 if $\beta_0 \sim \mbox{Normal}(0, 5^2)$.}
@@ -1706,7 +1720,7 @@ Unfortunately we don't have any of that information.
 
 \begin{figure}
 \begin{center}
-\includegraphics[height=2.75in]{Ch2/figs/PA1}
+\includegraphics[height=2.75in]{Ch2-Bayes/figs/PA1}
 \end{center}
 \caption{Plot of log-counts of mourning doves along North American Breeding Bird Survey routes in Pennsylvania (data from 1990).}
 \label{glms.fig.padovecounts}
@@ -1733,7 +1747,7 @@ the previous figure of log-counts suggests a relationship between
 counts and forest cover which is perhaps not surprising.
 \begin{figure}
 \begin{center}
-\includegraphics[height=2.75in]{Ch2/figs/PA2}
+\includegraphics[height=2.75in]{Ch2-Bayes/figs/PA2}
 \end{center}
 \caption{Plot of forest cover in Pennsylvania.}
 \label{glms.fig.paforest}
@@ -1987,7 +2001,7 @@ look like this.
 
 \begin{figure}
 \begin{center}
-\includegraphics[height=3in,width=4in]{Ch2/figs/poissonmcmc2}
+\includegraphics[height=3in,width=4in]{Ch2-Bayes/figs/poissonmcmc2}
 \end{center}
 \caption{First 300 MCMC iterations for the Poisson GLM model parameters $\beta_0$ (black) and $\beta_1$ (red) using
 a Metropolis-Hastings tuning parameter of
@@ -1997,7 +2011,7 @@ a Metropolis-Hastings tuning parameter of
 
 \begin{figure}
 \begin{center}
-\includegraphics[height=4in,width=5in]{Ch2/figs/poissonmcmc3}
+\includegraphics[height=4in,width=5in]{Ch2-Bayes/figs/poissonmcmc3}
 \end{center}
 \caption{Nice grassy plots of 10,000 MCMC iterations for the Poisson
   GLM model parameters $\beta_0$ (black) and $\beta_1$ (red) using a
@@ -2370,7 +2384,7 @@ surface is shown in Fig. \ref{glms.fig.bandrecovery}.
 
 \begin{figure}
 \begin{center}
-\includegraphics[height=2.75in]{Ch2/figs/responsesurface}
+\includegraphics[height=2.75in]{Ch2-Bayes/figs/responsesurface}
 \end{center}
 \caption{Predicted recovery rates of mallard bands across the upper great plains. Note the negative east-west gradient.}
 \label{glms.fig.bandrecovery}
