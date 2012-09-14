@@ -135,7 +135,7 @@ scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unk
                 zUps <- zUps + 1
             }
         }
-        for (r in 1:R) {
+        for (j in 1:J) {
             zip <- lam[, j] * z
             for (k in 1:K) {
                 if (y[j, k] == 0) {
