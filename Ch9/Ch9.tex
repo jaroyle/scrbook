@@ -892,7 +892,13 @@ XXX Definitely faster, but not THAT fast XXX
 \subsection{Sex Effects}
 Specifying a fully sex specific model for {\bf JAGS} is very similar to the time-specific model shown above: we need to use an index or dummy variable to let both $\alpha_0$ and $sigma$ be estimated separately for males and females. The main difference arise from the fact that we do not observe sex for the augmented individuals, which means, we have missing observations of the covariate for those augmented individuals. As a result, sex has to be estimated for those unobserved individuals as part of the model. In Bayesian inference, missing data are essentially treated like parameters, which means that we need to specify a prior distribution for the missing data. With only two possible outcomes, sex can be regarded as a Bernoulli random variable where $[sex = male] \sim Bernoulli(\pi)$ (we could equally well specify it as $[sex = female] \sim Bernoulli(\pi)$). The parameter $\pi$ can be seen as the sex ratio of the population and since it is something we want to estimate (a hyperparameter of the model), we again have to specify a prior for $\pi$. To express our lack of knowledge about the parameter and account for the fact that being a probability, it can only take values between 0 and 1, we choose $\pi \sim Uniform(0,1)$.  
 
-In both {\bf JGAS} or {\bf BUGS} missing data are specified as {\tt NA}. In terms of setting up the data that means we need to create a vector of length $M$ with the first $n$ elements being 0 if individual $i$ is a female, or 1 if $i$ is a male (for the Ft. Drum black bear data we can extract this information from XXX HOW IS BEARSEX GONNA GO INTO THE R PACKAGE???? XXXX), and the subsequent $M-n$ elements being {\tt NA}.  It is generally a good idea to provide starting values for the missing data, but we cannot provide starting values for observed data; in this case where one vector (or other object) contains both observed and missing data, initial values for the observed data have to be specified as {\tt NA}. The code snippet below shows you how to set up the  data including the{\tt sex} vector and the initial values function, as well as the {\JAGS} model specifications (the remainder of the code is identical to what we've shown before).
+In both {\bf JAGS} or {\bf BUGS} missing data are specified as {\tt NA}. In terms of setting up the data that means we need to create a vector of 
+length $M$ with the first $n$ elements being 0 if individual $i$ is a female, or 1 if $i$ is a male (for the Ft. Drum black bear data we can extract 
+this information from XXX HOW IS BEARSEX GONNA GO INTO THE R PACKAGE???? XXXX), and the subsequent $M-n$ elements being {\tt NA}.  It is generally a 
+good idea to provide starting values for the missing data, but we cannot provide starting values for observed data; in this case where one vector 
+(or other object) contains both observed and missing data, initial values for the observed data have to be specified as {\tt NA}. 
+The code snippet below shows you how to set up the  data including the{\tt sex} vector and the initial values function, 
+as well as the {\jags} model specifications (the remainder of the code is identical to what we've shown before).
 
 
 {\small
@@ -1014,89 +1020,16 @@ To demonstrate
 a suite of models with various types of covariates using \secr, we
 continue using the data collected on black bears in Ft. Drum, NY, USA
 which we previously analyzed in Chapt. \ref{chapt.closed}.  We include
-in the \scrbook~ package, a function called \mbox{\tt secr_bear} that will 
+in the \scrbook package, a function called secr.bear that will 
 format the data and then fit 7 models (details shown in panel 
-\ref{covariates.panel.secrfn}).  All of the models have been 
+\ref{covariates.panel.secrfn} ).  All of the models have been 
 previously described, so we only briefly comment here on how to fit
-certain models in \secr~ and give a few helpful notes.  Below, 
+certain models in \secr and give a few helpful notes.  Below, 
 we have a few subsections on the sex-specific effects, heterogeneity,
 and AIC which describe in more detail how we fit these models within
-\secr~.
+\secr.
 
 \subsection{Notes for fitting standard models}
-=======
-continue using the data collected on black bears in Ft. Drum, NY, USA.
-It should be easy for the reader to take this example and generalize
-it for his or her own use.  We have set up an R function to run these
-models, which is available in the R package \scrbook.
-
-XXMake note here of how to use the functionXX
-First we need to read in the raw data and
-the trap file so that we can build the capture history and trap files
-required by \secr.  After doing this, similar to the wolverine example
-shown in Chapt. \ref{chapt.mle}, we then call the command \mbox{\tt
-  secr.fit}
-to fit the model by the method of maximum likelihood.
- All of the following models should take somewhere between 30
-seconds and 5 minutes to run on your computer (possibly a little
-longer or shorter given the specifics of your machine).  To refresh
-your memory, we being by fitting a basic
-model with no covariates and a bivariate normal detection model in
-\secr~ to the Ft. Drum bear study data:
-
-XXXXX HOW IS THE CVS DATA FILE GOING INTO THE R PACKAGE? XXX
-{\small
-\begin{verbatim}
-bear=secr.fit (bearcapt, buffer = 20000)
-
-Detector type     proximity
-Detector number   38
-Average spacing   1776.437 m
-x-range           438789 456465 m
-y-range           4874895 4887477 m
-N animals       :  47
-N detections    :  151
-N occasions     :  8
-Mask area       :  301466.0 ha
-
-Model           :  D~1 g0~1 sigma~1
-Fixed (real)    :  none
-Detection fn    :  halfnormal
-Distribution    :  poisson
-N parameters    :  3
-Log likelihood  :  -587.1641
-AIC             :  1180.328
-AICc            :  1180.886
-
-Beta parameters (coefficients)
-           beta    SE.beta       lcl       ucl
-D     -6.398657 0.15502806 -6.702506 -6.094807
-g0    -2.133876 0.14669415 -2.421391 -1.846361
-sigma  7.587286 0.06458962  7.460692  7.713879
-
-Variance-covariance matrix of beta parameters
-                  D            g0        sigma
-D      0.0240336981 -0.0001084522 -0.002602049
-g0    -0.0001084522  0.0215191733 -0.005977169
-sigma -0.0026020486 -0.0059771686  0.004171819
-
-Fitted (real) parameters evaluated at base levels of covariates
-       link     estimate  SE.estimate          lcl          ucl
-D       log 1.663791e-03 2.594918e-04 1.227831e-03 2.254545e-03
-g0    logit 1.058476e-01 1.388370e-02 8.155599e-02 1.363008e-01
-sigma   log 1.972951e+03 1.275652e+02 1.738351e+03 2.239211e+03
-\end{verbatim}
-}
-
-
-Remember that \mbox{\tt secr} returns density in terms of
-individuals per
-hectare, so we must multiply this $D$ by 100 to see the estimate as
-individuals per $km^2$.  In doing so, the resulting density is 0.166
-individuals/$km^2$, which very similar to that found in sec. \ref{} XXXXX
-latex tag here XXXX ($D = 0.167$)
-using {\bf JAGS} for the equivalent half normal detection model. 
->>>>>>> f5e08f216904f7f8cb5cdce3258c6ac62a53bdc0
 
 In the \secr~ package, the detection functions are specified
 by changing the ``\mbox{\tt detectfn}'' option (an integer code)
@@ -1113,10 +1046,10 @@ The \mbox{\tt secr} package easily fits both the SCR equivalent of model
 $M_{t}$ where each
 occasion has its own detection probability, as well as a linear
 trend in baseline detection over occasions. For the classical
-time-effects type of model with $K$ distinct parameters \secr~ uses 't' to denote
+time-effects type of model with $K$ distinct parameters \secr uses 't' to denote
 this in the command call (see model 3 in 
 panel \ref{covariates.panel.secrfn}); whereas, for a linear
-trend over occasions \secr~ uses 'T'.
+trend over occasions \secr uses 'T'.
 
 It is not only easy to incorporate a global trap response model, 
 but also just as simple to
@@ -1157,7 +1090,7 @@ bear_sex=secr.fit (bear.cap, model=list(D \mytilde session, g0 \mytilde session,
 
 \rule[-0.1in]{\textwidth}{.03in}
 \caption{
-\jags~ model specification for the non-spatial JS model.}
+Models called from secr.bear function. }
 \label{covariates.panel.secrfn}
 \end{panel}
 
@@ -1247,7 +1180,7 @@ warning messages or errors.
 One practical advantage to using the \secr~ package, or likelihood
 inference in general, is the convenience of automatic model selection
 using AIC \citep{burnham_anderson:xxxxx}.
-After running the function \mbox{\tt secr_bear}, which calls all of the models, it returns
+After running the function secr.bear, which calls all of the models, it returns
 and AIC table with all of the summarized results including the AIC values,
 delta AIC, and model weights.  
 
