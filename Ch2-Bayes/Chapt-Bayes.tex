@@ -1722,36 +1722,6 @@ log-counts (+1 of course) which (Fig. \ref{glms.fig.padovecounts}) display a not
 be related to something. The {\bf R} commands for obtaining this figure are:
 {\small
 \begin{verbatim}
-data(bbsdata)
-y<-bbsdata$counts[,29]  # pick out 1990
-notna<-!is.na(y)
-y<-y[notna]
-sz<- y/max(y)
-spatial.plot(bbsdata$counts[notna,2:3],y,cx=1+sz*6)
-\end{verbatim}
-}
- We can ponder the potential effects that
-might lead to dove counts being high....corn fields, telephone wires,
-barn roofs along with misidentification of pigeons, these could all
-correlated reasonably well with the observed count of mourning doves.
-Unfortunately we don't have any of that information.
-\begin{figure}
-\begin{center}
-\includegraphics[height=2.75in]{Ch2-Bayes/figs/pacounts}
-\end{center}
-\caption{Plot of log-counts of mourning doves along North American Breeding Bird Survey routes in Pennsylvania (data from 1990).}
-\label{glms.fig.padovecounts}
-\end{figure}
-However, we do have a measure of forest cover in the vicinity of each point
-which is contained in the data set (variable ``habitat''). This was derived
-from a larger GIS coverage of the state (provided in the data frame
-``\mbox{\tt bbsdata\$habitat}'') which can be plotted using the \mbox{\tt spatial.plot} function
-using the following commands
-{\small
-\begin{verbatim}
-new
-
-
 library("scrbook")
 data(bbsdata)
 library("maps")
@@ -1761,82 +1731,87 @@ notna<-!is.na(y)
 y<-y[notna]
 locs<-bbsdata$counts[notna,c("lon","lat")]
 sz<- y/max(y)
-png("pacounts.png",width=5.5,height=4, units="in", res=400)
+
 par(mar=c(3,3,3,6))
-plot(locs,pch=" ",xlim=range(locs[,1])+c(-.3,+.3),ylim=c(range(locs[,2]) + c(-.6,.6)),axes=FALSE,xlab=" ",ylab=" ")
+plot(locs,pch=" ",xlim=range(locs[,1])+c(-.3,+.3),ylim=c(range(locs[,2]) + c(-.6,.6)),
+            axes=FALSE,xlab=" ",ylab=" ")
 map('state',regions='pennsylvania',add=TRUE,lwd=2)
 spatial.plot(bbsdata$counts[notna,2:3],y,cx=1+sz*6,add=TRUE)
-dev.off()
-
-
-library(maps)
+\end{verbatim}
+}
+We can ponder the potential effects that
+might lead to dove counts being high....corn fields, telephone wires,
+barn roofs along with misidentification of pigeons, these could all
+correlated reasonably well with the observed count of mourning doves.
+Unfortunately we don't have any of that information.
+\begin{figure}
+\begin{center}
+\includegraphics[height=2.75in]{Ch2-Bayes/figs/pacounts}
+\end{center}
+\caption{Plot  mourning doves along North American Breeding Bird
+  Survey routes in Pennsylvania (year = 1990). Plot symbol shading is
+  proportional to raw count. }
+\label{glms.fig.padovecounts}
+\end{figure}
+However, we do have a measure of forest cover
+(provided in the data frame
+``\mbox{\tt bbsdata\$habitat}'') which can be plotted using the \mbox{\tt spatial.plot} function
+with the following {\bf R} commands
+{\small
+\begin{verbatim}
 habdata<-bbsdata$habitat
 map('state',regions="penn",lwd=2)
 I<-matrix(NA,nrow=30,ncol=40)
 I<- matrix(habdata[,"dfor"],ncol=40,byrow=FALSE)
 ux<-unique(habdata[,2])
 uy<-sort(unique(habdata[,3]))
-png("paforest.png",width=5.5,height=4, units="in", res=400)
+
 par(mar=c(3,3,3,6))
 plot(locs,pch=" ",xlim=range(locs[,1])+c(-.3,+.3),ylim=c(range(locs[,2]) + c(-.6,.6)),axes=FALSE,xlab=" ",ylab=" ")
-
 image(ux,uy,rot(I),add=TRUE,col=gray(seq(3,17,,10)/20) )
 map('state',regions='pennsylvania',add=TRUE,lwd=3,col="white")
 image.scale(I,col=gray(seq(3,17,,10)/20) )
 points(locs,pch=20,col="white")
-dev.off()
-
-
-
-
-
-
-
-
-
-
-old
-
-library(maps)
-habdata<-bbsdata$habitat
-map('state',regions="penn",lwd=2)
-spatial.plot(habdata[,2:3],habdata[,"dfor"],cx=2)
-map('state',regions="penn",lwd=2,add=TRUE)
 \end{verbatim}
 }
 where the result appears in Fig. \ref{glms.fig.paforest}.
 We see a prominent pattern that indicates high forest coverage in the
 central part of the state and low forest cover in the SE.  Inspecting
-the previous figure of log-counts suggests a relationship between
+the previous figure of the raw counts suggests a relationship between
 counts and forest cover which is perhaps not surprising.
 \begin{figure}
 \begin{center}
 \includegraphics[height=2.75in]{Ch2-Bayes/figs/paforest}
 \end{center}
-\caption{Plot of forest cover in Pennsylvania.}
+\caption{Forest cover (percent deciduous) in Pennsylvania.}
 \label{glms.fig.paforest}
 \end{figure}
 
 \subsection{Doing it in WinBUGS}
 
 Here we demonstrate how to fit a Poisson GLM in {\bf WinBUGS} using the
-covariate $x_{i} =$ forest cover. It is advisable that $x_i$ be
+covariate $x_{i} =$ forest cover along BBS route $i$. It is advisable that $x_i$ be
 standardized in most cases as this will improve mixing of the Markov
-chains. Recall that the data we have stored include a standardized
-covariate (forest cover) and so we don't have to worry about that
+chains. We have pre-standardized the forest cover covariate for the
+BBS route locations,
+ and so we don't have to worry about that
 here.  To read the BBS data into {\bf R} and get things set up for
 {\bf WinBUGS}
 we issue the following commands:
 {\small
 \begin{verbatim}
+library("scrbook")
 data(bbsdata)
-y<-bbsdata$counts[,29]  # pick out 1990
+
+y<-bbsdata$counts[,"X90"]  # pick out 1990
 notna<-!is.na(y)
-y<-y[notna]                          # discard missing
-habitat<-data[notna,4]              # get habitat data
+y<-y[notna]
+## forest cover already standardized here:
+habitat<-bbsdata$counts[notna,"habitat"]
+M<-length(y)
+
 library("R2WinBUGS")                # load R2WinBUGS
 data <- list ( "y","M","habitat")   # bundle data for WinBUGS
-M<-length(y)
 \end{verbatim}
 }
 Now we write out the Poisson model specification in {\bf WinBUGS}
@@ -1861,11 +1836,11 @@ out<-bugs (data, inits, parameters, "PoissonGLM.txt", n.thin=2,n.chains=2,
                 n.burnin=2000,n.iter=6000,debug=TRUE,working.dir=getwd())
 \end{verbatim}
 }
-Note the close correspondence in how the model is
-specified here compared with the normal regression model
-previously. As an exercise you should discuss the specific differences
-between the {\bf BUGS} model specifications for the normal and Poisson
-models. 
+%Note the close correspondence in how the model is
+%specified here compared with the normal regression model
+%previously. As an exercise you should discuss the specific differences
+%between the {\bf BUGS} model specifications for the normal and Poisson
+%models. 
 
 % Model output is summarized in table \ref{glms.tab.poisreg}. 
 % \begin{table}
@@ -1936,11 +1911,11 @@ deviance 1116.576 1.997 1115.000 1115.000 1116.000 1117.000 1122.000 1.002  4000
 
 At this point it might be helpful to suffer through an example
 building a custom MCMC algorithm. Here, we develop an MCMC algorithm
-for
-the Poisson regression model, using a Metropolis-within-Gibbs sampling framework. 
-Building MCMC algorithms is covered in more detail in Chapt. \ref{chapt.mcmc} where 
-you can also find step-by-step instructions for Metropolis-within-Gibbs samplers, 
-should the following section move through all this stuff too quickly.  
+for the Poisson regression model, using a Metropolis-within-Gibbs
+sampling framework.  Building MCMC algorithms is covered in more
+detail in Chapt. \ref{chapt.mcmc} where you can also find step-by-step
+instructions for Metropolis-within-Gibbs samplers, should the
+following section move through all this stuff too quickly.
 
 We will assume that the two parameters have diffuse
 normal priors, say $[\beta_0] = \mbox{Normal}(0,100)$ and
@@ -1983,15 +1958,15 @@ use the so-called random walk candidate generator, which is a Normal proposal di
 We remark also that calculations are often done on the log-scale to
 preserve numerical integrity of things when quantities evaluate to
 small or large numbers, so keep in mind, for example,
-$a*b = exp(log(a) + log(b))$.
+$a*b = \exp(\log(a) + \log(b))$ for two positive numbers $a$ and $b$.
  The ``Metropolis within
 Gibbs'' algorithm for a Poisson regression turns out to be remarkably
 simple and is given in Panel \ref{glms.panel.poisreg}. It is also part
 of the {\tt scrbook} package and you can run 1000 iterations of it by
 calling {\ tt PoisGLMBBS(y=y, habitat=habitat, niter=1000)} (note that
-{\ tt y} = point count data and {\ tt habitat} = forest cover have to
-be defined in your {\bf R} workspace as shown in  the {\bf BUGS} 
-analysis above). 
+{\tt y} = point count data and {\tt habitat} = forest cover have to
+be defined in your {\bf R} workspace as shown in  the previous
+analysis of these data).
 
 \begin{panel}[htp]
 \centering
@@ -2053,7 +2028,8 @@ are shown in Fig. \ref{glms.fig.poissonmcmc2}. These chains are
 not very appealing but a couple of things are evident: 
 We see
 that the burn-in takes about 250 iterations and that after that chains seem to mix 
-reasonably well, although this is not so clear given the scale of the y-axis.
+reasonably well, although this is not so clear given the scale of the
+y-axis, which we have chosen to get both variables on the same graph.
 We generated 10,000 posterior samples,
 discarding the first 500 as burn-in, and the result is shown in
 Fig. \ref{glms.fig.grassy}, this time seperate panels for each
@@ -2086,26 +2062,27 @@ a Metropolis-Hastings tuning parameter of
 Note that we used a specific set of starting values for these
 simulations. It should be clear that starting values closer to the
 mass of the posterior distribution might cause burn-in to occur
-faster. As an exercise, evaluate that.  
-Further, for the diffuse normal prior distributions
-here we could leave the prior contribution out of the full conditional
-evaluation since it is locally constant, i.e., constant in the vicinity of
-the posterior mass, and thus has no practical effect. Removing the
-prior contribution from the MH acceptance probability is equivalent to
-saying that the parameters have an improper uniform prior, i.e.,
-$\beta_0 \sim \mbox{const}$, which is commonly used for mean parameters
-in practice.
+faster. 
+%Further, for the diffuse normal prior distributions
+%here we could leave the prior contribution out of the full conditional
+%evaluation since it is locally constant, i.e., constant in the vicinity of
+%the posterior mass, and thus has no practical effect. Removing the
+%prior contribution from the MH acceptance probability is equivalent to
+%saying that the parameters have an improper uniform prior, i.e.,
+%$\beta_0 \sim \mbox{const}$, which is commonly used for mean parameters
+%in practice.
 Note also that we have
 used a different prior than in our {\bf WinBUGS} model specification
-given previously. As an
-exercise, evaluate whether this seems to affect the result.
+given previously. We encourage you to evaluate 
+ whether this seems to affect the result.
 
 \section{Poisson GLM with Random Effects}
 
-What we will be doing in most of this book is dealing with random
+In most of this book, we will be dealing with random
 effects in GLM-like models - similar to what
 are usually referred to as generalized
-linear mixed models (GLMMs). We provide a brief introduction by way of
+linear mixed models (GLMMs). We provide a brief introduction of such a
+model by way of
 example, extending our Poisson regression model to include a random effect.
 
 
@@ -2113,34 +2090,36 @@ example, extending our Poisson regression model to include a random effect.
 with a normally distributed random effect that is additive on the
 linear predictor. For the Poisson case, we have:
 \[
- 	log(\lambda_{i}) = \beta_0  + \beta_1 x_{i} + \eta_{i}
+ 	\log(\lambda_{i}) = \beta_0  + \beta_1 x_{i} + \eta_{i}
 \]
-where $\eta_{i} \sim \mbox{Normal}(0,\sigma^{2})$.  A natural
-alternative is to have multiplicative gamma-distributed noise,
-$exp(\eta_{i}) \sim \mbox{Gamma}(a,b)$ which would correspond to a
-negative binomial kind of over-dispersion, implying a different
-mean/variance relationship to the log-normal mixture (the interested
-reader should work that out).  Choosing between such possibilities is
-not a topic we will get into here because it doesn't seem possible to
-provide general guidance on it.   
-% For this model we carried-out a
-% goodness-of-fit evaluation using the Bayesian p-value based on a
-% Pearson residual statistic. See also \citep[][ch. 18]{kery:2010} for
-% an example involving a binomial mixed model\footnote{Kery has noticed
-%   that such tests probably have 0 power. Should use the marginal
-%   frequency of the data}. 
- Anyhow, it is really amazingly simple to
-express this model in {\bf WinBUGS} and have {\bf WinBUGS} draw
-samples from the posterior distribution using the following code for
+where $\eta_{i} \sim \mbox{Normal}(0,\sigma^{2})$.  
+%A natural
+%alternative is to have multiplicative gamma-distributed noise,
+%$exp(\eta_{i}) \sim \mbox{Gamma}(a,b)$ which would correspond to a
+%negative binomial kind of over-dispersion, implying a different
+%mean/variance relationship to the log-normal mixture (the interested
+%reader should work that out).  Choosing between such possibilities is
+%not a topic we will get into here because it doesn't seem possible to
+%provide general guidance on it.   
+%% For this model we carried-out a
+%% goodness-of-fit evaluation using the Bayesian p-value based on a
+%% Pearson residual statistic. See also \citep[][ch. 18]{kery:2010} for
+%% an example involving a binomial mixed model\footnote{Kery has noticed
+%%   that such tests probably have 0 power. Should use the marginal
+%%   frequency of the data}. 
+It is really amazingly simple to
+express this model in the {\bf BUGS} language and have {\bf WinBUGS}
+(or {\bf JAGS}, etc..) draw
+samples from the posterior distribution. The code for analysis of the
+BBS dove counts is given as follows:
 the BBS dove counts: 
 {\small
 \begin{verbatim}
+library("scrbook")
 data(bbsdata)
-locs<-bbsdata$counts[,2:3]
-habitat<-bbsdata$counts[,4]
-y<-bbsdata$counts[,29]     # grab year 1990
-M<-length(y)
-
+### grab the BBS Data as before
+###
+### set random seed so that results are repeatable
 set.seed(2013)
 
 cat("
@@ -2159,11 +2138,12 @@ model {
 }
 
 ",file="model.txt")
-data <- list ( "y","M","habitat")
+
+data <- list ("y","M","habitat")
 inits <- function()
   list ( beta0=rnorm(1),beta1=rnorm(1),sigma=runif(1,0,4))
 parameters <- c("beta0","beta1","sigma","tau")
-library("R2WinBUGS")
+library("R2WinBUGS")                # load R2WinBUGS library
 
 out<-bugs (data, inits, parameters, "model.txt", n.thin=2,n.chains=2,
  n.burnin=1000,n.iter=5000,debug=TRUE)
@@ -2171,9 +2151,19 @@ out<-bugs (data, inits, parameters, "model.txt", n.thin=2,n.chains=2,
 }
 
 This produces the posterior summary statistics given in table \ref{glms.tab.bbspoisreg}. 
+One thing we notice is
+that the posterior standard deviations of the regression parameters
+are much higher, a result of the extra-Poisson variation allowed for
+by this model. We would also
+notice much less precise predictions of hypothetical new
+observations.
+
+
 
 \begin{table}
-\caption{Inference for Poisson GLM with habitat effect for mourning dove counts across BBS routes in PA, 1990, fit using WinBUGS,
+\caption{Inference for Poisson GLM with habitat effect for mourning
+  dove counts across BBS routes in PA, 1990, fit using 
+{\bf WinBUGS},
  2 chains, each with 5000 iterations (first 1000 discarded), n.thin = 2
  n.sims = 4000 iterations saved.}
    \scriptsize
@@ -2182,10 +2172,10 @@ This produces the posterior summary statistics given in table \ref{glms.tab.bbsp
         \hline
  Parameter &    mean   & sd   &  2.5\%    &  25\%  &    50\%   &   75\%  &  97.5\% & Rhat & n.eff \\
      \hline
-beta0   &   2.98 & 0.08 &  2.82 &  2.93  & 2.98 &  3.03 &  3.12 & 1.00 & 1400 \\
-beta1   &  -0.53 & 0.07 & -0.68 & -0.58 & -0.53 & -0.49 & -0.38 & 1.01 &  350 \\
-sigma   &   0.60 & 0.06 &  0.49 &  0.56 &  0.59 &  0.64 &  0.73 & 1.00 & 2000 \\
-tau     &   2.88 & 0.57 &  1.88 &  2.47 &  2.86 &  3.24 &  4.12 & 1.00 & 2000 \\
+$\beta_0$   &   2.98 & 0.08 &  2.82 &  2.93  & 2.98 &  3.03 &  3.12 & 1.00 & 1400 \\
+$\beta_1$   &  -0.53 & 0.07 & -0.68 & -0.58 & -0.53 & -0.49 & -0.38 & 1.01 &  350 \\
+$\sigma$   &   0.60 & 0.06 &  0.49 &  0.56 &  0.59 &  0.64 &  0.73 & 1.00 & 2000 \\
+$\tau$     &   2.88 & 0.57 &  1.88 &  2.47 &  2.86 &  3.24 &  4.12 & 1.00 & 2000 \\
 deviance & 445.94 & 12.18 & 424.00 & 437.40 & 445.20 & 453.90 & 471.50 & 1.00 & 4000 \\
     \hline
   \end{tabular}
@@ -2217,11 +2207,6 @@ deviance & 445.94 & 12.18 & 424.00 & 437.40 & 445.20 & 453.90 & 471.50 & 1.00 & 
 % \end{verbatim}
 % indicating a pretty good fit. Given the site-level random effect, it
 % would be surprising for this model to not fit! 
-One thing we notice is
-that the posterior standard deviations of the regression parameters
-are much higher, a result of the excess variation. We would also
-notice much less precise predictions of hypothetical new
-observations.
 
 
 
@@ -2244,7 +2229,7 @@ the relationship between $p$ and covariates (see below).
 
 One of the most typical binomial GLMs occurs when the sample size
 equals 1 and the outcome, $y$, is ``presence'' ($y=1$) or ``absence''
-($y=0$) of a species. This is a classical ``species distribution''
+($y=0$) of a species. This is a classical species distribution
 modeling situation. A special situation occurs when presence/absence
 is observed with error \citep{mackenzie_etal:2002,tyre_etal:2003}.
 In that case, $K>1$ samples
@@ -2264,8 +2249,8 @@ Another
 situation in which the binomial sample size is ``fixed'' is closed
 population capture-recapture models in which a population of
 individuals is sampled $K$ times.  The number of times each individual
-is encountered is a binomial outcome with parameter - encounter
-probability -- $p$, based on a sample of size $K$.  In addition, the
+is encountered is a binomial outcome with parameter (encounter
+probability) $p$, based on a sample of size $K$.  In addition, the
 total number of unique individuals observed, $n$, is also a binomial
 random variable based on population size $N$.  We consider such
 models in Chapt. \ref{chapt.closed}.
@@ -2276,7 +2261,8 @@ models in Chapt. \ref{chapt.closed}.
 In binomial models, covariates are modeled on a suitable
 transformation (the link function) of the binomial success
 probability, $p$.  Let $x_{i}$ denote some measured covariate for
-sample unit $i$ and let $p_{i}$ be the success probability for unit $i$.
+sample unit $i$ and let $p_{i}$ be the success probability for unit or
+subject $i$.
 The standard choice is the logit link function (\ref{glms.sec.glmms}) but there are many other possible link functions. However, ecologists seem
 to adopt the logit link function without question in most
 applications\footnote{a notable exception is distance sampling, which
