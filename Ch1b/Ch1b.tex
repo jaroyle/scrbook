@@ -175,7 +175,12 @@ the result of which is shown in Fig.\ref{modeling.fig.bin} with some extra detai
 The purpose of this little example is to show that once we specify a
 model for the random variable(s) being studied, we can begin drawing
 conclusions, i.e making inferences, about the processes of interest,
-even in the face of uncertainty. Probability distributions are
+even in the face of uncertainty.
+Evaluating pdfs and pmfs like we have shown here is not only
+necessary for making probability statements when parameter values are
+known, it is essential when estimating parameters. For example, if $p$
+was unknown, we could estimate it by
+Probability distributions are
 essential to this process, and thus we need to
 understand them in some more depth.
 
@@ -359,38 +364,45 @@ used distributions described in this section.
 
 \subsection{The Binomial Distribution}
 
-We have already briefly introduced the binomial distribution. Here, we
-elaborate on it here because it plays a critical role in ecology---being
+We have already briefly introduced the binomial distribution, but we
+need to describe it in more detail because of the critical role it
+plays in ecology. The binomial distribution is
 used for purposes as diverse as modeling count data, survival
-probability, occurrence, and capture probability.
+probability, occurrence probability, and capture probability.
 
+To describe the properties of the binomial distribution, and related
+distributions, we will introduce a new example.
+Suppose we are conducting a bird survey at a site in which 10
+chestnut-sided warblers (\textit{Stetophaga pensylvanica}) occur and
+each of these individuals has a detection probability of 0.5. The
+binomial distribution is the natural choice for describing the number
+of individuals that we would expect to detect in this
+situation, and using our notation, we can write
+$x \sim \text{Bin}(10, 0.5)$. Note that if $p \equiv 1$, the number of
+individuals that we would observe on $J$ replicate surveys, $x_j$,
+would not be a random variable---we would always observe
+$x_j=10$. That is the observed data would exactly equal the expected
+value and the variance would be zero.
 \begin{comment}
-  Suppose we are conducting a bird survey at a site in which 10
-  chestnut-sided warblers occur and each of these individuals have a
-  detection probability of 0.5. The binomial distribution is the
-  natural choice for describing the number of individuals that we
-  would expect to detect. If we visit the site three times, Using our
-  notation, we could describe our model for the expected counts of
-  chestnut ($x$ as
-  \[
-  x_j \sim \text{Binomial}(10, 0.5).
-  \]
+  The \texttt{stats} package that comes with \R~has random number
+  generators for most of the distributions we will use in this
+  book. These functions always begin with \texttt{r}, as in
+  \texttt{rbinom} for generating random binomial outcomes. Thus, to
 \end{comment}
-
-The \texttt{stats} package that comes with \R~has random number
-generators for most of the distributions we will use in this
-book. These functions always begin with \texttt{r}, as in
-\texttt{rbinom} for generating random binomial outcomes. Thus, to
-generate data under our simple model described above, we
-could issue the following command:
+However, when $p<1$, we can expect that we will observe different
+a different number of warblers on each replicate visit. To see this,
+we can simulate data under this simple model in which $J=3$ visits are
+made to the site:
 \begin{verbatim}
-> x <- rbinom(3, size=20, prob=0.35)
-> x
+> n <- rbinom(3, size=10, prob=0.5)
+> n
 [1] 6 4 8
 \end{verbatim}
 The vector $\mathbf{x}$ will typically differ each time you issue this
-command according to the properties of the binomial distribution.
-
+command; however, we know the probability of observing any value of
+$n_j$ because it is defined by the binomial pmf. As we demonstrated
+earlier, in \R~this probability can be found using the \verb+dbinom+
+function. For example, the probability of observing $n_j=5$ is given by:
 \begin{comment}
   Without knowing a thing about probability distributions, most people
   would recognize that the expected value of $x_j$ is $10 \times 0.5 =
@@ -402,11 +414,11 @@ command according to the properties of the binomial distribution.
   observe these data? And what is the actual probability of observing
   a 5? These questions can all be answered by the probability mass
   function (pmf) for the binomial distribution.
-\end{comment}
 
-The probability of
-observing a 5 (or any other number) when $N=10$ and $p=0.5$ can be
-computed in \R~by issue the following command:
+  The probability of
+  observing a 5 (or any other number) when $N=10$ and $p=0.5$ can be
+  computed in \R~by issue the following command:
+\end{comment}
 \begin{verbatim}
 dbinom(5, 10, 0.5)
 \end{verbatim}
@@ -422,59 +434,73 @@ exp(lgamma(N+1) - (lgamma(n+1) + lgamma(N-n+1)))*p^n*(1-p)^(N-n)
 choose(N, n)*p^n*(1-p)^(N-n)
 \end{verbatim}
 
-Now that we know how to compute the probability of observing a 5 under
+Note that these three expressions differ only in how they compute the
+binomial coefficient $\binom{N}{n}$, which is the number of different ways
+we could observer 5 of the 10 chestnut-sided warblers at the site. The
+binomial coefficient, which is read ``N choose n'' is defined as
+\begin{equation}
+  \label{eq:1}
+  \binom{N}{n} = \frac{N!}{n!(N-n)!}
+\end{equation}
+
+
+\begin{comment}
+Now that we know how to compute the probability of observing $n=5$ under
 our model, we can compute the probability of observing any
-integer $x$, $Pr(X=x|N,p)$, and this allows us to easily visualize the
-probability mass function. The following command produces a plot of
-the binomial pmf for integers 0 through 15. Notice that the
-probability of observing $n>N$ is zero.
+integer $n$ and this allows us to easily visualize the
+probability mass function as we did earlier.
+  The following command produces a plot of the binomial pmf for
+  integers 0 through 15. Notice that the probability of observing
+  $n>N$ is zero.
 
 \begin{verbatim}
 plot(0:15, dbinom(0:15, 10, 0.5), type="h", lwd=5, lend="butt",
      xlab="n", ylab="Pr(n=x|N,p)")
 \end{verbatim}
 
-In our example, we only drew 3 samples from the binomial distribution
-and it should be evident that it would be difficult to estimate
-parameters of the distribution with such a small sample. With a large
-sample, a histogram of the observed counts should closely mimic the
-true probability mass function as is shown here:
+  In our example, we only drew 3 samples from the binomial
+  distribution and it should be evident that it would be difficult to
+  estimate parameters of the distribution with such a small
+  sample. With a large sample, a histogram of the observed counts
+  should closely mimic the true probability mass function as is shown
+  here:
 
 
-This
-example illustrates the uncertainty inherent in sampling and the
+  This example illustrates the uncertainty inherent in sampling and
+  the
 
 
-If our interest was in estimating $N$, and we somehow
-knew that $p=0.5$, our best guess would be that $N$ is the mean of the
-counts divided by the detection probability,
-\[
-\hat{N} = \frac{\mathbb{E}(x)}{p} = \frac{1/J \sum_j x_j}{p} = \frac{6}{0.5} =
-12.
-\]
-Our estimate is 2 chestnut-sided warblers too high. Not too bad
-though. As it turns out, estimating the binomial $N$ can be quite a
-challenge, which we will discuss in more in the next section on
-estimation. For the moment, it is important to recognize what the
-binomial distribution is, and how it can be used to describe our
-hypotheses about an ecological processs. It also , however, that we had nothing better to do than
-visit the site 100 times. In this case, we would expect to observe
-counts such as this:
-
+  If our interest was in estimating $N$, and we somehow knew that
+  $p=0.5$, our best guess would be that $N$ is the mean of the counts
+  divided by the detection probability,
+  \[
+  \hat{N} = \frac{\mathbb{E}(x)}{p} = \frac{1/J \sum_j x_j}{p} =
+  \frac{6}{0.5} = 12.
+  \]
+  Our estimate is 2 chestnut-sided warblers too high. Not too bad
+  though. As it turns out, estimating the binomial $N$ can be quite a
+  challenge, which we will discuss in more in the next section on
+  estimation. For the moment, it is important to recognize what the
+  binomial distribution is, and how it can be used to describe our
+  hypotheses about an ecological processs. It also , however, that we
+  had nothing better to do than visit the site 100 times. In this
+  case, we would expect to observe counts such as this:
+\end{comment}
 
 
 
 \subsection{The Bernoulli Distribution}
 
 Above, we showed three alternatives to \verb+dbinom+ for evaluating the
-binmial pmf. These three commands differed only in how they computed the binomial coefficient
-$\binom{N}{n}$, which is the number of different ways
-we could observer 5 chestnut-sided warblers out of the 10
-possible birds, read ``N
-choose n''. For example, we could observed $\mathbf{h}=(0,0,1,1,1,1,1,0,0,0)$
+binmial pmf. These three commands differed only in how they computed
+the binomial coefficient, which we needed because of the numerous ways
+in which we could observe $n=5$ under our model. To conceptualize
+this, let $h_i$ be the binary variable indicating if individual $i$
+was detected or not.
+For example, we could observed $\mathbf{h}=(0,0,1,1,1,1,1,0,0,0)$
 which is to say that we detected individuals 3-7 but not 1-2 or
-8-10. For this specific example, there
-are 252 possible combinations. Note that when $N \equiv 1$, this term
+8-10. For $N=10$ and $n=5$, there
+are 252 possiblities of $\mathbf{h}$. However, when $N \equiv 1$, this term
 drops from the pmf and the result is the pmf for the Bernoulli
 distribution. That is, the Bernoulli distribution is simply the
 binomial distribution when $N \equiv 1$. Alternatively, we could say that the binomial
@@ -484,35 +510,55 @@ The utility of the Bernoulli distribution is evident when we imagine
 that not all of the chestnut-sided warblers have the same detection
 probability. Thus, if some individuals can be detected with
 probability 0.3 and others have a 0.7 detection probabilty, we can no
-longer safely write $x \sim \text{Binomial}(N, p)$ since $p$ is no
-longer a constant (scalar)\footnote{Although this model is not
-  technically accurate, it is often a good approximation if
-  heterogeneity in $p$ is low.}.
+longer safely write $n \sim \text{Bin}(N, p)$ since $p$ is no
+longer a constant (scalar). %\footnote{Although this model is not
+%  technically accurate, it is often a good approximation if
+%  heterogeneity in $p$ is low.}.
 
 To properly account for variation in $p$, we could redefine our notation
-describing how the counts of chestnut-sided warblers are generated during a
-single visit. Our model now is
-\[
-h_{ij} \sim \text{Bernoulli}(p_i)
+describing how the counts of chestnut-sided warblers are
+generated. Our model now is
+\begin{gather}
+h_{ij} \sim \text{Bern}(p_i) \quad \text{for} \; i=1,2,\dots,N \\
 x_j = \sum_i h_{ij}
-\]
+\label{modeling.eq.Bern}
+\end{gather}
 
+Note that the individual-specific data $h_{ij}$ can observed be
+observed when we can keep track of each individual, such as when they
+are marked or otherwise distinguishable. In such cases,
+the Bernoulli distribution allows us to
+model variation in detection probability among individuals and thus
+would be preferable to the binomial distribution, we assumes that each
+of the $N$ individuals have the same $p$.
+For this reason, the Bernoulli
+distribution, as simple as it is, is of paramount importance in
+capture-recapture models, including spatial capture-recapture models
+in which there is virtually always variation in capture probability
+among individuals. Indeed, it could be said the Bernoulli model is the
+canonical model in capture-recapture studies---most of the
+variations in capture-recapture models lie in how $p_i$ is specified,
+and how $N$ is estimated.
+
+The Bernoulli pmf is simply $p^n(1-p)^{1-n}$ and hence we do not need canned
+functions to facilitate its evaluation. Of course, if you wanted to, you
+could always use \verb+dbinom+ with the \verb+size+ argument set to
+1.
 
 \subsection{The Multinomial Distribution}
 
 
-Earlier we let $h_{ij}$ be a binary variable indicating if an
+Earlier we let $h_{ij}$ denote a binary variable indicating if
 warbler $i$ was detected on survey $j$. The vector of observations for
-individual $i$ $\bf H_i$ is often referred to as the ``encounter
+individual $i$ $\mathbf{h}_i$ is often referred to as the ``encounter
 history'' for individual $i$. The number of possible encounter
 histories depends on the number of survey occasssions. If there are
-only $J=2$ occasions, then there are 4 possible encounter histories, $H = c(11, 10,
-01, 00)$. More generally, there number of encounter histories is
-$2^J$\footnote{When $N$ is unknown, we can never observer the
-  encounter history of an individual that is not detected, and thus
-  the number of ``observable'' encounter histories is $2^(J-1)$}.
-encounter
-the e
+only $J=2$ occasions, then there are 4 possible encounter histories,
+$\mathbf{h} \in c(11, 10, 01, 00)$. More generally, there are $2^J$
+possible encounter histories\footnote{When $N$ is unknown, we can
+  never observer the encounter history of an individual that is not
+  detected, and thus the number of ``observable'' encounter histories
+  is $2^(J-1)$}.
 
 Just as the Bernoulli distribution is a specific case of the binomial
 distribution when $N\equiv1$, the categorical distribution is a very
