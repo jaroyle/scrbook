@@ -78,10 +78,11 @@ pbar<-apply(out2$sims.list$p,2,mean)
 ux<-unique(mallard$locs[,1])
 uy<-unique(mallard$locs[,2])
 
+X<- mallard$locs
 odx<-order(X[,1],X[,2])
 I<-matrix(pbar[odx],nrow=length(uy),ncol=length(ux))
 par(mfrow=c(2,1))
-spatial.plot(X,pbar,col="ss")
+
 image(ux,uy,t(I),col=terrain.colors(10))
 spatial.plot(X,pbar,col="notgray",cx=4)
 
