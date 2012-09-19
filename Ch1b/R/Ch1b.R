@@ -122,6 +122,25 @@ mean((x-mean(x))^2)          # Monte Carlo approximation
 
 
 
+
+# Multinomial
+
+set.seed(2321)
+caphist.probs <- c("11"=0.09, "10"=0.21, "01"=0.21, "00"=0.49)
+drop(rmultinom(1, 10, caphist.probs))
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Joint, marginal, conditional distributions
 
 X <- 0:20 # All possible values of X
@@ -156,3 +175,15 @@ round(YgivenX, 2)
 
 colSums(XgivenY)
 rowSums(YgivenX)
+
+
+
+
+
+
+
+
+
+
+
+
