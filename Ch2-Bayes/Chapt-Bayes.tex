@@ -2263,17 +2263,22 @@ transformation (the link function) of the binomial success
 probability, $p$.  Let $x_{i}$ denote some measured covariate for
 sample unit $i$ and let $p_{i}$ be the success probability for unit or
 subject $i$.
-The standard choice is the logit link function (\ref{glms.sec.glmms}) but there are many other possible link functions. However, ecologists seem
-to adopt the logit link function without question in most
-applications\footnote{a notable exception is distance sampling, which
-  is all about choosing among link functions}.  We sometimes use the
-``complementary log-log'' (= ``cloglog'') link function in ecological
-applications because it arises naturally in many situations
-\citep[][p. 150]{royle_dorazio:2008}. For example, consider the
+The standard choice is the logit link function (\ref{glms.sec.glmms})
+but there are many other possible link functions. 
+%However, ecologists seem
+%to adopt the logit link function without question in most
+%applications\footnote{a notable exception is distance sampling, which
+%  is all about choosing among link functions}.  
+We sometimes use the
+complementary log-log (= ``cloglog'') link function in ecological
+applications because it is natural in some cases when the response
+should scale in relation to area or effort
+\citep[][p. 150]{royle_dorazio:2008}. As an example, the
 ``probability of observing a count greater than 0'' under a Poisson
-model: $\Pr(y>0) = 1-exp(- \lambda)$. In that case,
+model is $\Pr(y>0) = 1-\exp(- \lambda)$. In that case, for the
+$i^{th}$ observation,
 \[
-cloglog(p) =log(- log(1-p)) = log(\lambda)
+\mbox{cloglog}(p_{i}) = \log(- \log(1-p_{i})) = \log(\lambda_{i})
 \]
 So that if you have covariates in your linear predictor for $E(y)$
 under a Poisson model then they are linear on the complementary
@@ -2282,11 +2287,11 @@ In models of species occurrence it seems natural to view occupancy as
 being derived from local abundance $N$
 \citep{royle_nichols:2003,royle_dorazio:2006,dorazio:2007}.
 Therefore,
-models of local abundance in which $N \sim \mbox{Poisson}(A \lambda)$
-for a habitat patch of area $A$ implies a model for occupancy $\psi$
+models of local abundance in which $N_{i} \sim \mbox{Poisson}(A_{i} \lambda_{i})$
+for a habitat patch of area $A_{i}$ implies a model for occupancy $\psi_{i}$
 of the form
 \[
- cloglog(\psi) = log(A) + log(\lambda).
+ \mbox{cloglog}(\psi_{i}) = log(A_{i}) + \log(\lambda_{i}).
 \]
 We will use the cloglog link in some analyses of
 SCR models in Chapt. \ref{chapt.scr0} and elsewhere.
@@ -2294,12 +2299,13 @@ SCR models in Chapt. \ref{chapt.scr0} and elsewhere.
 
 \subsection{ Example: Waterfowl Banding Data}
 
-It would be easy to consider a standard ``distribution modeling''
-application where $K=1$ and the outcome is occurrence ($y=1$) or not
+The standard binomial modeling problem in ecology is that of 
+modeling species distributions, 
+ where $K=1$ and the outcome is occurrence ($y=1$) or not
 ($y=0$) of some species. Such examples abound in books (e.g.,
 \citet[][ch. 3]{royle_dorazio:2008}; \citet[][ch. 21]{kery:2010};
 \citet[][ch. 13]{kery_schaub:2011}) and in the literature.
-Instead, we will
+Therefore, instead, we will
 consider an example involving band returns of waterfowl in the upper great plains including some canadian provinces, which were
 analyzed by \citet{royle_dubovsky:2001}.
 
@@ -2316,32 +2322,53 @@ basic binomial GLM with a linear response to geographic coordinates
 Here we
  provide the part of the script for creating the model and fitting the
  model in
-{\bf WinBUGS} using the \mbox{\tt bugs} function.
+{\bf WinBUGS}.
 There are few structural differences between this model and the
 Poisson GLM fitted previously. The main things are due to the data
 structure (we have a matrix here instead of a vector) and otherwise we
-change the main distributional assumption to binomial (specified with
+change the  distributional assumption to binomial (specified with
 \mbox{\tt dbin}) and then use the \mbox{\tt logit} function to relate
 the parameter $p_{it}$ to the covariates.  
 
-{\flushleft \bf Dummy variables in BUGS: } 
-In Chapt. \ref{chapt.modeling} we introduced the concept of categorical variables and how to display them in model formulas in the form of ``dummy variables''. In the mallard example, we model the band recovery probability $p$ not only as a linear function (on the logit scale) of geographic location, but also allow for variation in $p$ with year, $t$; $t=1,2,...T$. In this particular example there are $T=5$ years of data and if we wanted to describe the full mallard model with a formula adopting the dummy variable format, it would look like this:
+{\flushleft \bf Dummy variables in BUGS: } In
+Chapt. \ref{chapt.modeling} we introduced the concept of categorical
+variables and how to display them in model formulas in the form of
+``dummy variables''. In the mallard example, we model the band
+recovery probability $p_{it}$ not only as a linear function (on the logit
+scale) of geographic location, but also allow for variation in $p_{it}$
+with year, $t$; $t=1,2,...T$. In this particular example there are
+$T=5$ years of data and if we wanted to describe the full mallard
+model with a formula adopting the dummy variable format, it would look
+like this:
 
 \begin{eqnarray*}
 y_{it} &\sim & \mbox{Binomial}(p_{it}, B_{it}) \\
-\mbox{logit}(p_{it}) &=& \beta_0 + \beta_1 Sv2_t + \beta_2 Sv3_t + \beta_3 Sv4_t + \beta_4 Sv5_t + \beta_5 lat_i + \beta_6 lon_i + \beta_7 lat_i lon_i
+\mbox{logit}(p_{it}) &=& \beta_0 + \beta_1 x_{2t}+ \beta_2 x_{3t} +
+\beta_3 x_{4t} + \beta_4 x_{5t} + 
+\beta_5 \mbox{\tt lat}_i + \beta_6 \mbox{\tt lon}_i + \beta_7
+\mbox{\tt lat}_i \mbox{\tt lon}_i
 \end{eqnarray*}
-Here, $Sv2$ to $Sv5$ are the dummy variable vectors of length $T$ that take on the value of 1 when $t$ corresponds to the respective year and 0 otherwise. For example, Sv2 = (0,1,0,0,0). $\beta_0$ is the common intercept term and correspond to $t=1$; $\beta_1$ - $\beta_4$ describe the difference in $p$ for each $t$ \emph{relative to} $t=1$.
+Here, $x_{2}$ to $x_{5}$ are the dummy variable vectors of length $T$ that take on the value of 1 when $t$ corresponds to the respective year and 0 otherwise. $\beta_0$ is the common intercept term and correspond to $t=1$; $\beta_1$ - $\beta_4$ describe the difference in $p_{it}$ for each $t$ \emph{relative to} $t=1$.
 
-There is a more concise way of implementing such a model with a categorical covariate in {\bf BUGS}, namely, by using indexing instead of dummy variables (actually, in some cases a model may mix or converge better depending on whether you choose a dummy variable or an indexing description of it, although they are structurally equivalent \citep{kery:2010}). Essentially, instead of estimating the difference in $p$ relative to survey 1, we  estimate a separate intercept term for each survey, so that we have 5 different $beta_0$ indexed by $t$. This reduces the linear predictor to:
+There is a more concise way of implementing such a model with a
+categorical covariate in {\bf BUGS}, namely, by using indexing instead
+of dummy variables\footnote{Actually, in some cases a model may mix or
+  converge better depending on whether you choose a dummy variable or
+  an indexing description of it, although they are structurally
+  equivalent \citep{kery:2010}}. Essentially, instead of estimating
+the difference in $p$ relative to category 1, we estimate a separate
+intercept term for each category, so that we have 5 different $\beta_0$
+parameters indexed by $t$. This reduces the linear predictor to:
 \[
-logit(p_{it}) = \beta_{0t} +  \beta_5 lat_i + \beta_6 lon_i + \beta_7 lat_i lon_i
+logit(p_{it}) = \beta_{0t} +  \beta_5 \mbox{\tt lat}_i + \beta_6
+\mbox{\tt lon}_i + \beta_7 \mbox{\tt lat}_i \mbox{\tt lon}_i
 \]
-We show you how to implement that in {\bf BUGS} for this mallard example. Here is the script:
-
+The model can be implemented in the {\bf BUGS} language for the
+mallard banding data using the following {\bf R} script: 
 {\small
 \begin{verbatim}
-load("mallarddata")  # not sure how this will look
+library("scrbook")
+load("mallard")  # not sure how this will look
 
 sink("model.txt")
 cat("
@@ -2351,24 +2378,24 @@ model {
        y[i,t] ~ dbin(p[i,t], B[i,t])
        logit(p[i,t]) <- beta0[t] + beta1*X[i,1] + beta2*X[i,2] + beta3*X[i,1]*X[i,2]
      }
-}
+ }
 	beta1~dnorm(0,.001)
 	beta2~dnorm(0,.001)
 	beta3~dnorm(0,.001)
 	for(t in 1:5){
- 	beta0[t] ~ dnorm(0,.001)
- }
+ 	beta0[t] ~ dnorm(0,.001)  
+        }
 }
 ",fill=TRUE)
 sink()
 
-data  <- list(B=mallard.bandings, y=mallard.recoveries,
-             nobs=nrow(banding.locs),X=banding.locs)
-inits <- function(){
-      list(beta0=rnorm(5),beta1=0,beta2=0,beta3=0) }
+library("R2WinBUGS")
+data <- list(B=mallard$bandings, y=mallard$recoveries,
+             X=mallard$locs,nobs=nrow(mallard$locs))
+inits <- function(){ list(beta0=rnorm(5),beta1=0,beta2=0,beta3=0) }
 parms <- list('beta0','beta1','beta2','beta3')
-out   <- bugs(data,inits, parms,"model.txt",n.chains=3,
- 	n.iter=2000,n.burnin=1000, n.thin=2,debug=TRUE)
+out <- bugs(data,inits, parms,"model.txt",n.chains=3,
+ 	n.iter=2000,n.burnin=1000,n.thin=2, debug=TRUE)
 \end{verbatim}
 }
 
@@ -2396,26 +2423,29 @@ deviance & 1716.001 4.091 & 1710.000 & 1713.000 & 1715.000 & 1718.000 & 1726.000
 \vspace{0.5cm}
 \end{table}
 
-% {\small
-% \begin{verbatim}
-% > print(out,digits=3)
-% Inference for Bugs model at "model.txt", fit using WinBUGS,
-%  3 chains, each with 2000 iterations (first 1000 discarded), n.thin = 2
-%  n.sims = 1500 iterations saved
-%               mean    sd     2.5%      25%      50%      75%    97.5%  Rhat n.eff
-% alpha0[1]   -2.346 0.036   -2.417   -2.370   -2.346   -2.323   -2.277 1.001  1500
-% alpha0[2]   -2.356 0.032   -2.420   -2.379   -2.356   -2.335   -2.292 1.001  1500
-% alpha0[3]   -2.220 0.035   -2.291   -2.244   -2.219   -2.197   -2.153 1.001  1500
-% alpha0[4]   -2.144 0.039   -2.225   -2.169   -2.143   -2.116   -2.068 1.000  1500
-% alpha0[5]   -1.925 0.034   -1.990   -1.949   -1.924   -1.901   -1.856 1.004   570
-% alpha1      -0.023 0.003   -0.028   -0.025   -0.023   -0.022   -0.018 1.001  1500
-% alpha2       0.020 0.006    0.009    0.016    0.020    0.024    0.031 1.001  1500
-% alpha3       0.000 0.001   -0.002   -0.001    0.000    0.000    0.002 1.001  1500
-% deviance  1716.001 4.091 1710.000 1713.000 1715.000 1718.000 1726.000 1.001  1500
+> print(out,digits=3)
+Inference for Bugs model at "model.txt", fit using WinBUGS,
+ 3 chains, each with 2000 iterations (first 1000 discarded), n.thin = 2
+ n.sims = 1500 iterations saved
+             mean    sd     2.5%      25%      50%      75%    97.5%  Rhat n.eff
+beta0[1]   -2.346 0.036   -2.417   -2.370   -2.346   -2.323   -2.277 1.001  1500
+beta0[2]   -2.356 0.032   -2.420   -2.379   -2.356   -2.335   -2.292 1.001  1500
+beta0[3]   -2.220 0.035   -2.291   -2.244   -2.219   -2.197   -2.153 1.001  1500
+beta0[4]   -2.144 0.039   -2.225   -2.169   -2.143   -2.116   -2.068 1.000  1500
+beta0[5]   -1.925 0.034   -1.990   -1.949   -1.924   -1.901   -1.856 1.004   570
+beta1      -0.023 0.003   -0.028   -0.025   -0.023   -0.022   -0.018 1.001  1500
+beta2       0.020 0.006    0.009    0.016    0.020    0.024    0.031 1.001  1500
+beta3       0.000 0.001   -0.002   -0.001    0.000    0.000    0.002 1.001  1500
+deviance 1716.001 4.091 1710.000 1713.000 1715.000 1718.000 1726.000 1.001  1500
 
-% [... some output deleted ...]
-% \end{verbatim}
-% }
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+
+DIC info (using the rule, pD = Dbar-Dhat)
+pD = 7.9 and DIC = 1723.9
+DIC is an estimate of expected predictive error (lower deviance is better).
+> 
+
 
 
 Look at the posterior summaries of model parameters in Table \ref{glms.tab.mallard}. The basic result suggests a negative east-west gradient and a positive
