@@ -892,7 +892,13 @@ XXX Definitely faster, but not THAT fast XXX
 \subsection{Sex Effects}
 Specifying a fully sex specific model for {\bf JAGS} is very similar to the time-specific model shown above: we need to use an index or dummy variable to let both $\alpha_0$ and $sigma$ be estimated separately for males and females. The main difference arise from the fact that we do not observe sex for the augmented individuals, which means, we have missing observations of the covariate for those augmented individuals. As a result, sex has to be estimated for those unobserved individuals as part of the model. In Bayesian inference, missing data are essentially treated like parameters, which means that we need to specify a prior distribution for the missing data. With only two possible outcomes, sex can be regarded as a Bernoulli random variable where $[sex = male] \sim Bernoulli(\pi)$ (we could equally well specify it as $[sex = female] \sim Bernoulli(\pi)$). The parameter $\pi$ can be seen as the sex ratio of the population and since it is something we want to estimate (a hyperparameter of the model), we again have to specify a prior for $\pi$. To express our lack of knowledge about the parameter and account for the fact that being a probability, it can only take values between 0 and 1, we choose $\pi \sim Uniform(0,1)$.  
 
-In both {\bf JGAS} or {\bf BUGS} missing data are specified as {\tt NA}. In terms of setting up the data that means we need to create a vector of length $M$ with the first $n$ elements being 0 if individual $i$ is a female, or 1 if $i$ is a male (for the Ft. Drum black bear data we can extract this information from XXX HOW IS BEARSEX GONNA GO INTO THE R PACKAGE???? XXXX), and the subsequent $M-n$ elements being {\tt NA}.  It is generally a good idea to provide starting values for the missing data, but we cannot provide starting values for observed data; in this case where one vector (or other object) contains both observed and missing data, initial values for the observed data have to be specified as {\tt NA}. The code snippet below shows you how to set up the  data including the{\tt sex} vector and the initial values function, as well as the {\JAGS} model specifications (the remainder of the code is identical to what we've shown before).
+In both {\bf JAGS} or {\bf BUGS} missing data are specified as {\tt NA}. In terms of setting up the data that means we need to create a vector of 
+length $M$ with the first $n$ elements being 0 if individual $i$ is a female, or 1 if $i$ is a male (for the Ft. Drum black bear data we can extract 
+this information from XXX HOW IS BEARSEX GONNA GO INTO THE R PACKAGE???? XXXX), and the subsequent $M-n$ elements being {\tt NA}.  It is generally a 
+good idea to provide starting values for the missing data, but we cannot provide starting values for observed data; in this case where one vector 
+(or other object) contains both observed and missing data, initial values for the observed data have to be specified as {\tt NA}. 
+The code snippet below shows you how to set up the  data including the{\tt sex} vector and the initial values function, 
+as well as the {\jags} model specifications (the remainder of the code is identical to what we've shown before).
 
 
 {\small
@@ -973,9 +979,6 @@ overlap XXXX WHERE ARE THE BCIS? XXXX).
 
 \section{Likelihood analysis in \secr}
 
-Previously in the book, we have introduced the \R package \secr~ and described how
-to use the package generally.  Here, 
-
 \begin{comment}
 XXX THIS ENTIRE PARAGRAPH IS UNCLEAR - WHY IS IT THERE AND WHAT DOES IT WANT TO SAY? XXXX
 
@@ -993,10 +996,11 @@ likelihood which is kind of distinct and relevant to the individual
 covariates is the ``Huggins-Alho'' idea which is based on thinking
 about Horwitz-Thompson estimators involving unequal probabilities of
 sampling. XXX I DONT THINK THIS MEANS ANYTHING TO MOST READERS WITHOUT ADDITIONAL EXPLANATION XXX 
-
 \end{comment}
 
-The package \mbox{\tt secr} allows the user to simulate data and fit a
+Previously in the book, we have introduced the \R package \secr~ and described how
+to use the package generally. 
+ \secr~ allows the user to simulate data and fit a
 suite of models with various detection functions and covariate
 responses.  As we saw in Chapt. \ref{chapt.mle}, \secr~ uses the standard \R model
 specification framework, defining the dependent and independent
@@ -1014,77 +1018,18 @@ which are set for example as \verb+D ~ habitat+.
 
 To demonstrate
 a suite of models with various types of covariates using \secr, we
-continue using the data collected on black bears in Ft. Drum, NY, USA.
-It should be easy for the reader to take this example and generalize
-it for his or her own use.  We have set up an R function to run these
-models, which is available in the R package \scrbook.
+continue using the data collected on black bears in Ft. Drum, NY, USA
+which we previously analyzed in Chapt. \ref{chapt.closed}.  We include
+in the \scrbook package, a function called secr.bear that will 
+format the data and then fit 7 models (details shown in panel 
+\ref{covariates.panel.secrfn} ).  All of the models have been 
+previously described, so we only briefly comment here on how to fit
+certain models in \secr and give a few helpful notes.  Below, 
+we have a few subsections on the sex-specific effects, heterogeneity,
+and AIC which describe in more detail how we fit these models within
+\secr.
 
-XXMake note here of how to use the functionXX
-First we need to read in the raw data and
-the trap file so that we can build the capture history and trap files
-required by \secr.  After doing this, similar to the wolverine example
-shown in Chapt. \ref{chapt.mle}, we then call the command \mbox{\tt
-  secr.fit}
-to fit the model by the method of maximum likelihood.
- All of the following models should take somewhere between 30
-seconds and 5 minutes to run on your computer (possibly a little
-longer or shorter given the specifics of your machine).  To refresh
-your memory, we being by fitting a basic
-model with no covariates and a bivariate normal detection model in
-\secr~ to the Ft. Drum bear study data:
-
-XXXXX HOW IS THE CVS DATA FILE GOING INTO THE R PACKAGE? XXX
-{\small
-\begin{verbatim}
-bear=secr.fit (bearcapt, buffer = 20000)
-
-Detector type     proximity
-Detector number   38
-Average spacing   1776.437 m
-x-range           438789 456465 m
-y-range           4874895 4887477 m
-N animals       :  47
-N detections    :  151
-N occasions     :  8
-Mask area       :  301466.0 ha
-
-Model           :  D~1 g0~1 sigma~1
-Fixed (real)    :  none
-Detection fn    :  halfnormal
-Distribution    :  poisson
-N parameters    :  3
-Log likelihood  :  -587.1641
-AIC             :  1180.328
-AICc            :  1180.886
-
-Beta parameters (coefficients)
-           beta    SE.beta       lcl       ucl
-D     -6.398657 0.15502806 -6.702506 -6.094807
-g0    -2.133876 0.14669415 -2.421391 -1.846361
-sigma  7.587286 0.06458962  7.460692  7.713879
-
-Variance-covariance matrix of beta parameters
-                  D            g0        sigma
-D      0.0240336981 -0.0001084522 -0.002602049
-g0    -0.0001084522  0.0215191733 -0.005977169
-sigma -0.0026020486 -0.0059771686  0.004171819
-
-Fitted (real) parameters evaluated at base levels of covariates
-       link     estimate  SE.estimate          lcl          ucl
-D       log 1.663791e-03 2.594918e-04 1.227831e-03 2.254545e-03
-g0    logit 1.058476e-01 1.388370e-02 8.155599e-02 1.363008e-01
-sigma   log 1.972951e+03 1.275652e+02 1.738351e+03 2.239211e+03
-\end{verbatim}
-}
-
-
-Remember that \mbox{\tt secr} returns density in terms of
-individuals per
-hectare, so we must multiply this $D$ by 100 to see the estimate as
-individuals per $km^2$.  In doing so, the resulting density is 0.166
-individuals/$km^2$, which very similar to that found in sec. \ref{} XXXXX
-latex tag here XXXX ($D = 0.167$)
-using {\bf JAGS} for the equivalent half normal detection model. 
+\subsection{Notes for fitting standard models}
 
 In the \secr~ package, the detection functions are specified
 by changing the ``\mbox{\tt detectfn}'' option (an integer code)
@@ -1093,286 +1038,87 @@ within the \mbox{\tt secr.fit} command.  Table
 that \mbox{\tt secr} will fit; the default is that based on the kernel
 of a bivariate normal
 (``half-normal'') model and the
-(negative) exponential is \mbox{\tt detectfn = 2}. Therefore, to fit the
-exponential distance function, we use the following commands:
-
-{\small
-\begin{verbatim}
-bearexp = secr.fit (bearcapt, buffer = 20000, detectfn=2)
-
-[secr data and model summary output deleted ]
-
-Beta parameters (coefficients)
-            beta   SE.beta       lcl        ucl
-D     -6.3778954 0.1575762 -6.686739 -6.0690518
-g0    -0.6439777 0.2436156 -1.121455 -0.1664999
-sigma  7.0065881 0.0838522  6.842241  7.1709354
-
-Variance-covariance matrix of beta parameters
-                 D          g0        sigma
-D      0.024830243  0.00312779 -0.004050057
-g0     0.003127790  0.05934856 -0.015261224
-sigma -0.004050057 -0.01526122  0.007031192
-
-Fitted (real) parameters evaluated at base levels of covariates
-       link     estimate  SE.estimate          lcl          ucl
-D       log 1.698694e-03 2.693439e-04 1.247344e-03 2.313366e-03
-g0    logit 3.443479e-01 5.500169e-02 2.457414e-01 4.584709e-01
-sigma   log 1.103882e+03 9.272586e+01 9.365855e+02 1.301061e+03
-\end{verbatim}
-}
-
-Density is estimated similar to the bivariate normal model,
-although the mean
-estimate is slightly larger. The
-mean of
-$\sigma$ is about $1.1$
- which is very different from the half-normal model where the
- mean of $\sigma$ was $1.97$.
-These results are consistent with what we saw in the Bayesian
-analysis of the model where the posterior mean of $\sigma$ under the negative
-exponential model was $1.12$ and under the half normal was $1.99$.
-
-
-XXX can you put the secr commands in an R help file for a relevant
-function in scrbook? XXXXXX
-
-
-\subsection{Time-Varying Encounter Probability}
+(negative) exponential is \mbox{\tt detectfn = 2}.  See model 2 in 
+panel \ref{covariates.panel.secrfn} for how to fit the exponential 
+model to the bear dataset. 
 
 The \mbox{\tt secr} package easily fits both the SCR equivalent of model
 $M_{t}$ where each
 occasion has its own detection probability, as well as a linear
 trend in baseline detection over occasions. For the classical
-time-effects type of model with $K$ distinct parameters \secr~ uses 't' to denote
-this in the command call, whereas for a linear
-trend over occasions \secr~ uses 'T'.
-For example, we simply use \verb+g0~t+ in
-our model expression to implement eq. \ref{XX}   XXget eq. refXX
+time-effects type of model with $K$ distinct parameters \secr uses 't' to denote
+this in the command call (see model 3 in 
+panel \ref{covariates.panel.secrfn}); whereas, for a linear
+trend over occasions \secr uses 'T'.
 
-
-{\small
-\begin{verbatim}
-beart=secr.fit (bearcapt, model = list(D~1, g0~t, sigma~1), buffer = 20000)
-beart
-
-[secr data and model summary output deleted ]
-
-Beta parameters (coefficients)
-            beta    SE.beta         lcl        ucl
-D     -6.3984155 0.15485019 -6.70191633 -6.0949147
-g0    -2.8248967 0.34791833 -3.50680406 -2.1429893
-g0.t2 -0.2315323 0.49283661 -1.19747433  0.7344097
-g0.t3  1.0168296 0.39928271  0.23424991  1.7994094
-g0.t4  0.9923785 0.40168337  0.20509360  1.7796635
-g0.t5  1.0197370 0.39931504  0.23709388  1.8023801
-g0.t6  0.8267689 0.40841322  0.02629367  1.6272441
-g0.t7  1.0185729 0.39931309  0.23593362  1.8012122
-g0.t8  0.2871613 0.44183900 -0.57882724  1.1531498
-sigma  7.5832897 0.06435693  7.45715244  7.7094270
-
-Variance-covariance matrix of beta parameters
-[output deleted]
-
-Fitted (real) parameters evaluated at base levels of covariates
-       link     estimate  SE.estimate          lcl          ucl
-D       log 1.664192e-03 2.592530e-04 1.228555e-03 2.254302e-03
-g0    logit 5.599354e-02 1.839036e-02 2.911925e-02 1.049882e-01
-sigma   log 1.965083e+03 1.265978e+02 1.732208e+03 2.229264e+03
-\end{verbatim}
-}
-
-The package \mbox{\tt secr} does not provide the fitted value XXX make
-sure of this or Murray will have a cow and publish slammers about us! XXXXX
-for the
-detection probability of each time period after the initial time
-$(t1)$.
- We can back calculate each of the values using:
- XXXX THESE DETECTIONS LOOK VERY DIFFERENT FROM THE JAGS ONES WHERE THEY STABILIZE AROUND 0.12 XXXX
- XXX ACTUALLY, YOU SURE IT'S NOT plogis(-2.8248967 + oef(beart)[2,1]) AND SO ON? XXX
-{\small
-\begin{verbatim}
->plogis(coef(beart)[2,1])    #this pulls out time t = 2
-[1] 0.05599354
->plogis(coef(beart)[3,1])    #this pulls out time t = 3
-[1] 0.4423741
-.
-.
-.
-> plogis(coef(beart)[6,1])  #this pulls out time t = 6
-[1] 0.7349214
-.
-\end{verbatim}
-}
-These results suggest the same as we saw in sec. XXXXX give latex tag
-here  XXXX 8.3.1, that there
-are differences in detection by time.  Interestingly, the estimate of
-density remains similar to our basic model with $D = 0.167$
-individuals per $km ^2$.
-One might have expected the density to change given how
-small the baseline detection probability was in the first session.
-However, the increased detection in other time periods clearly
-balances that initial low detection probability.
-
-\subsection{Behavior}
-
-The {\Ttt secr} package allows one to incorporate a simple trap response
- (we called this the 'global behavioral model' above) just as easily as it was to incorporate a time effect .
-Without reorganizing our data, we can just take
-the basic model and change the model call to:
-{\small
-\begin{verbatim}
-bearb=secr.fit (bearcapt, model = list(D~1, g0~b, sigma~1), buffer = 20000)
-
-secr.fit( capthist = bearcapt, model = list(g0 ~ b), buffer = 20000 )
-secr 2.0.0, 18:39:38 14 Jul 2011
-
-[...secr data and model summary output deleted...]
-
-Beta parameters (coefficients)
-              beta    SE.beta        lcl       ucl
-D        -6.063824 0.20998468 -6.4753866 -5.652262
-g0       -2.962320 0.30193079 -3.5540936 -2.370547
-g0.bTRUE  1.069292 0.30169340  0.4779839  1.660600
-sigma     7.580269 0.06276493  7.4572522  7.703286
-
-Variance-covariance matrix of beta parameters
-                    D           g0      g0.bTRUE         sigma
-D         0.044093568 -0.038995412  0.0406985508 -0.0024012404
-g0       -0.038995412  0.091162203 -0.0788400314 -0.0054049828
-g0.bTRUE  0.040698551 -0.078840031  0.0910189076 -0.0006804517
-sigma    -0.002401240 -0.005404983 -0.0006804517  0.0039394367
-
-Fitted (real) parameters evaluated at base levels of covariates
-       link     estimate  SE.estimate          lcl          ucl
-D       log 2.325491e-03 4.937501e-04 1.540903e-03 3.509570e-03
-g0    logit 4.915745e-02 1.411255e-02 2.781168e-02 8.544641e-02
-sigma   log 1.959156e+03 1.230875e+02 1.732381e+03 2.215617e+03
-\end{verbatim}
-}
-The package \secr~ does not provide the fitted value for the detection
-probability of individuals that have been previously observed (or, in terms of traditional capture-recapture, the probability of recapture) and so we have to
-compute this by evaluating the encounter probability model explicitly.
-Here, the baseline
-detection probability is $0.049$ and for those individuals that have
-been previously captured, we see it is $0.131$:
-\begin{verbatim}
-> plogis(-2.962+1.069)
-[1] 0.1309028
-\end{verbatim}
-Thus, encounter probability for individuals previously captured is
-almost 3 times greater than that of individuals
-not previously captured.  We see that the
-estimated density increases over the model with no behavioral effect
-(posterior mean 0.23
-bears/$km^2$ versus 0.16 bears/$km^2$ in model SCR0).
-XXX HOW DOES THAT COMPARE TO JAGS? XXX
-
-It is not only easy to incorporate a global trap response model, but also just as simple to
+It is not only easy to incorporate a global trap response model, 
+but also just as simple to
 incorporate a trap specific behavioral response (as in
 \citet{royle_etal:2009}).  To do so, we use just modify
-the behavioral code from above from using a ``b" to ``bk".
+the behavioral code from above from using a ``b" to ``bk" 
+(see models 4 and 5 in 
+panel \ref{covariates.panel.secrfn}).
 
-XXX I might remove this part, but left it for reference right now XXX
+\begin{panel}[htp]
+\centering
+\rule[0.1in]{\textwidth}{.03in}
 {\small
-\begin{verbatim}
+\begin{Verbatim}[commandchars=\\\{\}]
+1. null model with a bivariate normal detection function
+bear_0=secr.fit (bear.cap, model=list(D \mytilde 1, g0 \mytilde 1, sigma \mytilde 1),buffer = 20000)
 
-> bearbk=secr.fit (bearcapt, model = list(D~1, g0~bk, sigma~1), buffer = 20000)
+2. null model with an exponential detection function
+bear_0exp=secr.fit (bear.cap, model=list(D \mytilde 1, g0 \mytilde 1, sigma \mytilde 1),buffer = 20000, detectfn=2)
 
-> bearbk
+3. model with fixed time effects
+bear_t=secr.fit (bear.cap, model=list(D \mytilde 1, g0 \mytilde t, sigma \mytilde 1),buffer = 20000)
 
-Beta parameters (coefficients)
-               beta    SE.beta       lcl       ucl
-D         -6.336352 0.17638162 -6.682053 -5.990650
-g0        -3.154732 0.20113222 -3.548944 -2.760520
-g0.bkTRUE  2.377687 0.25262813  1.882545  2.872829
-sigma      7.859917 0.09660444  7.670576  8.049258
-\end{verbatim}
+4. global behavioral model
+bear_b=secr.fit (bear.cap, model=list(D \mytilde 1, g0 \mytilde b, sigma \mytilde 1),buffer = 20000)
+
+5. trap specific behavioral response
+bear_bk=secr.fit (bear.cap, model=list(D \mytilde 1, g0 \mytilde bk, sigma \mytilde 1),buffer = 20000)
+
+6. global behavior model with fixed time effects
+bear_bt=secr.fit (bear.cap, model=list(D \mytilde 1, g0 \mytilde b+t, sigma \mytilde 1),buffer = 20000)
+
+7. sex-specific model
+bear_sex=secr.fit (bear.cap, model=list(D \mytilde session, g0 \mytilde session, sigma \mytilde session),buffer = 20000)
+
+\end{Verbatim}
 }
 
-Additionally, we can have additive effects within \secr.  For example, behavioral and time effects can be both incorporated by writing the standard linear regression type code within the model call:
-XXX we need to figure out how to center the tidles in the line XXXXX
-\begin{verbatim}
-bearbt=secr.fit (bearcapt, model = list(D~1, g0~b + t, sigma~1), buffer = 20000)
-\end{verbatim}
+\rule[-0.1in]{\textwidth}{.03in}
+\caption{
+Models called from secr.bear function. }
+\label{covariates.panel.secrfn}
+\end{panel}
 
-This particular code specifies a model with a global behavioral response and a factorial time trend in $g_0$.
+
 
 
 \subsection{Sex Effects}
 
+We include this separate section for sex specific effects because
+this is not as straight forward in \secr~ as the other models. 
 Incorporating sex effects into models with \secr~ can be done a few
-different ways.  Due to the approach, individuals that
+different ways.  In all cases, individuals that
 are of unknown sex must be removed from the dataset.
 The most common way to include
 sex is to code it into ``session'', providing two sessions that
-represent males and females.  This is specified using the model list
-within \mbox{\tt secr.fit} command as follows:
-{\small
-\begin{verbatim}
-bearraw$Sex<-bearsex$Sex[pmatch(bearraw$Ind, bearsex$Bear, duplicates.ok=T)]
-bearraw$Session<-as.numeric(bearraw$Sex)
+represent males and females (see model 7 in 
+panel \ref{covariates.panel.secrfn}).  This method provides two separate density
+estimates, which can then be combined into a total density.  
 
-captfile <- bearraw[ , c(6,1,3,2)]
-colnames(captfile) <- c("Session", "ID", "Occasion", "trapID")
-
-bearcapt=make.capthist(captfile, trapfile, fmt = "trapID", noccasions = 8)
-
-bearsex=secr.fit (bearcapt, model = list(D~session, g0~session, sigma~session), buffer = 20000)
-
-Fitted (real) parameters evaluated at base levels of covariates
-
- session = 1
-       link     estimate  SE.estimate          lcl          ucl
-D       log 1.192961e-03 2.400004e-04 8.073782e-04 1.762689e-03
-g0    logit 1.352143e-01 2.504984e-02 9.317268e-02 1.922053e-01
-sigma   log 1.513867e+03 1.276755e+02 1.283591e+03 1.785454e+03
-
- session = 2
-       link     estimate  SE.estimate          lcl          ucl
-D       log 5.376811e-04 1.081709e-04 3.638945e-04 7.944638e-04
-g0    logit 9.248494e-02 1.798037e-02 6.276472e-02 1.342622e-01
-sigma   log 2.522380e+03 2.127309e+02 2.138699e+03 2.974894e+03
-\end{verbatim}
-}
-
-\begin{comment}
-but none XXX {\bf recommend moving this ``but none....''
-end of sentence to a general discussion point at the end of this
-section} XXXXX
-of these allow us to include partial observability.
-{\bf not sure what is meant by ``which is different'' clarify
-this sentence here and probably this should be moved to the end of the
-section as a general discussion point} XXXXXX
-from the \textbf{WinBUGS} approach.
-\end{comment}
-
-As you can see in the output, this provides two separate density
-estimates, which can then be combined into a total density.  The
-resulting estimates for $\sigma$ are consistent with those from {\bf JAGS}
-provided in sec. XXX {\bf insert dynamic link} XXXX XXXX {\bf also say in what
-sense are they consistent so reader doesn't have to look back} XXXX
-
-Remarks: 1) We have shown 1 way in which sex can be incorporated in
-\secr, however, there are at least two other ways that one could
+There are at least two other ways that one could
 specify the model (M. Efford, pers. comm).  One way is that we could
 list sex as a categorical individual covariate and then maximize the
 conditional likelihood XXX{\bf Is this NOT what secr does in the above
   approach? explain...} XXXXX.  The second way is that we could specify the
 model as $model = list(D~g, g0~g, \sigma~g)$ and list \mbox{\tt groups = 'sex'}
 where we have specified sex as a 2-level individual covariate XXX How
-is this different then the first way? XXXXX.  There
-is an issue with the AIC values for models with and without groups
-that has not been resolved so the reader should be cautious when using
-this latter option (M. Efford, pers. comm).  ***I'm not trusting the
-AIC for the sex model as session either*** XXXXX ok, what to do then? XXXXXX
+is this different then the first way? XXXXX.  
 
-
-XXX
-{\bf Do we have an example of a Bayesian analysis of a model with sex in it?
-we gotta have one, preferably with some missing data, since this is a
-nice feature of the bayesian version of the models. }
-XXXXX
 
 XXX I DON'T LIKE HAVING THIS SUBSECTION RIGHT BEFORE THE HETEROGENEITY SECTION; BETTER TO KEEP IT ALL IN ONE SECTION IN MY OPINION XXX
 \subsection{Individual heterogeneity}
@@ -1429,15 +1175,28 @@ warning messages or errors.
 
 
 
-\subsection{Model selection in \secr with AIC}
+\subsection{Model selection in \secr~ with AIC}
 
 One practical advantage to using the \secr~ package, or likelihood
 inference in general, is the convenience of automatic model selection
 using AIC \citep{burnham_anderson:xxxxx}.
-After running our models above with various attributes (e.g., time,
-trap response), we can then use the AIC call to return the AIC values,
-delta AIC, and model weights as follows: XXX good material to add to a
-script for scrbook XXXX
+After running the function secr.bear, which calls all of the models, it returns
+and AIC table with all of the summarized results including the AIC values,
+delta AIC, and model weights.  
+
+It is important to note here that because of the way we specified the sex-specific model
+as  ``sessions'', we 
+coded the dataset as such when first loading it to \secr~.  
+Thus, the reader will see this in the results 
+for all of the models (even the null model with no covariates).  This
+coding of session allows us to compare all the models via AIC.  There
+is an issue with the AIC values for models with and without groups
+that has not been resolved so the reader should be cautious when using
+this latter option (M. Efford, pers. comm).
+
+
+   XX   update with new table XXXXXXXXXXX
+
 {\small
 \begin{verbatim}
 AIC(bear, bearb, beart, bearbt, bearh)
