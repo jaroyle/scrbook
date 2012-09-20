@@ -759,10 +759,82 @@ In classical inference, if our data are distributed according to some
 distribution with unknown parameter $\lambda$, then the only
 uncertainty that we are concerned with is that attributable
 sampling. For instance, we can imagine repeatedly sampling the
-population and each time obtaining a different estimate of $\lambda$.
+population and each time obtaining a different estimate of
+$\lambda$. Typically, we entertain the idea that there are an infinite
+number of Denote the collection of estimates $\hat{\lambda}_1,
+\hat{\lambda}_2, \hdots, \hat{\lambda}_\infty$. If these estimates are
+produced using the method of maximum likelihood, the distribution of
+estimates will be normally distributed and
+$\mathbb{E}(\hat{\lambda})=\lambda$. The variance of the the sampling
+distribution will be a function of sample size. Note that there is
+actually no uncertainty associated with the actual parameter. It is a
+fixed value. The only distribution then is the sampling distribution.
 
+The method of maximum likelihood requires..
 
+If the observations are independent, the likelihood is simply the
+product of Poisson probabilities:
+\begin{equation}
+  \mathcal{L}(\lambda | \mathbf{y}) = \prod_i \text{Pois}(y_i | \lambda)
+  \label{modeling.eq.like}
+\end{equation}
+Although likelihoods are typically shown on the natural scale, we
+almost always maximize the logarithm of the likelihood because this
+avoid computational problems that arise when multiplying very samll
+probabilities. Thus, we rewrite~\ref{modeling.eq.like} as
+\begin{equation}
+  \ell(\lambda | \mathbf{y}) = \sum_i \log(\text{Pois}(y_i | \lambda))
+  \label{modeling.eq.like}
+\end{equation}
+Here is some simple \R~code to simulate independent Poisson outcomes
+and estimate $\lambda$ (as though we did not know it) using the
+method of maximum likelihood. Actually, we will minimize the negative
+log-likelihood because it is equivalent and is the default for ~R\'s
+optimizers like \verb+optim+ and \verb+nlm+.
+\begin{verbatim}
+> lambda <- 3 # Truth
+> y1 <- rpois(100, lambda)
+> negLogLike1 <- function(par) -sum(dpois(y1, par, log=TRUE))
+> starting.value <- c('lambda'=1)
+> optim(starting.value, negLogLike1)$par
+  lambda
+3.039844
+\end{verbatim}
+Maximum likelihood isn't necessary here because the best estimate of
+$\lambda$ is given by the mean of the observations. A more interesting
+example where maximum likelihood is more useful is when there are
+covariates of $\lambda$.
+\begin{equation}
+  \mathcal{L}(\bm{\beta} | \mathbf{y}) = \prod_i \text{Pois}(y_i | \lambda_i)
+  \label{modeling.eq.like}
+\end{equation}
+The likelihood is essentially identical except that $\lambda$ is now a
+function, and so we need to estimate the parameters of the function,
+i.e. the $\beta$'s.
+\begin{verbatim}
+> nsites <- 100
+> elevation <- rnorm(100)
+> veght <- rnorm(100)
+> beta0 <- 1
+> beta1 <- -1
+> beta2 <- 0
+> lambda <- exp(beta0 + beta1*elevation + beta2*veght)
+> y2 <- rpois(nsites, lambda)
+> negLogLike2 <- function(pars) {
++     beta0 <- pars[1]
++     beta1 <- pars[2]
++     beta2 <- pars[3]
++     lambda <- exp(beta0 + beta1*elevation + beta2*veght)
++     -sum(dpois(y2, lambda, log=TRUE))
++ }
+> starting.values <- c('beta0'=0, 'beta1'=0, 'beta2'=0)
+> optim(starting.values, negLogLike2)$par
+      beta0       beta1       beta2
+ 0.98457756 -1.03025173 -0.01218292
+\end{verbatim}
 
+In all of these examples, we have dealt only with fixed effects. Fixed
+effects are parameters that
 
 \section{Joint, Marginal, and Conditional Distributions}
 
@@ -832,7 +904,7 @@ X=19 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
 X=20 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
 \end{verbatim}
 This matrix tells us the probability of all possible combinations of
-$x$ and $y$, and as dicatated by the law of total probability, the sum
+$x$ and $y$, and as dicatated by the law of total probability the sum
 of these probabilities is equal to 1.
 
 Perhaps most fisherman don't care about joint distributions. But, a
