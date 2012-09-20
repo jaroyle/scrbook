@@ -176,10 +176,6 @@ The purpose of this little example is to show that once we specify a
 model for the random variable(s) being studied, we can begin drawing
 conclusions, i.e making inferences, about the processes of interest,
 even in the face of uncertainty.
-Evaluating pdfs and pmfs like we have shown here is not only
-necessary for making probability statements when parameter values are
-known, it is essential when estimating parameters. For example, if $p$
-was unknown, we could estimate it by
 Probability distributions are
 essential to this process, and thus we need to
 understand them in some more depth.
@@ -549,9 +545,9 @@ could always use \verb+dbinom+ with the \verb+size+ argument set to
 
 
 Earlier we let $h_{ij}$ denote a binary variable indicating if
-warbler $i$ was detected on survey $j$. The vector of observations for
-individual $i$ $\mathbf{h}_i$ is often referred to as the ``encounter
-history'' for individual $i$. The number of possible encounter
+warbler $i$ was detected on survey $j$. The vector of observations for an
+individual, $\mathbf{h}_i$, is often referred to as the individual's
+``encounter history''. The number of possible encounter
 histories depends on the number of survey occasssions. Specifically,
 there are $2^J$
 possible encounter histories\footnote{When $N$ is unknown, we can
@@ -562,22 +558,31 @@ If we tabulate the number of individuals with each encounter history,
 the frequencies can be modeled using the multinomial
 distribution.
 
-The multinomial distribution has two parameters: $N$ the
-number of objects to put in each of $K$ categories and $\bm{\pi}$ the
-vector of probabilities corresponding to each category. It is a
-multivariate distribution because we observe multiple values, i.e. the
-frequencies of counts for each category.
+The multinomial distribution can be thought of as a
+model for placing $N$ items in $K$
+categories, which we will also refer to as bins or cells. Each bin has
+its own probability $\pi_k$ and
+these probabilities must sum to one.
+In ecology, $N$ is often population size or the number of individuals
+detected, but the definition of the $K$ bins varies among
+applications. In standard capture-recapture models, the bins are the
+capture histories and the cell probabilities are the probabilities of
+observing each capture history. In
+distance sampling, when the distance data are in discrete intervals,
+the bins are the distance intervals, and the cell probabilities are
+the probability of detection in each interval.
 
 Going back to our
 chestnut-sided warbler example, suppose the 10 individuals are marked
-and we make $J=2$ visits such that there are $2^J = 4$ possible encounter
+and we make $J=2$ visits to the site such that there are $2^J = 4$ possible encounter
 histories $\mathbf{h} \in c(11, 10, 01, 00)$. If $p=1$, then the
 encounter history for each of the 10 individuals would be $11$. That
 is, we would detect each individual on both occasions. In this case,
 we could format our data as $\mathbf{h} = (10, 0, 0, 0)$. The
 cooresponding cell probabilities would be $\bm{\pi} = (1, 0, 0,
-0)$. What about the case where $p<1$, e.g. $p=0.3$? In this case, the
-probability of observing 11 is $p*p = 0.3 \times 0.3 = 0.09$. The probability of
+0)$. What about the situation where $p<1$, e.g. $p=0.3$? In this case, the
+probability of observing the capture history ``11'' (detected on both
+occasions) is $pp = 0.3 \times 0.3 = 0.09$. The probability of
 observing $10$ is $p*(1-p) = 0.21$. Following this logic, the vector
 of cell probabilies is $\bm{\pi} = (0.09, 0.21, 0.21, 0.49)$. We can
 simulate data under this model as follows:
@@ -586,24 +591,35 @@ simulate data under this model as follows:
 > drop(rmultinom(1, 10, caphist.probs))
 11 10 01 00
  0  3  2  5
-\end{verbatim}
-The \verb+drop+ function simply converts the matrix to a vector. The
+\end{verbatim}\footnote{The \verb+drop+ function simply converts the matrix to a vector.}
+The
 result of our simulation is that zero individuals were observed with
 the capture history ``11'' and 5 individuals were observed with the
 capture history ``00''. The other 5 individuals were observed one out
 of the two occasions. This is not such a surprising outcome given
-$p=0.3$.
+$p=0.3$. Note that the a single outcome of a multinomial distribution
+is a vector, and hence it is a multivariate distribution in contrast
+to the univariate distributions discussed so far.
 
-Just as the Bernoulli distribution is a specific case of the binomial
+As in non-spatial capture-recapture studies, the multinomial
+distribution turns out to be very important in spatial
+capture-recapture studies. However, $N$ is typically not population
+size. Rather, we use the multinomial distribution when an individual
+can only be captured in a single trap during an occasion. Thus, in
+this case, $N=1$ and the cell probabilities are the probabilities of
+being captured in each trap.
+
+It is worth noting that, just as the Bernoulli distribution is a specific case of the binomial
 distribution when $N \equiv 1$, the categorical distribution is a very
 similar to a multinomial distribution with size parameter
 $N\equiv1$. The only difference is that, rather than returning a
 vector with a single element equal to 1, it returns the element number
 where the 1 occurs. For example, if $h=(0,0,1,0)$ is an outcome of a
 multinomial distribution with $N=1$, then the categorical outcome
-would be 3 because the third cell is 1. We
-won't discuss it in any detail, but note that it is useful as a prior
-for assigning an individual to a particular cell in a raster.
+would be 3 because the third cell is 1. Thus, in spatial
+capture-recapture models, we might use either the multinomial
+distribution with $N=1$, or we can just as well use the categorical
+distribution. They are equivalent.
 
 
 \subsection{The Poisson Distribution}
@@ -612,7 +628,19 @@ If $N$ individuals are uniformly distributed in some area $A$, and $N$ is a
 random variable, then the number of individuals occurring in some
 region $B \in A$ is Poisson distributed with expectation $\lambda =
 N/A$. This is a description of the homogeneous Poisson point process
-model, which is the basis for many count based sampling me
+model, which has a tremendous number of applications in ecology. When
+coordinates for individual organisms are recorded, Poisson point process
+models can be fitted directly to the data to describe spatial
+variation in abundance and
+interactions among the organisms. These methods have a long history in
+forestry, and they are increasingly being used to model species
+distributions.
+
+Although it the Poisson point process model is very powerful when
+coordinates are available
+
+is the basis for many count based sampling methods. In
+some ways, this
 
 
 \subsection{The Normal Distribution}
@@ -628,6 +656,17 @@ model, which is the basis for many count based sampling me
 
 
 
+
+
+
+\section{Estimation}
+
+
+
+Evaluating pdfs and pmfs like we have shown here is not only
+necessary for making probability statements when parameter values are
+known, it is essential when estimating parameters. For example, if $p$
+was unknown, we could estimate it by
 
 
 
