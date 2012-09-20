@@ -143,7 +143,7 @@ for ( t in 1:T) {
 
             if(runif(1) < exp(llcand - ll) ) { 
                 lam0[t] <- lam0.cand
-                lam [,,t]<- lam.cand.arr
+                lam [,,t]<- lam0.cand*exp(-(D*D)/(2*theta*theta))
 		lamk[,,t] <- lam0.cand*exp(-(Dk*Dk)/(2*theta*theta))
             }
         }
