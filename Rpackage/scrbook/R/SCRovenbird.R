@@ -1,5 +1,4 @@
-SCRovenbird <-
-function(){
+SCRovenbird<-function(){
 
 library("scrbook")
 library("secr")
@@ -22,48 +21,45 @@ ntraps<- nrow(traps[[1]])
 ## Y are the encounter history data
 Y<-ovenCH
 K<-10  # number of samples in each year
-M<-50 # do constant data augmentation to all years
+M<-100 # do constant data augmentation to all years
 
 ## starting values for each individual's activity centers
-Sst<-cbind(runif(M,xlim[1],xlim[2]),runif(M,ylim[1],ylim[2]))
-Sst<-array(Sst,dim=c(M,2,5))
-Xb.any<-array(0,dim=c(M,K,5))  # not used
-Xb.trap<-array(0,dim=c(M,K,ntraps,5))  # not used
-
+Sst0<-cbind(runif(M,xlim[1],xlim[2]),runif(M,ylim[1],ylim[2]))
+Sst<-NULL
+Ymat<-NULL
+died<-NULL
 # make the data into a 3-d array
-Yarr<-array(ntraps+1,dim=c(M,K,5))
+
 for(i in 1:5){
 tmp<-Y[[i]]
 nind<-nrow(tmp)
 nrep<-ncol(tmp)
+D<-matrix(0,nrow=M,ncol=10)
+D[1:nind,1:nrep]<-tmp
+D[D>0]<- 0
+D[D<0]<- 1
+died<-rbind(died,D)
 
-first<-rep(NA,nrow(tmp))
-
-tmp[tmp<0]<-tmp[tmp<0]*(-1) ## one guy died, we ignore that here and treat it as a  normal event
+tmp[tmp<0]<- 0 ## dead guy set to 0 b/c "died" created above
 tmp[tmp==0]<-ntraps+1
-
-for(j in 1:nind){
-first[j]<- (1:nrep)[tmp[j,]<(ntraps+1)][1]
-if(first[j]==nrep) next
-Xb.any[j,(first[j]+1):K,i]<- 1
-Xb.trap[j,(first[j]+1):K,tmp[j,first[j]],i]<-1  # just for the trap of capture
-}
-
-tmp2<-matrix(ntraps+1,nrow=M,ncol=10)  # pad last col with NA for year 1
+tmp2<-matrix(NA,nrow=M,ncol=10)  # pad last col with NA for year 1
+tmp2[,1:nrep]<-ntraps+1
 tmp2[1:nind,1:nrep]<-tmp
-Stmp<-Sst[,,i]  # change the starting values for the observed individuals
+Ymat<- rbind(Ymat, tmp2)
+
 sout<-spiderplot(tmp2[1:nind,1:nrep],as.matrix(X[[i]]))$avg.s
-browser()
+Stmp<-Sst0
 Stmp[1:nind,1:2]<-sout
-
-Sst[,,i]<-Stmp
-Yarr[,,i]<-tmp2
+Sst<-rbind(Sst,Stmp)
 }
-
-###
-### To do: Fit null model wtih constant psi first -- compare results, and tabulate a GoF based on
-### total encounter frequencies (not by trap)
-
+for(i in 1:nrow(died)){
+xx<-died[i,]
+if(sum(xx)>0){
+first<-(1:length(xx))[xx==1]
+died[i,first:ncol(died)]<-1
+died[i,first]<-0
+}
+}
 
 ## 
 ## This bit of code dumps out the BUGS model file
@@ -71,40 +67,37 @@ Yarr[,,i]<-tmp2
 cat("
 model {
  # year-specific N parameterized in DA parameter 
-for(t in 1:5){
-psi[t] ~ dunif(0,1)
-}
+
 alpha0 ~ dnorm(0,.1)
 sigma ~dunif(0,200)
 alpha1<- 1/(2*sigma*sigma)
-alpha2 ~ dnorm(0,.1)
-alpha3~  dnorm(0,.1)
 
 A <- ((xlim[2]-xlim[1]))*((ylim[2]-ylim[1]))
 for(t in 1:5){
-N[t] <- sum(z[1:M,t]) 
+N[t] <- inprod(z[1:bigM],yrdummy[,t])
 D[t] <- (N[t]/A)*10000  # put in units of per ha
+psi[t] ~ dunif(0,1)
+}
 
-for(i in 1:M){
-  z[i,t] ~ dbern(psi[t])
-  S[i,1,t] ~ dunif(xlim[1],xlim[2])
-  S[i,2,t] ~ dunif(ylim[1],ylim[2])
-  for(j in 1:ntraps){
-    #distance from capture to the center of the home range
-    d2[i,j,t] <- pow(pow(S[i,1,t]-X[j,1],2) + pow(S[i,2,t]-X[j,2],2),1)
+for(i in 1:bigM){
+
+  z[i] ~ dbern(psi[year[i]])
+  S[i,1] ~ dunif(xlim[1],xlim[2])
+  S[i,2] ~ dunif(ylim[1],ylim[2])
+
+ for(j in 1:ntraps){
+    d2[i,j] <- pow(pow(S[i,1]-X[j,1],2) + pow(S[i,2]-X[j,2],2),1)
   }
-  for(k in 1:K){
-   for(j in 1:ntraps){
-    bleen1[i,k,j,t]<- alpha2*Xb.any[i,k,t] 
-    bleen2[i,k,j,t]<- alpha3*Xb.trap[i,k,j,t]
-    lp[i,k,j,t] <- exp(alpha0 - alpha1*d2[i,j,t] + 0)*z[i,t]            
-    cp[i,k,j,t] <- lp[i,k,j,t]/(1+sum(lp[i,k,1:ntraps,t]))
-    }
-   # cp[i,k,j,t]<- 1
-    cp[i,k,ntraps+1,t] <- 1-sum(cp[i,k,1:ntraps,t])  # last cell = not captured
-    Ycat[i,k,t] ~ dcat(cp[i,k,,t])
-  }  
- }   
+for(k in 1:K){
+ Ycat[i,k] ~ dcat(cp[i,k,])
+
+  for(j in 1:ntraps){
+    lp[i,k,j] <- exp(alpha0 - alpha1*d2[i,j])*z[i]*(1-died[i,k])        
+    cp[i,k,j] <- lp[i,k,j]/(1+sum(lp[i,k,1:ntraps]))
+  }
+  cp[i,k,ntraps+1] <- 1-sum(cp[i,k,1:ntraps])  # last cell = not captured
+
+}
 }
    
 }
@@ -114,18 +107,23 @@ for(i in 1:M){
 ###
 
 nind<-c(nrow(Y[[1]]),nrow(Y[[2]]),nrow(Y[[3]]),nrow(Y[[4]]),nrow(Y[[5]]))
+yrid<-sort(rep(1:5,M))
+yrdummy<-as.numeric(c(yrid==1,yrid==2,yrid==3,yrid==4,yrid==5))
+yrdummy<-matrix(yrdummy,ncol=5,byrow=FALSE)
 
+bigM<- 5*M
 ## starting values for data augmentation parameters
-zst<-matrix(NA,nrow=M,ncol=5)
+zst<-NULL
 for(i in 1:5){
-zst[,i]<-c(rep(1,nind[i]),rep(0,M-nind[i]))
+zst<-c(zst,rep(1,nind[i]),rep(0,M-nind[i]))
 }
 
-inits <- function(){list (z=zst,sigma=runif(1,50,100) ,S=Sst,alpha0=runif(1,-2,-1) ,alpha2=-2,alpha3=-2) }              
+inits <- function(){list (z=zst,sigma=runif(1,50,100) ,S=Sst,alpha0=runif(1,-2,-1) 
+,alpha2=-2,alpha3=-2) }              
 ## parameters to monitor
-parameters <- c("psi","alpha0","alpha1","alpha2","alpha3","sigma","N","D")
+parameters <- c("psi","alpha0","alpha1","sigma","N","D")
 ## data used in BUGS model                                                                  
-data <- list (X=as.matrix(X[[1]]),K=10,Ycat=Yarr,M=M,ntraps=ntraps,ylim=ylim,xlim=xlim,Xb.any=Xb.any,Xb.trap=Xb.trap)         
+data <- list (died=died,yrdummy=yrdummy,year=yrid,X=as.matrix(X[[1]]),K=10,Ycat=Ymat,bigM=bigM,ntraps=ntraps,ylim=ylim,xlim=xlim)         
 
 ##
 ### This takes ~1 hour or so to run
@@ -136,3 +134,4 @@ n.burnin=1000,n.iter=2000,DIC=FALSE)
 
 out
 }
+
