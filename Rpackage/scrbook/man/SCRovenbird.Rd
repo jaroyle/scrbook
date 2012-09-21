@@ -183,7 +183,6 @@ n.burnin=1000,n.iter=2000,DIC=FALSE)
 ###
 ###
 
-
 ## fit constant-density model
 ovenbird.model.1 <- secr.fit(ovenCH)
 ## fit net avoidance model
@@ -192,15 +191,12 @@ ovenbird.model.1b <- secr.fit(ovenCH, model =   list(g0~b))
 ovenbird.model.1T <- secr.fit(ovenCH, model =    list(g0 ~ T))
 ## fit model with 2-class mixture for g0
 ovenbird.model.h2 <- secr.fit(ovenCH, model =    list(g0~h2))
+## fit a model with session (year)-specific Density
+ovenbird.model.D <- secr.fit(ovenCH, model =    list(D~session))
 
 ## compare & average pre-fitted models
 AIC (ovenbird.model.1, ovenbird.model.1b, ovenbird.model.1T,
-    ovenbird.model.h2)
-
-
-
-
-
+    ovenbird.model.h2,ovenbird.model.D)
 
 
 
