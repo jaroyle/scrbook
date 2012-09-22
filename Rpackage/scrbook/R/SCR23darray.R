@@ -1,4 +1,4 @@
-SCR23darray.fn <-
+SCR23darray <-
 function(caps,traps,ntraps=NULL,nperiods=NULL){
 nind<-max(caps[,2])
 ntraps<-nrow(traps)
