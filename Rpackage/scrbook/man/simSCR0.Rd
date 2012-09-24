@@ -1,4 +1,4 @@
-\name{simSCR0.fn}
+\name{simSCR0}
 \alias{simSCR0.fn}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
@@ -8,7 +8,7 @@ Simulate some SCR data %%  ~~function to do ... ~~
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-simSCR0.fn(discard0 = TRUE, array3d = FALSE, sd = 2013)
+simSCR0(discard0 = TRUE, array3d = FALSE, rnd = 2013)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -18,7 +18,7 @@ simSCR0.fn(discard0 = TRUE, array3d = FALSE, sd = 2013)
   \item{array3d}{
 %%     ~~Describe \code{array3d} here~~
 }
-  \item{sd}{
+  \item{rnd}{
 %%     ~~Describe \code{sd} here~~
 }
 }
@@ -50,7 +50,7 @@ simSCR0.fn(discard0 = TRUE, array3d = FALSE, sd = 2013)
 \examples{
 
 library("scrbook")
-data<-simSCR0.fn(discard0=TRUE,sd=2013)
+data<-simSCR0(discard0=TRUE,rnd=2013)
 
 
 ##out1<-SCR0bayes(data,M=200,engine="jags",ni=2000,nb=1000)

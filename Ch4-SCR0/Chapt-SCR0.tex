@@ -531,8 +531,7 @@ But, here we use a Gaussian kernel, i.e.,
 \]
 so that space usage occurs according to a a bivariate normal model.
 
-To apply
-this model of space-usage to SCR problems we just allow for imperfect
+To apply this model of space-usage to SCR problems we just allow for imperfect
 detection by introducing a constant encounter rate $<1$, then this
 yields, precisely, our bivariate normal encounter probability model.
 The main take-away point here is that underlying every SCR model is
@@ -542,8 +541,11 @@ Whether or not we have perfect sampling devices, the function we use
 in the encounter probability model equates to some conditional
 distribution of points, or utilization distribution, as in
 Eq. \ref{scr0.eq.ud}, from which we can compute effective home range
-area, i.e., the area that contains 95\% of the mass of $k({\bf x},{\bf
-  s})$, or 95\% of all space used.
+area, i.e., the area that contains some percent of the mass of a
+probability distribution proportional to
+ $k({\bf x},{\bf
+  s})$; e.g.,  95\% of all space used by an individual with activity
+center ${\bf s}$.
 
 
 \begin{comment}
@@ -598,16 +600,20 @@ which corresponds to a bivariate normal model of space usage with
 standard deviation $\sigma = \sqrt{1/2\alpha_{1}}$.  Under this model
 we can compute precisely the effective home range area. In particular,
 if use outcomes are bivariate normal, then $||{\bf x}-{\bf s}||^2$ has
-a chi-square distribution with 2 d.f. and the constant $B(\alpha)$
-that encloses 95\% of all realized distances i.e., $\Pr(d\le
-B(\alpha)) = 1-\alpha$, is $B(\alpha) = \sigma*\sqrt{q(2,\alpha)}$.
-To illustrate, for $\alpha=.05$, $q(2,\alpha) = 5.99$, and for
-$\sigma=1$, $B(\alpha) = 1*\sqrt{5.99} = 2.447$.  Therefore 95\% of
-the points used will be within 2.447 units of the home range
-center. So the basic idea is that we can estimate $\sigma$ by fitting
-the encounter model, and then plug the estimated $\sigma$ it into this expression for
-$B(\alpha)$ to obtain the home range radius that contains 95\% of
-space used.
+a chi-square distribution with 2 d.f. and the quantity $B(\alpha)$
+that encloses $(1-\alpha)$\% of all realized distances i.e., $\Pr(d\le
+B(\alpha)) = 1-\alpha$, is $B(\alpha) = \sigma*\sqrt{q(\alpha,2)}$
+where $q(\alpha,2)$ is the $0.05$ chi-square critical value on $2$ df. For
+example, to compute  $q(.05, 2)$ in {\bf R} we do this:
+\begin{verbatim}
+qchisq(.95,2)
+\end{verbatim}
+which is $q(2,\alpha) = 5.99$. Then, for $\sigma=1$, $B(\alpha) =
+1*\sqrt{5.99} = 2.447$.  Therefore 95\% of the points used will be
+within 2.447 units of the home range center. So the basic idea is that
+we can estimate $\sigma$ by fitting the encounter model, and then plug
+the estimated $\sigma$ it into this expression for $B(\alpha)$ to
+obtain the home range radius that contains 95\% of space used.
 
 An alternative bivariate normal model is based on a bivariate normal hazard rate:
 \begin{equation}
@@ -627,7 +633,7 @@ For any encounter model we can compute space usage quantiles
 empirically by taking a fine grid of points and either simulating
 movement outcomes with probabilities proportional to $p({\bf x},{\bf s})$ and
 accumulating area around ${\bf s}$, or else we can do this precisely
-by varying $B(q)$ to find that value within which 95\% of all
+by varying $B(\alpha)$ to find that value within which 95\% of all
 movements are concentrated, i.e., the set of all ${\bf x}$ such that
 $||{\bf x}-{\bf s}|| \le B(q)$.  Under any detection model,
   movement outcomes will occur in proportion to $p({\bf x},{\bf s})$,
@@ -645,10 +651,10 @@ can find the value of $B(q)$, for any $q$, such that
   s.t. ||x-s|| \le B(q) } \pi({\bf x},{\bf s}) \le 1-q
 \] 
 We have a function
-called \mbox{\tt hra} in the \mbox{\tt scrbook} package. The help file
+called \mbox{\tt hra} in the \mbox{\tt scrbook} package that computes
+the home range area for any encounter model and prescribed parameter values. The help file
 for \mbox{\tt hra} has an example of simulating some data.
-
-Here is an analysis of the two bivariate normal models of space usage:
+The following commands illustrate this calculation for two different bivariate normal models of space usage:
 {\small 
 \begin{verbatim}
 pGauss2<-function(parms,D){
@@ -687,7 +693,7 @@ What this means is that $B(q) = 0.978$ is the radius that
 encloses about 95\% of all movements under the standard bivariate
 normal encounter model.  Therefore, the area is about $\pi*.978*.978 =
 3.007$ spatial units.  You can change the intercept of the model and
-find that it has no affect. 
+find that it has no effect. 
 \begin{comment}
  note: I don't know if that works
   out across all classes of models or not. Note that the intercept
@@ -716,9 +722,10 @@ above) to obtain a close approximation to the value $\sigma$ we
 started with (the parameter argument is meaningless here):
 {\small
 \begin{verbatim}
-> hra(pGauss1,parms=c(-2,.3993),plot=FALSE,xlim,ylim,ng=500,target.area=3.00735,tol=.0005)
-Value of parm[2] to achieve 95% home range area of  3.00735  :  0.3993674
-[1] 0.3993674
+> hra(pGauss1,parms=c(-2,.3993),plot=FALSE,xlim,ylim,ng=500,
+       target.area=3.00735,tol=.0005)
+
+Value of parm[2] to achieve 95% home range area of  3.00735:  0.3993674
 \end{verbatim}
 }
 
@@ -801,7 +808,8 @@ well does our estimator perform of $N=50$?
 \includegraphics[height=2.5in]{Ch4-SCR0/figs/binomialpoint}
 \end{center}
 \caption{Realization (small dots) of a binomial point process with $N=20$. The
-  large dots represent trap locations.}
+  large dots represent trap locations.  {\bf XXXX need to remake this
+  figure XXXXX} }
 \label{scr0.fig.bpp}
 \end{figure}
 
@@ -857,7 +865,7 @@ effects ${\bf s}_{i},\ldots, {\bf s}_{N}$ are unknown quantities and
 we will need to be able to simulate each ${\bf s}_{i}$ in the
 population from the posterior distribution.  In order to simulate
 the ${\bf s}_{i}$, it is convenient to describe precisely
-the region over which they are uniformly distributed. This is the
+the region over which they are distributed. This is the
 quantity referred to above as the state-space, denoted henceforth by
 ${\cal S}$, which is a region or a set of points comprising the
 potential values of ${\bf s}_{i}$. Thus, an equivalent explicit
@@ -883,7 +891,7 @@ state-space. As we observed in Chapt. \ref{chapt.closed}, it is true
 that $N$ increases with ${\cal S}$, but only at the same rate as the
 area of ${\cal S}$ increases under the prior assumption of constant
 density. As a result, we say that density is invariant to ${\cal S}$
-as long as ${\cal S}$ is sufficiently large. Thus, while choice of
+{\bf as long as ${\cal S}$ is sufficiently large}. Thus, while choice of
 ${\cal S}$ is (or can be) essentially arbitrary, once ${\cal S}$ is
 chosen, it defines the population being exposed to sampling, which
 scales appropriately with the size of the state-space.
@@ -906,17 +914,18 @@ the state-space to be a regular polygon has computational advantages
 cannot for irregular polygons), a regular polygon induces an apparent
 problem of admitting into the state-space regions that are distinctly
 non-habitat (e.g., oceans, large lakes, ice fields, etc.).  It is
-difficult to describe complex sets in mathematical terms that can be
+difficult to describe complex regions in mathematical terms that can be
 used in {\bf BUGS}. As an alternative, we can provide a
 representation of the state-space as a discrete set of points (sec.
 \ref{scr0.sec.discrete}), that will allow specific points to be deleted
 or not depending on whether they represent habitat, or we can define
 the state-space as an arbitrary  collection of polygons stored as a GIS
 shapefile
-which can be analyzed easily using MCMC
+which can be analyzed easily by MCMC in {\bf R}
 (see sec. \ref{mcmc.sec.state-space}), but not so easily in the {\bf
   BUGS} engines.  In what follows below we provide an
-analysis of the camera data defining the state-space to be a regular
+analysis of the wolverine camera trapping data, in which we define
+the state-space to be a regular
 continuous polygon (a rectangle).
 
 
@@ -930,7 +939,8 @@ ${\bf s}_{i}$ is a decreasing function of distance.  We can prove this
 easily by drawing an analogy with a 1-d case involving distance
 sampling.  Let $y_{j}$ be the number of individuals captured in some
 interval $[d_{j-1},d_{j})$, and define $d_{J} = B$ for some large
-value of $B$.  The observations from a survey are $y_{1},\ldots,y_J$
+value of $B$. 
+ The observations from a survey are $y_{1},\ldots,y_J$
 and the likelihood is a multinomial likelihood, so the log-likelihood
 is of the form
 \[
@@ -944,6 +954,11 @@ discussion).  Choosing $B$ sufficiently large guarantees that $E(y_{J})
 contributes nothing to the likelihood, in regular situations in which
 the detection function decays monotonically with distance and prior
 density is constant.
+We can think of $B$ as being related to the state-space
+in an SCR model; $B \times L$, $L$ being the length of the transect, defines
+a rectangular state-space, ${\cal S}$. Thus, if we choose $B$ large enough, then
+we ensure that the expected trap-frequencies beyond $B$ will be 0, and
+thus contribute nothing to the likelihood. 
 
 Sometimes our estimate of density can be affected by choosing ${\cal
   S}$ too small. However, this might be sensible if ${\cal S}$ is
@@ -970,7 +985,7 @@ conscious of.  We demonstrate this in our analysis of section
 consideration, we note that $area({\cal S})$ affects data
 augmentation. If you increase $area({\cal S})$ then there are more
 individuals to account for and therefore the size of the augmented
-data set $M$ must increase.
+data set $M$ must increase. This has computational implications.
 
 \begin{comment}
 We have been told that one can carry-out non-Bayesian analyses of SCR
@@ -1000,14 +1015,14 @@ explicit element of the model.
 To understand this, suppose we have a random
 effect with some prior distribution:
 \[
-{\bf s} \sim \mbox{Unif}({\cal S})
+{\bf s} \sim \mbox{Uniform}({\cal S})
 \]
 and encounter probability is a function of ${\bf s}$, denoted by 
  $p({\bf s}) = p(y=1|{\bf s})$. 
 For example, under Eq. \ref{scr0.eq.logit}
 we have that 
 \[
-p({\bf s}) = logit^{-1} ( \alpha_{0} + \alpha_1 ||{\bf
+p({\bf s}) = \mbox{logit}^{-1} ( \alpha_{0} + \alpha_1 ||{\bf
   s}_{i}-{\bf x}_{j} || )
 \]
 and we can work out, either analytically or empirically, what is the
@@ -1028,7 +1043,7 @@ home range centers increase in distance from the trap array.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=6in,height=2.14in]{Ch4-SCR0/figs/Mh_buffer}
+\includegraphics[width=4.5in,height=1.6in]{Ch4-SCR0/figs/Mh_buffer}
 \end{center}
 \caption{Implied population distribution of $p_{i}$ for a population
   of individuals as a function of the size of the state-space buffer
@@ -1044,13 +1059,13 @@ Another way to understand this is by representing ${\cal S}$ as a set
 of discrete points on a grid. In the coarsest possible case where
 ${\cal S}$ is a single arbitrary point, then every individual has
 exactly the same $p$. As we increase the number of points in ${\cal
-  S}$,  more distinct values of $p$ are possible. As such, when
+  S}$,  more distinct values of $p$ are possible. Indeed, when
 ${\cal S}$ is characterized by discrete points then SCR models are
 precisely a type of finite-mixture model \citep{norris_pollock:1996,
   pledger:2000}, except, in the case of SCR models, we have some information about which
-group an individual belong (i.e., where their activity center is), as
-a result of their captures in traps.
-
+group an individual belongs (i.e., where their activity center is), as
+a result of which traps they're captured in.
+\begin{comment}
 This context suggests the problem raised by \citet{link:2003}. He
 showed that in most practical situations $N$ may not be identifiable
 across classes of mixture distributions which in the context of SCR
@@ -1060,6 +1075,8 @@ encountered individuals and,
 therefore, it may be reasonable to expect that
 $N$ is identifiable across models characterized by $(g,{\cal
   S})$.
+\end{comment}
+
 
 \subsection{Connection to Distance Sampling}
 
@@ -1075,7 +1092,7 @@ for those individuals that appear in the sample. Conversely, in SCR
 problems, it is only imperfectly observed (we have partial information
 in the form of trap observations).  Clearly, it is preferable to
 observe distance if possible, but distance sampling requires field
-methods that are often not practical in many situations, e.g. when
+methods that are not practical in many situations, e.g. when
 studying carnivores such as bears or large cats. Furthermore, SCR
 models allow us to relax many of the assumptions made in classical
 distance sampling, such as perfect detection at distance zero, and SCR
@@ -1144,22 +1161,22 @@ expressions for some quantities.
 In particular, we sometimes 
 substitute words for integer variable designations:
 \mbox{\tt nind} (for $n$), \mbox{\tt ntraps} (for $J$), and \mbox{\tt
- nperiods} (for $K$). In our opinion this leaves less to be infereed
+ nperiods} (for $K$). In our opinion this leaves less to be inferred
 by the reader in trying to understand code snippets.
 
  Subsequently we will generate data using this code packaged in an
- {\bf R} function called \mbox{\tt simSCR0.fn} in the package
+ {\bf R} function called \mbox{\tt simSCR0} in the package
  \mbox{\tt scrbook} which takes a number of arguments including
  \mbox{\tt discard0} which, if \mbox{\tt TRUE}, will return only the
  encounter histories for captured individuals.  A second argument is
  \mbox{\tt array3d} which, if \mbox{\tt TRUE}, returns the 3-d
  encounter history array instead of the aggregated \mbox{\tt nind}
  $\times \mbox{\tt ntraps}$ encounter frequencies (see below). Finally
- we provide a random number seed, \mbox{\tt sd = 2013} to ensure
+ we provide a random number seed, \mbox{\tt rnd = 2013} to ensure
  repeatability of the analysis here. We obtain a data set as above
  using the following command:
 \begin{verbatim}
-data<-simSCR0.fn(discard0=TRUE,array3d=FALSE,sd=2013)
+data<-simSCR0(discard0=TRUE,array3d=FALSE,rnd=2013)
 \end{verbatim}
 The {\bf R} object \mbox{\tt data} is a list, so let's take a look at
 what's in the list and then harvest some of its elements for further
@@ -1170,7 +1187,9 @@ analysis below.
 [1] "Y"        "traplocs" "xlim"     "ylim"     "N"        "alpha0"   "beta"
 [8] "sigma"    "K"
 
+## grab encounter histories from simulated data list
 > Y<-data$Y
+## grab the trap locations
 > traplocs<-data$traplocs
 \end{verbatim}
 }
@@ -1222,9 +1241,12 @@ the function call.  To recover the 2-d matrix from the 3-d array, and
 subset the 3-d array to individuals that were captured, we do this:
 {\small
 \begin{verbatim}
-Y2d<- apply(Y,c(1,3),sum) # sum over the ``replicates'' dimension (2nd margin of the array)
-ncaps<-apply(Y2d,1,sum)   # compute how many times each individual was captured
-Y<-Y[ncaps>0,,]           # keep those individuals that were captured
+     # sum over the ``replicates'' dimension (2nd margin of the array)
+Y2d<- apply(Y,c(1,3),sum) 
+     # compute how many times each individual was captured
+ncaps<-apply(Y2d,1,sum)   
+     # keep those individuals that were captured
+Y<-Y[ncaps>0,,]           
 \end{verbatim}
 }
 
@@ -1243,7 +1265,7 @@ more generally useful models.
 To begin, we use our simulator to grab a data set and then harvest the
 elements of the resulting object for further analysis.
 \begin{verbatim}
-data<-simSCR0.fn(discard0=FALSE,sd=2013)
+data<-simSCR0(discard0=FALSE,rnd=2013)
 y<-data$Y
 traplocs<-data$traplocs
 nind<-nrow(y) # in this case nind=N because we're doing the known-N problem
@@ -1323,7 +1345,7 @@ out <- bugs (data, inits, parameters, "SCR0a.txt", n.thin=nthin, n.chains=nc,
 } 
 There is little to say about the preceding operations other than to
 suggest that you might explore the output and investigate additional
-analyses by running the \mbox{\tt simSCR0.fn} script provided in the
+analyses by running the \mbox{\tt simSCR0} script provided in the
 {\bf R} package \mbox{\tt scrbook}.
 
 For purposes here, we ran $1000$ burn-in and $1000$ post-burn-in
@@ -1451,7 +1473,7 @@ derived parameter computed as $D=N/area({\cal S})$.
 \subsection{Analysis using data augmentation in WinBUGS}
 
 As before we begin by obtaining a data set using our \mbox{\tt
-  simSCR0.fn} routine and then harvesting the required data objects
+  simSCR0} routine and then harvesting the required data objects
 from the resulting data list.  Note that we use the \mbox{\tt
   discard0=TRUE} option this time so that we get a ``real looking'' data set
 with no all-zero encounter histories. After harvesting the data we
@@ -1461,7 +1483,7 @@ data augmentation parameters $z_{i}$, and the data augmentation
 parameter $\psi$. 
 {\small
 \begin{verbatim}
-data<-simSCR0.fn(discard0=TRUE,sd=2013)
+data<-simSCR0(discard0=TRUE,rnd=2013)
 y<-data$Y
 traplocs<-data$traplocs
 nind<-nrow(y)
@@ -1550,7 +1572,7 @@ This analysis can be run directly once \mbox{\tt scrbook} is loaded,
 by issuing the following commands
 \begin{verbatim}
 library("scrbook")
-data<-simSCR0.fn(discard0=TRUE,sd=2013)
+data<-simSCR0(discard0=TRUE,rnd=2013)
 out1<-SCR0bayes(data,M=200,engine="winbugs",ni=2000,nb=1000)
 \end{verbatim}
 Summarizing the output from {\bf WinBUGS} produces:
@@ -2605,7 +2627,7 @@ To execute this function we do, for example:
 {\small
 \begin{verbatim}
 library("scrbook")
-data<-simSCR0.fn(discard0=TRUE,sd=2013)   # generate data set
+data<-simSCR0(discard0=TRUE,rnd=2013)   # generate data set
 out1<-SCR0bayesDss(data,ng=8,M=200,engine="jags",ni=2000,nb=1000) # JAGS
 out2<-SCR0bayesDss(data,ng=8,M=200,engine="winbugs",ni=2000,nb=1000) # WinBUGS
 \end{verbatim}
