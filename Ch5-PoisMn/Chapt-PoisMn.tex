@@ -5,20 +5,24 @@
 \vspace{.3in}
 
 In the previous chapter we considered a very specific but not terribly
-limited observation model. The observation model consisted of two main
+limited observation model. The model for the observations consists of
+two main
 elements: First a description of the encounter process by which
-individuals are detected in traps. Specifically, we assumed individual
-trap-specific encounters were iid Bernoulli trials. The consequence of
-this is that individuals function independently of one another and can
-be captured in any number of traps during a specific interval of
-trapping effort, but only 1 time per trap.  The type of device is
-typical of bear hair snares, which we considered as an example in that
-section.  It is natural to consider alternative functional forms of
-this detection probability model which we do in
+individuals are detected in traps and, secondly, a parametric model
+that relates encounter probability to an individual's activity
+center. 
+In the previous chapter we considered the Bernoulli encounter process
+model which assumed that individual and 
+trap-specific encounters were independent Bernoulli trials. 
+In this chapter, we consider alternative models of the encounter
+process that do not require independence, and accommodate observed
+data that are not only binary. 
+ It is natural also to consider alternative parametric forms of 
+the encounter probability model which we consider in 
 Chapt. \ref{chapt.covariates} and elsewhere.
 
 In this chapter we consider alternative observation models which
-accommodate Poisson or multinomial observation models. For example, if
+accommodate Poisson or multinomial observation. For example, if
 sampling devices can detect an individual some arbitrary number of
 times during an interval, then it is natural to consider observation
 models for encounter frequencies, such as the Poisson model. Another
@@ -30,21 +34,20 @@ individuals. A typical example is a mist-net for birds
 from these kinds of studies as independent multinomial observations.
 A related type of device that produces {\it dependent} multinomial
 observations are the so-called {\it single-catch} traps
-\citep{efford_etal:2009euring}. The canonical example are small-mammal
-live traps which catch and hold a single individual. Competitation
+\citep{efford:2004, efford_etal:2009euring}. The canonical example are small-mammal
+live traps \citep{converse_etal:2006ea} which catch and hold a single individual. Competition
 among individuals for traps induces a complex dependence structure
 among individual encounters. To date, no formal inference framework
 has been devised for this method although it stands to reason that the
 independent multinomial model should be a good approximation in some
-situations \citep{efford_etal:2009euring}.  There are other
-observation systems that we discuss here.
+situations \citep{efford_etal:2009euring}.  
 
-One thing that is apparent from our development of the multinomial
-observation model is that SCR models are a kind of multi-state model,
-in the conventional sense as applied in capture-recapture studies. In
-the context of SCR though, the ``state'' variable is a geographic
-location and the transition probabilities are parameterized by
-distance between the states.
+We analyze a number of examples of these different observation models
+using {\bf JAGS} and also the {\bf R}
+package \mbox{\tt secr} \citep{efford:2011}.
+
+
+
 
 
 
@@ -74,7 +77,7 @@ frequency data.  In general, any discrete probability mass function
 could be used for this purpose, including the standard models for
 count data used throughout ecology, the Poisson and negative
 binomial.  Here we focus on using the Poisson
-model only although other count frequency models are possible 
+model only although other count frequency models are possible for SCR models 
 \citep{efford_etal:2009ecol}.
 
 Let $y_{ijk}$ be the frequency of encounter for
@@ -94,7 +97,7 @@ We propose
 \]
 Where $g({\bf x},{\bf s})$ is any positive valued function, such as
 the negative exponential or the bivariate Gaussian kernel.
-Then $\lambda_{0}g({\bf x},{\bf s})$ is the expected encounter rate in trap
+Then, $\lambda_{0}g({\bf x},{\bf s})$ is the expected encounter rate in trap
 ${\bf x}$ for an individual having activity center ${\bf s}$.  Note
 that
 \[
@@ -102,10 +105,10 @@ that
    s}_{i}) )
 \]
 where, if we set $\alpha_{0} \equiv \log(\lambda_{0})$, and, if 
-$g({\bf x},{\bf s}) \equiv \exp(-(1/(2\sigma^2)) d({\bf x},{\bf s})^2)$
+$g({\bf x},{\bf s}) \equiv \exp(-  d({\bf x},{\bf s})^2 /(2\sigma^2))$
 (i.e., the Gaussian model), then:
 \begin{equation}
- log(\lambda_{ij}) = \alpha_{0} + \alpha_{1} d({\bf x}_{j},{\bf s}_{i})^{2}
+ \log(\lambda_{ij}) = \alpha_{0} + \alpha_{1} d({\bf x}_{j},{\bf s}_{i})^{2}
 \label{poisson-mn.eq.lp}
 \end{equation}
 where $\alpha_{1} = -1/(2\sigma^2)$, 
@@ -113,9 +116,10 @@ which has the same linear predictor as we have seen for the Bernoulli
 model in Chapt. \ref{chapt.scr0}.  We can accommodate covariates at
 the level of individual-, trap- or sample occasion by including them
 on the baseline encounter rate parameter $\lambda_{0}$. For example,
-if $C_{j}$ is some covariate that depends on trap only, then we have:
+if $C_{j}$ is some covariate that depends on trap only, then we
+express the relationship between $\lambda_{0}$ and $C_{j}$ as:
 \[
-log(\lambda_{0,ijk}) = \alpha_{0} + \alpha_{2} C_{j}
+\log(\lambda_{0,ijk}) = \alpha_{0} + \alpha_{2} C_{j}
 \]
 and therefore covariates on the logarithm of baseline encounter
 probability appear also as linear effects on $\lambda_{ij}$.  We don't
@@ -149,8 +153,9 @@ about their home range (sec. \ref{scr0.sec.implied}).  Imagine we have
 perfect samplers in every pixel of the landscape so that whenever an
 individual moves from one pixel to another, we can record it.
 Let $m_{ij}$ be the number of
-times individual $i$ was recorded in pixel $j$. Then, 
-we might think of the Poisson model for the observed frequencies:
+times individual $i$ was recorded in pixel $j$ (i.e., it selected or
+used pixel $j$). Then, 
+we might think of the Poisson model for the observed {\it use} frequencies:
 \[
 m_{ij} \sim  \mbox{Poisson}( \lambda_{0} g({\bf x}_{j},{\bf s}_{i}) )
 \]
@@ -167,7 +172,7 @@ The marginal distribution of $y_{ij}$ is:
 \[
  y_{ij} \sim \mbox{Poisson}(p_{0} g({\bf x}_{j},{\bf s}_{i}) ).
 \]
-where $p$ is a composite of the movement rate and conditional
+where $p_0$ is a composite of the movement rate and conditional
 detection probability $p$. Therefore, we see that encounters
 accumulate in proportion to the frequency of outcomes of an individual
 using space (or ``selecting resources'').
@@ -176,7 +181,7 @@ We introduced this interpretation of the model in terms of movement
 and space usage in sec. \ref{scr0.sec.implied}, and it is one of the
 main underlying concepts of SCR models that is not present in ordinary
 capture-recapture models. As we noted there, the underlying model of
-space usage is only as complex as the encounter probability (or rate)
+space usage is only as complex as the encounter probability 
 model which is, so far, only symmetric and stationary (does not vary
 in space). We generalize this model of space usage substantially in
 Chapt. \ref{chapt.rsf}.
@@ -201,11 +206,11 @@ according to \ref{eq.cloglog}.
 In fact, as $\lambda$ gets small, the Poisson model is a close
 approximation to the Bernoulli model in the sense that outcomes
 concentrate on $\{0,1\}$, i.e., $\Pr(y\in \{0,1\}) \rightarrow 1$ as
-$\lambda \rightarrow 0$.  A relevent property of the Poisson model is
-that $\Pr(y>0) \rightarrow \lambda$ for small values of $\lambda$.
+$\lambda \rightarrow 0$.  Indeed, under the Poisson model, 
+$\Pr(y>0) \rightarrow \lambda$ for small values of $\lambda$.
 This phenomenon is shown in Fig.  \ref{poisson-mn.fig.poissonbern}
 where the left panel shows a plot of $\lambda_{ij}=\lambda_{0}g({\bf
-  x}_{j},{\bf s}_{i};\sigma)$ vs. distance and superimposed on that is
+  x}_{j},{\bf s}_{i})$ vs. distance and superimposed on that is
 a plot of $p_{ij}=1-exp(-\lambda_{ij})$ vs. distance, for values
 $\lambda_{0} = .1$ and $\sigma = 1$, and the right panel shows a plot
 of $\Pr(y>0)$ vs. $E[y]$. We see that the two quantities are
