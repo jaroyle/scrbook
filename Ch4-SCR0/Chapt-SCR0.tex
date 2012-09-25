@@ -1255,8 +1255,8 @@ Y<-Y[ncaps>0,,]
 
 Clearly if we somehow knew the value of $N$ then we could fit this
 model directly because, in that case, it is a special kind of logistic
-regression model - one with a random effect, but that enters into the
-model in a peculiar fashion - and also with a distribution (uniform)
+regression model, one with a random effect (${\bf s}$) that enters into the
+model in a peculiar fashion, and also with a distribution (uniform)
 which we don't usually think of as standard for random effects models.
 So our aim here is to analyze the known-$N$ problem, using our
 simulated data, as an incremental step in our progress toward fitting
@@ -1268,7 +1268,8 @@ elements of the resulting object for further analysis.
 data<-simSCR0(discard0=FALSE,rnd=2013)
 y<-data$Y
 traplocs<-data$traplocs
-nind<-nrow(y) # in this case nind=N because we're doing the known-N problem
+  # in this case nind=N because we're doing the known-N problem
+nind<-nrow(y) 
 X<-data$traplocs
 J<-nrow(X)   # number of traps
 K<-data$K
@@ -1438,7 +1439,7 @@ a sampling zero whereas observations for which $z_{i}=0$ are
 ``structural zeros'' under the model.  Under DA, we also express the
 Binomial observation model {\it conditional on} $z_{i}$ as follows:
 \[
-	y_{ij} \sim \mbox{Bin}(K, z_{i}*p_{ij})
+	y_{ij} \sim \mbox{Binomial}(K, z_{i}*p_{ij})
 \]
 where we see that the binomial probability evaluates to 0 if $z_{i}=0$
 (so $y_{ij}$ is a fixed 0 in that case)
@@ -1472,29 +1473,58 @@ derived parameter computed as $D=N/area({\cal S})$.
 
 \subsection{Analysis using data augmentation in WinBUGS}
 
+We provide a complete {\bf R} script for simulating and organizing a
+data set, and analyzing the data in {\bf WinBUGS}.
 As before we begin by obtaining a data set using our \mbox{\tt
   simSCR0} routine and then harvesting the required data objects
 from the resulting data list.  Note that we use the \mbox{\tt
   discard0=TRUE} option this time so that we get a ``real looking'' data set
-with no all-zero encounter histories. After harvesting the data we
-produce the {\bf WinBUGS} model specification which now includes $M$
-encounter histories including the augmented potential individuals, the
-data augmentation parameters $z_{i}$, and the data augmentation
-parameter $\psi$. 
+with no all-zero encounter histories:
+
 {\small
 \begin{verbatim}
+## Simulate the data and extract the required objects
 data<-simSCR0(discard0=TRUE,rnd=2013)
 y<-data$Y
-traplocs<-data$traplocs
 nind<-nrow(y)
 X<-data$traplocs
 K<-data$K
 J<-nrow(X)
-Xl<-data$xlim[1]
-Yl<-data$ylim[1]
-Xu<-data$xlim[2]
-Yu<-data$ylim[2]
+\end{verbatim}
+}
+ After harvesting the data we
+ augment the data matrix \mbox{\tt y}
+with $M-n$ all-zero encounter histories, and create starting
+values for the variables $z_{i}$ and also the activity centers ${\bf
+  s}_{i}$ of which, for each, we require $M$ values. 
+ One thing to take care of in using the {\bf BUGS}
+engines is the starting values for the activity centers. It is usually
+helpful to start the ${\bf s}_{i}$ for each observed individual at or
+near the trap(s) it was captured. All of this happens as follows:
+{\small
+\begin{verbatim}
+## Data augmentation 
+M<-200
+y<-rbind(y,matrix(0,nrow=M-nind,ncol=ncol(y)))
+z<-c(rep(1,nind),rep(0,M-nind))
 
+ # starting values for s
+sst<-cbind(runif(M,Xl,Xu),runif(M,Yl,Yu)) 
+for(i in 1:nind){
+   if(sum(y[i,])==0) next
+   sst[i,1]<- mean( X[y[i,]>0,1] )
+   sst[i,2]<- mean( X[y[i,]>0,2] )
+}
+\end{verbatim}
+}
+Next, we write out the {\bf BUGS} model specification and save it to
+an external file called \mbox{\tt SCR0b.txt}. The model 
+ specification which now includes $M$
+encounter histories including the augmented potential individuals, the
+data augmentation parameters $z_{i}$, and the data augmentation
+parameter $\psi$:
+{\small
+\begin{verbatim}
 cat("
 model {
 alpha0~dnorm(0,.1)
@@ -1505,8 +1535,8 @@ psi~dunif(0,1)
 
 for(i in 1:M){    
    z[i] ~ dbern(psi)
-   s[i,1]~dunif(Xl,Xu)
-   s[i,2]~dunif(Yl,Yu)
+   s[i,1]~dunif(xlim[1],xlim[2])
+   s[i,2]~dunif(ylim[1],ylim[2])
    for(j in 1:J){
       d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
       y[i,j] ~ dbin(p[i,j],K)
@@ -1516,45 +1546,28 @@ for(i in 1:M){
 N<-sum(z[])
 D<-N/64
 }
-",file = "SCR0a.txt")
+",file = "SCR0b.txt")
 \end{verbatim}
 }
-
-To prepare our data we have to augment the data matrix \mbox{\tt y}
-with $M-n$ all-zero encounter histories, we have to create starting
-values for the variables $z_{i}$ and also the activity centers ${\bf
-  s}_{i}$ of which, for each, we require $M$ values. Otherwise the
+{\bf XXXX This function needs changed on the repo. edits made in-text
+  here  XXXXX}
+The 
 remainder of the code for bundling the data, creating initial values
 and executing {\bf WinBUGS} looks much the same as before except with more
-or differently named arguments.
+or differently named arguments:
 {\small
 \begin{verbatim}
-## Data augmentation 
-M<-200
-y<-rbind(y,matrix(0,nrow=M-nind,ncol=ncol(y)))
-z<-c(rep(1,nind),rep(0,M-nind))
-
-sst<-cbind(runif(M,Xl,Xu),runif(M,Yl,Yu))  # starting values for s
-for(i in 1:nind){
-   if(sum(y[i,])==0) next
-   sst[i,1]<- mean( X[y[i,]>0,1] )
-   sst[i,2]<- mean( X[y[i,]>0,2] )
-}
-data <- list (y=y,X=X,K=K,M=M,J=J,Xl=Xl,Yl=Yl,Xu=Xu,Yu=Yu)
+data <- list (y=y,X=X,K=K,M=M,J=J,xlim=xlim,ylim=ylim)
 inits <- function(){
-  list (alpha0=rnorm(1,-4,.4),alpha1=runif(1,1,2),s=sst,z=z)
-}
+  list (alpha0=rnorm(1,-4,.4),alpha1=runif(1,1,2),s=sst,z=z) }
 
 library("R2WinBUGS")
 parameters <- c("alpha0","alpha1","sigma","N","D")
-nthin<-1
-nc<-3
-nb<-1000
-ni<-2000
-out <- bugs (data, inits, parameters, "SCR0a.txt", n.thin=nthin,n.chains=nc,
- n.burnin=nb,n.iter=ni,debug=TRUE,working.dir=getwd())
+out <- bugs (data, inits, parameters, "SCR0b.txt", n.thin=1,chains=3,
+ n.burnin=1000,n.iter=2000,debug=TRUE,working.dir=getwd())
 \end{verbatim}
 }
+
 Note the differences in this new {\bf WinBUGS} model with that
 appearing in the known-$N$ version -- there is not much!  The loop
 over individuals goes up to $M$ now, and there is a model component
@@ -1567,9 +1580,9 @@ changed slightly too, as the augmented data set has more rows to
 include excess all-zero encounter histories. Previously we knew that
 $N=100$ but in this analysis we pretend not to know $N$, but think
 that $N=200$ is a good upper bound;
-
-This analysis can be run directly once \mbox{\tt scrbook} is loaded,
-by issuing the following commands
+This analysis can be run directly using the \mbox{\tt SCR0bayes}
+function  once the \mbox{\tt scrbook} package is loaded,
+by issuing the following commands:
 \begin{verbatim}
 library("scrbook")
 data<-simSCR0(discard0=TRUE,rnd=2013)
@@ -1579,7 +1592,7 @@ Summarizing the output from {\bf WinBUGS} produces:
 {\small
 \begin{verbatim}
 > print(out1,digits=2)
-Inference for Bugs model at "SCR0a.txt", fit using WinBUGS,
+Inference for Bugs model at "SCR0b.txt", fit using WinBUGS,
  3 chains, each with 2000 iterations (first 1000 discarded)
  n.sims = 3000 iterations saved
            mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
@@ -1589,9 +1602,9 @@ sigma      0.46  0.04   0.39   0.43   0.45   0.48   0.55 1.02   120
 N        113.62 15.73  86.00 102.00 113.00 124.00 147.00 1.01   260
 D          1.78  0.25   1.34   1.59   1.77   1.94   2.30 1.01   260
 deviance 302.60 23.67 261.19 285.47 301.50 317.90 354.91 1.00  1400
-...
-[some output deleted]
-...
+
+[...some output deleted...]
+
 \end{verbatim}
 }
 \begin{comment}
@@ -1621,7 +1634,8 @@ We see that the
 estimated parameters ($\alpha_0$ and $\alpha_1$) are comparable to the
 previous results obtained for the known-$N$ case, and also not too
 different from the data-generating values. The posterior of $N$
-overlaps the data-generating value substantially.
+overlaps the data-generating value substantially. {\bf XXX possible
+  plot here of posterior summaries XXXXX}
 
 \begin{comment}
 We note that these results were obtained from a fit of the actual
@@ -1719,8 +1733,10 @@ There are two other popular {\bf BUGS} engines in widespread use: {\bf
 the package option in the \mbox{\tt bugs} call to \mbox{\tt
   package=OpenBUGS}.  {\bf JAGS} can be called using the function
 \mbox{\tt jags()} in package \mbox{\tt R2jags} which has nearly the
-same arguments as \mbox{\tt bugs()}.  We prefer to use the {\bf R}
-library \mbox{\tt rjags} \citep{plummer:2009} which has a slightly
+same arguments as \mbox{\tt bugs()}.  Or, it can be executed from 
+the {\bf R}
+package
+ \mbox{\tt rjags} \citep{plummer:2009} which has a slightly
 different implementation that we demonstrate here as we reanalyze the
 simulated data set in the previous section (note: the same {\bf R}
 commands are used to generate the data and package the data, inits and
@@ -1730,9 +1746,11 @@ during which tuning of the MCMC algorith might take place.  These
 samples cannot be used for inference.  Then the Markov chains are
 updated using \mbox{\tt coda.samples()} to obtain posterior samples
 for analysis, as follows:
+{\small 
 \begin{verbatim}
-jinit<- jags.model("SCR0a.txt", data=data, inits=inits, n.chains=nc, n.adapt=nb))
-jout <- coda.samples(jinit, parameters, n.iter=ni-nb, thin=nthin)
+jinit<- jags.model("SCR0b.txt", data=data, inits=inits,  
+                   n.chains=3, n.adapt=1000)
+jout <- coda.samples(jinit, parameters, n.iter=1000, thin=1)
 \end{verbatim}
 We find that {\bf JAGS} seems to be 20-30\% faster (and often more)
 for the basic SCR model which you can evaluate using the function
@@ -1762,9 +1780,9 @@ here is based on the analysis of \citet{royle_etal:2011jwm}.
 \includegraphics[height=4.22in,width=3.2in]{Ch4-SCR0/figs/Wolverines_cameratrap}
 \end{center}
 \caption{
-Wolverine camera trap locations (black dots) from
-\citet{magoun_etal:2011}.
-The study took place in SE Alaska (inset).
+Wolverine camera trap locations (black dots) from a study that took
+place in SE Alaska. See 
+\citet{magoun_etal:2011} for details.
 }
 \label{scr0.fig.wolverinelocs}
 \end{figure}
@@ -1787,7 +1805,10 @@ analysis. These files are
 
 {\flushleft \bf Encounter Data File (EDF)} -- 
 We store the encounter data in the
-an efficient file format which is easily manipulated. The file
+an efficient file format which is easily manipulated in {\bf R}) and 
+easy to create in  Excel and other spreadsheets which are widely used
+for data management.
+The file
 structure is a simple matrix with 4 columns, those being: (1)
 \mbox{\tt sessID}: the trap
 session or year. For a single-year study (as considered here) this
@@ -1802,7 +1823,8 @@ is the same as used in the \mbox{\tt secr} package \citep{efford:2011}
 and similar to that used
 in the {\bf SPACECAP} \citep{gopalaswamy_etal:2012}, and
 \mbox{\tt SCRbayes} \citep{russell_etal:2012} packages, both of which 
-have a 3-column format (trapID, indID, sampID).
+have a 3-column format (\mbox{\tt trapID}, \mbox{\tt indID}, \mbox{\tt
+  sampID}).
 
 To illustrate this format, the wolverine data are available in the
 package \mbox{\tt scrbook} by typing:
@@ -1837,11 +1859,13 @@ Often, the variable \mbox{\tt trapid} will have to
 correspond to the row of a matrix containing the trap coordinates - in
 this case the TDF file \mbox{\tt wtraps} which we describe further below.
 
+\begin{comment}
 {\bf 
 I THINK WE SHOULD PUT ALL THIS INFO INTO A DATA CLASS WITH SOME
   CONSTRUCTOR FUNCTION. I WILL WORK ON THAT. EDF, TDF + State-space +
   K(reps) + ??? -- "scr" data type. 
 }
+\end{comment}
 
 Note that the information provided in this encounter data file
 \mbox{\tt wcaps} does not represent a completely informative summary
@@ -1865,25 +1889,22 @@ require an encounter-history formulation of the model which requires a
 full 3-d array.  To obtain our encounter frequency matrix, we do this
 the hard way by first converting the encounter data file into a 3-d
 array and then summarize to trap totals. We have a handy function
-\mbox{\tt SCR23darray} which takes the compact encounter data file
-with optional arguments \mbox{\tt ntraps} and \mbox{\tt nsamples}, and
+\mbox{\tt SCR23darray} which takes the compact encounter data file,
+and
 converts it to a 3-d array, and then we use the {\bf R} function
 \mbox{\tt apply} to summarize over the sample occasion dimension (by
 convention here, this is the 2nd dimension). To apply this to the
 wolverine data in order to compute the 3-d array we do this: 
-{\bf XXXXX 2nd line is wrong b/c format changed XXXXXXXX}
 {\small
 \begin{verbatim}
 y3d <-SCR23darray(wolverine$wcaps,wolverine$wtraps)
 y <- apply(y3d,c(1,3),sum)
-\end{verbatim}
-}
+\end{verbatim} }
 See the help file for more information on \mbox{\tt SCR23darray}.
 The 3-d array is necessary to fit certain types of models (e.g.,
 behavioral response) and this is why we sometimes will require this
 maximally informative 3-d data format but, here, we analyze the
 summarized data.
-
 
 
 {\flushleft \bf Trap Deployment File (TDF)} --
@@ -1946,7 +1967,8 @@ more convenient. For that it seems natural to tabulate individuals by
 trap and total encounter frequencies. The spatial information in SCR
 data is based on multi-trap captures\footnote{I will add more context
   here on revision about spatial recaptures, lost recaptures, ordinary
-  recaptures. Function \mbox{\tt SCRsmy} in \mbox{\tt scrbook}}, and
+  recaptures. Function \mbox{\tt SCRsmy} in \mbox{\tt scrbook}. {\bf
+    XXXX THIS NEEDS WRITTEN XXXXX}  }, and
 so, it is informative to understand how many unique traps each
 individual is captured in. At the same time, it is useful to
 understand how many total captures we have of each individual because
@@ -1993,10 +2015,10 @@ Gaussian distance function although we revisit these data with more
 complex models in later chapters. The model is summarized by the
 following 4 elements:
 \begin{itemize}
-\item[(1)] $y_{ij}|{\bf s}_{i} \sim \mbox{Bin}(K, z_{i}\; p_{ij})$
+\item[(1)] $y_{ij}|{\bf s}_{i} \sim \mbox{Binomial}(K, z_{i}\; p_{ij})$
 \item[(2)] $p_{ij} = p_{0} \exp(-\alpha_{1} \; ||{\bf s}_{i}-{\bf x}_{j}||^2)$
-\item[(3)] ${\bf s}_{i} \sim \mbox{Unif}({\cal S})$
-\item[(4)] $z_{i} \sim \mbox{Bern}(\psi)$
+\item[(3)] ${\bf s}_{i} \sim \mbox{Uniform}({\cal S})$
+\item[(4)] $z_{i} \sim \mbox{Bernoulli}(\psi)$
 \end{itemize}
 We assume customary flat priors on the structural (hyper-) parameters
 of the model, $\alpha_{0} = \mbox{logit}(p_{0})$, $\alpha_{1}$ and
