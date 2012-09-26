@@ -19,6 +19,11 @@ S<-cbind(sx,sy)
 # how far is each individual from each trap?
 D<- e2dist(S,traplocs)
 
+nam<-names(parms)
+if( sum(nam=="sigma")==0 |
+   sum(nam=="alpha0")==0 |
+   sum(nam=="alpha2")==0) return("Missing parameter value.....")
+
 sigma<-parms$sigma
 alpha0<-parms$alpha0
 ###alpha1<-parms$alpha1
