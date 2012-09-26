@@ -1,4 +1,4 @@
-\name{simMnSCR.fn}
+\name{simMnSCR}
 \alias{simMnSCR.fn}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
@@ -8,7 +8,7 @@ bleen
 Simulate some independent multinomial SCR data..... %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-simMnSCR.fn(parms, K = 7, ssbuff = 2)
+simMnSCR(parms, K = 7, ssbuff = 2)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -54,7 +54,7 @@ set.seed(2013)
 parms<-list(N=100,alpha0= -.40, sigma=0.5)
 
 # simulate some data
-data<-simMnSCR.fn(parms,K=7,ssbuff=2)
+data<-simMnSCR(parms,K=7,ssbuff=2)
 
 nind<-nrow(data$Ycat)
 

@@ -347,7 +347,7 @@ of heterogeneity, analogous to the class of models considered by
 \citet{link:2003},
 \end{comment}
 
-\section{Analysis of the Poisson SCR model in BUGS}
+\subsection{Analysis of the Poisson SCR model in BUGS}
 
 We consider the simplest possible model here in which we have no
 covariates that vary over sample occasions  $k=1,2,\ldots,K$ 
@@ -483,11 +483,9 @@ D<- N/64
 }
 ",file = "SCR-Poisson.txt")
 
-nthin<-1; nc<-3; nb<-1000; ni<-2000
-
 library("R2WinBUGS'')
-out1 <- bugs (data, inits, parameters, "SCR-Poisson.txt", n.thin=nthin,n.chains=nc,
- n.burnin=nb,n.iter=ni,working.dir=getwd(),debug=TRUE)
+out1 <- bugs (data, inits, parameters, "SCR-Poisson.txt", n.thin=1,n.chains=3,
+ n.burnin=1000,n.iter=2000,working.dir=getwd(),debug=TRUE)
 \end{verbatim}
 }
 {\flushleft Or using {\bf JAGS}  we do this instead: }
@@ -524,9 +522,7 @@ deviance 329.95 21.92 290.00 314.20 329.50 344.40 375.80 1.00  1700
 %\ref{chapt.searchencounter}. {\bf XXXX DO WE DO THIS ANYWHERE? XXXXX}
 
 
-
-
-\section{Analysis of the Wolverine Study Data}
+\subsection{Analysis of the Wolverine Study Data}
 
 We reanalyzed the data from
 the  wolverine camera trapping study that were first introduced in 
@@ -534,7 +530,7 @@ sec. \ref{chapt.scr0.wolverine}.
 We modified the {\bf R} script from the function \mbox{\tt wolvSCR0.fn} to fit the
 Poisson model (see the help file for \mbox{\tt
   wolvSCR0pois.fn}). Executing this function produces the following
-results which are provided here:
+results:
 {\small
 \begin{verbatim}
 Inference for Bugs model at "modelfile.txt", fit using WinBUGS,
@@ -559,10 +555,33 @@ fitted preveiously, where we had a posterior mean for $N$ of
  $59.84$,  $\sigma$ it was
 $0.64$. The {\bf R} 
 script is provided in the  \mbox{\tt scrbook} package which you can
-use to modify the model or obtain more posterior samples for this model.
+use to modify the model or obtain more posterior samples.
 %In addition we did a basic assessment of Goodness-of-fit using a
 %Bayesian p-value and statistic 1 as described in sec. XXXXX.  
 
+\subsection{Count detector models in the  \mbox{\tt secr} package}
+
+The {\bf R} package \mbox{\tt secr} will fit Poisson or negative
+binomial encounter frequency models. The formatting of data and
+structure of the analysis proceeds in a similar fashion to the
+Bernoulli model described in sec. \ref{mle.sec.secr}, except that 
+we specify the \mbox{\tt detector=''count''} option when the traps
+object is created. The set-up proceeds as follows:
+{\small
+\begin{verbatim}
+library("secr")
+library("scrbook")
+data("wolverine")
+
+traps<-as.matrix(wolverine$wtraps)
+dimnames(traps)<-list(NULL,c("trapID","x","y",paste("day",1:165,sep="")))
+traps1<-as.data.frame(traps[,1:3])
+trapfile1<-read.traps(data=traps1,detector="count")
+\end{verbatim}
+}
+You can proceed with analysis of these data and compare/contrast with
+the Bayesian analysis given above, or the results of the Bernoulli
+model fitted in Chapt. \ref{chapt.mle}.
 
 
 
@@ -579,14 +598,17 @@ be viewed (in some cases) as a multi-catch device are area-searches
 of, for example, reptiles where we think of a small polygon as the
 ``trap'' -- we could get multiple individuals (turtles, lizards) in
 the same plot but not, in the same sample session, at different plots.
-The key feature is that capture of an individual in a trap is {\it
-  not} independent of capture in other traps, because once they are
-captured in a trap, it precludes capture in other traps.  On the other
-hand, individuals may behave independently of one another, or so it
-might be reasonable to assume, so whether a trap captures some other
-individual doesn't have bearning on whether it captures another.  This
-last assumption is violated in an extreme case in classical ``single
-catch'' traps which we address in
+The key features of this model are: (1) capture of an individual in a
+trap is {\it not} independent of its capture in other traps, because
+capture initial capture
+ precludes capture in any other trap and (2)
+individuals  behave independently of one another, so 
+whether a trap captures some other
+individual doesn't have bearning on whether it captures another.  A
+type of model in which the
+2nd 
+assumption is violated  are the ``single
+catch'' trap systems which we address in
 sec. \ref{poisson-mn.sec.singlecatch} below. In general we could
 imagine non-independence being important in any multi-catch situation
 but to the best of our knowledge a general model that encompasses
@@ -597,16 +619,17 @@ situation wherein individuals behave independently.
 
 
 In this case we assume the observation ${\bf y}_{ik}$ for individual
-$i$ during sample occasion $k$ as a multinomial observation which
-consists of a sequence of 0's and at most a single 1 indiciating the
+$i$ during sample occasion $k$ is a multinomial observation which
+consists of a sequence of 0's and  a single 1 indiciating the
 trap of capture, or ``not captured''. For the ``not captured'' event
 we define an additional outcome, by conveniton element $J+1$ of the
-vector.  As an example, if we capture an individual in trap 2 during a
+vector.  As an example, if we capture an individual in trap 2 during
+some occasion of a
 6 sample period study then the multinomial observation has length $J+1
 = 7$, and the observation is ${\bf y}_{i} = (0,1,0,0,0,0,0)$. An
 individual not captured at all would have the observation vector
 $(0,0,0,0,0,0,1)$.  If we sample for 5 periods in all and the
-individual is also caught in trap 4 during sample 3, but otherwise
+individual is also caught in trap 4 during occassion 3, but otherwise
 uncaptured, then the 5 encounter observations for that individual are
 as follows:
 \begin{verbatim}
@@ -629,7 +652,7 @@ activity ${\bf s}$. Thus we suppose that
  {\bf y}_{ik}|{\bf s}_{i} \sim \mbox{Multinom}(1, {\bm \pi}({\bf s}_{i}) )
 \label{poisson-mn.eq.mn}
 \end{equation}
-where ${\bm \pi}({\bf s}_{i})$ is a vector of length $J+1$, ehre
+where ${\bm \pi}({\bf s}_{i})$ is a vector of length $J+1$, where
  $\pi_{i,J+1}$, the last cell, corresponds
  to the probability of the event ``not captured''.
 Now we have to
@@ -653,19 +676,20 @@ direct correspondance to the standard encounter probability models we
 used in the Bernoulli or Poisson models as well (see
 sec. \ref{scr0.sec.implied}). 
 
-It is convenient to express these multinomial models short-hand as follows:
+It is convenient to express these multinomial models short-hand as
+follows, e.g., for the Gaussian encounter probability model:
 \[
-\mbox{mlogit}( \pi_{ij} ) = \alpha_{0} + \alpha_{1} d_{ij}
+\mbox{mlogit}( \pi_{ij} ) = \alpha_{0} + \alpha_{1} d_{ij}^{2}
 \]
 In this way we can refer to models with covariates in a more concise
 way. For example, a model with a trap-specific covariate is:
 \[
-\mbox{mlogit}( \pi_{ij} ) = \alpha_{0} + \alpha_{1} d_{ij} + \alpha_{2} C_{ij}
+\mbox{mlogit}( \pi_{ij} ) = \alpha_{0} + \alpha_{1} d_{ij}^{2} + \alpha_{2} C_{ij}
 \]
 or we could include occasion-specific covariates too, such as
 behavioral response. 
 
-A statistically equivalent distribution is the {\it categorical}
+A statistically equivalent distribution to the multinomial is the {\it categorical}
 distribution.  If ${\bf y}$ is a multinomial trial with probabilities
 ${\bm \pi}$ than the {\it position} of the non-zero element of ${\bf
   y}$ is a categorical random variable with probabilities ${\bm \pi}$.
@@ -677,10 +701,10 @@ In the SCR context, the categorical version of the
 multinomial trial corresponds to the {\it trap of capture}.  Using our
 example above with 6 traps then we
 could as well say $y_{ik}$ is a categorical random variable with
-state-space (possible outcomes) $(1,2,3,4,5,6,7)$ where outcome $y=7$
+possible outcomes $(1,2,3,4,5,6,7)$ where outcome $y=7$
 corresponds to ``not captured.'' Obviously, how this is organized or
 labeled is completely irrelevant, although it is convenient to use the
-integers $1:(J+1)$ where $J+1$ is the event not captured.  Therefore,
+integers $1 - (J+1)$ where $J+1$ is the event not captured.  Therefore,
 for our illustration in the previous table, $y_{i1} = 2$, $y_{i2} =
 7$, $y_{i3} = 4$ and so on.
 
@@ -707,7 +731,7 @@ for ``use'' -- which, if we take the product of use with encounter
 produces a model for the observable encounter data. This 
 leads naturally to the development of models that integrate RSF data
 from telemetry studies with SCR data \citep{royle_chandler:2012},
-which we pursue in Chapt. \ref{chapt.rsf}.
+which is the topic of  Chapt. \ref{chapt.rsf}.
 
 
 
@@ -716,7 +740,7 @@ which we pursue in Chapt. \ref{chapt.rsf}.
 \subsection{Simulating data and analysis using JAGS}
 
 We're going to show the nugget of a simulation function which is
-used in the function \mbox{\tt sim.mnSCR} found in the {\bf R} package
+used in the function \mbox{\tt simMnSCR} found in the {\bf R} package
 \mbox{\tt scrbook}.  The first lines of the following {\bf R} code
 make use of some things that should be defined but we omit them here:
 {\small
@@ -745,7 +769,7 @@ for(i in 1:N){
 The resulting data matrix in this case has the maximal dimension $N$
 and so, for analysis, to mimic a real situation, we would have to
 discard the uncaptured individuals.  The function \mbox{\tt
-  simMnSCR.fn} in the package \mbox{\tt scrbook} will also simulate
+  simMnSCR} in the package \mbox{\tt scrbook} will also simulate
 data that includes a behavioral response
 %(the parameter
 %labeled \mbox{\tt alpha2} shown in the {\bf R} code below),
@@ -754,7 +778,7 @@ typical situation in small-mammal trapping problems
 \citep[see][for details]{converse_royle:2012}.
 
 
-Here we use our function \mbox{\tt simMnSCR.fn} to simulate a data set
+Here we use our function \mbox{\tt simMnSCR} to simulate a data set
 with $K=7$ periods, etc.. We'll run the model using \mbox{\tt JAGS} which
 we have found is much more effective for this class of models.  We get
 the data set-up for analysis by augmenting the size of the data set to
@@ -762,7 +786,7 @@ $M=200$. In addition we choose starting values for ${\bf s}$ and the
 data augmentation variables $z$.  For ${\bf s}$ here we cheat a little
 bit and use the true values for the obseved individuals and then
 augment the matrix ${\bf S}$ with $M-n$ randomly selected activity
-centers.  The parameters input to \mbox{\tt simMnSCR.fn} are the
+centers.  The parameters input to \mbox{\tt simMnSCR} are the
 intercept $\alpha_{0}$, $\sigma = \sqrt{1/(2\alpha_{1})}$ for the
 Gaussian encounter probability model, and $\alpha_{2}$ is the
 behavioral response parameter. The data simulation and set-up proceeds
@@ -772,7 +796,7 @@ as follows:
 \begin{verbatim}
 set.seed(2013)
 parms<-list(N=100,alpha0= -.40, alpha2= 0,sigma=0.5)
-data<-simMnSCR.fn(parms,K=7,ssbuff=2)
+data<-simMnSCR(parms,K=7,ssbuff=2)
 nind<-nrow(data$Ycat)
 
 M<-200
@@ -835,7 +859,7 @@ D <- N/A
 \caption{
 {\bf BUGS} model specification for the independent multinomial
 observation model. For data simulation and model fitting see the
-help file \mbox{\tt ?simMnSCR.fn} in the {\bf R} package \mbox{\tt scrbook}.
+help file \mbox{\tt ?simMnSCR} in the {\bf R} package \mbox{\tt scrbook}.
 }
 \label{poisson-mn.panel.mn}
 \end{panel}
@@ -843,7 +867,7 @@ help file \mbox{\tt ?simMnSCR.fn} in the {\bf R} package \mbox{\tt scrbook}.
 To fit the model, we need to package everything up (inits, parameters,
 data) and send it off to \mbox{\bf JAGS} to build an MCMC simulator
 for us (these commands are executed in the help file for \mbox{\tt
-  simMnSCR.fn}). In addition to the usual data objects, we also pass
+  simMnSCR}). In addition to the usual data objects, we also pass
 the limits of the assumed rectangular state-space (\mbox{\tt ylim},
 \mbox{\tt xlim}, both $1 \times 2$ vectors) and the scale of the
 standardized units, called \mbox{\tt trap.space} here because we
