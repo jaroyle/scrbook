@@ -783,10 +783,12 @@ with $K=7$ periods, etc.. We'll run the model using \mbox{\tt JAGS} which
 we have found is much more effective for this class of models.  We get
 the data set-up for analysis by augmenting the size of the data set to
 $M=200$. In addition we choose starting values for ${\bf s}$ and the
-data augmentation variables $z$.  For ${\bf s}$ here we cheat a little
-bit and use the true values for the obseved individuals and then
-augment the matrix ${\bf S}$ with $M-n$ randomly selected activity
-centers.  The parameters input to \mbox{\tt simMnSCR} are the
+data augmentation variables $z$.  For starting values of ${\bf s}$ we cheat a little
+bit here and use the true values for the obseved individuals and then
+augment the $M \times 2$ matrix ${\bf S}$ with $M-n$ randomly selected activity
+centers. Our function \mbox{\tt spiderplot} returns the mean observed
+location of individuals for use as starting values.  
+The parameters input to \mbox{\tt simMnSCR} are the
 intercept $\alpha_{0}$, $\sigma = \sqrt{1/(2\alpha_{1})}$ for the
 Gaussian encounter probability model, and $\alpha_{2}$ is the
 behavioral response parameter. The data simulation and set-up proceeds
@@ -795,7 +797,7 @@ as follows:
 {\small
 \begin{verbatim}
 set.seed(2013)
-parms<-list(N=100,alpha0= -.40, alpha2= 0,sigma=0.5)
+parms<-list(N=100,alpha0= -.40, sigma=0.5, alpha2= 0)
 data<-simMnSCR(parms,K=7,ssbuff=2)
 nind<-nrow(data$Ycat)
 
@@ -877,43 +879,52 @@ terms of individuals {\it per} meter, then we input \mbox{\tt
   trap.space=10}. The analysis is carried out as follows: 
 {\small
 \begin{verbatim}
-library("rjags")
+inits <- function(){list (z=zst,sigma=runif(1,.5,1) ,S=Sst) }
 
-inits <- function(){list (z=zst,sigma=runif(1,.5,1), S=Sst) }
+# parameters to monitor
 parameters <- c("psi","alpha0","alpha1","sigma","N","D")
-data <- list (X=data$X,K=data$K,trap.space=1,Ycat=Ycat,M=M,
-              ntraps=nrow(data$X),ylim=data$ylim,xlim=data$xlim)
 
-out1 <- jags.model("model.txt", data, inits, n.chains=3, n.adapt=500)
-out2 <- coda.samples(out1,parameters,n.iter=1000)
+# bundle the data. Note this reuses "data"
+data <- list (X=data$X,K=data$K, trap.space=1,Ycat=Ycat,M=M,
+        ntraps=nrow(data$X),ylim=data$ylim,xlim=data$xlim)
+
+library("R2jags")
+out <- jags (data, inits, parameters, "model.txt", n.thin=1,
+        n.chains=3, n.burnin=1000, n.iter=2000)
 \end{verbatim}
 }
-This produces the following posterior summaries: {\bf XXXXX NOTE: have
-  to rerun b/c apparently this was simulated with behavioral response XXXXX}
+
+The posterior summaries are provided in the following {\bf R}
+output (recall that
+$N=100$, $\alpha_{0}= -.40$, and $\sigma=0.5$):
 {\small
 \begin{verbatim}
-1. Empirical mean and standard deviation for each variable,
-   plus standard error of the mean:
+Inference for Bugs model at "model.txt", fit using jags,
+ 3 chains, each with 2000 iterations (first 1000 discarded)
+ n.sims = 3000 iterations saved
+         mu.vect sd.vect    2.5%     25%     50%     75%   97.5%  Rhat n.eff
+D          1.873   0.189   1.531   1.750   1.859   2.000   2.250 1.006  1300
+N        119.867  12.107  98.000 112.000 119.000 128.000 144.000 1.006  1300
+alpha0    -0.435   0.151  -0.738  -0.535  -0.439  -0.331  -0.146 1.004   580
+alpha1    -2.195   0.286  -2.785  -2.372  -2.180  -2.004  -1.658 1.003  2800
+psi        0.599   0.069   0.465   0.552   0.599   0.645   0.739 1.006  1400
+sigma      0.480   0.032   0.424   0.459   0.479   0.500   0.549 1.003  2400
+deviance 892.164  21.988 850.922 877.417 891.561 906.246 937.728 1.003   950
 
-           Mean       SD  Naive SE Time-series SE
-D        1.8642  0.18359 0.0023701       0.008635
-N      119.3118 11.74965 0.1516873       0.552662
-alpha0  -0.4425  0.14827 0.0019142       0.005060
-psi      0.5961  0.06800 0.0008779       0.002962
-sigma    0.4812  0.02869 0.0003704       0.001507
-alpha2   2.1824  0.25874 0.0033403       0.013425
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
 
+DIC info (using the rule, pD = var(deviance)/2)
+pD = 241.4 and DIC = 1133.6
+DIC is an estimate of expected predictive error (lower deviance is better).
 \end{verbatim}
 }
-We see that these posterior summaries are generally
-consistent with the data-generating parameter values of
-$N=100$, $\alpha_{0}= -.40$, and $\sigma=0.5$.
 
 
 \subsection{Multinomial Relationship to Poisson}
 
-The multinomial is related directly to the Poisson encounter rate
-model in the following sense. Let $y_{ij}$ be the number of
+The multinomial is related to the Poisson encounter rate
+model by a conditioning argument. Let $y_{ij}$ be the number of
 encounters for individual $i$ in trap $j$. If $y_{ij} \sim
 \mbox{Poisson}(\lambda_{ij})$,
 then,
@@ -929,8 +940,8 @@ Or equivalently the {\it trap of
   capture} is categorical with probabilities $\pi_{ij}$ as given above.
 Under the Gaussian kernel model, these probabilities are:
 \begin{equation}
-\pi_{ij} =  \frac{ \exp( - \alpha_{1}  d({\bf x},{\bf s})^2 ) }  {
-   \sum_{j} \exp(-\alpha_{1} d({\bf x},{\bf s})^2)}
+\pi_{ij} =  \frac{ \exp(  \alpha_{1}  d({\bf x}_{i},{\bf s}_{i})^2 ) }  {
+   \sum_{j} \exp( \alpha_{1} d({\bf x}_{i},{\bf s}_{i})^2)}
 \label{poisson-mn.eq.mnprobs}
 \end{equation}
 where, we note, the intercept $\alpha_{0}$ has cancelled from both the
