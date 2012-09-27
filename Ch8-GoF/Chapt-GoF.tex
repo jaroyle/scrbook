@@ -677,8 +677,8 @@ DIC = 519.8               DIC = 518.1       DIC = 523.2       DIC = 522.4
 \end{table}
 
 
+\begin{comment}
 \subsubsection{Checking some things}
-
 
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 check priors
@@ -703,7 +703,7 @@ a
 
 
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-
+\end{comment}
 
 
 
@@ -1246,6 +1246,55 @@ away from the data, and therefore uninformed by the actual data in the
 vincinity of the trap array.
 Therefore we recoommend computing these fit statistics in the vicinity
 of the trap array only.
+
+
+
+\subsection{some GoF insight}
+
+Standard deviance 
+based GoF statistic for binary regression are not useful.  I'm not sure I've ever seen a
+good technical explanation as to why, but I was fiddling with some SCR
+models last week, testing GoF of "complete spatial randomness" and I think
+I hit on the basic intuitive explanation for this problem.
+ Consider a spatial point process in some region S.  The standard test of
+complete spatial randomness [CSR] has us grid-up the region S into squares
+and tally up y[i] for each grid cell i and then we can use a standard GoF
+statistic like:
+\[
+ sum_{i}  (sqrt(y[i]) - sqrt(E[y[i]]) )^2
+\]
+or the deviance or pearson residual or whatever.
+
+in testing CSR the investigator has to choose the grid size and everyone
+knows that GoF tests are sensitive to the grid size with diminishing power
+as grid size gets small or if its too coarse [you see this everywhere, and
+there are some references cited which I haven't looked into].
+Anyhow, check out what happens if you let the grid cell size go to 0.
+
+In this case, E[y[i]] tends to N/npix  (N being the number of points).
+Further, y[i] tends to a binary outcome. Therefore the fit statistic has  N
+components that represent the y[i] = 1 values and it has npix-N components
+that represent the y[i] = 0 values. So it looks like:
+\begin{verbatim}
+
+sum[ N values where y[i] = 1]      (1 - sqrt(N/npix))^2
+ +
+sum[ npix-N values where y[i] = 0]   (N/npix)^2
+\end{verbatim}
+
+which is just a bunch of constants that works out to be some multiple of N,
+I think around 2*N although I keep messing up the math.
+
+Anyhow, my point is that as you take the limit in which the counts become
+binary, the fit statistic loses all its variability and is just constant.
+This is why logistic-regression requires grouping the data -- the same goes
+for testing CSR of point processes.
+
+My understanding is that there is an inherent subjectivity in how you group
+the data even for the point process CSR test. I can't find my copy of
+Illian so I can't read up on this right now.
+
+
 
 \subsubsection{Computing the cell counts}
 
