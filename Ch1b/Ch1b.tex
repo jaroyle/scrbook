@@ -105,7 +105,10 @@ probability of observing any possible realization of the random
 variable $X$.
 
 In this book, we will use bracket notation (the last two
-examples above) to represent arbitrary probability distributions. When
+examples above) to represent arbitrary probability distributions. The
+key thing to remember when you see $[x]$ is that we are referring to
+the probability distribution for the random variable $x$, which could
+be anything: Poisson, Gaussian, beta, etc... When
 we wish to be specific about the probability distribution, we will do
 so in one of two ways, one precise and one symbolic. Before explaining
 these two options, let's choose a specific distribution as a model for
@@ -135,7 +138,7 @@ often simplify Eq.~\ref{modeling.eq.bin} using the symbolic notation:
 %\text{Binomial}(K, p)$, where $p$ is the
 %probability of catching a shad on a particular cast and $K$ is the
 %binomial size parameter.
-The $\sim$ symbol is meant to represent a stochastic relationship, and
+The ``$\sim$'' symbol is meant to represent a stochastic relationship, and
 can be read ``is distributed as.''
 %We  will use this notation to complement the bracket notation, which will
 %be reserved for generic probability distributions. Thus, we could
@@ -146,19 +149,22 @@ Another reason for using this notation is that
 it resembles the syntax of the \bugs~language, which we will
 frequently use to conduct Bayesian inference.
 
-Now that we have specified our model as $x \sim \text{Bin}(K,p)$,
-we can use it to make probability statments about future
+Note that once we choose a probability distribution, we have chosen a
+model. In our example, we have specified our model as $x \sim
+\text{Bin}(K,p)$, and because we are assuming that the parameters are
+known, we can make probability statments about future
 outcomes. Continuing with our fish example, we might want to know what
 the probability of catching $x=7$ again on a future fishing outing
-assuming that we know $p=0.35$. Evaluating the pmf returns a
+assuming that we know $p=0.35$. Evaluating the binomial pmf returns a
 probability of 0.18, as show using this bit of \R~code:
 \begin{verbatim}
 > dbinom(7, 20, 0.35)
 [1] 0.1844012
 \end{verbatim}
 By definition, the pmf allows us to evaluate the probability of observing
-any $x$ given $K=20$ and $p=.35$. This probability mass distribution
-can be visualized in \R~as follows:
+any $x$ given $K=20$ and $p=.35$, thus the distribution can be visualed
+by can be visualized by evaluating it for all values of $x$ that have
+non-negligible probabilities, as can be easily done in \R:
 \begin{verbatim}
 plot(0:20, dbinom(0:20, 20, 0.35), type="h", ylab="Probability",
      xlab="Number of shad caught (x)")
@@ -174,7 +180,7 @@ the result of which is shown in Fig.\ref{modeling.fig.bin} with some extra detai
 
 The purpose of this little example is to show that once we specify a
 model for the random variable(s) being studied, we can begin drawing
-conclusions, i.e making inferences, about the processes of interest,
+conclusions, i.e. making inferences, about the processes of interest,
 even in the face of uncertainty.
 Probability distributions are
 essential to this process, and thus we need to
@@ -230,13 +236,13 @@ The first is that the function
 must be non-negative for all possible values of the random variable
 $X$, i.e. $[x] \geq 0$. The second requirement is that the integral of
 a pdf must be unity, $\int_{-\infty}^{\infty} [x] = 1$, and similarly
-for pmf, the summation over all possible values is unity, $\sum_x [x]
+for a pmf, the summation over all possible values is unity, $\sum_x [x]
 = 1$. The following \R~code demonstrates
 this for the normal and binomial distributions:
 \begin{verbatim}
 > integrate(dnorm, -Inf, Inf, mean=0, sd=1)$value
 [1] 1
-> sum(dbinom(0:5, size=5, p=0.1)) # 5 is as good as Inf here
+> sum(dbinom(0:5, size=5, p=0.1))
 [1] 1
 \end{verbatim}
 This requirement is important to remember when one must develop a
@@ -251,8 +257,8 @@ to compute important summaries of random variables. The two most
 important summaries are the expected value, $\mathbb{E}(X)$,
 and the variance $\text{Var}(X)$. The expected value
 can be thought of as the average
-value of a very large sample from the specified distribution. For
-example, a poor man's way of finding the expected values of a binomial
+of a very large sample from the specified distribution. For
+example, a mindless way of approximating the expected values of a binomial
 distribution with $K=20$ trials and $p=0.35$ can be implemented in \R~using:
 \begin{verbatim}
 > mean(rbinom(10000, 20, 0.3))
@@ -260,7 +266,7 @@ distribution with $K=20$ trials and $p=0.35$ can be implemented in \R~using:
 \end{verbatim}
 For most probability distributions used in this book, the expected
 values are known exactly, as shown in Table~\ref{stat.tab.pdfs}, and
-thus we don't need to resort to Monte Carlo approximations. For instance, the
+thus we don't need to resort to such Monte Carlo approximations. For instance, the
 expected value of the binomial distribution is $\mathbb{E}[x] = Kp =
 20 \times 0.35 = 7$. In this case, it happens to take an integer
 value, but this is not a necessary condition, even for discrete random
@@ -314,11 +320,10 @@ describes the amount of variation around the expected
 value. Specifically, $\text{Var}(X) = \mathbb{E}((X -
 \mathbb{E}(X))^2)$. Clearly, if the variance is zero, the variable is
 not random.
-
 For some distributions, notably the normal distribution, the variance
 is a parameter to be estimated. Thus, in ordinary linear regression,
-we estimate both the mean (expected value) of the random variable
-$\mu$ (which may be a function of covariates) and the variance
+we estimate both the expected value $\mu=E(x)$,
+which may be a function of covariates, and the variance
 $\sigma^2$, or similarly the residual standard error $\sigma$. For
 other distributions, the variance is not an explicit parameter to be
 estiamted, and instead, the mean to variance ratio is fixed. In the
@@ -333,7 +338,7 @@ situation is true for the binomial distribuiton---the variance is
 determined by the two parameters $K$ and $p$, $\text{Var}(X) = Kp(1-p)$. Thus
 in our earlier example with $K=20$ and $p=0.35$, the variance is
 4.55. Toying around with these ideas using random number generators
-may be helpful. Here is some code
+may be helpful. Here is some code to illustrate some of these basic concepts:
 \begin{verbatim}
 > 20*0.35*(1-0.35)             # Var(X)
 [1] 4.55
@@ -347,8 +352,8 @@ may be helpful. Here is some code
 \section{Common Probability Distributions}
 \label{sec.modeling.distributions}
 
-We got a little ahead of ourselves in the previous example by using
-the binomial and Poisson distributions without fully describing them.
+We got a little ahead of ourselves in the previous sections by using
+the binomial and Poisson distributions without describing them in detail.
 A solid understanding of the binomial, Poisson, multinomial, uniform,
 and normal distributions is absolutely essential throughout the
 remainder of the book. We will occasionally make use of other
@@ -360,12 +365,10 @@ used distributions described in this section.
 
 \subsection{The Binomial Distribution}
 
-We have already briefly introduced the binomial distribution, but we
-need to describe it in more detail because of the critical role it
-plays in ecology. The binomial distribution is
+The binomial distribution plays a critical role in ecology. It is
 used for purposes as diverse as modeling count data, survival
-probability, occurrence probability, and capture probability.
-
+probability, occurrence probability, and capture probability, just to
+name a few.
 To describe the properties of the binomial distribution, and related
 distributions, we will introduce a new example.
 Suppose we are conducting a bird survey at a site in which 10
@@ -374,10 +377,10 @@ each of these individuals has a detection probability of 0.5. The
 binomial distribution is the natural choice for describing the number
 of individuals that we would expect to detect in this
 situation, and using our notation, we can write
-$x \sim \text{Bin}(10, 0.5)$. Note that if $p \equiv 1$, the number of
-individuals that we would observe on $J$ replicate surveys, $x_j$,
+$n \sim \text{Bin}(10, 0.5)$. Note that if $p \equiv 1$, the number of
+individuals that we would observe on $J$ replicate surveys, $n_j$,
 would not be a random variable---we would always observe
-$x_j=10$. That is the observed data would exactly equal the expected
+$n_j=10$. That is, the observed data would exactly equal the expected
 value and the variance would be zero.
 \begin{comment}
   The \texttt{stats} package that comes with \R~has random number
@@ -436,52 +439,10 @@ we could observer 5 of the 10 chestnut-sided warblers at the site. The
 binomial coefficient, which is read ``N choose n'' is defined as
 \begin{equation}
   \label{eq:1}
-  \binom{N}{n} = \frac{N!}{n!(N-n)!}
+  \binom{N}{n} = \frac{N!}{n!(N-n)!}.
 \end{equation}
 
 
-\begin{comment}
-Now that we know how to compute the probability of observing $n=5$ under
-our model, we can compute the probability of observing any
-integer $n$ and this allows us to easily visualize the
-probability mass function as we did earlier.
-  The following command produces a plot of the binomial pmf for
-  integers 0 through 15. Notice that the probability of observing
-  $n>N$ is zero.
-
-\begin{verbatim}
-plot(0:15, dbinom(0:15, 10, 0.5), type="h", lwd=5, lend="butt",
-     xlab="n", ylab="Pr(n=x|N,p)")
-\end{verbatim}
-
-  In our example, we only drew 3 samples from the binomial
-  distribution and it should be evident that it would be difficult to
-  estimate parameters of the distribution with such a small
-  sample. With a large sample, a histogram of the observed counts
-  should closely mimic the true probability mass function as is shown
-  here:
-
-
-  This example illustrates the uncertainty inherent in sampling and
-  the
-
-
-  If our interest was in estimating $N$, and we somehow knew that
-  $p=0.5$, our best guess would be that $N$ is the mean of the counts
-  divided by the detection probability,
-  \[
-  \hat{N} = \frac{\mathbb{E}(x)}{p} = \frac{1/J \sum_j x_j}{p} =
-  \frac{6}{0.5} = 12.
-  \]
-  Our estimate is 2 chestnut-sided warblers too high. Not too bad
-  though. As it turns out, estimating the binomial $N$ can be quite a
-  challenge, which we will discuss in more in the next section on
-  estimation. For the moment, it is important to recognize what the
-  binomial distribution is, and how it can be used to describe our
-  hypotheses about an ecological processs. It also , however, that we
-  had nothing better to do than visit the site 100 times. In this
-  case, we would expect to observe counts such as this:
-\end{comment}
 
 
 
@@ -491,25 +452,25 @@ Above, we showed three alternatives to \verb+dbinom+ for evaluating the
 binmial pmf. These three commands differed only in how they computed
 the binomial coefficient, which we needed because of the numerous ways
 in which we could observe $n=5$ under our model. To conceptualize
-this, let $h_i$ be the binary variable indicating if individual $i$
-was detected or not.
-For example, we could observed $\mathbf{h}=(0,0,1,1,1,1,1,0,0,0)$
-which is to say that we detected individuals 3-7 but not 1-2 or
-8-10. For $N=10$ and $n=5$, there
+this, let $h_i$ be a binary variable indicating if individual $i$
+was detected or not. Hence, given that 5 individuals were detected,
+the vector of individual detections could be something like
+$\mathbf{h}=(0,0,1,1,1,1,1,0,0,0)$, which would indicate
+that we detected individuals 3-7 but not 1-2 or 8-10. For $N=10$ and
+$n=5$, the binomial coefficient tells us that there
 are 252 possiblities of $\mathbf{h}$. However, when $N \equiv 1$, this term
 drops from the pmf and the result is the pmf for the Bernoulli
 distribution. That is, the Bernoulli distribution is simply the
 binomial distribution when $N \equiv 1$. Alternatively, we could say that the binomial
 distribution is the outcome of $N$ i.i.d. Bernoulli trials.
+%% DEFINE iid here?
 
 The utility of the Bernoulli distribution is evident when we imagine
 that not all of the chestnut-sided warblers have the same detection
 probability. Thus, if some individuals can be detected with
 probability 0.3 and others have a 0.7 detection probabilty, we can no
 longer safely write $n \sim \text{Bin}(N, p)$ since $p$ is no
-longer a constant (scalar). %\footnote{Although this model is not
-%  technically accurate, it is often a good approximation if
-%  heterogeneity in $p$ is low.}.
+longer a scalar, i.e. a single value.
 
 To properly account for variation in $p$, we could redefine our notation
 describing how the counts of chestnut-sided warblers are
@@ -835,6 +796,59 @@ i.e. the $\beta$'s.
 
 In all of these examples, we have dealt only with fixed effects. Fixed
 effects are parameters that
+
+
+
+
+
+
+\begin{comment}
+Now that we know how to compute the probability of observing $n=5$ under
+our model, we can compute the probability of observing any
+integer $n$ and this allows us to easily visualize the
+probability mass function as we did earlier.
+  The following command produces a plot of the binomial pmf for
+  integers 0 through 15. Notice that the probability of observing
+  $n>N$ is zero.
+
+\begin{verbatim}
+plot(0:15, dbinom(0:15, 10, 0.5), type="h", lwd=5, lend="butt",
+     xlab="n", ylab="Pr(n=x|N,p)")
+\end{verbatim}
+
+  In our example, we only drew 3 samples from the binomial
+  distribution and it should be evident that it would be difficult to
+  estimate parameters of the distribution with such a small
+  sample. With a large sample, a histogram of the observed counts
+  should closely mimic the true probability mass function as is shown
+  here:
+
+
+  This example illustrates the uncertainty inherent in sampling and
+  the
+
+
+  If our interest was in estimating $N$, and we somehow knew that
+  $p=0.5$, our best guess would be that $N$ is the mean of the counts
+  divided by the detection probability,
+  \[
+  \hat{N} = \frac{\mathbb{E}(x)}{p} = \frac{1/J \sum_j x_j}{p} =
+  \frac{6}{0.5} = 12.
+  \]
+  Our estimate is 2 chestnut-sided warblers too high. Not too bad
+  though. As it turns out, estimating the binomial $N$ can be quite a
+  challenge, which we will discuss in more in the next section on
+  estimation. For the moment, it is important to recognize what the
+  binomial distribution is, and how it can be used to describe our
+  hypotheses about an ecological processs. It also , however, that we
+  had nothing better to do than visit the site 100 times. In this
+  case, we would expect to observe counts such as this:
+\end{comment}
+
+
+
+
+
 
 \section{Joint, Marginal, and Conditional Distributions}
 
