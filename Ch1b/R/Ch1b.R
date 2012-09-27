@@ -122,6 +122,55 @@ mean((x-mean(x))^2)          # Monte Carlo approximation
 
 
 
+
+# Multinomial
+
+set.seed(2321)
+caphist.probs <- c("11"=0.09, "10"=0.21, "01"=0.21, "00"=0.49)
+drop(rmultinom(1, 10, caphist.probs))
+
+
+
+
+
+
+
+
+
+
+# Maximum likelihood
+
+set.seed(3440)
+lambda <- 3
+y1 <- rpois(100, lambda)
+negLogLike1 <- function(par) -sum(dpois(y1, par, log=TRUE))
+starting.value <- c('lambda'=1)
+optim(starting.value, negLogLike1)$par
+
+
+set.seed(540)
+nsites <- 100
+elevation <- rnorm(100)
+veght <- rnorm(100)
+beta0 <- 1
+beta1 <- -1
+beta2 <- 0
+lambda <- exp(beta0 + beta1*elevation + beta2*veght)
+y2 <- rpois(nsites, lambda)
+negLogLike2 <- function(pars) {
+    beta0 <- pars[1]
+    beta1 <- pars[2]
+    beta2 <- pars[3]
+    lambda <- exp(beta0 + beta1*elevation + beta2*veght)
+    -sum(dpois(y2, lambda, log=TRUE))
+}
+starting.values <- c('beta0'=0, 'beta1'=0, 'beta2'=0)
+optim(starting.values, negLogLike2)$par
+
+
+
+
+
 # Joint, marginal, conditional distributions
 
 X <- 0:20 # All possible values of X
@@ -156,3 +205,15 @@ round(YgivenX, 2)
 
 colSums(XgivenY)
 rowSums(YgivenX)
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,6 +1,6 @@
-simPoissonSCR.fn <-
-function(discard0=TRUE,array3d=FALSE,sd=2013){
-set.seed(sd)
+simSCR0.fn <-
+function(discard0=TRUE,array3d=FALSE,rnd=2013){
+set.seed(rnd)
 
 # make trapping grid. Normally you would provide a 2-dimensional matrix
 # of trap coordinates and read it in like this:
@@ -13,7 +13,7 @@ plot(traplocs)
 
 # define state-space of point process. (i.e., where animals live).
 # Here "delta" just adds
-# a fixed buffer to the outer extent of the traps. 
+# a fixed buffer to the outer extent of the traps.
 delta<-2
 Xl<-min(traplocs[,1] - delta)
 Xu<-max(traplocs[,1] + delta)
@@ -32,20 +32,27 @@ K<- 20
 # to simulate data we have to start with some activity centers
 sx<-runif(N,Xl,Xu)
 sy<-runif(N,Yl,Yu)
-S<-cbind(sx,sy) 
+S<-cbind(sx,sy)
 
 # how far is each individual from each trap?
 D<- e2dist(S,traplocs)
 
 alpha0<- -2.5
 sigma<- 0.5
-alpha1<- 1/(2*sigma*sigma)
+beta<- 1/(2*sigma*sigma)
 
-muy <-  exp(alpha0)*exp(-alpha1*D*D)
+#cloglog.probcap<- alpha0  - beta*D*D
+#probcap<- 1-exp(-exp(cloglog.probcap))
+
+# this is logit model here:
+
+#probcap<- expit(-2.5 - beta*D)
+
+probcap<-plogis(alpha0)*exp(-beta*D*D)
 # now generate the encounters of every individual in every trap
 Y<-matrix(NA,nrow=N,ncol=ntraps)
 for(i in 1:nrow(Y)){
- Y[i,]<-rpois(ntraps,K*muy[i,])
+ Y[i,]<-rbinom(ntraps,K,probcap[i,])
 }
 
 ## NOTE NOTE NOTE NOTE
@@ -69,7 +76,7 @@ if(array3d){
 Y<-array(NA,dim=c(N,K,ntraps))
 for(i in 1:nrow(Y)){
 for(j in 1:ntraps){
- Y[i,1:K,j]<-rpois(K,1,muy[i,j])
+ Y[i,1:K,j]<-rbinom(K,1,probcap[i,j])
 }
 }
 

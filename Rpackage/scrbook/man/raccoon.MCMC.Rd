@@ -56,7 +56,7 @@ raccoon.MCMC <- function(n,X,Eff,y,M, niters,SSp,collar, locs,mi,mall, inits)
 XXXXX
 }
 
-\example{
+\examples{
 #use raccoon.MCMC to run a single MCMC chain for raccoon data from Ch15
 
 data(ch15racdata)

@@ -9,7 +9,7 @@ ntraps<- dim(Yarr)[2]
 nz<-M-nind
 Yaug <- array(0, dim=c(M,ntraps,K))
 
-Yaug[1:nind,,]<-beardata$bearArray
+Yaug[1:nind,,]<-Yarr
 y<- apply(Yaug,c(1,3),sum) # summarize by ind x rep
 y[y>1]<- 1             # toss out duplicate obs
 ytot<-apply(y,1,sum)   # total encounters out of K

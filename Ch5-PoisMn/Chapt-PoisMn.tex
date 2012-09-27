@@ -1,23 +1,28 @@
 \chapter{Alternative Models for the Encounter Process}
+\markboth{Encounter Models}{}
 \label{chapt.poisson-mn}
 
-In the previous chapter we considered a very specific but not
-terribly limited observation model. The observation model consisted of
-two main elements: First a description of the encounter process
-by which individuals are detected in traps. Specifically, we
-assumed individual trap-specific encounters were iid Bernoulli
-trials. The consequence of this is that individuals function
-independently of one another and can be captured in
-any number of traps during a specific interval of trapping
-effort, but only 1 time per trap. 
-The type of device is typical of bear hair snares, which we
-considered as an example in that section. 
- It is natural to consider
-alternative functional forms of this detection probability model which
-we do in Chapt. \ref{chapt.covariates} and elsewhere.
+\vspace{.3in}
+
+In the previous chapter we considered a very specific but not terribly
+limited observation model. The model for the observations consists of
+two main
+elements: First a description of the encounter process by which
+individuals are detected in traps and, secondly, a parametric model
+that relates encounter probability to an individual's activity
+center. 
+In the previous chapter we considered the Bernoulli encounter process
+model which assumed that individual and 
+trap-specific encounters were independent Bernoulli trials. 
+In this chapter, we consider alternative models of the encounter
+process that do not require independence, and accommodate observed
+data that are not only binary. 
+ It is natural also to consider alternative parametric forms of 
+the encounter probability model which we consider in 
+Chapt. \ref{chapt.covariates} and elsewhere.
 
 In this chapter we consider alternative observation models which
-accommodate Poisson or multinomial observation models. For example, if
+accommodate Poisson or multinomial observation. For example, if
 sampling devices can detect an individual some arbitrary number of
 times during an interval, then it is natural to consider observation
 models for encounter frequencies, such as the Poisson model. Another
@@ -29,21 +34,20 @@ individuals. A typical example is a mist-net for birds
 from these kinds of studies as independent multinomial observations.
 A related type of device that produces {\it dependent} multinomial
 observations are the so-called {\it single-catch} traps
-\citep{efford_etal:2009euring}. The canonical example are small-mammal
-live traps which catch and hold a single individual. Competitation
+\citep{efford:2004, efford_etal:2009euring}. The canonical example are small-mammal
+live traps \citep{converse_etal:2006ea} which catch and hold a single individual. Competition
 among individuals for traps induces a complex dependence structure
 among individual encounters. To date, no formal inference framework
 has been devised for this method although it stands to reason that the
 independent multinomial model should be a good approximation in some
-situations \citep{efford_etal:2009euring}.  There are other
-observation systems that we discuss here.
+situations \citep{efford_etal:2009euring}.  
 
-One thing that is apparent from our development of the multinomial
-observation model is that SCR models are a kind of multi-state model,
-in the conventional sense as applied in capture-recapture studies. In
-the context of SCR though, the ``state'' variable is a geographic
-location and the transition probabilities are parameterized by
-distance between the states.
+We analyze a number of examples of these different observation models
+using {\bf JAGS} and also the {\bf R}
+package \mbox{\tt secr} \citep{efford:2011}.
+
+
+
 
 
 
@@ -56,9 +60,10 @@ observations -- i.e., standard encounter history data -- so
 that individuals are captured at most one time in a trap.  This makes
 sense for many types of DNA sampling (e.g., based on hair snares)
 because distinct visits to sampled locations or devices cannot be
-differentiated. However, many encounter methods or devices make it
+differentiated. However, for some encounter devices, or methods, the
+potential sample size is {\it not} fixed, and so it is 
 possible to encounter an individual some arbitrary number of times
-during any particular sampling episode XXXX EFFORD CITE XXXXXX. 
+during any particular sampling episode.
 That is, we might observe
 encounter frequencies $y_{ijk}>1$
 for individual $i$, trap $j$ and
@@ -72,8 +77,8 @@ frequency data.  In general, any discrete probability mass function
 could be used for this purpose, including the standard models for
 count data used throughout ecology, the Poisson and negative
 binomial.  Here we focus on using the Poisson
-model only although other count frequency models are possible XXX
-EFFORD ciTE XXXX.
+model only although other count frequency models are possible for SCR models 
+\citep{efford_etal:2009ecol}.
 
 Let $y_{ijk}$ be the frequency of encounter for
 individual $i$, in trap $j$, during occasion $k$, then assume:
@@ -92,27 +97,29 @@ We propose
 \]
 Where $g({\bf x},{\bf s})$ is any positive valued function, such as
 the negative exponential or the bivariate Gaussian kernel.
-Then $\lambda_{0}g({\bf x},{\bf s})$ is the expected encounter rate in trap
+Then, $\lambda_{0}g({\bf x},{\bf s})$ is the expected encounter rate in trap
 ${\bf x}$ for an individual having activity center ${\bf s}$.  Note
 that
 \[
- log(\lambda_{ij}) = log(\lambda_{0}) + log(  g({\bf x}_{j},{\bf
+ \log(\lambda_{ij}) = \log(\lambda_{0}) + \log(  g({\bf x}_{j},{\bf
    s}_{i}) )
 \]
-where, if we set $\alpha_{0} \equiv log(\lambda_{0})$, and, if 
-$g({\bf x},{\bf s}) \equiv exp(-\alpha_{1} d({\bf x},{\bf s})^2)$
+where, if we set $\alpha_{0} \equiv \log(\lambda_{0})$, and, if 
+$g({\bf x},{\bf s}) \equiv \exp(-  d({\bf x},{\bf s})^2 /(2\sigma^2))$
 (i.e., the Gaussian model), then:
 \begin{equation}
- log(\lambda_{ij}) = \alpha_{0} + \alpha_{1} d({\bf x}_{j},{\bf s}_{i})^{2}
+ \log(\lambda_{ij}) = \alpha_{0} + \alpha_{1} d({\bf x}_{j},{\bf s}_{i})^{2}
 \label{poisson-mn.eq.lp}
 \end{equation}
-which is the same linear predictor as we have seen for the Bernoulli
+where $\alpha_{1} = -1/(2\sigma^2)$, 
+which has the same linear predictor as we have seen for the Bernoulli
 model in Chapt. \ref{chapt.scr0}.  We can accommodate covariates at
 the level of individual-, trap- or sample occasion by including them
 on the baseline encounter rate parameter $\lambda_{0}$. For example,
-if $C_{j}$ is some covariate that depends on trap only, then we have:
+if $C_{j}$ is some covariate that depends on trap only, then we
+express the relationship between $\lambda_{0}$ and $C_{j}$ as:
 \[
-log(\lambda_{0,ijk}) = \alpha_{0} + \alpha_{2} C_{j}
+\log(\lambda_{0,ijk}) = \alpha_{0} + \alpha_{2} C_{j}
 \]
 and therefore covariates on the logarithm of baseline encounter
 probability appear also as linear effects on $\lambda_{ij}$.  We don't
@@ -133,54 +140,59 @@ g({\bf x}_{j},{\bf s}_{i}) )
 We see that $K$ and $\lambda_{0}$ serve the same role as affecting the
 base encounter rate. Since the observation model is the same,
 probabilistically speaking, for all values of $K$, evidently we need
-only $K=1$ ``survey'' from which to estimate model parameters. We know
+only $K=1$ ``survey'' from which to estimate model parameters \citep{efford_etal:2009ecol}. We know
 this intuitively as sampling by multiple traps serves as replication
 in SCR models.
 
 \subsection{Poisson model of space usage}
 
-How do we interpret this model?  A natural interpretation of the
-encounter process model is that resulting from movement of individuals
+It is natural to interpret the Poisson encounter model as a model of
+space usage
+resulting from movement of individuals
 about their home range (sec. \ref{scr0.sec.implied}).  Imagine we have
-perfect samplers in every pixel of the landscape that discharge at set
-time intervals (e.g., every hour), and let $m_{ij}$ be the number of
-times individual $i$ was recorded in pixel $j$. For pure model of
-space usage, we might think of this model:
+perfect samplers in every pixel of the landscape so that whenever an
+individual moves from one pixel to another, we can record it.
+Let $m_{ij}$ be the number of
+times individual $i$ was recorded in pixel $j$ (i.e., it selected or
+used pixel $j$). Then, 
+we might think of the Poisson model for the observed {\it use} frequencies:
 \[
-m_{ij} \sim  \mbox{Poisson}(K  g({\bf x}_{j},{\bf s}_{i}) )
+m_{ij} \sim  \mbox{Poisson}( \lambda_{0} g({\bf x}_{j},{\bf s}_{i}) )
 \]
-where $K$ is the number of time intervals recorded. This model of
+where $\lambda_{0}$ is related to the baseline movement rate of the
+animal (how often it moves). This model of
 space usage gives rise to the standard resource selection function
-(RSF) models \citep[][and Chapt. \ref{chapt.rsf}]{royle_etal:2012mee}.
+(RSF) models (see Chapt. \ref{chapt.rsf}).
 But now suppose our samplers are not perfect but, rather, record only
 a fraction of the resulting visits. A sensible model is
 \[
- y_{ij}|m_{ij} \sim \mbox{Binomial}(m_{ij}, \lambda_{0}).
+ y_{ij}|m_{ij} \sim \mbox{Binomial}(m_{ij}, p).
 \]
 The marginal distribution of $y_{ij}$ is:
 \[
- y_{ij} \sim \mbox{Poisson}(K \lambda_{0} g({\bf x}_{j},{\bf s}_{i}) ).
+ y_{ij} \sim \mbox{Poisson}(p_{0} g({\bf x}_{j},{\bf s}_{i}) ).
 \]
-Therefore, we see that encounters accumulate in proportion to the
-frequency of outcomes of an individual using space (or ``selecting
-resources'').
+where $p_0$ is a composite of the movement rate and conditional
+detection probability $p$. Therefore, we see that encounters
+accumulate in proportion to the frequency of outcomes of an individual
+using space (or ``selecting resources'').
 
 We introduced this interpretation of the model in terms of movement
 and space usage in sec. \ref{scr0.sec.implied}, and it is one of the
 main underlying concepts of SCR models that is not present in ordinary
-capture-recapture models. As we noted previously, the underlying model
-of space usage is only as complex as the encounter probability (or
-rate) model which is, so far, only symmetric and stationary (does not
-vary in space). 
-
+capture-recapture models. As we noted there, the underlying model of
+space usage is only as complex as the encounter probability 
+model which is, so far, only symmetric and stationary (does not vary
+in space). We generalize this model of space usage substantially in
+Chapt. \ref{chapt.rsf}.
 
 
 
 \subsection{Poisson relationship to the Bernoulli model}
 \label{poisson-mn.sec.approx}
 
-There is a sense in which the Poisson and Bernoulli models can
-be viewed as consistent with one another. Note that under the Poisson
+There is a sense in which the Poisson and Bernoulli models can be
+viewed as consistent with one another. Note that under the Poisson
 model with $E(y) = \lambda$ we have:
 \begin{equation}
  \Pr(y>0) = 1-\exp(-\lambda)
@@ -191,32 +203,26 @@ the individual was captured at least 1 time under the Poisson model,
 i.e., $y>0$, then it would be natural to set $p_{ij} = \Pr(y>0)$
 according to \ref{eq.cloglog}.
 
-In fact, as $\lambda$ gets small, the Poisson model is a close approximation
-to the Bernoulli model in the sense that outcomes concentrate on
-$\{0,1\}$, i.e.,  $\Pr(y\in \{0,1\})
-\rightarrow 1$ as $\lambda \rightarrow 0$.
-A relevent property of the Poisson model
-is that
-$\Pr(y>0) \rightarrow \lambda$
-for small values of $\lambda$.
-This phenomenon is shown in  Fig.
-\ref{poisson-mn.fig.poissonbern} where
-the left panel shows a plot of $\lambda_{ij}=\lambda_{0}g({\bf
-  x}_{j},{\bf s}_{i};\sigma)$ vs. distance and
-superimposed on that is a plot of $p_{ij}=1-exp(-\lambda_{ij})$ vs. distance, for values
-$\lambda_{0} = .1$ and $\sigma = 1$, and the right panel shows a plot of
-$\Pr(y>0)$ vs. $E[y]$. We see that the two quantities are
+In fact, as $\lambda$ gets small, the Poisson model is a close
+approximation to the Bernoulli model in the sense that outcomes
+concentrate on $\{0,1\}$, i.e., $\Pr(y\in \{0,1\}) \rightarrow 1$ as
+$\lambda \rightarrow 0$.  Indeed, under the Poisson model, 
+$\Pr(y>0) \rightarrow \lambda$ for small values of $\lambda$.
+This phenomenon is shown in Fig.  \ref{poisson-mn.fig.poissonbern}
+where the left panel shows a plot of $\lambda_{ij}=\lambda_{0}g({\bf
+  x}_{j},{\bf s}_{i})$ vs. distance and superimposed on that is
+a plot of $p_{ij}=1-exp(-\lambda_{ij})$ vs. distance, for values
+$\lambda_{0} = .1$ and $\sigma = 1$, and the right panel shows a plot
+of $\Pr(y>0)$ vs. $E[y]$. We see that the two quantities are
 practically indistinguishable.
 
-This is
-convenient in some cases because the Poisson model might be more
-tractable to fit (or even vice versa). For an example, see the models
-described in Chapt. \ref{chapt.scr-unmarked}, and we also consider
-another case in sec. \ref{poisson-mn.sec.singlecatch} below. To
-evaluate the closeness of the approximation, you can use the following
-{\bf R} commands which we used to produce
-Fig. \ref{poisson-mn.fig.poissonbern}:
-{\small
+This is convenient in some cases because the Poisson model might be
+more tractable to fit (or even vice versa). For an example, see the
+models described in Chapt. \ref{chapt.scr-unmarked}, and we also
+consider another case in sec. \ref{poisson-mn.sec.singlecatch}
+below. To evaluate the closeness of the approximation, you can use the
+following {\bf R} commands which we used to produce
+Fig. \ref{poisson-mn.fig.poissonbern}: {\small
 \begin{verbatim}
 x<-seq(0.001,5,,200)
 lam0<- .1
@@ -235,56 +241,54 @@ abline(0,1,col="red")
 To summarize, if $y$ is Poisson and, as $\lambda$ gets small,
 \begin{eqnarray*}
 \Pr(y>0)  & \approx & E[y]  \\
-1-exp(-\lambda_{0} g(x,s)) &\approx &  \lambda_{0} g(x,s)
+1-\exp(-\lambda_{0} g({\bf x},{\bf s})) &\approx &  \lambda_{0} g({\bf
+  x},{\bf s})
 \end{eqnarray*}
-which explains the close correspondance we have found between these
-two versions of the Gaussian encounter probability model (sec. \ref{scr0.sec.implied}).
-What all of this suggests it that
-if we see very few observations $>1$ then we wont lose much
-information by using the Bernoulli model. On the other hand, the
-Poisson model may have some advantages in terms of analytic or numerical
-tractability in some cases.
+What all of this suggests it that if
+we see very few observations $>1$ then we wont lose much information
+by using the Bernoulli model. On the other hand, the Poisson model may
+have some advantages in terms of analytic or numerical tractability in
+some cases. Further, this approximation
+ explains the close correspondance we have found between these
+two versions of the Gaussian encounter probability model
+(sec. \ref{scr0.sec.implied}).  Namely, the Gaussian hazard model and
+the Gaussian encounter probability model are close approximations
+because
+$1-\exp(-\lambda) \approx \lambda$ if $\lambda$ is small.
+
+
 
 \begin{figure}
 \centering
 \includegraphics[width=5in,height=2.5in]{Ch5-PoisMn/figs/Poisson-Bern.png}
 \caption{Poisson approximation to the binomial. As the Poisson mean
-  approaches 0, then $Pr(y>0)$ under the Poisson model approaches
-  $\lambda$ and therefore $y \sim Poisson$ is well-approximated by a
+  approaches 0, then $\Pr(y>0)$ under the Poisson model approaches
+  $\lambda$ and therefore $y \sim \mbox{Poisson}(\lambda)$ is well-approximated by a
   Bernoulli model with parameter $\lambda$.
 }
 \label{poisson-mn.fig.poissonbern}
 \end{figure}
 
-Even in such cases where we're not in the range where the Poisson and
-Bernoulli models are nearly equivalent,
-we might choose to truncate  individual encounter frequencies
-to binary observations anyhow (``quantize'').
-We might do
-this intentionally, but sometimes this truncation is a feature of the
-sampling. For example, in the case of bear hair snares, the number of
-encounters might be well approximated by a Poisson distribution but we
-cannot determine unique visits and so only get to observe the binary
-event ``$y>0$''. Similarly for scat sampling problems it will not
-generally be possible to diagnose distinct ``independent'' scat
-samples. Under this model the data are only binary encounters and we
-might therefore choose a model of the form:
+Even in such cases not in the range where the Poisson and
+Bernoulli models are nearly equivalent, we might choose to truncate
+individual encounter frequencies to binary observations anyhow
+(transforming counts to 0/1 is called ``quantizing'').  We might do this intentionally, but sometimes this
+truncation is a feature of the sampling. For example, in the case of
+bear hair snares, the number of encounters might be well approximated
+by a Poisson distribution but we cannot determine unique visits and so
+only get to observe the binary event ``$y>0$''. Similarly for scat
+sampling problems it will not generally be possible to diagnose
+distinct ``independent'' scat samples. Under this model the data are
+only binary encounters and we might therefore choose a model of the
+form:
 \[
-\mbox{ cloglog}(p_{ij}) = \log(\lambda0)  + \log(g({\bf x},{\bf s}))
+\mbox{ cloglog}(p_{ij}) = \log(\lambda_{0})  + \log(g({\bf x},{\bf s}))
 \]
 \begin{comment}
 This example shows us that the choice of link function is typically
 directly related to a specific encounter frequency model and,
 furthermore, the choice of link function is equivalent to choice of
 ``detection function.''
-%As another example, what if the latent
-%encounter frequencies are actually geometric random variables where
-%the mean is a function of distance? For the case where the support of
-%y includes 0 – so that $y$ is the number of failures before the 1st
-%success, then the mean is $\mu = (1-p)/p$.  $Pr(y>0) =$ ??
-%\[
-%logit() = ….?
-%\]
 \end{comment}
 
 \subsection{A cautionary note on modeling encounter frequencies}
@@ -294,7 +298,7 @@ are especially fond of negative binomial models for count data
 \citep{verhoef_boveng:2007,white_bennetts:1996,kery_etal:2005}
 but other models for excess-Poisson variation are possible. For
 example, we might add a normally distributed random effect to
-the linear predictor.
+the linear predictor \citep{coull_agresti:1999}.
 
 As a general rule we favor the Bernoulli observation model even if
 encounter frequencies are obtained by sampling.  The main reason is
@@ -303,41 +307,35 @@ problem (i.e., Poisson, negative binomial, log-normal mixture) that is
 wholly unrelated to the fundamental space usage process that underlies
 the genesis of SCR data. Repeated encounters over short time intervals
 are not likely to be the result of independent encounter
-processes. E.g., an individual moving back and forth in front of a
+events. E.g., an individual moving back and forth in front of a
 camera yields a cluster of observations that is not informative about
-the spatial structure of the model. Similarly in scat surveys (e.g.,
+the underlying spatial structure of the population. Similarly in scat surveys (e.g.,
 Thompson et al. in review), dogs are used to locate scats which are
 processed in the lab for individuality.  The process of local scat
 deposition is not really the outcome of movement or space usage but rather the
 outcome of complex behavioral considerations as well as dependence in
 detection of scat by dogs. E.g., they find one and then more likely to
 find a nearby one, or they get into a den area and find lots of scats.
-This additional model assumption required to model variation in
+The additional  assumption required to model variation in
 observed frequencies (i.e., conditional on location) provides
-relatively no information about density, and we feel that the
+relatively no information about space usage and density, and we feel that the
 model selection issue should therefore be avoided.
 
-To elaborate on this, it seems natural to construct models for
-encounter data that are conditional on movement outcomes: We suppose
-that an individual visits a particular pixel ${\bf x}$ with some probability
-$p({\bf x}, {\bf s})$,
- and then, once its
-there, deposits a
-number of scat, or visits a camera some number of times with frequency
-$y(x,s) \ge 0$.
-We describe the outcome of this movement/usage with
-a two-level hierarchical model of the form:
-$[y|z][z|p({\bf x},{\bf s})]$.
-Let $z({\bf x},{\bf s})$ be a binary variable
-that indicates whether the individual with activity center ${\bf s}$
-visits pixel ${\bf x}$ during some interval, and let
-$z({\bf x},{\bf s}) \sim  \mbox{Bern}(p({\bf x},{\bf s}))$ and
-suppose
- the encounter frequency $y$ is independent of ${\bf x}$ and
-${\bf s}$ conditional
-on the binary event $z$,  that the individual visited pixel $x$.
-Therefore, the model for $y$ (amount of use) does not
-depend on ${\bf s}$.
+To elaborate on this, we suppose that an individual ${\bf s}$ visits a
+particular pixel ${\bf x}$ with some probability $p({\bf x}, {\bf
+  s})$, and then, once there, deposits a number of scat, or visits
+a camera some number of times with frequency $y({\bf x},{\bf s}) \ge
+0$.  We describe the outcome of this movement/usage process with a two-level
+hierarchical model of the form: $[y|z][z|p({\bf x},{\bf s})]$ where 
+$z({\bf x},{\bf s})$ is a binary variable that indicates whether the
+individual with activity center ${\bf s}$ used pixel ${\bf x}$
+during some interval, and let $z({\bf x},{\bf s}) \sim
+\mbox{Bernoulli}(p({\bf x},{\bf s}))$. If we suppose  encounter frequency
+$y$ is independent of ${\bf x}$ and ${\bf s}$ conditional on the
+use variable  $z$, then  we see that 
+the model for $y$ (amount of use) does not depend on ${\bf s}$. 
+
+
 
 \begin{comment}
 Moreover, consideration of encounter frequency data could lead to
@@ -349,26 +347,26 @@ of heterogeneity, analogous to the class of models considered by
 \citet{link:2003},
 \end{comment}
 
-\section{Analysis of the Poisson SCR model in BUGS}
+\subsection{Analysis of the Poisson SCR model in BUGS}
 
 We consider the simplest possible model here in which we have no
 covariates that vary over sample occasions  $k=1,2,\ldots,K$ 
 so that we work with
 the aggregated individual- and trap-specific encounters:
 \[
-y_{ij} = (\sum_{k=1}^{K} y_{ijk}) =  \mbox{Poisson}(K  \lambda_{ij})
+y_{ij} = (\sum_{k=1}^{K} y_{ijk}) =  \mbox{Poisson}(K  \lambda_{0} 
+g({\bf x}_{j},{\bf s}_{i}) )
 \]
-We consider a bivariate normal form of $g({\bf x}_{j},{\bf s}_{i})$ so
-that
+and we consider the bivariate normal form of $g({\bf x},{\bf s})$:
 \[
-g({\bf x}_{j},{\bf s}_{i}) = \exp( -d({\bf x}_{j}, {\bf
-  s}_{i})^{2} /(2\sigma^{2}))
+g({\bf x},{\bf s}) = \exp( -d({\bf x}, {\bf
+  s})^{2} /(2\sigma^{2}))
 \]
 so that 
 \[
-log( \lambda_{ij})  =\alpha_{0} + \alpha_{1} d({\bf x}_{j}, {\bf s}_{i})^2
+\log( \lambda_{ij})  =\alpha_{0} + \alpha_{1} d({\bf x}_{j}, {\bf s}_{i})^2
 \]
-where $\alpha_{0} = log(\lambda_{0})$ and $\alpha_1 = 1/(2\sigma^2)$.
+where $\alpha_{0} = \log(\lambda_{0})$ and $\alpha_1 = -1/(2\sigma^2)$.
 
 
 As usual, we approach Bayesian analysis of these
@@ -384,7 +382,7 @@ which evaluates to a point mass at $y=0$ if $z=0$.  In other words, the
 observation model under data augmentation is a zero-inflated Poisson
 model which is easily analyzed by Bayesian methods, e.g., in one of
 the {\bf BUGS}
-dialects, or  using likelihood methods, which we neglect here although
+dialects or, alternatively,  using likelihood methods, which we neglect here although
 the same principles as in Chapt. \ref{chapt.mle} apply.
 
 
@@ -393,10 +391,10 @@ the same principles as in Chapt. \ref{chapt.mle} apply.
 
 Simulating a sample SCR data set under the Poisson model requires only
 a couple minor modifications to the procedure we used in
-Chapt. \ref{chapt.scr0}. In
-particular, we modify the block of code which defines the model to be
-that of $E(y)$ and not $\Pr(y=1)$, and we change the random variable
-generator from \mbox{\tt rbinom} to \mbox{\tt rpois}:
+Chapt. \ref{chapt.scr0}. In particular, we modify the block of code
+which defines the model to be that of $E(y)$ and not $\Pr(y=1)$, and
+we change the random variable generator from \mbox{\tt rbinom} to
+\mbox{\tt rpois}:
 {\small
 \begin{verbatim}
 D<- e2dist(S,traplocs)
@@ -416,26 +414,23 @@ for(i in 1:nrow(Y)){
 
 We modified our simulation code from Chapt. \ref{chapt.scr0} to
 simulate Poisson encounter frequencies for each trap and then we
-analyze an ideal data set using {\bf BUGS}. The new function,
-available in the \mbox{\tt scrbook} package, is called {\tt
-  simPoissonSCR.fn}.  The simulator can produce 3-d encounter history
-data too although we don't do that here.  Here is an example of
+analyze an ideal data set using {\bf BUGS}. The new simulator function
+{\tt  simPoissonSCR} is
+available in the \mbox{\tt scrbook} package (this can produce 3-d encounter history
+data too although we don't do that here).  Here is an example of
 simulating a data set and harvesting the required data objects, and
 doing the data augmentation:
 
 {\small
 \begin{verbatim}
-data<-simPoissonSCR.fn(discard0=TRUE,sd=2013)
+data<-simPoissonSCR(discard0=TRUE,rnd=2013)
 y<-data$Y
-traplocs<-data$traplocs
 nind<-nrow(y)
 X<-data$traplocs
 K<-data$K
 J<-nrow(X)
-Xl<-data$xlim[1]
-Yl<-data$ylim[1]
-Xu<-data$xlim[2]
-Yu<-data$ylim[2]
+xlim<-data$xlim
+ylim<-data$ylim
 
 ## Data augmentation stuff
 M<-200
@@ -445,23 +440,23 @@ z<-c(rep(1,nind),rep(0,M-nind))
 }
 
 The process for fitting
-the model in \winbugs  or \jags is identical to what we've done
+the model in {\bf WinBUGS} or {\bf JAGS} is identical to what we've done
 previously in Chapt. \ref{chapt.scr0}. In particular, we set up some
 starting values, package the data and inits, identify the parameters
 to be monitored, and then send everything off to our MCMC engine. Here
 it all is for fitting the Poisson observation model (these commands
-are shown in the help file for \mbox{\tt simPoissonSCR.fn}):
+are shown in the help file for \mbox{\tt simPoissonSCR}):
 
 {\small
 \begin{verbatim}
-sst<-traplocs[sample(1:J,M,replace=TRUE),] # starting values for s
+sst<-X[sample(1:J,M,replace=TRUE),] # starting values for s
 for(i in 1:nind){
 if(sum(y[i,])==0) next
 sst[i,1]<- mean( X[y[i,]>0,1] )
 sst[i,2]<- mean( X[y[i,]>0,2] )
 }
 sst<-sst + runif(nrow(sst)*2,0,1)/8
-data <- list (y=y,X=X,K=K,M=M,J=J,Xl=Xl,Yl=Yl,Xu=Xu,Yu=Yu)
+data <- list (y=y,X=X,K=K,M=M,J=J,xlim=xlim,ylim=ylim)
 inits <- function(){
   list (alpha0=rnorm(1,-2,.4),alpha1=runif(1,1,2),s=sst,z=z,psi=.5)
 }
@@ -475,8 +470,8 @@ psi~dunif(0,1)
 
 for(i in 1:M){
  z[i] ~ dbern(psi)
- s[i,1]~dunif(Xl,Xu)
- s[i,2]~dunif(Yl,Yu)
+ s[i,1]~dunif(xlim[1],xlim[2])
+ s[i,2]~dunif(ylim[1],ylim[2])
 for(j in 1:J){
 d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
 y[i,j] ~ dpois(lam[i,j])
@@ -488,11 +483,9 @@ D<- N/64
 }
 ",file = "SCR-Poisson.txt")
 
-nthin<-1; nc<-3; nb<-1000; ni<-2000
-
 library("R2WinBUGS'')
-out1 <- bugs (data, inits, parameters, "SCR-Poisson.txt", n.thin=nthin,n.chains=nc,
- n.burnin=nb,n.iter=ni,working.dir=getwd(),debug=TRUE)
+out1 <- bugs (data, inits, parameters, "SCR-Poisson.txt", n.thin=1,n.chains=3,
+ n.burnin=1000,n.iter=2000,working.dir=getwd(),debug=TRUE)
 \end{verbatim}
 }
 {\flushleft Or using {\bf JAGS}  we do this instead: }
@@ -528,18 +521,8 @@ deviance 329.95 21.92 290.00 314.20 329.50 344.40 375.80 1.00  1700
 %we use this observation model for an analysis of some data in Chapt.
 %\ref{chapt.searchencounter}. {\bf XXXX DO WE DO THIS ANYWHERE? XXXXX}
 
-\begin{comment}
-\subsection{Exercise}
 
-Use the Bernoulli model simulator from Chapt. \ref{chapt.scr0} (\mbox{\tt
-  simSCR0.fn}) to simulate a Bernoulli data set and then fit the
-Poisson model. Compare the results of fitting the correct
-data-generating model with those of fitting the misspecified Poisson
-model.
-\end{comment}
-
-
-\section{Analysis of the Wolverine Study Data}
+\subsection{Analysis of the Wolverine Study Data}
 
 We reanalyzed the data from
 the  wolverine camera trapping study that were first introduced in 
@@ -547,7 +530,7 @@ sec. \ref{chapt.scr0.wolverine}.
 We modified the {\bf R} script from the function \mbox{\tt wolvSCR0.fn} to fit the
 Poisson model (see the help file for \mbox{\tt
   wolvSCR0pois.fn}). Executing this function produces the following
-results which are provided here:
+results:
 {\small
 \begin{verbatim}
 Inference for Bugs model at "modelfile.txt", fit using WinBUGS,
@@ -572,34 +555,33 @@ fitted preveiously, where we had a posterior mean for $N$ of
  $59.84$,  $\sigma$ it was
 $0.64$. The {\bf R} 
 script is provided in the  \mbox{\tt scrbook} package which you can
-use to modify the model or obtain more posterior samples for this model.
+use to modify the model or obtain more posterior samples.
 %In addition we did a basic assessment of Goodness-of-fit using a
 %Bayesian p-value and statistic 1 as described in sec. XXXXX.  
 
+\subsection{Count detector models in the  \mbox{\tt secr} package}
 
-\begin{comment}
-\section{Likelihood analysis of the Poisson model}
-
-Counts are Poisson with a random effect so this is stupidly easy to
-implement.
-We do the normal ``full likelihood'' approach in which we retain $N$
-as a real parameter in the model. We adapt \mbox{\tt intlik3} from
-chapter 5 here..... behold:
-
-Poisson(lambda(s,x))
-
-data augmentation = ZIP
+The {\bf R} package \mbox{\tt secr} will fit Poisson or negative
+binomial encounter frequency models. The formatting of data and
+structure of the analysis proceeds in a similar fashion to the
+Bernoulli model described in sec. \ref{mle.sec.secr}, except that 
+we specify the \mbox{\tt detector=''count''} option when the traps
+object is created. The set-up proceeds as follows:
+{\small
 \begin{verbatim}
-Pr(yi) =   ( prod_{j} dpois(y) ) *psi + I(y=0)*(1-psi)
+library("secr")
+library("scrbook")
+data("wolverine")
 
-Actually if y(i,j) = Poisson( lambda(i,j) ) then we can just add up
-sum_{j} y(i,j) =  Poisson( sum_{j} lambda(i,j)) right?
-
- int_{s} thatthing
-
-Zero-inflate the result
+traps<-as.matrix(wolverine$wtraps)
+dimnames(traps)<-list(NULL,c("trapID","x","y",paste("day",1:165,sep="")))
+traps1<-as.data.frame(traps[,1:3])
+trapfile1<-read.traps(data=traps1,detector="count")
 \end{verbatim}
-\end{comment}
+}
+You can proceed with analysis of these data and compare/contrast with
+the Bayesian analysis given above, or the results of the Bernoulli
+model fitted in Chapt. \ref{chapt.mle}.
 
 
 
@@ -616,14 +598,17 @@ be viewed (in some cases) as a multi-catch device are area-searches
 of, for example, reptiles where we think of a small polygon as the
 ``trap'' -- we could get multiple individuals (turtles, lizards) in
 the same plot but not, in the same sample session, at different plots.
-The key feature is that capture of an individual in a trap is {\it
-  not} independent of capture in other traps, because once they are
-captured in a trap, it precludes capture in other traps.  On the other
-hand, individuals may behave independently of one another, or so it
-might be reasonable to assume, so whether a trap captures some other
-individual doesn't have bearing on whether it captures another.  This
-last assumption is violated in an extreme case in classical ``single
-catch'' traps which we address in
+The key features of this model are: (1) capture of an individual in a
+trap is {\it not} independent of its capture in other traps, because
+capture initial capture
+ precludes capture in any other trap and (2)
+individuals  behave independently of one another, so 
+whether a trap captures some other
+individual doesn't have bearning on whether it captures another.  A
+type of model in which the
+2nd 
+assumption is violated  are the ``single
+catch'' trap systems which we address in
 sec. \ref{poisson-mn.sec.singlecatch} below. In general we could
 imagine non-independence being important in any multi-catch situation
 but to the best of our knowledge a general model that encompasses
@@ -634,20 +619,21 @@ situation wherein individuals behave independently.
 
 
 In this case we assume the observation ${\bf y}_{ik}$ for individual
-$i$ during sample occasion $k$ as a multinomial observation which
-consists of a sequence of 0's and at most a single 1 indicating the
+$i$ during sample occasion $k$ is a multinomial observation which
+consists of a sequence of 0's and  a single 1 indiciating the
 trap of capture, or ``not captured''. For the ``not captured'' event
 we define an additional outcome, by conveniton element $J+1$ of the
-vector.  As an example, if we capture an individual in trap 2 during a
+vector.  As an example, if we capture an individual in trap 2 during
+some occasion of a
 6 sample period study then the multinomial observation has length $J+1
 = 7$, and the observation is ${\bf y}_{i} = (0,1,0,0,0,0,0)$. An
 individual not captured at all would have the observation vector
 $(0,0,0,0,0,0,1)$.  If we sample for 5 periods in all and the
-individual is also caught in trap 4 during sample 3, but otherwise
+individual is also caught in trap 4 during occassion 3, but otherwise
 uncaptured, then the 5 encounter observations for that individual are
 as follows:
 \begin{verbatim}
-sample |---- trap ---------|
+sample |---------trap ---------|
        1   2   3   4   5   6   7
  1     0   1   0   0   0   0   0
  2     0   0   0   0   0   0   1
@@ -680,7 +666,7 @@ multinomial logit with distance as a covariate:
 \]
 for $j=1,2,\ldots,J$ and, for $J+1$, i.e., ``not captured'',
 \[
- \pi_{i,(J+1)} = \frac{  exp(0) }
+ \pi_{i,(J+1)} = \frac{  \exp(0) }
                     { 1+ \sum_{j} \exp(\alpha_{0} + \alpha_{1} d_{ij})}
 \]
 or, more commonly, we use $d_{ij}^{2}$ to correspond to our Gaussian
@@ -690,19 +676,20 @@ direct correspondance to the standard encounter probability models we
 used in the Bernoulli or Poisson models as well (see
 sec. \ref{scr0.sec.implied}). 
 
-It is convenient to express these multinomial models short-hand as follows:
+It is convenient to express these multinomial models short-hand as
+follows, e.g., for the Gaussian encounter probability model:
 \[
-mlogit( \pi_{ij} ) = \alpha_{0} + \alpha_{1} d_{ij}
+\mbox{mlogit}( \pi_{ij} ) = \alpha_{0} + \alpha_{1} d_{ij}^{2}
 \]
 In this way we can refer to models with covariates in a more concise
 way. For example, a model with a trap-specific covariate is:
 \[
-mlogit( \pi_{ij} ) = \alpha_{0} + \alpha_{1} d_{ij} + \alpha_{2} C_{ij}
+\mbox{mlogit}( \pi_{ij} ) = \alpha_{0} + \alpha_{1} d_{ij}^{2} + \alpha_{2} C_{ij}
 \]
 or we could include occasion-specific covariates too, such as
 behavioral response. 
 
-A statistically equivalent distribution is the {\it categorical}
+A statistically equivalent distribution to the multinomial is the {\it categorical}
 distribution.  If ${\bf y}$ is a multinomial trial with probabilities
 ${\bm \pi}$ than the {\it position} of the non-zero element of ${\bf
   y}$ is a categorical random variable with probabilities ${\bm \pi}$.
@@ -714,10 +701,10 @@ In the SCR context, the categorical version of the
 multinomial trial corresponds to the {\it trap of capture}.  Using our
 example above with 6 traps then we
 could as well say $y_{ik}$ is a categorical random variable with
-state-space (possible outcomes) $(1,2,3,4,5,6,7)$ where outcome $y=7$
+possible outcomes $(1,2,3,4,5,6,7)$ where outcome $y=7$
 corresponds to ``not captured.'' Obviously, how this is organized or
 labeled is completely irrelevant, although it is convenient to use the
-integers $1:(J+1)$ where $J+1$ is the event not captured.  Therefore,
+integers $1 - (J+1)$ where $J+1$ is the event not captured.  Therefore,
 for our illustration in the previous table, $y_{i1} = 2$, $y_{i2} =
 7$, $y_{i3} = 4$ and so on.
 
@@ -744,7 +731,7 @@ for ``use'' -- which, if we take the product of use with encounter
 produces a model for the observable encounter data. This 
 leads naturally to the development of models that integrate RSF data
 from telemetry studies with SCR data \citep{royle_chandler:2012},
-which we pursue in Chapt. \ref{chapt.rsf}.
+which is the topic of  Chapt. \ref{chapt.rsf}.
 
 
 
@@ -753,7 +740,7 @@ which we pursue in Chapt. \ref{chapt.rsf}.
 \subsection{Simulating data and analysis using JAGS}
 
 We're going to show the nugget of a simulation function which is
-used in the function \mbox{\tt sim.mnSCR} found in the {\bf R} package
+used in the function \mbox{\tt simMnSCR} found in the {\bf R} package
 \mbox{\tt scrbook}.  The first lines of the following {\bf R} code
 make use of some things that should be defined but we omit them here:
 {\small
@@ -778,13 +765,12 @@ for(i in 1:N){
   }
 }
 \end{verbatim}
-}
+} 
 The resulting data matrix in this case has the maximal dimension $N$
 and so, for analysis, to mimic a real situation, we would have to
 discard the uncaptured individuals.  The function \mbox{\tt
-  simMnSCR.fn} in the package \mbox{\tt scrbook}
-will also
-simulate data that includes a behavioral response 
+  simMnSCR} in the package \mbox{\tt scrbook} will also simulate
+data that includes a behavioral response
 %(the parameter
 %labeled \mbox{\tt alpha2} shown in the {\bf R} code below),
  which will be the
@@ -792,7 +778,7 @@ typical situation in small-mammal trapping problems
 \citep[see][for details]{converse_royle:2012}.
 
 
-Here we use our function \mbox{\tt simMnSCR.fn} to simulate a data set
+Here we use our function \mbox{\tt simMnSCR} to simulate a data set
 with $K=7$ periods, etc.. We'll run the model using \mbox{\tt JAGS} which
 we have found is much more effective for this class of models.  We get
 the data set-up for analysis by augmenting the size of the data set to
@@ -800,7 +786,7 @@ $M=200$. In addition we choose starting values for ${\bf s}$ and the
 data augmentation variables $z$.  For ${\bf s}$ here we cheat a little
 bit and use the true values for the obseved individuals and then
 augment the matrix ${\bf S}$ with $M-n$ randomly selected activity
-centers.  The parameters input to \mbox{\tt simMnSCR.fn} are the
+centers.  The parameters input to \mbox{\tt simMnSCR} are the
 intercept $\alpha_{0}$, $\sigma = \sqrt{1/(2\alpha_{1})}$ for the
 Gaussian encounter probability model, and $\alpha_{2}$ is the
 behavioral response parameter. The data simulation and set-up proceeds
@@ -810,7 +796,7 @@ as follows:
 \begin{verbatim}
 set.seed(2013)
 parms<-list(N=100,alpha0= -.40, alpha2= 0,sigma=0.5)
-data<-simMnSCR.fn(parms,K=7,ssbuff=2)
+data<-simMnSCR(parms,K=7,ssbuff=2)
 nind<-nrow(data$Ycat)
 
 M<-200
@@ -871,24 +857,24 @@ D <- N/A
 %\end{minipage}
 \rule[-0.15in]{\textwidth}{.03in}
 \caption{
-\winbugs model specification for the independent multinomial
+{\bf BUGS} model specification for the independent multinomial
 observation model. For data simulation and model fitting see the
-help file \mbox{\tt ?simMnSCR.fn} in the {\bf R} package \mbox{\tt scrbook}.
+help file \mbox{\tt ?simMnSCR} in the {\bf R} package \mbox{\tt scrbook}.
 }
 \label{poisson-mn.panel.mn}
 \end{panel}
 
-To fit the model, we need to package everything up (inits, parameters, data) and send
-it off to \mbox{\bf JAGS} to build an MCMC simulator for us (these commands are
-executed in the help file for \mbox{\tt simMnSCR.fn}). In addition to
-the usual data objects, we also pass the limits of the assumed
-rectangular state-space (\mbox{\tt ylim}, \mbox{\tt xlim}, both $1
-\times 2$ vectors) and the scale of the standardized units, called
-\mbox{\tt trap.space} here because we typically will define the trap
-coordinates to be an integer grid. If the trap spacing is 10 $m$ and
-we want units of density computed in terms of individuals {\it per}
-meter, then we input \mbox{\tt trap.space=10}. The analysis is carried
-out as follows:
+To fit the model, we need to package everything up (inits, parameters,
+data) and send it off to \mbox{\bf JAGS} to build an MCMC simulator
+for us (these commands are executed in the help file for \mbox{\tt
+  simMnSCR}). In addition to the usual data objects, we also pass
+the limits of the assumed rectangular state-space (\mbox{\tt ylim},
+\mbox{\tt xlim}, both $1 \times 2$ vectors) and the scale of the
+standardized units, called \mbox{\tt trap.space} here because we
+typically will define the trap coordinates to be an integer grid. If
+the trap spacing is 10 $m$ and we want units of density computed in
+terms of individuals {\it per} meter, then we input \mbox{\tt
+  trap.space=10}. The analysis is carried out as follows: 
 {\small
 \begin{verbatim}
 library("rjags")
@@ -947,20 +933,18 @@ Under the Gaussian kernel model, these probabilities are:
    \sum_{j} \exp(-\alpha_{1} d({\bf x},{\bf s})^2)}
 \label{poisson-mn.eq.mnprobs}
 \end{equation}
-where, we note, the intercept $\alpha_{0}$ has canceled  from both the
-numerator and denominator. This makes sense because, here, these
+where, we note, the intercept $\alpha_{0}$ has cancelled from both the
+numerator and denominator. This makese sense because, here, these
 probabilities describe the trap-specific capture probabilities {\it
-  conditional on capture}. 
-Therefore, the model is not completely specified, absent a model for
-the
-``overall'' probability of encouter or the expected frequency of captures, say
-$\phi_{i}$. Depending on how we specify a model for this quantity $\phi_{i}$, we can
-reconcile it directly with the Poisson model.
+  conditional on capture}.  Therefore, the model is not completely
+specified, absent a model for the ``overall'' probability of encouter
+or the expected frequency of captures, say $\phi_{i}$. Depending on
+how we specify a model for this quantity $\phi_{i}$, we can reconcile
+it directly with the Poisson model.
 % or the Bernoulli model of
 %Chapt. \ref{chapt.scr0}.  
-Let $y_{i.}$ be the 
-total number of encounters for individual $i$ and suppose $y_{i.}$ has
-a Poisson distribution with mean $\phi_{i}$.
+Let $y_{i.}$ be the total number of encounters for individual $i$ and
+suppose $y_{i.}$ has a Poisson distribution with mean $\phi_{i}$.
 Then, marginalizing Eq. \ref{poisson-mn.eq.mn} over the Poisson
 distribution for $y_{i.}$ produces the original set of $iid$ Poisson
 frequencies with probabilities:
@@ -977,10 +961,9 @@ Eq. \ref{poisson-mn.eq.lp}.
 %binomial will produce individual- and trap-specific probabilities
 %consistent with the binomial model SCR0. 
 \begin{comment}
-Suppose, instead, that 
-$y_{i}$ is Binomial with sample size $K$ and probability
-$\phi_{i}$. How should we parameterize $\phi_{i}$? 
-One possibility is
+  Suppose, instead, that $y_{i}$ is Binomial with sample size $K$ and
+  probability $\phi_{i}$. How should we parameterize $\phi_{i}$?  One
+  possibility is
 \[
 \phi_{i} = \lambda_{0} \exp(-\alpha_{1} \sum_{j} d_{ij}^2)
 \]
@@ -1095,7 +1078,8 @@ Efford. The data from this study are available in the \mbox{\tt secr}
 package, and have been analyzed previously by
 \citet{efford_etal:2004}, see also \citet{borchers_efford:2008}.
 Forty-four mist nets spaced 30 m apart on the perimeter of a 600-m x
-100-m rectangle (fig. XXXX) were operated on 9 or 10 non-consecutive
+100-m rectangle (fig. XXXX hard to make a fig out of this due to
+aspect ratio XXXXXXX) were operated on 9 or 10 non-consecutive
 days in late May and June for 5 years from 2005-2009.  From the
 \mbox{\tt secr} documentation of this data set we take this: ``{\it
   Netting was passive (i.e. song playback was not used to lure birds
@@ -1103,6 +1087,7 @@ days in late May and June for 5 years from 2005-2009.  From the
   newly banded and previously banded birds were released at the net
   where captured. Sex was determined in the hand from the presence of
   a brood patch (females) or cloacal protuberance (males).}''  
+
 The ovenbird 
 data can be loaded as follows:
 \begin{verbatim}
@@ -1111,15 +1096,26 @@ data(ovenbird)
 \end{verbatim}
 The dataset consists of adult ovenbirds caught during sampling in each
 of 5 years, 2005-2009. (one ovenbird was killed in 2009, indicated by
-a negative net number in the data set).  
+a negative net number in the encounter data file)\index{loss-on-capture}.
 As with most mist-netting studies, nets are checked multiple times
 during a day (e.g., every hour during a morning session). However, for
-this data set the within-day recaptures are not included so each bird
+this data set, the within-day recaptures are not included so each bird
 has at most a single capture per day. Therefore the multinomial model
 (detector type 'multi' in \mbox{\tt secr}) is appropriate. 
  Although
 several individuals were captured in more than one year, this
-information is not used in the models presently offered in \mbox{\tt secr}.
+information is not used in the models presently offered in \mbox{\tt
+  secr}, but we do make use of it in the development of open models in
+Chapt. \ref{chapt.js}.
+%
+%{\it
+%  An analysis of the data for males in the first four years showed
+%  that they tended to avoid nets after their first capture within a
+%  season (Dawson and Efford 2009). While the species was present
+%  consistently, the number of detections in any one year was too small
+%  to give reliable estimates of density; pooling of detection
+%  parameters across years helped to improve precision.  
+%}
 
 
 \subsection{Multiple Sample Sessions}
@@ -1129,7 +1125,8 @@ sampling situation consisting of repeated sample occasions of a single
 population of individuals using a single array of traps. In practice,
 many studies produce repeated samples over time, or at different
 locations -- we adopt the \mbox{\tt secr} terminology of {\it session}
-for such replication by groups of time or space although we think of
+for such replication by groups of time or space, and the models are
+{\it multi-session} models,  although we think of
 such
 models as being relevant to any stratified population. We introduced
 \mbox{\tt secr}'s
@@ -1137,7 +1134,7 @@ multi-session models in sec. \ref{mle.sec.multisession}.
 In the case of the ovenbird data, sampling was carried out
 in multiple years, with a number of sample occassions within each year
 (9 or 10), a type of data structure commonly referred to as ``the
-robust design'' \citep{pollock:1982}.
+robust design''\index{robust design} \citep{pollock:1982}.
 In this context, it stands to reason that there is
 recruitment and mortality happening across years. In
 Chapt. \ref{chapt.js} we model these processes explicitly but, here,
@@ -1145,6 +1142,7 @@ we provide an analysis of the data that does not require explicit
 models for recruitment and survival, regarding the yearly populations
 as independent strata, and fitting a multi-session model.
 
+What exactly is the multi-session model that \mbox{\tt secr} fits?
 A special case of open models arises when we assume $N_{t}$ are
 independent from one time period or session to the next -- this can be
 thought of as a ``random temporary emigration'' model of the
@@ -1154,18 +1152,19 @@ assuming that $N_{t}$ is Poisson with mean $\Lambda_{t}$ one can model
 variation in abundance among sessions based on the Poisson-integrated
 likelihood in which parameters of $\Lambda_{t}$ appear directly in the
 likelihood as we noted in sec. \ref{mle.sec.multisession}.  We provide
-some results from \mbox{\tt secr} for the ovenbird data shortly.  We
-formalize the multi-session model approach from a Bayesian perspective
-in Chapt. \ref{chapt.hscr} based on \citet{converse_royle:2012} and
+some results from \mbox{\tt secr} for the ovenbird data shortly, and
+we formalize the multi-session model approach from a Bayesian
+perspective and data augmentation
+in Chapt. \ref{chapt.hscr}, based on \citet{converse_royle:2012} and
 \citet{converse_royle:2013}.
 
 A 3rd way to develop multi-session models which is convenient for {\bf
   BUGS} is to regard the data from each session as an independent data
 set with its own $N_{t}$ parameter. Doing this we can deal with this
 in the normal context of data augmentation by augmenting each year
-speeratedly in the same {\bf BUGS} model specification. This approach
+seperately in the same {\bf BUGS} model specification. This approach
 avoids making explicit model assumptions about the $N_{t}$
-parameters. Lets' call this the nonparametric multi-session model.  We
+parameters. Let's call this the nonparametric multi-session model.  We
 demonstrate all of the 3 approaches with the ovenbird data: In the
 following section we provide the nonparametric model with
 uncsontrained $N_{t}$. We address the fully open ``SCR Jolly-Seber''
@@ -1177,113 +1176,169 @@ Chapt. \ref{chapt.hscr} from a Bayesian standpoint.
 \subsection{Analysis in JAGS}
 
 The ovenbird data are provided as a multi-session \mbox{\tt capthist}
-object \mbox{\tt ovenCH} which regards years as independent strata and
-fits a multi-session model. Data on individual sex is not included
-with \mbox{\tt secr} and so we analyze the data for all adults captured. 
-There is a habitat mask provided with the data but the mask appears to
-just be a clipped rectangle around the net locations, so we don't use
-it here. 
+object \mbox{\tt ovenCH} which, by regarding  years as independent
+strata, allows for the fitting of the multi-session model.
+For doing a Bayesian analysis in one of the {\bf BUGS} engines (we use
+{\bf JAGS} here) there are a number of ways to structure the data and
+describe the model. 
+We can analyze either a 2-d data set with all years
+(data augmented) ``stacked'' into a data set of dimension $(5*M)
+\times 10$
+(5 years, $M=$ size of the augmented data set, $K=10$ replicate samples). Or, we could 
+produce a 3-d aray ($M \times J \times K$). We adopted the former
+approach, analyzing the 
+data as a 2-d array  and creating an additional indicator variable for
+``year'' to indicate which stratum (year) each record goes with. 
 
-{\it
-  An analysis of the data for males in the first four years showed
-  that they tended to avoid nets after their first capture within a
-  season (Dawson and Efford 2009). While the species was present
-  consistently, the number of detections in any one year was too small
-  to give reliable estimates of density; pooling of detection
-  parameters across years helped to improve precision.  
-}
+Data on individual sex is included
+with \mbox{\tt secr}, but  we provide an analysis of a single model
+for all adults, constant $\sigma$ across years, constant $p_{0}$, and
+year-specific values of $N_{t}$ (and hence $D_{t}$). 
+ There is a habitat mask provided with the data but the mask
+appears to just be a modified rectangle around the net locations,
+clipped to have rounded corners, and so we don't use it here.  There
+was a single loss-on-capture which we accounted for 
+by fixing  $p=0$ for all subsequent encounters
+of that individual. 
+ We have an {\bf R} script in \mbox{\tt scrbook}
+package called \mbox{\tt SCRovenbird}, so you can see how to do
+this. The {\bf BUGS} model statement is shown in Panel 
+\ref{poisson-mn.panel.ovenbird}
+where you
+can see how we code up the multi-session model using the
+``non-parametric'' formulation (which does not make an explicit
+Poisson assumption about $N_{t}$), and also including loss-on-capture
+with the indicator variable \mbox{\tt dead}. Executing the script \mbox{\tt
+  SCRovenbird} produces the posterior summaries  given in Table
+XXX. Here, density is in units of birds per ha. 
 
-Finally, there is one issue we don't deal with here. There was a single
-loss-on-capture which we pretended didn't happen. To account for that
-we would just fix p=0 for all subsequent encounters of that guy. You
-can try it out.
 
-We have an R script in scrbook package called \mbox{\tt SCRovenbird}
-so you can see how to do this. 
-
-
-%% multiply D by 10000 to make in ha...... rerun this ......
+\begin{panel}[htp]
+\centering
+\rule[0.15in]{\textwidth}{.03in}
+%\begin{minipage}{2.5in}
+{\small
 \begin{verbatim}
-> summary(out2)
+model {
+ alpha0 ~ dnorm(0,.1)
+ sigma ~dunif(0,200)
+ alpha1<- 1/(2*sigma*sigma)
 
-Iterations = 501:2500
-Thinning interval = 1
-Number of chains = 3
-Sample size per chain = 2000
-
-1. Empirical mean and standard deviation for each variable,
-   plus standard error of the mean:
-
-             Mean        SD  Naive SE Time-series SE
-D[1]    9.341e-05 1.397e-05 1.804e-07      4.631e-07
-D[2]    1.030e-04 1.485e-05 1.917e-07      5.230e-07
-D[3]    1.212e-04 1.649e-05 2.129e-07      6.271e-07
-D[4]    8.881e-05 1.345e-05 1.736e-07      4.386e-07
-D[5]    7.559e-05 1.249e-05 1.612e-07      4.153e-07
-N[1]    3.243e+01 4.851e+00 6.262e-02      1.608e-01
-N[2]    3.575e+01 5.156e+00 6.656e-02      1.815e-01
-N[3]    4.207e+01 5.724e+00 7.390e-02      2.177e-01
-N[4]    3.083e+01 4.668e+00 6.026e-02      1.523e-01
-N[5]    2.624e+01 4.335e+00 5.596e-02      1.442e-01
-alpha0 -2.883e+00 1.459e-01 1.884e-03      7.310e-03
-alpha1  1.219e-04 1.509e-05 1.948e-07      9.272e-07
-psi[1]  3.277e-01 6.689e-02 8.635e-04      1.870e-03
-psi[2]  3.598e-01 6.823e-02 8.809e-04      2.163e-03
-psi[3]  4.225e-01 7.441e-02 9.606e-04      2.471e-03
-psi[4]  3.123e-01 6.379e-02 8.235e-04      1.777e-03
-psi[5]  2.673e-01 6.063e-02 7.828e-04      1.783e-03
-sigma   6.443e+01 4.120e+00 5.318e-02      2.585e-01
-
-2. Quantiles for each variable:
-
-             2.5%        25%        50%        75%      97.5%
-D[1]    6.914e-05  8.354e-05  9.218e-05  1.008e-04  0.0001239
-D[2]    7.778e-05  9.218e-05  1.008e-04  1.123e-04  0.0001354
-D[3]    9.218e-05  1.095e-04  1.210e-04  1.296e-04  0.0001556
-D[4]    6.626e-05  8.066e-05  8.642e-05  9.795e-05  0.0001181
-D[5]    5.473e-05  6.626e-05  7.490e-05  8.354e-05  0.0001037
-N[1]    2.400e+01  2.900e+01  3.200e+01  3.500e+01 43.0000000
-N[2]    2.700e+01  3.200e+01  3.500e+01  3.900e+01 47.0000000
-N[3]    3.200e+01  3.800e+01  4.200e+01  4.500e+01 54.0000000
-N[4]    2.300e+01  2.800e+01  3.000e+01  3.400e+01 41.0000000
-N[5]    1.900e+01  2.300e+01  2.600e+01  2.900e+01 36.0000000
-alpha0 -3.173e+00 -2.978e+00 -2.881e+00 -2.783e+00 -2.6007831
-alpha1  9.237e-05  1.117e-04  1.216e-04  1.320e-04  0.0001511
-psi[1]  2.086e-01  2.808e-01  3.247e-01  3.707e-01  0.4691979
-psi[2]  2.358e-01  3.116e-01  3.559e-01  4.039e-01  0.5060367
-psi[3]  2.877e-01  3.708e-01  4.188e-01  4.699e-01  0.5827959
-psi[4]  1.970e-01  2.675e-01  3.090e-01  3.538e-01  0.4462831
-psi[5]  1.603e-01  2.240e-01  2.636e-01  3.062e-01  0.3941830
-sigma   5.753e+01  6.154e+01  6.413e+01  6.691e+01 73.5734314
+ A <- ((xlim[2]-xlim[1]))*((ylim[2]-ylim[1]))
+ for(t in 1:5){
+  N[t] <- inprod(z[1:bigM],yrdummy[,t])
+  D[t] <- (N[t]/A)*10000  # put in units of per ha
+  psi[t] ~ dunif(0,1)
+ }
+# bigM = total size of jointly augmented data set
+ for(i in 1:bigM){
+   z[i] ~ dbern(psi[year[i]])
+   S[i,1] ~ dunif(xlim[1],xlim[2])
+   S[i,2] ~ dunif(ylim[1],ylim[2])
+# X = trap locations, S = activity centers
+ for(j in 1:ntraps){
+    d2[i,j] <- pow(pow(S[i,1]-X[j,1],2) + pow(S[i,2]-X[j,2],2),1)
+  }
+ for(k in 1:K){
+   Ycat[i,k] ~ dcat(cp[i,k,])
+   for(j in 1:ntraps){
+     lp[i,k,j] <- exp(alpha0 - alpha1*d2[i,j])*z[i]*(1-dead[i,k])        
+     cp[i,k,j] <- lp[i,k,j]/(1+sum(lp[i,k,1:ntraps]))
+   }
+   cp[i,k,ntraps+1] <- 1-sum(cp[i,k,1:ntraps])  # last cell = not captured
+ } }  }
 \end{verbatim}
+}
+%\end{minipage}
+\rule[-0.15in]{\textwidth}{.03in}
+\caption{
+{\bf BUGS} model specification for the non-parametric multi-session
+model in which each $N_{t}$ is independent of the other. The implied
+prior (by data augmentation) is that $N_{t} \sim
+\mbox{Uniform}(0,100)$. 
+To fit this model to the ovenbird data, see
+ \mbox{\tt ?SCRovenbird} in the {\bf R} package \mbox{\tt scrbook}.
+}
+\label{poisson-mn.panel.ovenbird}
+\end{panel}
 
-We compare to {\tt ovenbird.model.1} which is the \mbox{\tt secr.fit}
-object for the null model provided with the ovenbird data set. 
 
-We look at some other models for this data set in the model selection
-chapter where we will do some AIC and DIC calculations to see what is up.
+
+{\small
+\begin{verbatim}
+XXX Will ask Kimmy to tableize this output XXXX
+
+Inference for Bugs model at "model.txt", fit using jags,
+ 3 chains, each with 5000 iterations (first 1000 discarded)
+ n.sims = 12000 iterations saved
+       mu.vect sd.vect   2.5%    25%    50%    75%  97.5%  Rhat n.eff
+D[1]     1.056   0.177  0.778  0.922  1.037  1.152  1.469 1.001 12000
+D[2]     1.109   0.174  0.835  0.979  1.095  1.210  1.498 1.002  1600
+D[3]     1.302   0.187  0.979  1.181  1.296  1.412  1.728 1.002  2700
+D[4]     0.959   0.159  0.691  0.835  0.951  1.066  1.296 1.001  8000
+D[5]     0.811   0.146  0.576  0.720  0.807  0.893  1.152 1.002  2000
+N[1]    36.666   6.132 27.000 32.000 36.000 40.000 51.000 1.001 12000
+N[2]    38.513   6.056 29.000 34.000 38.000 42.000 52.000 1.002  1600
+N[3]    45.197   6.501 34.000 41.000 45.000 49.000 60.000 1.002  2700
+N[4]    33.279   5.511 24.000 29.000 33.000 37.000 45.000 1.001  8000
+N[5]    28.145   5.071 20.000 25.000 28.000 31.000 40.000 1.002  2000
+alpha0  -3.528   0.164 -3.853 -3.636 -3.530 -3.418 -3.208 1.002  1700
+alpha1   0.000   0.000  0.000  0.000  0.000  0.000  0.000 1.002  2400
+psi[1]   0.369   0.077  0.235  0.315  0.363  0.418  0.535 1.001 12000
+psi[2]   0.388   0.076  0.252  0.334  0.382  0.436  0.549 1.002  2400
+psi[3]   0.453   0.080  0.307  0.398  0.448  0.503  0.622 1.001  3300
+psi[4]   0.336   0.071  0.210  0.285  0.332  0.382  0.488 1.001 12000
+psi[5]   0.286   0.066  0.170  0.239  0.281  0.328  0.429 1.002  1600
+sigma   75.781   6.016 65.443 71.564 75.359 79.373 88.993 1.002  2400
+\end{verbatim}
+}
 
 
 \subsection{Analysis in \mbox{\tt secr} }
 
-\begin{comment}
-Included with the data are a mask and four models fitted as in Examples.
-Object  Description
-ovenCH  multi-session capthist object
-ovenbird.model.1  fitted secr model -- null
+
+Included with the ovenbird data are a number of  models fitted as
+examples. Those include:
+\begin{verbatim}
+ovenbird.model.1   fitted secr model -- null
 ovenbird.model.1b  fitted secr model -- g0 net shyness
 ovenbird.model.1T  fitted secr model -- g0 time trend within years
 ovenbird.model.h2  fitted secr model -- g0 finite mixture
-ovenbird.model.D  fitted secr model -- trend in density across years
-ovenmask  mask object
-\end{comment}
+ovenbird.model.D   fitted secr model -- trend in density across years
+\end{verbatim}
+All of these can be fitted in {\bf JAGS} but 
+we only fitted the first one -- so we will compare our previous analysis to {\tt ovenbird.model.1} which is the \mbox{\tt secr.fit}
+object for the null model provided with the ovenbird data set. We
+refit all of the models here because we chose not to use the mask in
+our {\bf JAGS} analysis. 
+The analysis proceeds as follows:
+{\small 
+\begin{verbatim}
+## fit constant-density model
+ovenbird.model.1 <- secr.fit(ovenCH)
+## fit net avoidance model
+ovenbird.model.1b <- secr.fit(ovenCH, model =   list(g0~b))
+## fit model with time trend in detection
+ovenbird.model.1T <- secr.fit(ovenCH, model =    list(g0 ~ T))
+## fit model with 2-class mixture for g0
+ovenbird.model.h2 <- secr.fit(ovenCH, model =    list(g0~h2))
+## fit a model with session (year)-specific Density
+ovenbird.model.DT <- secr.fit(ovenCH, model =    list(D~session))
 
-
+## compare & average pre-fitted models
+AIC (ovenbird.model.1, ovenbird.model.1b, ovenbird.model.1T,
+    ovenbird.model.h2,ovenbird.model.DT)
+\end{verbatim}
+}
+The \mbox{\tt secr} printed output is a little bit unwieldy. It summarizes the trap
+information for each year, encounter information, and then output for
+each year. Here is an abbreviated version for the null model:
+{\small
 \begin{verbatim}
 > ovenbird.model.1
 
-secr.fit( capthist = ovenCH, mask = ovenmask, trace = F )
-secr 2.3.0, 15:43:08 16 Nov 2011
+secr.fit( capthist = ovenCH )
+secr 2.3.1, 21:58:26 20 Sep 2012
 
 $`2005`
 Object class      traps 
@@ -1293,37 +1348,8 @@ Average spacing   30.27273 m
 x-range           -50 49 m 
 y-range           -285 285 m 
 
-$`2006`
-Object class      traps 
-Detector type     multi 
-Detector number   44 
-Average spacing   30.27273 m 
-x-range           -50 49 m 
-y-range           -285 285 m 
+[... deleted ....]
 
-$`2007`
-Object class      traps 
-Detector type     multi 
-Detector number   44 
-Average spacing   30.27273 m 
-x-range           -50 49 m 
-y-range           -285 285 m 
-
-$`2008`
-Object class      traps 
-Detector type     multi 
-Detector number   44 
-Average spacing   30.27273 m 
-x-range           -50 49 m 
-y-range           -285 285 m 
-
-$`2009`
-Object class      traps 
-Detector type     multi 
-Detector number   44 
-Average spacing   30.27273 m 
-x-range           -50 49 m 
-y-range           -285 285 m 
 
            2005 2006 2007 2008 2009
 Occasions     9   10   10   10   10
@@ -1331,85 +1357,93 @@ Detections   35   42   52   30   33
 Animals      20   22   26   19   16
 Detectors    44   44   44   44   44
 
-Model           :  D~1 g0~1 sigma~1 
-Fixed (real)    :  none 
-Detection fn    :  halfnormal 
-Distribution    :  poisson 
-N parameters    :  3 
-Log likelihood  :  -1121.163 
-AIC             :  2248.325 
-AICc            :  2248.567 
-
-Beta parameters (coefficients) 
-             beta   SE.beta        lcl        ucl
-D     -0.09365937 0.1373528 -0.3628659  0.1755472
-g0    -3.56078501 0.1505899 -3.8559358 -3.2656343
-sigma  4.36405841 0.0811427  4.2050216  4.5230952
-
-Variance-covariance matrix of beta parameters 
-                  D            g0        sigma
-D      0.0188657960 -0.0003010523 -0.006302968
-g0    -0.0003010523  0.0226773134 -0.006928242
-sigma -0.0063029677 -0.0069282425  0.006584138
-
-Fitted (real) parameters evaluated at base levels of covariates 
+[... deleted ....]
 
  session = 2005 
-       link    estimate SE.estimate         lcl         ucl
-D       log  0.91059289 0.125664720  0.69567969  1.19189825
-g0    logit  0.02763132 0.004046024  0.02071559  0.03676914
-sigma   log 78.57537970 6.386327707 67.02204834 92.12028650
+       link    estimate SE.estimate         lcl        ucl
+D       log  1.25448819 0.137674225  1.01234988  1.5545422
+g0    logit  0.02384623 0.003647758  0.01765135  0.0321441
+sigma   log 76.58675001 5.911524450 65.84900819 89.0754536
 
- session = 2006 
-       link    estimate SE.estimate         lcl         ucl
-D       log  0.91059289 0.125664720  0.69567969  1.19189825
-g0    logit  0.02763132 0.004046024  0.02071559  0.03676914
-sigma   log 78.57537970 6.386327707 67.02204834 92.12028650
+[... deleted ...]
+\end{verbatim}
+}
 
- session = 2007 
-       link    estimate SE.estimate         lcl         ucl
-D       log  0.91059289 0.125664720  0.69567969  1.19189825
-g0    logit  0.02763132 0.004046024  0.02071559  0.03676914
-sigma   log 78.57537970 6.386327707 67.02204834 92.12028650
-
- session = 2008 
-       link    estimate SE.estimate         lcl         ucl
-D       log  0.91059289 0.125664720  0.69567969  1.19189825
-g0    logit  0.02763132 0.004046024  0.02071559  0.03676914
-sigma   log 78.57537970 6.386327707 67.02204834 92.12028650
-
- session = 2009 
-       link    estimate SE.estimate         lcl         ucl
-D       log  0.91059289 0.125664720  0.69567969  1.19189825
-g0    logit  0.02763132 0.004046024  0.02071559  0.03676914
-sigma   log 78.57537970 6.386327707 67.02204834 92.12028650
-
-
-
-
-
+To do model selection  we use the handy helper-function \mbox{\tt AIC}
+as follows: {\bf XXXX PUT OUTPUT IN A TABLE? XXXXX}
+{\small 
+\begin{verbatim}
 > AIC (ovenbird.model.1, ovenbird.model.1b, ovenbird.model.1T,
-+     ovenbird.model.h2)
-                                      model   detectfn npar    logLik      AIC
-ovenbird.model.1T          D~1 g0~T sigma~1 halfnormal    4 -1111.849 2231.698
-ovenbird.model.1b          D~1 g0~b sigma~1 halfnormal    4 -1117.612 2243.223
-ovenbird.model.1           D~1 g0~1 sigma~1 halfnormal    3 -1121.163 2248.325
-ovenbird.model.h2 D~1 g0~h2 sigma~1 pmix~h2 halfnormal    5 -1119.762 2249.525
-                      AICc  dAICc AICwt
-ovenbird.model.1T 2232.106  0.000     1
-ovenbird.model.1b 2243.631 11.525     0
-ovenbird.model.1  2248.567 16.461     0
-ovenbird.model.h2 2250.143 18.037     0
++     ovenbird.model.h2,ovenbird.model.D)
+                                      model   detectfn npar    logLik      AIC     AICc  dAICc AICwt
+ovenbird.model.1T          D~1 g0~T sigma~1 halfnormal    4 -1113.429 2234.858 2235.266  0.000     1
+ovenbird.model.1b          D~1 g0~b sigma~1 halfnormal    4 -1120.161 2248.323 2248.731 13.465     0
+ovenbird.model.h2 D~1 g0~h2 sigma~1 pmix~h2 halfnormal    5 -1119.337 2248.674 2249.293 14.027     0
+ovenbird.model.D     D~Session g0~1 sigma~1 halfnormal    4 -1120.747 2249.495 2249.903 14.637     0
+ovenbird.model.1           D~1 g0~1 sigma~1 halfnormal    3 -1122.650 2251.299 2251.542 16.276     0
+
+Results for "D[year]" model:
+
+ session = 2005, Session = 0 
+       link    estimate SE.estimate         lcl         ucl
+D       log  1.03219052 0.199449228  0.70923143  1.50221386
+g0    logit  0.02760077 0.004042557  0.02069122  0.03673114
+sigma   log 78.57955355 6.387162285 67.02478446 92.12631245
+
+ session = 2006, Session = 1 
+       link    estimate SE.estimate         lcl         ucl
+D       log  0.96834386 0.187112197  0.66536156  1.40929367
+g0    logit  0.02760077 0.004042557  0.02069122  0.03673114
+sigma   log 78.57955355 6.387162285 67.02478446 92.12631245
+
+ session = 2007, Session = 2 
+       link    estimate SE.estimate         lcl         ucl
+D       log  0.90844647 0.175538278  0.62420529  1.32212111
+g0    logit  0.02760077 0.004042557  0.02069122  0.03673114
+sigma   log 78.57955355 6.387162285 67.02478446 92.12631245
+
+ session = 2008, Session = 3 
+       link    estimate SE.estimate         lcl         ucl
+D       log  0.85225406 0.164680271  0.58559476  1.24034065
+g0    logit  0.02760077 0.004042557  0.02069122  0.03673114
+sigma   log 78.57955355 6.387162285 67.02478446 92.12631245
+
+ session = 2009, Session = 4 
+       link    estimate SE.estimate         lcl         ucl
+D       log  0.79953746 0.154493890  0.54937251  1.16361876
+g0    logit  0.02760077 0.004042557  0.02069122  0.03673114
+sigma   log 78.57955355 6.387162285 67.02478446 92.12631245
+
+> 
 
 \end{verbatim}
+}
 
-
+We see that the null model is way down at the bottom of the list, and
+the model with year-specific density is just ahead of that. Instead,
+the model with a time-trend (within-season) in detection probability
+is preferred, followed by a behavioral response. We encourage you to
+adapt the JAGS model specification for such models which is easily
+done. We summarize the estimates for the year-specific density model
+in Table XXXXX. They are uniformly smaller than the Bayesian estimates
+(posterior means). We expect some difference in this direction due to
+small-sample skew of the posterior, although for year 2 and 3 the
+difference is even in the opposite relative direction which is
+strange. {\bf XXXXX Andy check this XXXXXX}.
+The estimated $\sigma$ is basically the same and so is $p_{0} = g_{0}$.
+A final comment:
+Its interesting that these are a bit different from those obtained by
+using the mask (you can verify this by rerunning the models) which, 
+as we noted, is a rectangle with the corners
+rounded. That is not obvious that it should be so different.
 
 
 
 
 \begin{comment}
 \section{SCR Models are Multi-State Models}
+
+{\bf XXXXXX THIS IS ALL COMMENTED OUT XXXXXXXX}
 
 The multinomial observation model suggests that SCR models are closely
 related to classical multi-state models
@@ -1459,7 +1493,7 @@ temporary emigration -- if the individual is unavailable, i.e., not in
 the surveyed patches, then its probability of detection is 0.
 
 We wrote the state-model above in which the state-transition
-probabilities are constant, conditional on ${\bf s}$.
+probabilitties are constant, conditional on ${\bf s}$.
 It might be reasonable to imagine them as being Markovian, so that
 they depend on the immediately prior state, such as:
 \[
@@ -1493,7 +1527,7 @@ other covariates of geography as in Chapt. \ref{chapt.rsf}.
 
 Clearly this dcat model arises by thinking about a discrete
 approximation to a continuous space
-Gaussian movement model.
+gaussian movement model.
 
 \end{comment}
 
@@ -1509,11 +1543,13 @@ The classical animal trapping experiment is based on a physical trap
 which captures a single animal and holds that individual until
 subsequent molestation by a biologist.
 This type of observation model -- the ``single-catch'' trap --
-was the original situation considered by
-\citet{efford:2004}. Nowadays, capture-recapture data are more often
+was the original situation considered in the context of spatial
+capture-recapture  by
+\citet{efford:2004}. Nowadayws, capture-recapture data are more often
 obtained by other methods (DNA from hair snares, or scat sampling,
 camera traps etc...) but nevertheless the single-catch traps are still
-widely used in small mammal studies \citep{converse_1996, converse_royle:2012, converse_royle:2013}.
+widely used in small mammal studies \citep{converse_etal:2006ea,
+  converse_royle:2012} and other situations.
 
 The single-catch model is basically a multinomial model but one in
 which the number of available traps is reduced as each individual is
@@ -1556,14 +1592,14 @@ simulate the data in our function \mbox{\tt simScSCR.fn})\footnote{actually orde
   capture might be more realistic because individuals aren't
   continually exposed to traps -- they wander about their home range
   and if they encounter a trap they have some chance of being captured
-  in it or not, depending on if the trap happens to be full. }.  If we
-define a latent variable ${\bf o}_{i}$ being the order of capture of
-individual $i$....... actually, what I did was assign o to every
-individual and then just cycle through them.
+  in it or not, depending on if the trap happens to be full. }. In the
+simulation of single catch data, we randomly ordered the population of
+individuals for each sample occasion, 
+and then cycled through them, turning off each trap if an individual
+was captured in it.  
 
 
 \subsection{Inference for single-catch systems}
-
 
 For the single-catch model, we argued that the observations  
 have a multinomial type of observation model, but the
@@ -1572,7 +1608,7 @@ structure among them owing to the ``removal'' of traps as they fill-up
 with individuals. 
 Thus, 
 competition for single-catch traps renders the independence
-assumptions for the independent multinomial model invalid.  As
+assumptions for the independent multinomial model invalid.  However, as
 \citet{efford_etal:2009euring} noted, we expect ``bias to be small
 when trap saturation (the proportion of traps occupied) is low.  Trap
 saturation will be higher when population density is high...'',
@@ -1580,26 +1616,25 @@ relative to trap density, or when net encounter probability is high.
 Efford et al. did a limited simulation study and found essentially no
 effective bias and concluded that estimators of density from the
 misspecified independent multinomial model are robust to the mild
-dependence induced when trap saturation is low.  Naturally then, the
-Poisson model should be an effective approximation under the same set
+dependence induced when trap saturation is low.  Naturally then, we
+expect that the
+Poisson model could also be an effective approximation under the same set
 of circumstances.
 
 In the {\bf R} package \mbox{\tt scrbook} we provide a function for
 simulating data from a single-catch system (function \mbox{\tt
   simScSCR.fn}) and fitting the misspecified model (\mbox{\tt
-  example(simScSCR.fn)}) in {\bf JAGS} so that the interested reader can
-evaluate the effectiveness of this misspecified model for their own
-situation.
+  example(simScSCR.fn)}) in {\bf JAGS} so that you can 
+evaluate the effectiveness of this misspecified model for 
+situations that interest you.
 
 
 \subsection{Analysis of Efford's possum trapping data}
 
 We provide an analysis here of data from a study of bushtail possums
-in New Zealand. The data are available in the \R package \mbox{\tt secr}
+in New Zealand. The data are available with the {\bf R} package \mbox{\tt secr}
 \citep{efford_etal:2009euring};
-see the help file \mbox{\tt ?possum} after loading the \secr package.
-We provide more information about the \mbox{\tt secr} package in
-Chapt. \ref{chapt.mle} and elsewhere.
+see the help file \mbox{\tt ?possum} after loading the \mbox{\tt secr} package.
 Originally the data were analyzed by \citet{efford_etal:2005}, and
 a detailed description of the data set is available in the help file,
 from which we summarize:
@@ -1607,15 +1642,16 @@ from which we summarize:
 species in New Zealand. Although most abundant in forests, where they
 occasionally exceed densities of 15 / ha, possums live wherever there
 are palatable food plants and shelter}.''
-To load the data we have to load \mbox{\tt secr} first
+
+To load the possum data, execute the following commands:
 \begin{verbatim}
 library("secr")
 data(possum)
 \end{verbatim}
-The study area encompasses approximately 300 ha, and 180 live traps
+The study area encompases approximately 300 ha, and 180 live traps
 were
 organized in 5 distinct grids, shown in  Fig. \ref{poisson-mn.fig.possum}
-which shows the spiderplot (see \mbox{\tt ?spiderplot} in the \R
+which shows the spiderplot (see \mbox{\tt ?spiderplot} in the {\bf R}
 package \mbox{\tt scrbook}) for the possum data. The black lines
 connect recaptures of the same individual (trap locations in black)
 with the mean location of capture (red dots) of each individual).
@@ -1626,22 +1662,31 @@ Individuals were captured, tagged, and released over 5 days during
 April, 2002. An interesting aspect of this study is that something
 close to truth exists based on an extensive removal study
 conducted after the live-trapping study \citep{efford_etal:2005}. This
-produced a density estimate of 2.26 possums/ha.  Another noteworthy
-aspect of this study is that it involves
-replicated grids -- they were randomly selected within a prescribed
-region.
-From an inference standpoint, the fact that we have replicated grids,
-and how they were selected, is
-immaterial because inference by SCR models is purely
-model-based and so it wouldn't matter if the grids were chosen
-randomly, systematically, opportunistically, or arbitrarily. That
-said, use of the {\it model} implies a belief in some basic
-independence
-assumptions and applicability of the model, which we might
-feel more confident in if we randomly choose grids or clusters of traps.
+produced a density estimate of 2.26 possums/ha.  
+
+Another noteworthy aspect of this study is that it involves replicated
+grids -- they were randomly selected within a prescribed region.  From
+an inference standpoint, the fact that we have replicated grids, and
+how they were selected, is immaterial because inference by SCR models
+is purely model-based and so it wouldn't matter if the grids were
+chosen randomly, systematically, opportunistically, or
+arbitrarily. That said, use of the basic model SCR model implies a
+belief in some basic independence assumptions and applicability of the
+model, which we might feel more confident in if we randomly choose
+grids or clusters of traps.  We note that this is a type of
+multi-session model, we could use exactly the same formulation of the
+model given for the ovenbird data and obtain estimates of $N_{t}$ but
+for each grid this time. We could also model variation {\it among}
+grids (e.g., treatment effects) in this way. However, here we will
+just pool the data into a large data set and not take into account the
+grid identity of each record. In doing this sort of pooling, there is
+an implicit assumption that $N_{t}$ is Poisson distributed, with
+constant mean \citep{royle:2004abc, royle_etal:2011ms}.
+
+
 \begin{figure}
 \centering
-\includegraphics[width=5in,height=3.2in]{Ch5-PoisMn/figs/possum.png}
+\includegraphics[width=5in]{Ch5-PoisMn/figs/possum.png}
 \caption{Trapping grids used in possum study from
   \citet{efford_etal:2005}, data are contained in the \R
 package \mbox{\tt secr}
@@ -1651,7 +1696,7 @@ additional details of this study.}
 \end{figure}
 
 The data file \mbox{\tt possumCH} contains 112 encounter histories,
-and we analyze those here although the last 8 of those are recaptures
+and we analyzet those here although the last 8 of those are recaptures
 treated as new individuals\footnote{M. Efford, personal communication}.
 %Trapping produced
 %46 adult females, 33 adult males, 10 immature females and 11
@@ -1662,7 +1707,8 @@ as noted in the \mbox{\tt possum} help file
  ``One female possum was twice captured at two
 sites on one day, having entered a second trap after being released;
 one record in each pair was selected arbitrarily and discarded.''
-which is a similar problem as we might have in bird mist net studies.
+which is a similar problem as we might have in bird mist net studies,
+with birds being caught multiple times in a set.
 If this was a significant problem then it might be worth describing a
 model fo $n_{ik} = $ the number of captures of individual $i$ during
 sample $k$ to make use of all captures. By discarding the two
@@ -1670,65 +1716,51 @@ extra-capture events, we can satisfactorily view these data as
 single-catch data, for which \mbox{\tt secr} uses the independent
 multinomial likelihood (M. Efford, pers. comm.).
 
-For our analysis we just tossed up a rectangular state-space which
+For our Bayesian analysis here, we used a rectangular state-space which
 doesn't account for any geographic boundaries of the suvey region, but
-we note that a habitat mask is included in \secr, and we analyze the
-data using that mask in Chapt. \ref{chapt.mle}.
+we note that a habitat mask is included in {\tt secr} and it could be
+used in a Bayesian analysis.
+%, and we analyze the
+%data using that mask in Chapt. \ref{chapt.mle}.
 Whether or not we use the mask is
 probably immaterial as long as we understand the predictions of $N$ or
 $D$ over the ocean don't mean anything biological and we probably
-wouldn't report such predictions.
+wouldn't report such predictions. Shortly we will show how to make a
+density map that is suitably restricted. The {\bf JAGS} model
+specification is based on that of the ovenbird analysis given
+previously, and so we don't reproduce the model here. The {\bf R/JAGS}
+script called \mbox{\tt SCRpossum} which is in our \mbox{\tt scrbook}
+package. 
 
-XXX add code here
-to set up the analysis we do this.....
-XXXXX
-
-XXXX Script for doing this needs to be put in the repo XXXXXXX
-Note that we define Dha in the WinBUGS script.
-XXX This is fashioned after the ind. multinomial model.
 
 {\small
+
+Table caption: Results for the possum data. Dha is density per ha.
 \begin{verbatim}
-> summary(out2)
+> out2
+Inference for Bugs model at "model.txt", fit using jags,
+ 3 chains, each with 2000 iterations (first 1000 discarded)
+ n.sims = 3000 iterations saved
+       mu.vect sd.vect    2.5%     25%     50%     75%   97.5%  Rhat n.eff
+D        0.000   0.000   0.000   0.000   0.000   0.000   0.000 1.009   340
+Dha      1.549   0.115   1.343   1.468   1.547   1.626   1.777 1.009   340
+N      235.407  17.435 204.000 223.000 235.000 247.000 270.000 1.009   340
+alpha0  -0.935   0.167  -1.270  -1.045  -0.934  -0.822  -0.605 1.007   870
+alpha1   0.000   0.000   0.000   0.000   0.000   0.000   0.000 1.001  2800
+psi      0.783   0.062   0.666   0.739   0.782   0.826   0.903 1.008   340
+sigma   52.020   2.675  47.067  50.159  51.933  53.748  57.585 1.001  2800
 
-Iterations = 501:2500
-Thinning interval = 1
-Number of chains = 3
-Sample size per chain = 2000
-
-1. Empirical mean and standard deviation for each variable,
-   plus standard error of the mean:
-
-             Mean        SD  Naive SE Time-series SE
-D       1.541e-04 1.223e-05 1.579e-07      6.113e-07
-Dha     1.541e+00 1.223e-01 1.579e-03      6.113e-03
-N       2.342e+02 1.858e+01 2.399e-01      9.288e-01
-alpha0 -7.380e-01 1.539e-01 1.987e-03      6.189e-03
-alpha1  1.952e-04 2.052e-05 2.649e-07      1.302e-06
-psi     4.686e-01 4.282e-02 5.528e-04      2.002e-03
-sigma   5.082e+01 2.691e+00 3.474e-02      1.711e-01
-
-2. Quantiles for each variable:
-
-             2.5%        25%        50%        75%      97.5%
-D       1.316e-04  1.455e-04  1.534e-04  1.619e-04  1.797e-04
-Dha     1.316e+00  1.455e+00  1.534e+00  1.619e+00  1.797e+00
-N       2.000e+02  2.210e+02  2.330e+02  2.460e+02  2.730e+02
-alpha0 -1.043e+00 -8.411e-01 -7.387e-01 -6.368e-01 -4.308e-01
-alpha1  1.565e-04  1.811e-04  1.949e-04  2.086e-04  2.379e-04
-psi     3.876e-01  4.400e-01  4.675e-01  4.957e-01  5.563e-01
-sigma   4.584e+01  4.896e+01  5.065e+01  5.254e+01  5.652e+01
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
 \end{verbatim}
 }
 
-The estimated density (posterior mean) is about 1.54 possums/ha which
-compares well with the estimated obtained from \secr (see
-Chapt. \ref{chapt.mle} for more on the use of \secr).
-To fit these data we do this (default to half-normal function)
+The estimated density (posterior mean) is about 1.53 possums/ha.
+To obtain the \mbox{\tt secr} results for the equivalent null model, we execute the following command
 \begin{verbatim}
 secr.fit( capthist = possumCH, trace = F )
 \end{verbatim}
-which produces summary output like this
+which produces (edited) summary output:
 \begin{verbatim}
 [... some output deleted ...]
 
@@ -1740,25 +1772,27 @@ sigma   log 51.4689114  2.59981905 46.6204139 56.8216500
 
 [... some output deleted ...]
 \end{verbatim}
-There are a million reasons for potential differences some of which
-we've discussed in the context of Bayesian and likelihood estimates
-(Chapt. \ref{chapt.closed} sec. XXXX).
+As we've discussed previously,
+there are many reasons for why there might be differences 
+between Bayesian and likelihood estimates.
 But even among likelihood estimates -- any time you run a model there
 is some numerical integration going on which requires some specific
 choices of how to do the integration (see
-Chapt. \ref{chapt.mle}). Also \secr uses the conditional likelihood
-\citep{borchers_efford:2008} which we expect to induce a slight
-difference.
+Chapt. \ref{chapt.mle}). 
 For now we just observe that the estimated density is certainly in the
 ballpark and so too is the estimated $\sigma$.
 
 
+{\bf XXXX TO DO XXXXXX Density MAP XXXXXX} 
+
+
 \section{Acoustic sampling}
 
-optional material on acoustic sampling here. Citing Borchers
-materia.. 
 
+Optional (if time permits) material on acoustic sampling here. Citing Borchers
+recent material from the ISEC. 
 
+Signal strenth detector .... from \citep{efford_etal:2009ecol}
 
 \section{Summary and Outlook}
 
@@ -1775,7 +1809,7 @@ data from devices that can record multiple encounters of the same
 individual at a device.
 
 There are other types of encounter models that arise in practice. We
-identify a few of them here, although we neglect a detailed
+identify a few of them here, although we neglected a detailed
 development of them at the present time or, in some cases, put that
 off until later chapters.  (1) Removal systems. Sometimes traps kill
 individuals and SCR models can handle that. This can be viewed as a
@@ -1785,20 +1819,24 @@ Chapt. \ref{chapt.js}.
 specific summary statistics are observable \citep{chandler_royle:2012}
 which we cover in Chapts. \ref{chapt.scr-unmarked}-
 \ref{chapt.partialID}; (3) We can have multiple observation methods
-working together as in \citet{gopalaswamy_etal:2012} which we
-summarize in sec. XXXX unsure if we cover this XXXXX; 
+working together as in \citet{gopalaswamy_etal:2012ecol} which we
+summarize in sec. XXXX unsure if we cover this later or not XXXXX; 
 (4) In so-called search-encounter models we
-have slightly different considerations -- there is an intermediate
-``process'' related to movement and so our observations.... not sure
-how to discuss that here.
+have slightly different situation where the encounter is Bernoulli or
+Poisson or multinomial, but the observation location can also be
+random (in contrast to traps, where the location is fixed by
+design). This auxiliary data is informative about an intermediate 
+process related to movement.
 
 There remains much research to be done to formalize models for certain
 observation systems. For example, while we think one will usually be
 able to analyze single-catch systems using the multi-catch model, or
 even the Bernoulli model if encounter probability is sufficiently low, 
 a formalization of the single-catch model would be a useful
-development.   In addition, trapping webs (XXXX Anderson XXXXX) have
+development.   In addition, classical ``trapping webs''
+\citep{anderson_etal:1983, wilson_anderson:1985b, jett_nichols:1987, 
+parmenter_etal:1989} have 
 been around for quite some time and it seems like they are amenable to
-formulation as a type of SCR model although we have not pursued that 
-simply because they are rarely used in practice. 
+formulation as a type of SCR model although we have not pursued that development
+simply because trapping webs are rarely used in practice. 
 
