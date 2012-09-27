@@ -133,6 +133,11 @@ drop(rmultinom(1, 10, caphist.probs))
 
 
 
+# Uniform on plane
+
+
+set.seed(3656)
+plot(runif(100), runif(100))
 
 
 
