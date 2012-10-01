@@ -58,15 +58,18 @@ type of binomial regression with a random effect. For such models we
 can  obtain maximum likelihood estimators of model parameters
 based on integrated likelihood. The integrated likelihood is based on
 the marginal distribution of the data $y$ in which the random effects
-are removed by integration. Conceptually, our SCR model is a specification
+are removed by integration from the conditional-on-${\bf s}$ distribution of the
+observations. See Chapt. \ref{chapt.modeling} for a
+review of marginal, conditional and joint distributions.
+Conceptually, any SCR model begins with a specification
 of the conditional-on-${\bf s}$ model $[y|{\bf s},{\bm \alpha}]$ and we have
-a ``prior distribution'' for ${\bf s}$, say $[{\bf s}]$, and the
+a ``prior distribution'' for ${\bf s}$, say $[{\bf s}]$. Then, the
 marginal distribution of the data $y$ is
 \[
 [y|{\bm \alpha}] =  \int_{\bf s} [y|{\bf s},{\bm \alpha}][{\bf s}] d{\bf s}.
 \]
-When viewed as a function of $\alpha$ for purposes of estimation, the
-marginal distribution $[y|\alpha]$ is often referred to as the {\it
+When viewed as a function of ${\bm \alpha}$ for purposes of estimation, the
+marginal distribution $[y|{\bm \alpha}]$ is often referred to as the {\it
   integrated likelihood}.
 
 It is worth analyzing 
@@ -87,9 +90,13 @@ y_{ij}| {\bf s}_{i} \sim \mbox{Binomial}(K, p_{\alpha}({\bf x}_{j},{\bf s}_{i}))
 \end{equation}
 where we have indicated the dependence of $p_{ij}$ on ${\bf s}$ and
 parameters ${\bm \alpha}$
-explicitly.
-For the random effect we have ${\bf s}_{i} \sim  \mbox{Uniform}({\cal
-  S})$.
+explicitly. For example, $p_{ij}$ might be the Gaussian model given by
+\[
+ p_{ij} = \mbox{logit}^{-1}(\alpha_{0})\exp( \alpha_{1} ||{\bf x}_{j} - {\bf s}_{i}||)
+\]
+where $\alpha_{1} = -1/(2\sigma^2)$.
+%Further, the distribution of the random effect is ${\bf s}_{i} \sim  \mbox{Uniform}({\cal
+%%  S})$.
 The joint distribution of the data for individual $i$ is the product
 of $J$ such terms (i.e., contributions from each of $J$ traps).
 \[
@@ -109,10 +116,11 @@ the likelihood. That
 is, we compute:
 \[
   [y|{\bm \alpha}] = 
-\int_{{\cal S}}  [ {\bf y}_{i} |{\bf s}_{i}, {\bm \alpha}] g({\bf s}_{i}) d{\bf s}_{i}
+\int_{{\cal S}}  [ {\bf y}_{i} |{\bf s}_{i}, {\bm \alpha}] [{\bf s}_{i}] d{\bf s}_{i}
 \]
-In most SCR models, $g({\bf s}) = 1/||{\cal S}||$ (but see Chapt. \ref{chapt.state-space} for
-alternative specifications).
+In most SCR models, $[{\bf s}] = 1/A({\cal S})$ where $A({\cal S})$ is
+the area of the prescribed state-space ${\cal S}$ (but see Chapt. \ref{chapt.state-space} for
+alternative specifications of $[{\bf s}]$).
 
 The joint likelihood for all $N$ individuals, assuming independence of
 encounters among individuals, is the product of $N$ such terms:
@@ -134,7 +142,7 @@ The key operation for computing the likelihood is solving a
 including \mbox{\tt adapt} \citep{genz_etal:2007} and \mbox{\tt R2cuba}
 \citep{hahn_etal:2011}.  In practice, we won't rely
 on these extraneous {\bf R} packages (except see
-Chapt. \ref{chapt.state-space} for an application of \mbox{\tt Rcuba})
+Chapt. \ref{chapt.state-space} for an application of \mbox{\tt R2cuba})
 but instead will use perhaps less
 efficient methods in which we replace the integral with a summation
 over an equal area mesh of points on the state-space ${\cal S}$ and explicitly
@@ -158,12 +166,13 @@ ${\bf y}_{i}$, is approximated by
 \end{equation}
 
 This is a specific case of the general expression that could be used
-for approximating the integral for any arbitrary (bivariate or otherwise)
-distribution $g({\bf s})$. The general case is
+for approximating the integral for any arbitrary 
+distribution $[{\bf s}]$. The general case is
 \[
-[y|{\bm \alpha}]  = \frac{A}{nG} \sum_{u} [y|{\bf s}_{u},{\bm \alpha}] [{\bf s}_{u}]
+[y|{\bm \alpha}]  = \frac{A({\cal S})}{nG} \sum_{u=1}^{nG} [y|{\bf s}_{u},{\bm \alpha}] [{\bf s}_{u}]
 \]
- In the present context it happens that  $[{\bf s}] = (1/A)$
+Under the uniformity assumption,
+ $[{\bf s}] = 1/A({\cal S})$
 and thus the grid-cell area cancels in the above
 expression to yield eq. \ref{mle.eq.intlik}.
 The rectangular rule for integration can be seen as an application of
@@ -176,7 +185,7 @@ unique values with equal probabilities $1/nG$.
 
 Here we will illustrate how to carryout this integration and
 optimization based on the integrated likelihood using simulated data
- (i.e., following that from Chapt. \ref{chapt.scr0}). Using \mbox{\tt simSCR0.fn}
+ (i.e., see sec. \ref{scr0.sec.simulating}). Using \mbox{\tt simSCR0}
  we simulate data for 100 individuals and a 25 trap array
 laid out in a $5 \times 5$ grid of unit spacing.  The specific encounter
 model is the Gaussian model. The 100 activity centers were
@@ -185,62 +194,71 @@ within which the
 trap array was centered (thus the trap array is buffered by 2
 units). Therefore, the density of individuals in this system is fixed
 at $100/64$.
-
 In the following set of {\bf R} commands we generate the data and 
 then harvest the required data objects:
 {\small
 \begin{verbatim}
-data<-simSCR0.fn(discard0=FALSE,sd=2013)
+  ## simulate a complete data set (perfect detection)
+data<-simSCR0(discard0=FALSE,rnd=2013)
+  ## extract the objects that we need for analysis
 y<-data$Y
 traplocs<-data$traplocs
-nind<-nrow(y)
+nind<-nrow(y)  ## in this case nind=N
 J<-nrow(traplocs)
 K<-data$K
-Xl<-data$xlim[1]
-Yl<-data$ylim[1]
-Xu<-data$xlim[2]
-Yu<-data$ylim[2]
+xlim<-data$xlim
+ylim<-data$ylim
 \end{verbatim}
 }
-{\flushleft Now } we need to define the integration grid, say ${\bf G}$, which we do with
+{\flushleft Now } we need to define the integration grid, say
+\mbox{\tt G}, which we do with
 the following set of {\bf R} commands (here, \mbox{\tt delta} is the grid spacing):
 {\small
 \begin{verbatim}
 delta<- .2
-xg<-seq(Xl+delta/2,Xu-delta/2,by=delta) 
-yg<-seq(Yl+delta/2,Yu-delta/2,by=delta) 
-npix<-length(xg)          # assumes square state-space here
+xg<-seq(xlim[1]+delta/2,xlim[2]-delta/2,by=delta) 
+yg<-seq(ylim[1]+delta/2,ylim[2]-delta/2,by=delta) 
+npix<-length(xg)          # valid for square state-space only
 G<-cbind(rep(xg,npix),sort(rep(yg,npix)))
 nG<-nrow(G)
 \end{verbatim}
 }
 {\flushleft In this case}, the integration grid is set up as a grid with spacing
-$\delta = 0.2$ which produces a $40 \times 40$ grid of points for evaluating the
-integrand if the state-space buffer is set at 2.
+$\delta = 0.2$ which produces, for our example, a $40 \times 40$ grid of points for evaluating the
+integrand if the state-space buffer is set at 2. We note that the
+integration grid is set-up here to correspond exactly to the
+state-space used in simulating the data. However, in practice, we
+wouldn't know this, and our estimate of $N$ (for the unknown case, see
+below) would be sensitive to choice of the extent of the integration
+grid. As we've discussed previously, density, which is $N$
+standardized by the area of the state-space, will not be so sensitive
+in most cases. 
 
-We next create an {\bf R} function that defines the likelihood as a
-function of the data objects $y$ and $X$ which were created above but,
-in general, you would read these files into {\bf R}, e.g., from a .csv
-file.  In addition to these data objects, we need to have defined the
-quantities $G$ and $nG$ associated with the integration grid.
-However, instead of worrying about making all of these objects and
-keeping track of them we just put that code above into a
-function, say \mbox{\tt intlik1}, and pass $\delta$ as an additional
-(optional) argument and a few other things that we need such as the
-boundary of the state-space over which the integration (summation) is
-being done. This function is available in the \mbox{\tt
-  scrbook} package (use {\tt ?intlik1} at the {\bf R} prompt).
- The code is reproduced here:
+We are now ready to  compute the conditional-on-{\bf s} likelihood and
+carry-out the marginalization described by Eq. \ref{mle.eq.intlik}.
+We need to do this by defining an {\bf R} function that computes the
+likelihood for the integration grid, as a function of the data objects \mbox{\tt y} and
+\mbox{\tt X} which were created above. However,
+it is a bit untidy to store the grid information in your workspace,
+and define the likelihood function in a way that depends on these things that
+exist in your workspace.  Therefore, we build the {\bf R} function so
+that it computes the integration grid {\it within} the function, thereby
+avoiding potential problems if our trapping grid locations change, or
+if we want to modify the state-space buffer easily.  We therefore
+define the function, called \mbox{\tt intlik1}, to which we pass the data
+objects and other information necessary to compute the marginal
+likelihood.  This function is available in the \mbox{\tt scrbook}
+package (use {\tt ?intlik1} at the {\bf R} prompt).  The code is
+reproduced here:
 
 {\small 
 \begin{verbatim}
 intlik1<-function(parm,y=y,delta=.2,X=traplocs,ssbuffer=2){
 
-Xl<-min(X[,1]) - ssbuffer 
-Xu<-max(X[,1]) + ssbuffer
-Yu<-max(X[,2]) + ssbuffer
+Xl<-min(X[,1]) - ssbuffer   ## these lines of code are setting up the 
+Xu<-max(X[,1]) + ssbuffer   ## support for the integration which is
+Yu<-max(X[,2]) + ssbuffer   ## the same as the state-space of "s"
 Yl<-min(X[,2]) - ssbuffer
-
 xg<-seq(Xl+delta/2,Xu-delta/2,,length=npix) 
 yg<-seq(Yl+delta/2,Yu-delta/2,,length=npix) 
 npix<-length(xg)
@@ -250,7 +268,8 @@ nG<-nrow(G)
 D<- e2dist(X,G)  
 
 alpha0<-parm[1]
-alpha1<-parm[2]
+alpha1<-exp(parm[2])  # alpha1 restricted to be positive here
+                      # for convenience (it is negated below)
 probcap<- plogis(alpha0)*exp(-alpha1*D*D)
 Pm<-matrix(NA,nrow=nrow(probcap),ncol=ncol(probcap))
                     # all zero encounter histories
@@ -260,10 +279,15 @@ ymat<-y[apply(y,1,sum)>0,]
 ymat<-rbind(ymat,rep(0,ncol(ymat)))
 lik.marg<-rep(NA,nrow(ymat))
 for(i in 1:nrow(ymat)){
+ ## next line: log conditional likelihood for ALL possible values of s
 Pm[1:length(Pm)]<- (dbinom(rep(ymat[i,],nG),K,probcap[1:length(Pm)],log=TRUE))
+ ## next line: sum the log conditional likelihoods, exp() result
+ ## same as taking the product
 lik.cond<- exp(colSums(Pm))
+ ## take the average value == computing marginal
 lik.marg[i]<- sum( lik.cond*(1/nG))  
 }
+ ## n0 = number of all-0 encounter histories
 nv<-c(rep(1,length(lik.marg)-1),n0)
 -1*( sum(nv*log(lik.marg)) )
 }
@@ -271,11 +295,12 @@ nv<-c(rep(1,length(lik.marg)-1),n0)
 }
 
 
-The function \mbox{\tt intlik1} accepts as input the encounter history matrix, $y$, the
-trap locations, $X$, and the state-space buffer. This allows us to
+The function \mbox{\tt intlik1} accepts as input the encounter history
+matrix, \mbox{\tt y}, the
+trap locations, \mbox{\tt X}, and the state-space buffer. This allows us to
 vary the state-space buffer and easily evaluate the sensitivity of the
 MLE to the size of the state-space.  Note that we have a peculiar
-handling of the encounter history matrix $y$. In particular, we remove
+handling of the encounter history matrix \mbox{\tt y}. In particular, we remove
 the all-zero encounter histories from the matrix and tack-on a single
 all-zero encounter history as the last row which then gets weighted by
 the number of such encounter histories (\mbox{\tt n0}). This is a bit
@@ -287,14 +312,15 @@ frequency for each possible state-space location of the individual.
 The log contributions are summed up and the result exponentiated on
 the next line, producing lik.cond, the conditional-on-${\bf s}$
 likelihood (Eq. \ref{mle.eq.cond-on-s} above). The marginal likelihood
-(\mbox{\tt lik.marg}) sums up the conditional elements weighted by
-$\Pr({\bf s})$ (Eq. \ref{mle.eq.intlik} above).  This is a fairly
+(\mbox{\tt lik.marg}) sums up the conditional elements weighted by the probabilities
+$[{\bf s}]$ (Eq. \ref{mle.eq.intlik} above).  This is a fairly
 primitive function which doesn't allow much flexibility in the data
 structure. For example, it assumes that $K$, the number of replicates,
 is constant for each trap. Further, it assumes that the state-space is
 a square. We generalize this to some extent later in this chapter.
 
-Here is the {\bf R} command for maximizing the likelihood and saving the
+Here is the {\bf R} command for maximizing the likelihood using
+\mbox{\tt nlm} (the function \mbox{\tt optim} could also be used) and saving the
 results into an object called \mbox{\tt frog}.  The output is a list of the
 following structure and these specific estimates are produced using
 the simulated data set:
@@ -416,13 +442,13 @@ the following 3 components: (1) the marginal
 probability of each ${\bf y}_{i}$ as before,
 \[
   [{\bf y}_{i}|{\bm \alpha}] = 
-\int_{{\cal S}} \mbox{Binomial}({\bf y}_{i} |{\bf s}_{i}, {\bm \alpha})g({\bf s}_{i}) d{\bf s}_{i}.
+\int_{{\cal S}} \mbox{Binomial}({\bf y}_{i} |{\bf s}_{i}, {\bm \alpha})[{\bf s}_{i}] d{\bf s}_{i}.
 \]
 (2) We compute
 the probability of an all-0 encounter history:
 \[
 \pi_{0} = [{\bf y} = {\bf 0} | {\bm \alpha}] = 
-\int_{{\cal S}} \mbox{Binomial}({\bf 0} |{\bf s}_{i}, {\bm \alpha})g({\bf s}_{i}) d{\bf s}_{i}
+\int_{{\cal S}} \mbox{Binomial}({\bf 0} |{\bf s}_{i}, {\bm \alpha})[{\bf s}_{i}] d{\bf s}_{i}
 \]
 (3) The combinatorial term: ${N \choose n}$. Then, 
  the marginal likelihood has this form:
@@ -1513,7 +1539,7 @@ group $g$ and {\it assume}
 \]
 Naturally, we model group-specific covariates on $\Lambda_{g}$:
 \[
- log(\Lambda_{g}) = \beta_{0} + \beta_{1} z_{g}
+ \log(\Lambda_{g}) = \beta_{0} + \beta_{1} z_{g}
 \]
 where $z_{g}$ is some group-specific covariate such as a categorical index to the group, or a trend variable, or a spatial 
 covariate, such as treatment effect or habitat structure, if the groups
