@@ -220,8 +220,125 @@ data. It is important to note that $\sigma$ is not comparable under
 these different distance functions for detection.  Additionally, the
 relationship between $\sigma$ and home range radius does not have
 a precise definition under alternative distance functions.  We
-demonstrate how to fit different distance functions under the Bayesian
-and likelihood sections below.
+demonstrate how to fit different distance functions under the Bayesian framework here
+and then provide a section on the likelihood analysis (in \secr~) in a 
+separate section below.
+
+\section{Bayesian Analysis of detection functions}
+
+To demonstrate how to incorporate various types of covariates using
+{\bf JAGS}, we will again return to the data collected during the
+Ft. Drum bear study.  This data set was first introduced in Chapt. \ref{chapt.closed},
+but to refresh your memory, there were 38 baited hair snares that were run
+between June and July 2006.  The snares were checked each week for a
+total for $K=8$ sample occasions and $n=47$ individual bears were
+encountered at least once.  The data are provided in the {\bf R}
+package \mbox{\tt scrbook} and an {\bf R} called XXXX allows the user to easily
+pick which model to analyze and calling the function will provide all the code to 
+implement the models independently as well.
+
+We start here by presenting the basic SCR model with no covariates and
+the half normal distance function. The {\bf R} function XXX  will set up the data, write the model, define the MCMC specifications (e.g., initial values, number of chains, etc.) and, finally, run the specified model in {\bf JAGS}.  In this chapter we will present the 
+model code and output for the most commonly employed models.  
+
+In panel XXX, we present the basic SCR model as well as showing how to specify
+the negative exponential detection function.  To call each of these from the function XXX
+fill in how here XXX  
+
+{\small
+\begin{verbatim}
+cat("
+model {
+alpha0~dnorm(0,.1)
+logit(p0)<- alpha0
+alpha1<-1/(2*sigma*sigma)
+sigma~dunif(0, 15)
+psi~dunif(0,1)
+
+for(i in 1:M){
+ z[i] ~ dbern(psi)
+ s[i,1]~dunif(Xl,Xu)
+ s[i,2]~dunif(Yl,Yu)
+for(j in 1:J){
+d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
+y[i,j] ~ dbin(p[i,j],K)
+p[i,j]<- z[i]*p0*exp(- alpha1*d[i,j]*d[i,j])
+# p[i,j]<- z[i]*p0*exp(- alpha1*d[i,j]) #exponential
+
+}
+}
+N<-sum(z[])
+D<-N/area
+}
+",file = "SCR0.txt")
+
+\end{verbatim}
+}
+
+
+The output from our basic model with no covariates and the half-normal
+distance function provides an estimate of $D = 0.167$ bears per $km^2$
+and $\sigma = 1.996$.  This is similar to the estimated density found
+under model $M_0$ in Chapter 3.2.5, which was 0.18 bears per $km^2$,
+when we used the effective trap area based on the trap polygon
+buffered by $1/2$ the female home range radius.
+While the results from the non-spatial model may be similar this is mostly coincident given this particular set of
+conditions, but now we have a model based estimate of $D$ instead of having to wonder
+what effective trap area to use.
+We can also see that the 97.5\%
+percentile for $N$ is 621, thus not reaching our $M=650$ value, but
+close enough that we may want to check that $N$ is not truncated by
+this level of data augmentation.  In addition to checking the percentiles, we can also see from \ref{fig.9.1}, the histogram of $N$, that $N$ shows no signs of truncation.  We could also increase
+M as another check that our data augmentation is sufficient.
+
+
+Executing the negative exponential detection function, results in the 
+following summary output:
+{\small
+\begin{verbatim}
+> print(summary(outSCR0exp), digits=2)
+
+Iterations = 501:20500
+Thinning interval = 1
+Number of chains = 3
+Sample size per chain = 20000
+
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
+
+         Mean     SD Naive SE Time-series SE
+D        0.17  0.023  9.3e-05        0.00111
+N      511.55 68.730  2.8e-01        3.35478
+p0       0.34  0.055  2.2e-04        0.00088
+psi      0.79  0.107  4.4e-04        0.00520
+sigma    1.12  0.094  3.8e-04        0.00213
+
+[some output deleted]
+...
+\end{verbatim}
+}
+
+
+Here, we see that posterior mean density is 0.17,
+effectively the same as under the half-normal distance function model
+above.  The posterior mean (percentiles) of $\sigma$ for the negative
+exponential model are $1.12 (0.95, 1.32)$, entirely distinct from our
+estimate of $\sigma$ under the half normal model. The interpretation
+of $\sigma$ in the two models is really quite distinct. In the normal
+model it can be interpreted as the standard deviation of a bivariate
+normal movement model whereas the manner in which $\sigma$ relates to
+``area used'' for the negative exponential model has nothing to do
+with a bivariate normal model of movement.  This highlights that it is
+important for the user to know what distance function is used and what
+the interpretation of $\sigma$ might be in relation to the home range size.
+This relationship was discussed in \ref{Ch. 4}
+XXadd ref tagXX for various detection functions.
+
+
+We leave the detection functions for now and move onto incorporating
+covariates into the model using the {\bf JAGS}
+language.  For this part, we will stick with the half-normal distance
+model shown in the \mbox{\tt SCR0.txt} model file above.
 
 
 \section{Modeling Covariate Effects}
@@ -491,218 +608,7 @@ separately in Section 8.5 below and show a simple example of a finite
 mixture model carried out in secr in Section 8.4.4.
 \end{comment}
 
-\section{Bayesian Analysis of covariates}
 
-XXXXX TOO MUCH R CODE FOR MY TASTE; HAPPY TO BREAK IT DOWN IF YOU AGREE XXX
-
-To demonstrate how to incorporate various types of covariates using
-{\bf JAGS}, we will again return to the data collected during the
-Ft. Drum bear study.  This data set was first introduced in Chapt. \ref{chapt.closed},
-but to refresh your memory, there were 38 baited hair snares that were run
-between June and July 2006.  The snares were checked each week for a
-total for $K=8$ sample occasions and $n=47$ individual bears were
-encountered at least once.  The data are provided in the {\bf R}
-package \mbox{\tt scrbook} and the analysis can be set up and run as
-we will show throughout the chapter.
-
-\subsection{Detection functions}
-
-We start here by presenting the basic SCR model with no covariates and
-the half normal distance function. The following block of code loads the necessary {\bf R} packages, sets up the data, writes the model, defines MCMC run specifications (e.g., initial values, number of chains, etc.) and, finally, runs the so specified model in {\bf JAGS}.  
-
-{\small
-\begin{verbatim}
-library("scrbook")
-library("rjags")
-data("beardata")
-trapmat<-beardata$trapmat
-nind<-dim(beardata$bearArray)[1]
-K<-dim(beardata$bearArray)[3]
-ntraps<-dim(beardata$bearArray)[2]
-M=650
-nz<-M-nind
-Yaug <- array(0, dim=c(M,ntraps,K))
-Yaug[1:nind,,]<-beardata$bearArray
-y<- apply(Yaug,c(1,2),sum) # summarize by ind x traps
-
-#center the coordinates of the trap matrix
-X=as.matrix(cbind((trapmat[,1]- mean(trapmat[,1])), (trapmat[,2]- mean(trapmat[,2]))))
-
-#set up the state-space
-
-Xl=min(trapmat[,1]- mean(trapmat[,1])) - 20
-Xu=max(trapmat[,1]- mean(trapmat[,1])) + 20
-Yl=min(trapmat[,2]- mean(trapmat[,2])) - 20
-Yu=max(trapmat[,2]- mean(trapmat[,2])) + 20
-areaX=(Xl-Xu)*(Yl-Yu)
-
-cat("
-model {
-alpha0~dnorm(0,.1)
-logit(p0)<- alpha0
-alpha1<-1/(2*sigma*sigma)
-sigma~dunif(0, 15)
-psi~dunif(0,1)
-
-for(i in 1:M){
- z[i] ~ dbern(psi)
- s[i,1]~dunif(Xl,Xu)
- s[i,2]~dunif(Yl,Yu)
-for(j in 1:J){
-d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
-y[i,j] ~ dbin(p[i,j],K)
-p[i,j]<- z[i]*p0*exp(- alpha1*d[i,j]*d[i,j])
-}
-}
-N<-sum(z[])
-D<-N/area
-}
-",file = "SCR0a.txt")
-
-data0<-list(y=y,M=M,K=K, J=ntraps, Xl=Xl, Yl=Yl, Xu=Xu, Yu=Yu, X=X, area=areaX)
-params<-c('psi','p0','N', 'D', 'sigma')
-zst=as.vector(c(rep(1, nind), rep(0, M-nind)))
-
-toad<- spiderplot(beardata$bearArray,X)
-Sst<-matrix(cbind(runif(M, Xl, Xu), runif(M, Yl, Yu)), ncol=2)
-Sst[1:nind, ]<-toad$avg.s
-
-inits =  function() {list(z=zst,psi=runif(1), s=Sst, sigma=runif(1,2,3),alpha0=runif(1)) }
-
-
-out1 <- jags.model("SCR0a.txt", data0, inits, n.chains=3, n.adapt=500)
-outSCR0a <- coda.samples(out1,  params, n.iter=20000)
-\end{verbatim}
-}
-Executing this block of code produces the following summary output:
-{\small
-\begin{verbatim}
-> print(summary(outSCR0a), digits=2)
-
-Iterations = 501:20500
-Thinning interval = 1
-Number of chains = 3
-Sample size per chain = 20000
-
-1. Empirical mean and standard deviation for each variable,
-   plus standard error of the mean:
-
-        Mean     SD Naive SE Time-series SE
-D       0.17  0.022  9.0e-05        0.00096
-N     500.63 66.652  2.7e-01        2.91683
-p0      0.11  0.014  5.7e-05        0.00017
-psi     0.77  0.104  4.2e-04        0.00453
-sigma   1.99  0.131  5.3e-04        0.00252
-\end{verbatim}
-}
-The output from our basic model with no covariates and the half-normal
-distance function provides an estimate of $D = 0.167$ bears per $km^2$
-and $\sigma = 1.996$.  This is similar to the estimated density found
-under model $M_0$ in Chapter 3.2.5, which was 0.18 bears per $km^2$,
-when we used the effective trap area based on the trap polygon
-buffered by $1/2$ the female home range radius.
-While the results from the non-spatial model may be similar this is mostly coincident given this particular set of
-conditions, but now we have a model based estimate of $D$ instead of having to wonder
-what effective trap area to use.
-We can also see that the 97.5\%
-percentile for $N$ is 621, thus not reaching our $M=650$ value, but
-close enough that we may want to check that $N$ is not truncated by
-this level of data augmentation.  In addition to checking the percentiles, we can also see from \ref{fig.9.1}, the histogram of $N$, that $N$ shows no signs of truncation.  We could also increase
-M as another check that our data augmentation is sufficient.
-
-
-XXXXX probably worth checking that..... can you included that here? XXXXXXX
-
-Now, we can use the same data setup, but fit a model having a
-different distance function in the encounter probability model. Here
-we use the negative exponential distance function, and the new
-{\bf JAGS} model is:  XXXX BETH: include this in your scrbook
- function too and maybe allow the user to specify which model file
- they want to use with an if statement or something XXXXXXXXXXXXXXXXXXXXXXXXXX
-{\small
-\begin{verbatim}
-cat("
-model {
-alpha0~dnorm(0,.1)
-logit(p0)<- alpha0
-alpha1<-1/(2*sigma*sigma)
-sigma~dunif(0, 15)
-psi~dunif(0,1)
-
-for(i in 1:M){
- z[i] ~ dbern(psi)
- s[i,1]~dunif(Xl,Xu)
- s[i,2]~dunif(Yl,Yu)
-for(j in 1:J){
-d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
-y[i,j] ~ dbin(p[i,j],K)
-p[i,j]<- z[i]*p0*exp(- alpha1*d[i,j])
-}
-}
-N<-sum(z[])
-D<-N/area
-}
-",file = "SCR0exp.txt")
-
-data0<-list(y=y,M=M,K=K, J=ntraps, Xl=Xl, Yl=Yl, Xu=Xu, Yu=Yu, X=X, area=areaX)
-params<-c('psi','p0','N', 'D', 'sigma')
-zst=as.vector(c(rep(1, nind), rep(0, M-nind)))
-
-toad<- spiderplot(beardata$bearArray,X)
-Sst<-matrix(cbind(runif(M, Xl, Xu), runif(M, Yl, Yu)), ncol=2)
-Sst[1:nind, ]<-toad$avg.s
-inits =  function() {list(z=zst,psi=runif(1), s=Sst, sigma=runif(1,2,3),alpha0=runif(1)) }
-
-out1 <- jags.model("SCR0exp.txt", data0, inits, n.chains=3, n.adapt=500)
-outSCR0exp <- coda.samples(out1,  params, n.iter=20000)
-\end{verbatim}
-}
-Executing this block of code produces the following summary output:
-{\small
-\begin{verbatim}
-> print(summary(outSCR0exp), digits=2)
-
-Iterations = 501:20500
-Thinning interval = 1
-Number of chains = 3
-Sample size per chain = 20000
-
-1. Empirical mean and standard deviation for each variable,
-   plus standard error of the mean:
-
-         Mean     SD Naive SE Time-series SE
-D        0.17  0.023  9.3e-05        0.00111
-N      511.55 68.730  2.8e-01        3.35478
-p0       0.34  0.055  2.2e-04        0.00088
-psi      0.79  0.107  4.4e-04        0.00520
-sigma    1.12  0.094  3.8e-04        0.00213
-
-[some output deleted]
-...
-\end{verbatim}
-}
-
-
-Here, we see that posterior mean density is 0.17,
-effectively the same as under the half-normal distance function model
-above.  The posterior mean (percentiles) of $\sigma$ for the negative
-exponential model are $1.12 (0.95, 1.32)$, entirely distinct from our
-estimate of $\sigma$ under the half normal model. The interpretation
-of $\sigma$ in the two models is really quite distinct. In the normal
-model it can be interpreted as the standard deviation of a bivariate
-normal movement model whereas the manner in which $\sigma$ relates to
-``area used'' for the negative exponential model has nothing to do
-with a bivariate normal model of movement.  This highlights that it is
-important for the user to know what distance function is used and what
-the interpretation of $\sigma$ might be in relation to the home range size.
-This relationship was discussed in \ref{Ch. 4}
-XXadd ref tagXX for various detection functions.
-
-
-We leave the detection functions for now and move onto incorporating
-covariates into the model using the {\bf JAGS}
-language.  For this part, we will stick with the half-normal distance
-model shown in the \mbox{\tt SCR0.txt} model file above.
 
 \subsection{Time-Varying Encounter Probability}
 
