@@ -238,8 +238,8 @@ for (x in 1:ntot) {
         if (iter%%100 == 0) {
             cat("   Acceptance rates\n")
             cat("     z =", zUps/M, "\n")
-            cat("     S =", Sups/M, "\n")
-            cat("     Sk =", Skups/M, "\n")
+            cat("     S =", Sups/(M-length(locs)), "\n")
+            cat("     Sk =", Skups/length(locs), "\n")
         }
         out[iter, ] <- c(sigma, lam0, crat, psi, sum(z))
     }
