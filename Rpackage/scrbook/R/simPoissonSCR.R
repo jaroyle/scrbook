@@ -1,6 +1,6 @@
-simPoissonSCR.fn <-
-function(discard0=TRUE,array3d=FALSE,sd=2013){
-set.seed(sd)
+simPoissonSCR <-
+function(discard0=TRUE,array3d=FALSE,rnd=2013){
+set.seed(rnd)
 
 # make trapping grid. Normally you would provide a 2-dimensional matrix
 # of trap coordinates and read it in like this:

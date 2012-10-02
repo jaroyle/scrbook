@@ -1,4 +1,4 @@
-simSCR0.fn <-
+simSCR0 <-
 function(discard0=TRUE,array3d=FALSE,rnd=2013){
 set.seed(rnd)
 

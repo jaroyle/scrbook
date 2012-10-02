@@ -57,7 +57,7 @@ intlik1(parm, y = y, delta = 0.2, X = traplocs, ssbuffer = 2)
 }
 \examples{
 
-data<-simSCR0.fn(discard0=FALSE,sd=2013)
+data<-simSCR0(discard0=FALSE,rnd=2013)
 y<-data$Y
 traplocs<-data$traplocs
 nind<-nrow(y)

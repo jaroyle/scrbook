@@ -1,4 +1,4 @@
-\name{simPoissonSCR.fn}
+\name{simPoissonSCR}
 \alias{simPoissonSCR.fn}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
@@ -8,7 +8,7 @@ Simulatesion SCR data with Poisson observation model
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-simPoissonSCR.fn(discard0 = TRUE, array3d = FALSE, sd = 2013)
+simPoissonSCR(discard0 = TRUE, array3d = FALSE, rnd = 2013)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -18,7 +18,7 @@ simPoissonSCR.fn(discard0 = TRUE, array3d = FALSE, sd = 2013)
   \item{array3d}{
 %%     ~~Describe \code{array3d} here~~
 }
-  \item{sd}{
+  \item{rnd}{
 random number seed
 }
 }
@@ -53,17 +53,14 @@ random number seed
 
 
 
-data<-simPoissonSCR.fn(discard0=TRUE,sd=2013)
+data<-simPoissonSCR(discard0=TRUE,rnd=2013)
 y<-data$Y
-traplocs<-data$traplocs
 nind<-nrow(y)
 X<-data$traplocs
 K<-data$K
 J<-nrow(X)
-Xl<-data$xlim[1]
-Yl<-data$ylim[1]
-Xu<-data$xlim[2]
-Yu<-data$ylim[2]
+xlim<-data$xlim
+ylim<-data$ylim
 
 ## Data augmentation stuff
 M<-200
@@ -78,8 +75,8 @@ psi~dunif(0,1)
 
 for(i in 1:M){
  z[i] ~ dbern(psi)
- s[i,1]~dunif(Xl,Xu)
- s[i,2]~dunif(Yl,Yu) 
+ s[i,1]~dunif(xlim[1],xlim[2])
+ s[i,2]~dunif(ylim[1],ylim[2])
 for(j in 1:J){
 d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
 y[i,j] ~ dpois(lam[i,j])
@@ -91,14 +88,14 @@ D<- N/64
 }
 ",file = "SCR-Poisson.txt")
 
-sst<-traplocs[sample(1:J,M,replace=TRUE),] # starting values for s
+sst<-X[sample(1:J,M,replace=TRUE),] # starting values for s
 for(i in 1:nind){
 if(sum(y[i,])==0) next
 sst[i,1]<- mean( X[y[i,]>0,1] )
 sst[i,2]<- mean( X[y[i,]>0,2] )
 }
 sst<-sst + runif(nrow(sst)*2,0,1)/8
-data <- list (y=y,X=X,K=K,M=M,J=J,Xl=Xl,Yl=Yl,Xu=Xu,Yu=Yu)
+data <- list (y=y,X=X,K=K,M=M,J=J,xlim=xlim,ylim=ylim)
 inits <- function(){
   list (alpha0=rnorm(1,-2,.4),alpha1=runif(1,1,2),s=sst,z=z,psi=.5)
 }

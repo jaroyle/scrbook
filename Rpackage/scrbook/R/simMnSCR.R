@@ -1,4 +1,4 @@
-simMnSCR.fn <-
+simMnSCR <-
 function(parms,K=7,ssbuff=2){
 
 traplocs<- cbind(sort(rep(1:5,5)),rep(1:5,5))
@@ -14,10 +14,15 @@ Yu<-max(traplocs[,2] + delta)
 N<-parms$N
 sx<-runif(N,Xl,Xu)
 sy<-runif(N,Yl,Yu)
-S<-cbind(sx,sy) 
+S<-cbind(sx,sy)
 
 # how far is each individual from each trap?
 D<- e2dist(S,traplocs)
+
+nam<-names(parms)
+if( sum(nam=="sigma")==0 |
+   sum(nam=="alpha0")==0 |
+   sum(nam=="alpha2")==0) return("Missing parameter value.....")
 
 sigma<-parms$sigma
 alpha0<-parms$alpha0
