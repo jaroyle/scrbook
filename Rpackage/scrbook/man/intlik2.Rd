@@ -60,12 +60,11 @@ data<-simSCR0.fn(discard0=TRUE,sd=2013)
 y<-data$Y
 traplocs<-data$traplocs
 nind<-nrow(y)
-X<-data$traplocs
-J<-nrow(X)
+J<-nrow(traplocs)
 K<-data$K
 
 
-starts<-c(-2,2,log(4))
+starts<-c(-2,0,4)
 frog<-nlm(intlik2,c(-2.5,2,log(4)),hessian=TRUE,y=y,X=traplocs,delta=.2,ssbuffer=2)
 
 
