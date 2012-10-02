@@ -7,6 +7,8 @@ library(mvtnorm)
     R <- nrow(n)
     T <- ncol(n)
     S <- inits$S
+    Sin<-t(sapply(locss, colMeans))
+    S[telID,]<-Sin
     D <- e2dist(S, X)
     ntot<-length(locs)
     tel<-rep(FALSE, M)
@@ -55,6 +57,8 @@ library(mvtnorm)
 	if(missing(npics)){
 	crat<-1} else{
 	crat<-npics[1]/npics[2]}
+
+	cr[marked]<-crat
 
     out <- matrix(NA, nrow = niters, ncol = 5)
     colnames(out) <- c("sigma", "lam0", "c", "psi", "N")
@@ -146,6 +150,7 @@ for (x in 1:ntot) {
                 zUps <- zUps + 1
             }
         }
+
         for (r in 1:R) {
             zip <- lam[, r] * z
             for (t in 1:T) {
