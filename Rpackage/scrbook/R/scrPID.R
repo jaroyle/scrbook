@@ -47,6 +47,7 @@ scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unk
 	if(missing(npics)){
 	crat<-1} else{
 	crat<-npics[1]/npics[2]}
+        cr[marked]<-crat
 
     out <- matrix(NA, nrow = niters, ncol = 5)
     colnames(out) <- c("sigma", "lam0","c", "psi", "N")
