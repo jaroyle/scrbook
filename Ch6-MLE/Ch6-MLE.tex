@@ -1207,7 +1207,7 @@ the probability of detection to the distance of a detector from an
 individual activity center. \mbox{\tt secr} allows the user to specify one of a
 variety of detection functions including the commonly used
 half-normal, hazard rate, and exponential.  There are 12 different
-functions (see Tab. \ref{covariates.tab.detmodels} in Chapt. \ref{chapt.covariates}), but
+functions as of version 2.3.1 (see Tab. \ref{covariates.tab.detmodels} in Chapt. \ref{chapt.covariates}), but
 some are only available for simulating data.
 %, and one
 %should be cautious when using different detection functions as the
@@ -1222,16 +1222,17 @@ detection function:
 It is useful to note that \mbox{\tt secr} requires the buffer distance to be
 defined in meters and density will be returned as number of animals
 per hectare.  Thus to make comparisons between \mbox{\tt secr} and other models,
-we will often have to convert the density to the same units.  Also,
-note that $\sigma$ is returned in units of meters.
+we will often have to convert the density to the same units.
 
 Most of the detection functions available in \mbox{\tt secr} contain
 some kind of a scale parameter which is usually labeled
-$\sigma$. However, we caution that the meaning of this parameter
+$\sigma$.
+The units of this parameter default to meters in the \mbox{\tt secr} output.
+We caution that the meaning of this parameter
 depends on the specific model being used and it should not be directly
 compared as a measure of home-range size across models. Instead, as we
-noted in sec. \ref{scr0.sec.implied} any encounter probability model
-does imply a
+noted in sec. \ref{scr0.sec.implied} every encounter probability model
+implies a 
  model of space-usage and fitted encounter models should be
 converted to a common currency such as ``area used.'' 
 
@@ -1254,7 +1255,7 @@ For a standard closed population study that takes place during a
 single season, the 'Session' column
 in our case is all 1s, to indicate a single primary sampling
 occasion. 
-In addition to providing the EDF,  we must tell \mbox{\tt secr}
+In addition to providing the encounter data file (EDF),  we must tell \mbox{\tt secr}
 information about the traps, which is formated as a matrix with column labels
 'trapID', 'x' and 'y', the last two being the coordinates of each
 trap, with additional columns representing the operational state of
@@ -1296,11 +1297,13 @@ wolverine study is that while the camera traps were operated over a
 165 day period, each trap was operational during only a portion of
 that period. We need to provide the trap operation information which
 is contained in the columns to the right of the trap coordinates in
-our standard TDF. Unfortunately, this is less easy to do in \mbox{\tt
+our standard trap deployment file (TDF). Unfortunately, this is less easy to do in \mbox{\tt
   secr}, which requires an external file with a single long string of
 1's and 0's indicating the days in which each trap was operational (1)
-or not (0). We can create this external file and then read it back in
-using these commands:
+or not (0). The \mbox{\tt read.traps} function will not allow for this
+ information on trap operation if the data exists as an {\bf R} object
+ -- instead, we can create this external file and then read it back in
+with \mbox{\tt read.traps} using these commands:
 \begin{verbatim}
 hold<-rep(NA,nrow(traps))
 for(i in 1:nrow(traps)){
@@ -1481,10 +1484,6 @@ of marginalization over this prior distribution:
  \pi_{0}^{n_{0}}
 \frac{\exp(-\Lambda) \Lambda^{N}}{N!}
 \]
-We emphasize there are two marginalizations
- going on here: (1) the
-integration to remove the latent variables ${\bf s}$; and, (2) 
-summation to remove the parameter $N$. 
 Carrying-out the summation above produces exactly this marginal likelihood:
 \[
 {\cal L}_{2}({\bm \alpha}, \Lambda | {\bf y}) = 
@@ -1494,7 +1493,12 @@ which is Eq. 2 of \citet{borchers_efford:2008} except for notational
 differences. It also resembles the binomial-form of the likelihood in
 Eq. \ref{mle.eq.binomialform} except with 
 $\Lambda^{n}   \exp( - \Lambda \pi_{0} )$ replacing the combinatorial
-term and the $\pi_{0}^{n_{0}}$ term. We provide a function for
+term and the $\pi_{0}^{n_{0}}$ term. 
+We emphasize there are two marginalizations
+ going on here: (1) the
+integration to remove the latent variables ${\bf s}$; and, (2) 
+summation to remove the parameter $N$. 
+We provide a function for
 computing this in the \mbox{\tt scrbook} package called \mbox{\tt
   intlik3Poisson}. The help file for that function shows how to
 conduct a small simulation study to compare the MLE under the
@@ -1534,7 +1538,14 @@ slightly larger uncertainty associated with it.
 
 \subsection{Other stuff secr does}
 
-mapping, estimating $N$ and other things???
+secr has a function called \mbox{\tt region.N} for estimating the
+realized value of $N$ and not its expectation.
+
+We can also model covariates on density, allowing that the activity
+centers ${\bf s}$ are a realization of an inhomogeneous point
+process. We cover such models in Chapt. \ref{chapt.ipp}.
+
+mapping, and other things???
 
 \subsection{Multi-Session Models in \mbox{\tt secr}}
 \label{mle.sec.multisession}
@@ -1582,7 +1593,7 @@ we provide the relevant stratification information in the
 be described in the model. For example, if the session has 2 values
 for males and females then we have sex-specific densities , and
 baseline encounter probability $p_{0}$ (named $g_{0}$  in \mbox{\tt
-  secr}) by just doing this:
+  secr}) by just doing this: {\bf XXXXX need centered tildes here XXXXX}
 \begin{verbatim}
 out<-secr.fit(wolvcapt,model=list(D~session, g0~session, sigma~1), buffer=20000)
 \end{verbatim}
@@ -1628,22 +1639,17 @@ or leave out.
 
 \section{Summary and Outlook}
 
-In this chapter, we discussed basic concepts
-related to classical analysis of SCR models based
-on likelihood methods. Analysis is
-based on the so-called integrated or marginal likelihood in which the individual
-activity centers (random effects) are removed from the
-conditional-on-{\bf s} likelihood by integration. We showed how to construct
-the integrated likelihood and fit some simple models in the {\bf R}
-programming language.  In addition, likelihood analysis for some broad
-classes of SCR models can be accomplished using the
-{\bf R}
-library \mbox{\tt secr} \citep{efford:2011} which we provided a brief introduction to. In
-later 
-chapters we provide more detailed analyses of SCR data using likelihood
-methods and the
-\mbox{\tt secr}
-package.
+In this chapter, we discussed basic concepts related to classical
+analysis of SCR models based on likelihood methods. Analysis is based
+on the so-called integrated or marginal likelihood in which the
+individual activity centers (random effects) are removed from the
+conditional-on-{\bf s} likelihood by integration. We showed how to
+construct the integrated likelihood and fit some simple models in the
+{\bf R} programming language.  In addition, likelihood analysis for
+some broad classes of SCR models can be accomplished using the {\bf R}
+library \mbox{\tt secr} \citep{efford:2011} which we provided a brief
+introduction to. In later chapters we provide more detailed analyses
+of SCR data using likelihood methods and the \mbox{\tt secr} package.
 
 \begin{comment}
 To compute the marginal (integrated) likelihood we have to precisely describe the
@@ -1664,26 +1670,27 @@ using model $M_0$ or model $M_h$ and buffering the trap array.
 
 Why or why not use likelihood inference exclusively? For certain
 specific models, it is probably more computationally efficient to
-produce MLEs (for an example see Chapt. \ref{chapt.ecoldist}). However, {\bf BUGS} is extremely flexible in terms of
-describing models, although it sometimes can be quite inefficient. We can
-devise models in the {\bf BUGS} language easily that we cannot fit in
-\mbox{\tt secr}. E.g.,
-random individual effects of various types
-(Chapt. \ref{chapt.covariates}), we can 
+produce MLEs (for an example see
+Chapt. \ref{chapt.ecoldist}). However, {\bf BUGS} is extremely
+flexible in terms of describing models, although it sometimes can be
+quite inefficient. We can devise models in the {\bf BUGS} language
+easily that we cannot fit in \mbox{\tt secr}. E.g., random individual
+effects of various types (Chapt. \ref{chapt.covariates}), we can
 handle missing covariates in complete generality and seamlessly, and
 impose arbitrary distributions on random variables. Moreover, models
 can easily be adapted to include auxiliary data types. For example, we
 might have camera trapping and genetic data and we can describe the
-models directly in {\bf BUGS} and fit a joint model \citep{gopalaswamy_etal:2012}. For the MLE we have
-to write a custom new piece of code for each model or hope someone has
-done it for us, although you should be able to do this with the tools
-we have provided here.  Later we consider open population models which are
+models directly in {\bf BUGS} and fit a joint model
+\citep{gopalaswamy_etal:2012}. For the MLE we have to write a custom
+new piece of code for each model or hope someone has done it for us,
+although you should be able to do this with the tools we have provided
+here.  Later we consider open population models which are
 straightforward to develop in {\bf BUGS} but, so far, there is no
-available platform for doing MLE of such models, although we imagine one could develop
-this.  On
-the other hand, likelihood analysis makes it easy to do
-model-selection by AIC and in some cases compute standard errors or
-carry-out goodness-of-fit evaluations. 
+available platform for doing MLE of such models, although we imagine
+one could develop this.  On the other hand, likelihood analysis makes
+it easy to do model-selection by AIC and in some cases compute
+standard errors or carry-out goodness-of-fit evaluations.  
+
 \begin{comment}
 Another thing that is more conceptual here is non-CSR point
 processes (Chapt. \ref{chapt.state-space}) and generating predictions of how many
