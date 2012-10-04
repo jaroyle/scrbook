@@ -1,6 +1,5 @@
 \name{PoisGLMBBD.rda}
 \alias{PoisGLMBBD.rda}
-\docType{function}
 \title{
 MCMC for Poisson regression of bird counts
 }

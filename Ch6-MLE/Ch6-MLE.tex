@@ -430,19 +430,32 @@ that we don't observe the all-zero encounter history so we have to
 make sure we compute the probability for that encounter history which
 we do by tacking a row of zeros onto the encounter history matrix. In
 addition, we include the number of such all-zero encounter histories
+(that is, the number of individuals {\it not} encountered)
 as an unknown parameter of the model. Call that unknown quantity
-$n_{0}$, and we have to be sure to include a combinatorial term to
+$n_{0}$. Then, $N=n_{0}+n$. We will usually parameterize the
+likelihood in terms of $n_{0}$ because optimization over a parameter
+space in which $\log(n_{0})$ is unconstrained is preferred to a
+parameter space in which $N$ must be constrained $N\ge n$.
+With $n_{0}$ unknown, we have to be sure to include a combinatorial term to
 account for the fact that of the $n$ observed individuals there are
-${N \choose n}$ ways to realize a sample of size $n$. The
+${N \choose n}$ 
+ways to realize a sample of size $n$. The
 combinatorial term involves the unknown $n_{0}$ and thus it must be
-included in the likelihood.
+included in the likelihood. In evaluating the {\it log}-likelihood, we
+have to compute terms such as the log-factorial $\log(N!) = log((n_{0}+n)!)$. 
+We do this in {\bf R} by making use of the log-gamma function
+(\mbox{\tt lgamma}) and the identity
+\[
+ \log(N!) = \mbox{\tt lgamma}(N+1).
+\]
 
 Therefore, to compute the likelihood, we require 
 the following 3 components: (1) the marginal
 probability of each ${\bf y}_{i}$ as before,
 \[
   [{\bf y}_{i}|{\bm \alpha}] = 
-\int_{{\cal S}} \mbox{Binomial}({\bf y}_{i} |{\bf s}_{i}, {\bm \alpha})[{\bf s}_{i}] d{\bf s}_{i}.
+\int_{{\cal S}} [{\bf y}_{i} |{\bf s}_{i}, {\bm
+  \alpha}] [{\bf s}_{i}] d{\bf s}_{i}.
 \]
 (2) We compute
 the probability of an all-0 encounter history:
@@ -460,7 +473,7 @@ the probability of an all-0 encounter history:
 \end{equation}
 This is discussed in \citet[][p. 379]{borchers_efford:2008} as the
 conditional-on-$N$ form of the likelihood -- we might also call it
-``binomial form'' because of its appearance. 
+the ``binomial form'' because of its appearance. 
 
 Operationally, things proceed much as before: 
 We compute the marginal probability of each observed ${\bf y}_{i}$,
@@ -476,11 +489,12 @@ To analyze a specific case, we'll read in our fake data set (simulated
 using the parameters given above). To set some things up in our
 workspace we do this:
 \begin{verbatim}
-data<-simSCR0.fn(discard0=TRUE,sd=2013)
+data<-simSCR0(discard0=TRUE,rnd=2013)  # obtain a simulated data set
+  ## extract the items we need for analysis
 y<-data$Y
 nind<-nrow(y)
 traplocs<-data$traplocs
-J<-nrow(X)
+J<-nrow(traplocs)
 K<-data$K
 \end{verbatim}
 Recall that these data were generated with $N=100$, on an $8 \times 8$ unit
@@ -494,7 +508,7 @@ model and additional arguments as prescribed. In particular,
  we provide the encounter history matrix ${\bf y}$, the trap locations
 \mbox{\tt traplocs}, the spacing of the integration grid (argument
 \mbox{\tt delta}) and the
-state-space buffer. Here is the new likelihood function:
+state-space buffer. Here is the new likelihood function: 
 {\small
 \begin{verbatim}
 intlik2<-function(parm,y=y,delta=.3,X=traplocs,ssbuffer=2){
@@ -512,10 +526,10 @@ area<- (Xu-Xl)*(Yu-Yl)/((npix.x)*(npix.y))
 G<-cbind(rep(xg,npix.y),sort(rep(yg,npix.x)))
 nG<-nrow(G)
 D<- e2dist(X,G) 
-
+    # extract the parameters from the input vector
 alpha0<-parm[1]
-alpha1<-parm[2]
-n0<-exp(parm[3])
+alpha1<-exp(parm[2])
+n0<-exp(parm[3])  # note parm[3] lives on the real line
 probcap<- plogis(alpha0)*exp(-alpha1*D*D)
 Pm<-matrix(NA,nrow=nrow(probcap),ncol=ncol(probcap))
 ymat<-rbind(y,rep(0,ncol(y)))
@@ -527,35 +541,44 @@ lik.cond<- exp(colSums(Pm))
 lik.marg[i]<- sum( lik.cond*(1/nG) )  
 }                                                 
 nv<-c(rep(1,length(lik.marg)-1),n0)
+ ## part1 here is the combinatorial term. 
+ ## math: log(factorial(N)) = lgamma(N+1)
 part1<- lgamma(nrow(y)+n0+1) - lgamma(n0+1)
 part2<- sum(nv*log(lik.marg))
  -1*(part1+ part2)
 }
 \end{verbatim}
 }
-To execute this function for the data that we created with \mbox{\tt simSCR0.fn},
+To execute this function for the data that we created with \mbox{\tt simSCR0},
  we execute the following command (saving the result in our
 friend \mbox{\tt frog}).
 This results in the usual output, including the parameter estimates,
 the gradient, and the numerical Hessian which is useful for obtaining
 asymptotic standard errors (see below):
 \begin{verbatim}
-starts<-c(-2.5,2,log(4))
-frog<-nlm(intlik2,starts,hessian=TRUE,y=y,X=traplocs,delta=.2,ssbuffer=2)
+> starts<-c(-2.5,0,4)
+> frog<-nlm(intlik2,starts,hessian=TRUE,y=y,X=traplocs,delta=.2,ssbuffer=2)
 
-There were 50 or more warnings (use warnings() to see the first 50)
+Warning message:
+In nlm(intlik2, starts, hessian = TRUE, y = y, X = traplocs, delta = 0.2,  :
+  NA/Inf replaced by maximum positive value
 
-frog
+> frog
 $minimum
 [1] 113.5004
 
 $estimate
-[1] -2.538334  2.466515  4.232810
+[1] -2.538333  0.902807  4.232810
 
-[... Additional output deleted ...]
+[... additional output deleted ...]
 \end{verbatim}
-While this produces some {\bf R} warnings, these happen to be harmless
-in this case, and we will see from the \mbox{\tt nlm} output that the
+While usually produces one or more {\bf R} warnings due to numerical
+calculations happening on extremely small or large numbers
+(calculation of $p$ near the
+edge of the state-space), and they also happen if a poor
+parameterization is used which produces evaluations of the objective
+function beyond the boundary of the parameter space (e.g., $n_{0} < 0$).
+You will see from the \mbox{\tt nlm} output that can be reproduced that the
 algorithm performed satisfactory in minimizing the objective function.
 The estimate of population size for the state-space (using the default 
 state-space buffer) is
@@ -633,9 +656,12 @@ Further extensions: It should be straightforward to
 The likelihood analysis developed in the previous sections
 is based on the likelihood
 in which $N$ (or $n_{0}$) is an explicit parameter. This is usually called
-the ``full likelihood'' or sometimes ``unconditional likelihood''.  
-We could also
-express the  likelihood using data augmentation, replacing the
+the ``full likelihood'' or sometimes ``unconditional likelihood''
+\citep{borchers_etal:2002} because it is the likelihood for all
+individuals in the population, not just those which have been
+captured, i.e., not that which is {\it conditional on capture}.
+It is also possible to 
+express an alternative unconditional  likelihood using data augmentation, replacing the
 parameter $N$ with $\psi$ \citep[e.g., see Sec. 7.1.6][for an example]{royle_dorazio:2008}.
 We don't go into detail here, but we note that the
 likelihood under data augmentation is a zero-inflated binomial
@@ -773,34 +799,21 @@ traps<-wolverine$wtraps
 traplocs<-traps[,2:3]/10000
 K.wolv<-apply(traps[,4:ncol(traps)],1,sum)
 
-y3d<-SCR23darray.fn(wolverine$wcaps,traps)
+y3d<-SCR23darray(wolverine$wcaps,traps)
 y2d<-apply(y3d,c(1,3),sum)
 
-starts<-c(-1.5,1.2,log(4))
+starts<-c(-1.5,0,3)
+
 frog<-nlm(intlik3,starts,hessian=TRUE,y=y2d,K=K.wolv,X=traplocs,delta=.2,ssbuffer=2)
-There were 23 warnings (use warnings() to see them)
 
 frog
 $minimum
 [1] 220.4313
 
 $estimate
-[1] -2.817610  1.254757  3.583690
+[1] -2.8176120  0.2269395  3.5836875
 
-$gradient
-[1]  1.210460e-06 -5.255072e-06 -5.710212e-07
-
-$hessian
-           [,1]       [,2]      [,3]
-[1,]  37.686164 -11.849561  4.686501
-[2,] -11.849561  30.842624 -9.193201
-[3,]   4.686501  -9.193201 12.973354
-
-$code
-[1] 1
-
-$iterations
-[1] 12
+[.... output deleted ....]
 \end{verbatim}
 }
 Of course we're interested in obtaining an estimate of population size
@@ -818,12 +831,12 @@ area<-attr(intlik3(starts,y=y2d,K=K.wolv,X=traplocs,delta=.2,ssbuffer=2),"SSarea
 Dhat<- Nhat/area
 
 Dhat
-[1] 0.5494956
+[1] 0.5494947
 
 SE<- (1/area)*exp(frog$estimate[3])*sqrt(solve(frog$hessian)[3,3])
 
 SE
-[1] 0.1087101
+[1] 0.1087073
 \end{verbatim}
 } 
 So our estimate of density is $0.55$ individuals per ``standardized
@@ -898,13 +911,16 @@ buff    & area & $\hat{N}$ & $\hat{D}$ \\ \hline
 \end{table}
 
 
-\subsection{Restricted state-space}
+\subsection{Restricted state-space or Habitat mask}
 \label{mle.sec.shapefile}
 
 In sec. \ref{scr0.sec.discrete} 
  we used a discrete representation of
-the state-space in order to have control over its extent and shape,
-for example so that we could clip out ``non-habitat''. Clearly that
+the state-space in order to have control over its extent and
+shape. This makes it easy to do things like 
+ clip out non-habitat, or create a {\it habitat mask} which defines
+ suitable habitat.
+Clearly that
 formulation of the model is relevant to the calculation of the
 marginal 
 likelihood in the sense that the discrete state-space 
@@ -923,17 +939,22 @@ determine which points of the grid lie in the polygon defined by the
 shapefile using 
 functions in the {\bf R} packages \mbox{\tt sp} \index{R
   package!sp} and
-\mbox{\tt maptools} \index{R package!maptools} \index{maptools}.  Here
-are the {\bf R} commands for doing this:  
+\mbox{\tt maptools} \index{R package!maptools} \index{maptools}. 
+For each point in the state-space grid, we deterimine whether it is
+inside the polygon, identifying such points with a value of \mbox{\tt
+  mask=1} and \mbox{\tt mask=0} for points that are {\it not} in the polygon.
+Here
+are the {\bf R} commands for doing this:  {\bf XXXX a few commands
+  need changed in the repo help file for intlik4 XXXXX}
 {\small
 \begin{verbatim}
 library(maptools}
 library(sp)
 SSp<-readShapeSpatial('Sim_Polygon.shp')
 Pcoord<-SpatialPoints(G)
-PinPoly<-over(Pcoord,SSp)
-Pin<-as.numeric(!is.na(PinPoly[,1]))
-G<-G[Pin==1,]
+PinPoly<-over(Pcoord,SSp)  ### determine if each point is in polygon
+mask<-as.numeric(!is.na(PinPoly[,1]))  ## convert to binary 0/1
+G<-G[mask==1,]
 \end{verbatim}
 }
 We created  the function \mbox{\tt intlik4} which accepts the integration
@@ -955,11 +976,11 @@ traps<-wolverine$wtraps
 traplocs<-traps[,2:3]/10000
 K.wolv<-apply(traps[,4:ncol(traps)],1,sum)
 
-y3d<-SCR23darray.fn(wolverine$wcaps,traps)
+y3d<-SCR23darray(wolverine$wcaps,traps)
 y2d<-apply(y3d,c(1,3),sum)
 G<-wolverine$grid2/10000
 
-starts<-c(-1.5,1.2,log(4))
+starts<-c(-1.5,0,3)
 frog<-nlm(intlik4,starts,hessian=TRUE,y=y2d,K=K.wolv,X=traplocs,G=G)
 
 frog
@@ -967,34 +988,23 @@ $minimum
 [1] 225.8355
 
 $estimate
-[1] -2.995541  1.265021  4.110476
+[1] -2.9955424  0.2350885  4.1104757
 
-$gradient
-[1]  3.808485e-05 -9.930579e-06  3.906668e-06
-
-$hessian
-           [,1]       [,2]      [,3]
-[1,]  47.059393 -21.415124  4.406148
-[2,] -21.415124  38.255192 -7.386245
-[3,]   4.406148  -7.386245 15.406613
-
-$code
-[1] 1
-
-$iterations
-[1] 14
+[... some output deleted ...]
 \end{verbatim}
 }
 
 Next we convert the parameter estimates to estimates of total
 population size for the prescribed state-space, and then obtain an
 estimate of density (per 1000
-$km^2$) using the area computed as the number of pixels in the
+$\text{km}^2$) using the area computed as the number of pixels in the
 state-space grid \mbox{\tt G} multiplied by the area per grid cell. In
 the present case (the calculation above) we used a state-space grid
-with $2 \times 2$ $km$ pixels.  Finally, we compute
-a standard errors using the delta approximation: 
+with $2 \text{km} \times 2 \text{km}$ pixels.  Finally, we compute
+a standard errors using the delta approximation: {\bf XXXX Check these
+  commands and compare with whats in the table XXXXXX}
 \begin{verbatim}
+area<- nrow(G)*4
 Nhat<- 21+exp(frog$estimate[3])
 SE<-  exp(frog$estimate[3])*sqrt(solve(frog$hessian)[3,3])
 D<- (Nhat/(nrow(G)*area))*1000
@@ -1013,9 +1023,9 @@ in sec. \ref{scr0.sec.discrete}.
 \begin{tabular}{cccccccc}
 \hline \hline
 grid &  $\alpha_0$  &  $\alpha_1$ &   $log(n_0)$  & $N$   &  SE & D(1000) &  SE \\ \hline
-2  &  -2.995541& 1.265021 &4.110476 &81.97574& 16.30904 &8.310598 &1.653391\\
-4  &  -2.991268&1.344055  &4.157026 &84.88126& 16.76202 &8.570401& 1.692450\\
-8   & -3.051705& 1.080083 &4.058542 &78.88983& 15.31392 &7.851296& 1.524077\\   \hline
+2  &  -3.00 & 1.27 &4.11  &81.98& 16.31 &8.31 &1.65\\
+4  &  -2.99 & 1.34  &4.16 &84.88& 16.76 &8.57& 1.69\\
+8   & -3.05 & 1.08 &4.06  &78.89& 15.31 &7.85& 1.52\\   \hline
 \end{tabular}
 \label{mle.tab.wolv}
 \end{table}
@@ -1069,7 +1079,9 @@ the \mbox{\tt secr} help manual can be accessed with the command:
 \begin{verbatim}
  RShowDoc("secr-manual", package = "secr")
 \end{verbatim}
-
+We note that \mbox{\tt secr} has many capabilities that we will not
+cover or do so only sparingly. We encourage you to read through the
+manual to get a better understanding of what the package is capable of.
 
 The main model-fitting function in   \mbox{\tt secr} is called
 \mbox{\tt secr.fit}, which 
@@ -1101,8 +1113,15 @@ trap layout (location and
 identification information for each trap), which is equivalent to our
 trap deployment file (TDF) described in sec. \ref{scr0.sec.wolverine}
 and the capture data file containing 
-sampling session, animal identification, trap day, and trap
+sampling {\it session}, animal identification, trap day, and trap
 location,  equivalent in information content to our encounter data file (EDF).
+Sample session can be thought of as primary period identifier in a
+robust design like framework -- it could represent a yearly sample or
+multiple sample periods within a year, each of them producing data on
+a closed population. We discuss ``multi-session'' models in more
+detail below, in sec. \ref{mle.sec.multisession}.
+
+
 There are three important constructor functions that help package-up
 your 
 data for use in \mbox{\tt secr}:
@@ -1113,11 +1132,13 @@ We provide a brief description of each here, but apply them to our
 wolverine camera trapping data in the next section:
 \begin{itemize}
 \item[(1)] 
-\mbox{\tt read.traps}: This function points to an external file or
+\mbox{\tt read.traps}: This function points to an external file {\it or}
 {\bf R} data object containing the trap coordinates, and other
 information, and also requires specification of the type of encounter
 devices (described in the next section). A typical application of this
-function would be:
+function looks like the following, invoking the \mbox{\tt data=} option 
+when there is an existing {\bf R} object
+containing the trap information:
 \begin{verbatim}
 trapfile<-read.traps(data=traps,detector="proximity")
 \end{verbatim}
@@ -1137,7 +1158,7 @@ The function accepts either an external file name (see \mbox{\tt
   ?read.mask} for details of the structure) or a $nG \times 2$ {\bf R}
 object, say \mbox{\tt mask.coords},
 containing the coordinates of the mask. A typical application looks
-like:
+like the following:
 \begin{verbatim}
 grid<-read.mask(data=mask.coords)
 \end{verbatim}
@@ -1150,7 +1171,7 @@ the fitting of models using \mbox{\tt secr.fit}.
 The
 \mbox{\tt secr} package requires that you specify the type of encounter
 device. 
-Instead of of 
+Instead of 
 describing models by their statistical distribution (Bernoulli,
 Poisson, etc..), 
  \mbox{\tt secr} 
@@ -1186,7 +1207,7 @@ the probability of detection to the distance of a detector from an
 individual activity center. \mbox{\tt secr} allows the user to specify one of a
 variety of detection functions including the commonly used
 half-normal, hazard rate, and exponential.  There are 12 different
-functions (see Tab. \ref{covariates.tab.detmodels} in Chapt. \ref{chapt.covariates}), but
+functions as of version 2.3.1 (see Tab. \ref{covariates.tab.detmodels} in Chapt. \ref{chapt.covariates}), but
 some are only available for simulating data.
 %, and one
 %should be cautious when using different detection functions as the
@@ -1201,16 +1222,17 @@ detection function:
 It is useful to note that \mbox{\tt secr} requires the buffer distance to be
 defined in meters and density will be returned as number of animals
 per hectare.  Thus to make comparisons between \mbox{\tt secr} and other models,
-we will often have to convert the density to the same units.  Also,
-note that $\sigma$ is returned in units of meters.
+we will often have to convert the density to the same units.
 
 Most of the detection functions available in \mbox{\tt secr} contain
 some kind of a scale parameter which is usually labeled
-$\sigma$. However, we caution that the meaning of this parameter
+$\sigma$.
+The units of this parameter default to meters in the \mbox{\tt secr} output.
+We caution that the meaning of this parameter
 depends on the specific model being used and it should not be directly
 compared as a measure of home-range size across models. Instead, as we
-noted in sec. \ref{scr0.sec.implied} any encounter probability model
-does imply a
+noted in sec. \ref{scr0.sec.implied} every encounter probability model
+implies a 
  model of space-usage and fitted encounter models should be
 converted to a common currency such as ``area used.'' 
 
@@ -1233,7 +1255,7 @@ For a standard closed population study that takes place during a
 single season, the 'Session' column
 in our case is all 1s, to indicate a single primary sampling
 occasion. 
-In addition to providing the EDF,  we must tell \mbox{\tt secr}
+In addition to providing the encounter data file (EDF),  we must tell \mbox{\tt secr}
 information about the traps, which is formated as a matrix with column labels
 'trapID', 'x' and 'y', the last two being the coordinates of each
 trap, with additional columns representing the operational state of
@@ -1275,11 +1297,13 @@ wolverine study is that while the camera traps were operated over a
 165 day period, each trap was operational during only a portion of
 that period. We need to provide the trap operation information which
 is contained in the columns to the right of the trap coordinates in
-our standard TDF. Unfortunately, this is less easy to do in \mbox{\tt
+our standard trap deployment file (TDF). Unfortunately, this is less easy to do in \mbox{\tt
   secr}, which requires an external file with a single long string of
 1's and 0's indicating the days in which each trap was operational (1)
-or not (0). We can create this external file and then read it back in
-using these commands:
+or not (0). The \mbox{\tt read.traps} function will not allow for this
+ information on trap operation if the data exists as an {\bf R} object
+ -- instead, we can create this external file and then read it back in
+with \mbox{\tt read.traps} using these commands:
 \begin{verbatim}
 hold<-rep(NA,nrow(traps))
 for(i in 1:nrow(traps)){
@@ -1460,10 +1484,6 @@ of marginalization over this prior distribution:
  \pi_{0}^{n_{0}}
 \frac{\exp(-\Lambda) \Lambda^{N}}{N!}
 \]
-We emphasize there are two marginalizations
- going on here: (1) the
-integration to remove the latent variables ${\bf s}$; and, (2) 
-summation to remove the parameter $N$. 
 Carrying-out the summation above produces exactly this marginal likelihood:
 \[
 {\cal L}_{2}({\bm \alpha}, \Lambda | {\bf y}) = 
@@ -1473,7 +1493,12 @@ which is Eq. 2 of \citet{borchers_efford:2008} except for notational
 differences. It also resembles the binomial-form of the likelihood in
 Eq. \ref{mle.eq.binomialform} except with 
 $\Lambda^{n}   \exp( - \Lambda \pi_{0} )$ replacing the combinatorial
-term and the $\pi_{0}^{n_{0}}$ term. We provide a function for
+term and the $\pi_{0}^{n_{0}}$ term. 
+We emphasize there are two marginalizations
+ going on here: (1) the
+integration to remove the latent variables ${\bf s}$; and, (2) 
+summation to remove the parameter $N$. 
+We provide a function for
 computing this in the \mbox{\tt scrbook} package called \mbox{\tt
   intlik3Poisson}. The help file for that function shows how to
 conduct a small simulation study to compare the MLE under the
@@ -1511,7 +1536,16 @@ And we could make a prediction for a new study which would be based on
 the posterior distribution of $M \psi$ which, we imagine, should have
 slightly larger uncertainty associated with it. 
 
+\subsection{Other stuff secr does}
 
+secr has a function called \mbox{\tt region.N} for estimating the
+realized value of $N$ and not its expectation.
+
+We can also model covariates on density, allowing that the activity
+centers ${\bf s}$ are a realization of an inhomogeneous point
+process. We cover such models in Chapt. \ref{chapt.ipp}.
+
+mapping, and other things???
 
 \subsection{Multi-Session Models in \mbox{\tt secr}}
 \label{mle.sec.multisession}
@@ -1559,7 +1593,7 @@ we provide the relevant stratification information in the
 be described in the model. For example, if the session has 2 values
 for males and females then we have sex-specific densities , and
 baseline encounter probability $p_{0}$ (named $g_{0}$  in \mbox{\tt
-  secr}) by just doing this:
+  secr}) by just doing this: {\bf XXXXX need centered tildes here XXXXX}
 \begin{verbatim}
 out<-secr.fit(wolvcapt,model=list(D~session, g0~session, sigma~1), buffer=20000)
 \end{verbatim}
@@ -1605,22 +1639,17 @@ or leave out.
 
 \section{Summary and Outlook}
 
-In this chapter, we discussed basic concepts
-related to classical analysis of SCR models based
-on likelihood methods. Analysis is
-based on the so-called integrated or marginal likelihood in which the individual
-activity centers (random effects) are removed from the
-conditional-on-{\bf s} likelihood by integration. We showed how to construct
-the integrated likelihood and fit some simple models in the {\bf R}
-programming language.  In addition, likelihood analysis for some broad
-classes of SCR models can be accomplished using the
-{\bf R}
-library \mbox{\tt secr} \citep{efford:2011} which we provided a brief introduction to. In
-later 
-chapters we provide more detailed analyses of SCR data using likelihood
-methods and the
-\mbox{\tt secr}
-package.
+In this chapter, we discussed basic concepts related to classical
+analysis of SCR models based on likelihood methods. Analysis is based
+on the so-called integrated or marginal likelihood in which the
+individual activity centers (random effects) are removed from the
+conditional-on-{\bf s} likelihood by integration. We showed how to
+construct the integrated likelihood and fit some simple models in the
+{\bf R} programming language.  In addition, likelihood analysis for
+some broad classes of SCR models can be accomplished using the {\bf R}
+library \mbox{\tt secr} \citep{efford:2011} which we provided a brief
+introduction to. In later chapters we provide more detailed analyses
+of SCR data using likelihood methods and the \mbox{\tt secr} package.
 
 \begin{comment}
 To compute the marginal (integrated) likelihood we have to precisely describe the
@@ -1641,26 +1670,27 @@ using model $M_0$ or model $M_h$ and buffering the trap array.
 
 Why or why not use likelihood inference exclusively? For certain
 specific models, it is probably more computationally efficient to
-produce MLEs (for an example see Chapt. \ref{chapt.ecoldist}). However, {\bf BUGS} is extremely flexible in terms of
-describing models, although it sometimes can be quite inefficient. We can
-devise models in the {\bf BUGS} language easily that we cannot fit in
-\mbox{\tt secr}. E.g.,
-random individual effects of various types
-(Chapt. \ref{chapt.covariates}), we can 
+produce MLEs (for an example see
+Chapt. \ref{chapt.ecoldist}). However, {\bf BUGS} is extremely
+flexible in terms of describing models, although it sometimes can be
+quite inefficient. We can devise models in the {\bf BUGS} language
+easily that we cannot fit in \mbox{\tt secr}. E.g., random individual
+effects of various types (Chapt. \ref{chapt.covariates}), we can
 handle missing covariates in complete generality and seamlessly, and
 impose arbitrary distributions on random variables. Moreover, models
 can easily be adapted to include auxiliary data types. For example, we
 might have camera trapping and genetic data and we can describe the
-models directly in {\bf BUGS} and fit a joint model \citep{gopalaswamy_etal:2012}. For the MLE we have
-to write a custom new piece of code for each model or hope someone has
-done it for us, although you should be able to do this with the tools
-we have provided here.  Later we consider open population models which are
+models directly in {\bf BUGS} and fit a joint model
+\citep{gopalaswamy_etal:2012}. For the MLE we have to write a custom
+new piece of code for each model or hope someone has done it for us,
+although you should be able to do this with the tools we have provided
+here.  Later we consider open population models which are
 straightforward to develop in {\bf BUGS} but, so far, there is no
-available platform for doing MLE of such models, although we imagine one could develop
-this.  On
-the other hand, likelihood analysis makes it easy to do
-model-selection by AIC and in some cases compute standard errors or
-carry-out goodness-of-fit evaluations. 
+available platform for doing MLE of such models, although we imagine
+one could develop this.  On the other hand, likelihood analysis makes
+it easy to do model-selection by AIC and in some cases compute
+standard errors or carry-out goodness-of-fit evaluations.  
+
 \begin{comment}
 Another thing that is more conceptual here is non-CSR point
 processes (Chapt. \ref{chapt.state-space}) and generating predictions of how many
