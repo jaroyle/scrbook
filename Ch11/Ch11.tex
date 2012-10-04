@@ -222,7 +222,7 @@ dropping the vector of coefficients for readability. Since an intensity must be 
 positive, and because the logarithm is the canonical link function of the Poisson
 generalized linear model, it is natural to model $\mu(x, \beta)$ as
 \[
-\log(\mu(x, \beta)) = \sum_{j=1}^J \beta_j v_j(x), \quad  x \in \cal{S}
+\log(\mu(x, \beta)) = \beta_0 + \sum_{j=1}^J \beta_j v_j(x), \quad  x \in \cal{S}
 \]
 where $\beta_j$ is the regression coefficient for covariate
 $v_j(x)$. To be clear, $v(x)$ is the value of any covariate, such as
@@ -230,36 +230,41 @@ habitat type or elevation, at location $x$ and it assumed to be
 defined at all locations in the state-space.
 This equation should look
 familiar because it is the standard linear predictor used in log-linear
-GLMs. Note, however, that we have not included
-an intercept. The reason for this is that it would be confounded with
-$N$ (see Chapt. \ref{chapt.hscr}). This should be intuitive since an intercept would
-represent the expected value of $N$ when ${\bm \beta}=0$, but we already
-have a parameter in the model for expected abundance, namely $\mathbb{E}[N] =
-\psi M$\footnote{Remember, $M$ is the size of the augmented population, and
+GLMs. One caveat is that the intercept $\beta_0$ is not a
+unique parameter to be estimated.
+%Note, however, that we have not included
+%an intercept. The reason for this is that it would be confounded with
+%$N$ (see Chapt. \ref{chapt.hscr}).
+The reason for this is that %This should be intuitive since
+$\beta_0$ represents population density at the location $x$ when
+%, the expected value of $N$ in some infinitesimally
+%small area when
+the other $\beta$'s equal 0. However, we already
+have a parameter in the model for expected abundance, namely $\mathbb{E}[D] =
+N/A(\mathcal{S}) =  \psi M / A(\mathcal{S})$\footnote{Remember, $M$ is the size of the augmented population, and
 $\psi$ is the probability that a member of $M$ is an actual
-constituent of the population (Chapt. ~\ref{chapt.scr0}).}. Thus an intercept would be
-redundant, and without it we are still able to achieve our goal of
-describing the distribution of $N$ activity centers as a function of
-spatial covariates. One caveat is that if we wish to make predictions
-to unsampled regions, it is useful to include the intercept $\beta_0 =
-\log(N)$.
+constituent of the population (Chapt. ~\ref{chapt.scr0}).}. Thus, in
+practice, we can either remove $\beta0$ and model a value proportional
+to the intensity, or we can define $\beta_0=\log(N/A(\mathcal{S}))$ and model the
+intensity directly.
+%an intercept would be
+%redundant, and without it we are still able to achieve our goal of
+%describing the distribution of $N$ activity centers as a function of
+%spatial covariates. One caveat is that if we wish to make predictions
+%to unsampled regions, it is useful to include the intercept $\beta_0 =
+%\log(N)$.
 
 Now that we have a model of the intensity parameter $\mu(x)$,
-we need to develop the associated probability density function to use
+we need to develop the associated probability density function
+$[\bf s]$ to use
 in place of the uniform prior. Remembering that
-the integral of a pdf must be unity, we can create a pdf by dividing
+the integral of a pdf must be unity, we can create the pdf
+$[\bf s]$ by dividing
 $\mu(x)$ by a normalizing constant, which in this case is the integral
-of $\mu(x)$ evaluated over the entire
-state-space. \begin{comment}
-this is the conditional probability distribution of location -- i.e., conditional on their being a point in x, this
-is the probability distribution of its location. I think we need to use the term ``conditional probability distribution''
-and maybe a concise coherent justification can be copied out of Illian at a later date. we can also contemplate
-this later and resolve things
-\end{comment}
-The
-probability density function is therefore
+of $\mu(x)$ evaluated over the entire state-space.
+The probability density function is therefore
 \begin{equation}
-f(x, \beta) = \frac{\mu(x, \beta)}{\int_{x \in \mathcal{S}} \mu(x, \beta)\, \mathrm{d}x}
+[\mathbf{s}] = \frac{\mu(x, \beta)}{\int_{x \in \mathcal{S}} \mu(x, \beta)\, \mathrm{d}x}
 \label{eq.pdf.ipp}
 \end{equation}
 Substituting this distribution for the
@@ -272,7 +277,7 @@ is $p(B) = \int_B
 f(x, \beta)\, \mathrm{d}x$. These are
 also the multinomial cell probabilities if the regions are
 disjoint and compose the entire state-space. We provide an example in
-the next section, and in Fig.\ref{ch9.fig.hetero}.
+the next section, and in Fig.\ref{state-space.fig.hetero}.
 
 As a practical matter, note that the integral in the
 denominator of $f(x, \beta)$ is evaluated over space, and since we always regard
@@ -397,7 +402,7 @@ covariates are more often measured on a discrete grid.}
 
 The following \R~commands demonstrate the use of rejection sampling to
 simulate an inhomogeneous point process for the covariate depicted in
-Fig.~\ref{ch9.fig.hetero}. The code uses the \verb+cuhre+ function in
+Fig.~\ref{state-space.fig.hetero}. The code uses the \verb+cuhre+ function in
 the {\tt R2Cuba} package to integrate the intensity function over
 space \citep{hahn_etal:2011}. An alternative would be to evaluate the
 integral on a fine grid of points as we have done in previous
@@ -442,13 +447,13 @@ while(count <= 100) {
 \begin{figure}[ht]
 \centering
 \includegraphics[width=5in,height=2.5in]{Ch11/figs/heteroPlots}
-\label{ch9.fig.hetero}
+\label{state-space.fig.hetero}
 \caption{An example of a spatial covariate, say elevation, and a
   realization of a inhomogeneous binomial point process with $N$=100
   and $\mu(x) = exp(\beta \mbox{elev}(x))$ where $\beta=2$.}
 \end{figure}
 
-The simulated data are shown in Fig~\ref{ch9.fig.hetero}. High elevations
+The simulated data are shown in Fig~\ref{state-space.fig.hetero}. High elevations
 are represented by light green and low elevations by dark green. The
 activity centers of 100 animals are shown as
 points, and it is clear that these simulated animals prefer the high
@@ -499,7 +504,7 @@ we can simply add the methods described above into our existing MCMC
 algorithm to simulate the posterior distributions of $\beta$ conditional on the
 simulated values of $\mathbf{s}$. To demonstrate, we will continue with
 the previous example. Specifically, we will overlay a grid of
-traps on the map shown in Fig.~\ref{ch9.fig.hetero}. We will then
+traps on the map shown in Fig.~\ref{state-space.fig.hetero}. We will then
 simulate capture histories conditional upon the activity
 centers. Then, we will attempt to estimate the activity center
 locations as though we did not know where they were, as is the case in
@@ -639,7 +644,7 @@ as outlined in Chapter~\ref{chapt.poisson-mn}---we define ${\bf s}_i$ as
 pixel ID, and we use the categorical distribution as a prior. A good
 example is found in \citep{mollet_etal:2012}. Here we present
 an analysis of the simulated data shown in the %right panel of
-Fig.~\ref{ch9.fig.hetero}. The spatial covariate, let's call it
+Fig.~\ref{state-space.fig.hetero}. The spatial covariate, let's call it
 elevation again, was simulated
 using using the code shown on the help page
 \verb+ch9simData+ in \scrbook. The points are the number of
@@ -753,7 +758,7 @@ forest cover is a covariate of both density and encounter probability,
 and we could model it as such by combining the methods described in
 this chapter and in Chapter~\ref{chapt.ecoldist}. To demonstrate, we
 continue with our analysis of the data shown in
-Fig~\ref{ch9.fig.hetero}. Once again, we suppose that density
+Fig~\ref{state-space.fig.hetero}. Once again, we suppose that density
 increases with elevation, but this time, we also make the
 assumption that home range size decreases as density increases. This
 commonly-observed phenomenon can be explained by numerous factors such
