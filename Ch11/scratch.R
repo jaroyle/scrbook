@@ -298,8 +298,9 @@ head(dat)
 # Simulate IPP
 set.seed(30275)
 N <- 50
-alpha <- 2
-dat$cp <- exp(alpha*dat$elev) / sum(exp(alpha*dat$elev))
+beta0 <- log(N/1) # log(density). Note: this cancels out of probs below
+beta1 <- 2
+dat$cp <- exp(beta0 + beta1*dat$elev) / sum(exp(beta0 + beta1*dat$elev))
 s.tmp <- rmultinom(1, N, dat$cp) # a single realization to be ignored later
 
 # Trap locations
@@ -448,12 +449,13 @@ cat("
 model{
 sigma ~ dunif(0, 1)
 lam0 ~ dunif(0, 5)
-beta ~ dnorm(0,0.1)
+beta0 <- log(D) # D=density defined below
+beta1 ~ dnorm(0,0.1)
 psi ~ dbeta(1,1)
 
 for(j in 1:nPix) {
-  theta[j] <- exp(beta*elevation[j])
-  probs[j] <- theta[j]/sum(theta[])
+  mu[j] <- exp(beta0 + beta1*elevation[j])
+  probs[j] <- mu[j]/sum(mu[])
 }
 
 for(i in 1:M) {
@@ -498,7 +500,7 @@ init <- function() {
 }
 str(init())
 
-pars <- c("sigma", "lam0", "beta", "N")
+pars <- c("sigma", "lam0", "beta0", "beta1", "N")
 
 # Obtain posterior samples. This takes a few minutes
 # Compile and adapt

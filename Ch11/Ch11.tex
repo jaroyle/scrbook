@@ -267,7 +267,8 @@ $\beta_0 = N/|\mathcal{S}|$. %, which is to say that the intercept is
 In practice, we could remove $\beta0$ from
 Eq.~\ref{state-space.eq.loglin} altogether, which would still allow us
 to model a value proportional to the intensity. However, if we wish to
-make predictions from our fitted model, it is necessary to retain
+make predictions from our fitted model, such as predictions of
+abundance in unsampled regions, it is necessary to retain
 $\beta_0$ in the model.
 %an intercept would be
 %redundant, and without it we are still able to achieve our goal of
@@ -276,37 +277,53 @@ $\beta_0$ in the model.
 %to unsampled regions, it is useful to include the intercept $\beta_0 =
 %\log(N)$.
 
-As with the homogeneous model, the inhomogeneous binomial point process
-model is developed conditional on $N$. The primary distinction is that
-the uniform distribution is replaced with another distribution
-allowing for the intensity parameter to vary spatially. To arrive at
-this new distribution, we need to allow thereplace the scalar intensity parameter $\mu$
-with the function $\mu(s, {\bm \beta})$, where $\bm \beta$ is a
-vector of coefficients describing the effects of
-spatially-referenced covariates on the point process intensity.
-
-
-Now that we have a model of the intensity parameter $\mu(s)$,
-we need to develop the associated probability density function
-$[\bf s]$ to use
-in place of the uniform prior. Remembering that
-the integral of a pdf must be unity, we can create the pdf
-$[\bf s]$ by dividing
-$\mu(s)$ by a normalizing constant, which in this case is the integral
-of $\mu(s)$ evaluated over the entire state-space.
+We have now described an approach to modeling the point process
+intensity, yet in order to define the likelihood or to develop an MCMC
+algorithm for the inhomogeneous model, we need to specify the prior
+distribution for the activity centers. Recall that under the
+homogeneous binomial point process, the prior was
+$\mathbf{s} \sim \text{Uniform}(\mathcal{S})$, or equivalently:
+\begin{equation}
+  \label{state-space.eq.uprior}
+  [\mathbf{s}] = 1/|\mathcal{S}|
+\end{equation}
+where once again $|\mathcal{S}|$ denotes the area of the
+state-space. This simply indicates that an activity center is equally
+likely to occur at any location in the state-space, which is
+consistent with the fact that the intensity parameter is a fixed
+constant. However, if animals exhibit habitat selection or simply
+occur in one region more often than another, it would be preferable to
+replace this prior with one describing the spatial variation in
+density. Clearly this prior should be determined in some way by
+spatially-varying intensity function $\mu(s, \bm{\beta})$.
+% using our MCMC approach, we need to
+% As with the homogeneous model, the inhomogeneous binomial point process
+% model is developed conditional on $N$. The primary distinction is that
+% the uniform distribution is replaced with another distribution
+% allowing for the intensity parameter to vary spatially. To arrive at
+% this new distribution, we need to allow thereplace the scalar intensity parameter $\mu$
+% with the function $\mu(s, {\bm \beta})$, where $\bm \beta$ is a
+% vector of coefficients describing the effects of
+% spatially-referenced covariates on the point process intensity.
+%Now that we have a model of the intensity parameter $\mu(s)$,
+%we need to develop the associated probability density function
+%$[\bf s]$ to use in place of the uniform prior.
+The key to determining this prior is to recall that
+the integral of a probability density function (pdf) must be unity,
+and we can always convert any function into a pdf by dividing it by a
+normalzing constant. In this case, the normalizing constant is the integral
+of $\mu(s, \bm{\beta})$ evaluated over the entire state-space.
 The probability density function is therefore
 \begin{equation}
-[\mathbf{s}] = \frac{\mu(s, \beta)}{\int_{x \in \mathcal{S}} \mu(s, \beta)\, \mathrm{d}s}
-\label{eq.pdf.ipp}
+[\mathbf{s} | \bm{\beta}] = \frac{\mu(s, \bm{\beta})}{\int_{s \in \mathcal{S}} \mu(s, \bm{\beta})\, \mathrm{d}s}
+\label{state-space.eq.pdf.hetero}
 \end{equation}
-Substituting this distribution for the
-uniform prior allows us to fit inhomogeneous binomial point process
+Substituting the uniform prior with this new distribution
+allows us to fit inhomogeneous binomial point process
 models to spatial capture-recapture data. We can also use this
 distribution to obtain the expected number of individuals in any given
-region. Specifically, the proportion of $N$ expected to occur in any
-region $B$ %when heterogeneity in density is present
-is $p(B) = \int_B
-f(s, \beta)\, \mathrm{d}x$. These are
+region $B \in \mathcal{S}$. Specifically, the proportion of $N$ expected to occur in
+$B$ is $p(B) = \int_B [\mathbf{s} | \bm{\beta}]\, \mathrm{d}x$. These are
 also the multinomial cell probabilities if the regions are
 disjoint and compose the entire state-space. We provide an example in
 the next section, and in Fig.\ref{state-space.fig.hetero}.
@@ -317,14 +334,14 @@ space as two-dimensional, this is a two-dimensional integral that can
 be approximated using the methods discussed in
 Chapter~\ref{chapt.poisson-mn}, which include
 Monte Carlo integration and Gaussian quadrature. Alternatively, if
-our state-space covariates are in raster format, \emph{i.e} they are
+our state-space covariates are in raster format, i.e. they are
 in discrete space, the integral can be replaced with a sum over
 all pixels,
 \begin{equation}
-f(s, \beta) = \frac{\mu(s, \beta)}{\sum_{x \in \mathcal{S}} \mu(s, \beta)\, \mathrm{d}x}
+[\mathbf{s}, \bm{\beta}] = \frac{\mu(s, \bm{\beta})}{\sum_{s \in \mathcal{S}} \mu(\mathbf{s}, \bm{\beta})\, \mathrm{d}s}
 \label{eq.pdf.dipp.d}
 \end{equation}
-which is much more efficient computationally.
+where $s$ is now defined as ``pixel ID'' rather than a point in space.
 
 Although the discrete space approach is standard practice, it is
 technically unjustified because covariate values must be known for all
