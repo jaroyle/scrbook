@@ -161,9 +161,9 @@ the expected counts are $\mathbb{E}(n(B_k)) = Np(B_k)$.
 However, these counts are not
 independent realizations from a binomial distribution since $\sum_k %{k=1}^K
 n(B_k) = N$. Instead, the model for the entire vector is
-$\{n(B_1), n(B_2), \dots, n(B_k)\} \sim \mbox{Multin}(N, \{p(B_1), p(B_2), \dots,
+$\{n(B_1), n(B_2), \dots, n(B_k)\} \sim \mbox{Multinom}(N, \{p(B_1), p(B_2), \dots,
 p(B_K) \})$ \citep{illian_etal:2008}. If you need a refresher on the
-multinomial distribution, refer to Sec.\ref{chapt.modeling}, and
+multinomial distribution, refer to Sec.~\ref{modeling.sec.multinom}, and
 consider the following \R~code, which generates counts such as those
 seen in Fig.~\ref{state-space.fig.homo}:
 \begin{verbatim}
@@ -178,15 +178,6 @@ carries very little information about the expected number of points in another
 pixel. However, if there are only 2 pixels, then clearly the number of
 points in one pixel allows one to determine how many points will occur in the
 remaining pixel.
-%To gain familiarity with the multinomial distribution
-%and the discrete representation of space, use the \verb+rmultinom+
-%function in \R~to simulate counts similar to those shown in
-%Fig.~\ref{state-space.fig.homo}, for example using commands
-%such as:
-%\begin{verbatim}
-%n.Bk <- rmultinom(1, size=50, prob=rep(1/25, 25))
-%matrix(n.Bk, 5, 5)
-%\end{verbatim}
 
 
 \begin{figure}[ht!]
@@ -201,11 +192,19 @@ remaining pixel.
 The discrete space representation of the binomial point process is of
 practical importance when fitting SCR models because spatial covariates
 are almost always represented in a discrete-space format called
-``rasters'' in GIS-speak. In such cases, we often need to change our
-definition of the prior for an activity center from ${\bf s}_i \sim
-\mbox{Unif}(\cal{S})$ to ${\bf s}_i \sim \mbox{Multin}(1, \mathbf{\pi})$. In the
-latter case, the activity center is simply defined as an integer
-representing pixel ``id''.
+``rasters'' in GIS-speak. In such cases, we need to change the
+the definition of the prior for activity centers from the probability
+that $\bf s$ occurs at some point in space to the probability that $s$
+occurs in some pixel of the raster. To do this, we can change the
+prior from the uniform distribution to the
+multinomial distribution, or equivalently, the categorical
+distribution as demonstrated in Sec.~\ref{modeling.sec.discrete}.
+%  with because the multinomial distribution describes the
+%probability that an activity center occurs in one of the $G$ pixels.
+%${\bf s} \sim
+%\mbox{Unif}(\cal{S})$ to ${\bf s} \sim \mbox{Categorical}(1, \mathbf{\pi})$. In the
+%latter case, the activity center is simply defined as an integer
+%representing pixel ``id''.
 %Note also that the multinomial distribution
 %with an index of 1 (\emph{i.e.} \verb+size=1+ in \verb+rmultinom+)
 %is referred to as the categorical distribution,
@@ -215,52 +214,77 @@ representing pixel ``id''.
 
 \section{Inhomogeneous binomial point process}
 
-\hl{Check for x instead of s throughout}
-
-As with the homogeneous model, the inhomogeneous binomial point process
-model is developed conditional on $N$. The primary distinction is that
-the uniform distribution is replaced with another distribution
-allowing for the intensity parameter to vary spatially. To arrive at
-this new distribution, replace the scalar intensity parameter $\mu$
-with the function $\mu(s, {\bm \beta})$, where $\bm \beta$ is a
-vector of coefficients describing the effects of
-spatially-referenced covariates on the point process intensity. In
-what follows, we will often abbreviate the intensity function as $\mu(s)$,
-dropping the vector of coefficients for readability. Since an intensity must be strictly
-positive, and because the logarithm is the canonical link function of the Poisson
-generalized linear model, it is natural to model $\mu(s, \beta)$ as
-\[
-\log(\mu(s, \beta)) = \beta_0 + \sum_{j=1}^J \beta_j v_j(s), \quad  x \in \cal{S}
-\]
+The principal difference between homogeneous and inhomogeneous point
+processes is that the intensity parameter $\mu$ is allowed to vary spatially
+in the inhomogeneous model. Thus, rather than $\mu$ being a fixed constant,
+it is now a function defined at each point $s \in
+\mathcal{S}$. Typically, the function is determined by
+spatially-referenced covariates and a vector of regression
+coefficients $\bm \beta$, thus we denote the function $\mu(s,
+\bm{\beta})$. Since the intensity must be strictly
+positive, and because the natural logarithm is the canonical link
+function of the Poisson generalized linear model, it is natural to
+consider the following model:
+\begin{equation}
+  \log(\mu(s, \beta)) = \beta_0 + \sum_{j=1}^J \beta_j v_j(s), \quad  s \in \cal{S}
+  \label{state-space.eq.loglin}
+\end{equation}
 where $\beta_j$ is the regression coefficient for covariate
-$v_j(s)$. To be clear, $v(s)$ is the value of any covariate, such as
-habitat type or elevation, at location $x$ and it assumed to be
+$v_j(s)$. To be clear, $v_j(s)$ is the value of a covariate, such as
+habitat type or elevation, at location $s$, and it assumed to be
 defined at all locations in the state-space.
 This equation should look
 familiar because it is the standard linear predictor used in log-linear
-GLMs. One caveat is that the intercept $\beta_0$ is not a
-unique parameter to be estimated.
+GLMs.
+
+In the context of spatial capture-recapture models, if one assumes an
+inhomogeneous Poisson point process for the activity centers, then
+each of the $\bm \beta$ parameters is identifiable, and the intercept
+$\beta_0$ is interpretted as population density when all covariates
+equal zero. However, in the case of an inhomogeneous binomial point
+process, in which we condition on $N$, the intercept $\beta_0$ is not a
+unique parameter to be estimated because it is entirely confounded
+with $N$. In other words, $beta_0$ has already been defined. For
+example, in our MCMC algorithm we model population size as $N \sim
+\text{Binomial}(M, \psi)$
 %Note, however, that we have not included
 %an intercept. The reason for this is that it would be confounded with
 %$N$ (see Chapt. \ref{chapt.hscr}).
-The reason for this is that %This should be intuitive since
-$\beta_0$ represents population density at the location $x$ when
+%The reason for this is that %This should be intuitive since
+$\beta_0$ represents population density at the location $s$ when
 %, the expected value of $N$ in some infinitesimally
 %small area when
-the other $\beta$'s equal 0. However, we already
-have a parameter in the model for expected abundance, namely $\mathbb{E}[D] =
-N/A(\mathcal{S}) =  \psi M / A(\mathcal{S})$\footnote{Remember, $M$ is the size of the augmented population, and
+%the other $\beta$'s equal 0. However, we already
+%have a parameter in the model for expected abundance, namely $\mathbb{E}[D] =
+%N/A(\mathcal{S}) =  \psi M / A(\mathcal{S})$
+\footnote{Remember, $M$ is the size of the augmented population, and
 $\psi$ is the probability that a member of $M$ is an actual
-constituent of the population (Chapt. ~\ref{chapt.scr0}).}. Thus, in
-practice, we can either remove $\beta0$ and model a value proportional
-to the intensity, or we can define $\beta_0=\log(N/A(\mathcal{S}))$ and model the
-intensity directly.
+constituent of the population (Chapt.~\ref{chapt.scr0}).}
+and hence it would be redundant to also try
+to estimate $\beta_0$. Instead, simply define the intercept as
+$\beta_0 = N/|\mathcal{S}|$. %, which is to say that the intercept is
+
+In practice, we could remove $\beta0$ from
+Eq.~\ref{state-space.eq.loglin} altogether, which would still allow us
+to model a value proportional to the intensity. However, if we wish to
+make predictions from our fitted model, it is necessary to retain
+$\beta_0$ in the model.
 %an intercept would be
 %redundant, and without it we are still able to achieve our goal of
 %describing the distribution of $N$ activity centers as a function of
 %spatial covariates. One caveat is that if we wish to make predictions
 %to unsampled regions, it is useful to include the intercept $\beta_0 =
 %\log(N)$.
+
+As with the homogeneous model, the inhomogeneous binomial point process
+model is developed conditional on $N$. The primary distinction is that
+the uniform distribution is replaced with another distribution
+allowing for the intensity parameter to vary spatially. To arrive at
+this new distribution, we need to allow thereplace the scalar intensity parameter $\mu$
+with the function $\mu(s, {\bm \beta})$, where $\bm \beta$ is a
+vector of coefficients describing the effects of
+spatially-referenced covariates on the point process intensity.
+
 
 Now that we have a model of the intensity parameter $\mu(s)$,
 we need to develop the associated probability density function
@@ -645,6 +669,7 @@ covariates are, or can be, defined as such.
 
 
 \subsection{Discrete space}
+\label{modeling.sec.discrete}
 
 To fit IPPs using covariates in discrete space, \emph{i.e.} in raster
 format, we follow the same steps
