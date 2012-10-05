@@ -301,6 +301,13 @@ N <- 50
 beta0 <- log(N/1) # log(density). Note: this cancels out of probs below
 beta1 <- 2
 dat$cp <- exp(beta0 + beta1*dat$elev) / sum(exp(beta0 + beta1*dat$elev))
+sum(exp(log(N/nrow(dat)) + beta1*dat$elev))
+sum(exp(log(N) + beta1*dat$elev))
+sum(exp(log(N) + beta1*dat$elev)/400)
+sum(exp(log(N) + beta1*dat$elev + log(1/400)))
+sum(dat$cp*N)
+sum(exp(1/400 + beta1*dat$elev)/N)
+nc <- sum(exp(beta0 + beta1*dat$elev))
 s.tmp <- rmultinom(1, N, dat$cp) # a single realization to be ignored later
 
 # Trap locations
@@ -510,11 +517,11 @@ jm <- jags.model(modfile, jags.data, init, n.chains=2, n.adapt=1000)
 jags1 <- coda.samples(jm, pars, n.iter=10000)
 })
 
-plot(jags1)
+plot(jags1, ask=TRUE)
 summary(jags1)
 
 summary(window(jags1, start=3501))
-plot(window(jags1, start=3501))
+plot(window(jags1, start=3501), ask=TRUE)
 
 
 
