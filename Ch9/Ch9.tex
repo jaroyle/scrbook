@@ -227,7 +227,7 @@ demonstrate how to fit different distance functions under the Bayesian framework
 and then provide a section on the likelihood analysis (in \secr~) in a 
 separate section below.
 
-\section{Bayesian Analysis of detection functions}
+\section{Bayesian Analysis with jags.bears}
 
 To demonstrate how to incorporate various types of covariates using
 {\bf JAGS}, we will again return to the data collected during the
@@ -240,12 +240,15 @@ package \mbox{\tt scrbook} and an {\bf R} called XXXX allows the user to easily
 pick which model to analyze and calling the function will provide all the code to 
 implement the models independently as well.
 
-We start here by presenting the basic SCR model with no covariates and
-the half normal distance function. The {\bf R} function XXX  
+ The {\bf R} function XXX  
 will set up the data, write the model, define the MCMC specifications 
 (e.g., initial values, number of chains, etc.) and, finally, 
-run the specified model in {\bf JAGS}.  In this chapter we will present the 
+run the selected model in {\bf JAGS}.  In this chapter we will present the 
 model code and output for the most commonly employed models.  
+
+\section{Bayesian Analysis of detection functions}
+We start here by presenting the basic SCR model with no covariates and
+the half normal distance function.
 
 In panel \ref{covariates.panel.basicSCR}, 
 we present the basic SCR model as well as showing how to specify
@@ -422,7 +425,7 @@ p[i,j,k]<- z[i]*p0[k]*exp(- alpha1*d[i,j]*d[i,j])
 
 Since the model estimates
 a parameter effect for each time period, the encounter histories must be time-dependent. 
-Thus, a 3-d data array (called \mbox{\tt Yaug} in our
+Thus, a 3-d data array (called \mbox{\tt bearArray} in our
 code), with dimensions
 $\mbox{\tt nind} \times \mbox{\tt ntraps} \times \mbox{\tt nreps}$ is required. In addition
 to using the 3-d data array, the initial values must be updated so that 
@@ -666,10 +669,14 @@ individuals. Sex is a simple example of an individual covariate.
 % case that it is missing for some captured individuals because
 % frequently, in practice, we only imperfectly determine gender of many
 % species.  
-The sex of an individual can influence many aspects of its ecology and behavior, including, for example its home range size. This is
+The sex of an individual can influence many aspects of its ecology and behavior, 
+including, for example its home range size. This is
 common in studies of carnivores where females often have smaller home ranges than
 males \citep{gardner_etal:2010jwm, sollmann_etal:2011}. Additionally, we may find differences in
-the baseline detection between males and females because females may move around less frequently, or possibly because they are less likely to use landscape structures that researchers may target with sampling devices in order to increase sample size, such as roads \citep[e.g.][]{salom-perez_etal:2007}. 
+the baseline detection between males and females because females may move around less frequently, 
+or possibly because they are less likely to use landscape structures that researchers may target 
+with sampling devices in order to increase sample size, 
+such as roads \citep[e.g.][]{salom-perez_etal:2007}. 
 
 
 Thus, we can imagine that sex may impact both the baseline encounter
@@ -677,8 +684,10 @@ probability $\alpha_{0}$ and the typical home range
 size, so that
 $\alpha_{1}$ might be sex-specific also.  The fully sex-specific model is:
 \[
-logit(p_{ijk}) = \alpha_{0,sex_{i}} + \alpha_{1, sex_{i}}*||{\bf s}_{i}-{\bf x}_{j}||^{2}  
+logit(p0_{i}) = \alpha_{0,sex_{i}}
+p_{ijk} = p0_{i} \exp(- \alpha_{1, sex_{i}}*||{\bf s}_{i}-{\bf x}_{j}||^2)
 \]
+
 where $sex_{i}$ is a binary vector indicating the sex of
 each individual (1 = male, 2 = female).  While we might know the sex of all
 individuals observed in the study, we will never know the
@@ -689,16 +698,17 @@ individuals that are observed during the study. For example photographic
 captures do not necessary result in pictures that allow the sex to be absolutely
 determined, thus sometimes resulting in missing values of this covariate for animals
 captured in the study.   We deal with this slightly differently based on the framework
-that we select (Bayesian or likelihood) and we discuss this in detail
-below in sec. \ref{ XXXXX latex TAG XXXX 8.3.3} and sec. \ref{XXXX latex TAG XXXXX 8.4.3}.
+that we select (Bayesian or likelihood).  Here we demonstrate the Bayesian implementation 
+and we discuss the likelihood approach using \secr~ in detail
+below sec. \ref{covariates.secr.sex}.
 
 
-
-
-
-
-\subsection{Sex Effects}
-Specifying a fully sex specific model for {\bf JAGS} is very similar to the time-specific model shown above: we need to use an index or dummy variable to let both $\alpha_0$ and $sigma$ be estimated separately for males and females. The main difference arise from the fact that we do not observe sex for the augmented individuals, which means, we have missing observations of the covariate for those augmented individuals. As a result, sex has to be estimated for those unobserved individuals as part of the model. In Bayesian inference, missing data are essentially treated like parameters, which means that we need to specify a prior distribution for the missing data. With only two possible outcomes, sex can be regarded as a Bernoulli random variable where $[sex = male] \sim Bernoulli(\pi)$ (we could equally well specify it as $[sex = female] \sim Bernoulli(\pi)$). The parameter $\pi$ can be seen as the sex ratio of the population and since it is something we want to estimate (a hyperparameter of the model), we again have to specify a prior for $\pi$. To express our lack of knowledge about the parameter and account for the fact that being a probability, it can only take values between 0 and 1, we choose $\pi \sim Uniform(0,1)$.  
+Specifying a fully sex specific model for {\bf JAGS} is very similar to the time-specific model shown above: 
+we need to use an index or dummy variable to let $\alpha_0$ and/or $\alpha_1$ be estimated 
+separately for males and females. The main difference arise from the fact that we do not observe 
+sex for the augmented individuals, which means, we have missing observations of the covariate for those 
+augmented individuals. As a result, sex has to be estimated for those unobserved individuals as part 
+of the model. In Bayesian inference, missing data are essentially treated like parameters, which means that we need to specify a prior distribution for the missing data. With only two possible outcomes, sex can be regarded as a Bernoulli random variable where $[sex = male] \sim Bernoulli(\pi)$ (we could equally well specify it as $[sex = female] \sim Bernoulli(\pi)$). The parameter $\pi$ can be seen as the sex ratio of the population and since it is something we want to estimate (a hyperparameter of the model), we again have to specify a prior for $\pi$. To express our lack of knowledge about the parameter and account for the fact that being a probability, it can only take values between 0 and 1, we choose $\pi \sim Uniform(0,1)$.  
 
 In both {\bf JAGS} or {\bf BUGS} missing data are specified as {\tt NA}. In terms of setting up the data that means we need to create a vector of  
 length $M$ with the first $n$ elements being 0 if individual $i$ is a female, or 1 if $i$ is a male (for the Ft. Drum black bear data we can extract 
@@ -939,6 +949,7 @@ Models called from secr.bear function. }
 
 
 \subsection{Sex Effects}
+\label{covariates.secr.sex}
 
 Specifying models with sex specific parameters is not as straight forward in \secr~ as the other models. 
 Incorporating sex effects into models with \secr~ can be done a few
@@ -964,10 +975,21 @@ XXX I left this section, but cut it way down since we are likely gonna move the 
 these are just notes on the secr XXX
 
 \subsection{Individual heterogeneity}
+To incorporate heterogeniety, \secr~ fits the
+``finite mixture'' models \citep{norris_pollock:1996,
+  pledger:2000}. These are expensive in terms of parameters and not
+very typically used outside of their use in secr and a few other
+specialized software packages that do capture-recapture
+things. Historically they were adopted because they are easy to
+compute with. More recently, continuous mixtures have been adopted in
+many settings because they are natural extensions of standard GLMs. We
+don't favor the use of finite mixtures. Despite this we give some
+examples here using secr.
 
 Using \secr,  individual heterogeneity can be incorporated
 into the detection parameters as either a 2-part or 3-part finite
-mixture model XXXX REF XXXXXXX with the use of ``\mbox{\tt h2}'' or
+mixture model \citep{norris_pollock:1996,
+  pledger:2000} with the use of ``\mbox{\tt h2}'' or
 ``\mbox{\tt h3}'', respectively, in the
 model call.   The 2-part mixture is shown in model 8 of panel
 \ref{covariates.panel.secrfn} and the 3-part mixture can easily be fit by
