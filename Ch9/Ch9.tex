@@ -511,18 +511,9 @@ being located on roads, which the animals were using to travel along, as
 opposed to traps placed off roads.  In this case, the trap
 type is a binary variable - on/off road,
 (another binary variable could be baited/non-baited).  We can write this such that:
-{\bf 
-XXX BETH: you have logit throughout here, but all of the WinBUGS codes
-are NOT logit.
-}
-% \[
-% logit(p_{ijk}) = \alpha_{0,type_j} + \alpha_1*||{\bf s}_{i}-{\bf x}_{j}||^{2}
-% + \alpha_{2} \mbox{\tt type}_{j}
-% \]
 \[
 \mbox{logit}(p0_{j}) = \alpha_{0,type_j} 
-p_{ijk} = p0_{j} \exp(- \alpha_1*||{\bf s}_{i}-{\bf x}_{j}||^2)
-
+p_{ijk} = p0_{j} \exp(- \alpha_1*||{\bf s}_{i}-{\bf x}_{j}||^2).
 \]
 Here, we use an indicator variable, ``type'', that will be a numeric
 value for the trap-specific covariate.  Thus for our example of on/off
@@ -620,7 +611,6 @@ model.
 Here, we demonstrate the local behavioral response model and start by constructing the
 indicator of previous capture array $C_{ijk}$.
 
-XXXXX please put this in the R package XXXXXX
 
 {\small
 \begin{verbatim}
@@ -703,110 +693,79 @@ and we discuss the likelihood approach using \secr~ in detail
 below sec. \ref{covariates.secr.sex}.
 
 
-Specifying a fully sex specific model for {\bf JAGS} is very similar to the time-specific model shown above: 
+Specifying a fully sex specific model for {\bf JAGS} is similar to the time-specific model shown above, 
 we need to use an index or dummy variable to let $\alpha_0$ and/or $\alpha_1$ be estimated 
 separately for males and females. The main difference arise from the fact that we do not observe 
 sex for the augmented individuals, which means, we have missing observations of the covariate for those 
 augmented individuals. As a result, sex has to be estimated for those unobserved individuals as part 
-of the model. In Bayesian inference, missing data are essentially treated like parameters, which means that we need to specify a prior distribution for the missing data. With only two possible outcomes, sex can be regarded as a Bernoulli random variable where $[sex = male] \sim Bernoulli(\pi)$ (we could equally well specify it as $[sex = female] \sim Bernoulli(\pi)$). The parameter $\pi$ can be seen as the sex ratio of the population and since it is something we want to estimate (a hyperparameter of the model), we again have to specify a prior for $\pi$. To express our lack of knowledge about the parameter and account for the fact that being a probability, it can only take values between 0 and 1, we choose $\pi \sim Uniform(0,1)$.  
+of the model. In Bayesian inference, missing data are essentially treated like parameters, which means that we need to specify a prior distribution for the missing data. With only two possible outcomes, sex can be regarded as a Bernoulli random variable where $[sex = male] \sim Bernoulli(\pi)$ (we could equally well specify it as $[sex = female] \sim Bernoulli(\pi)$). The parameter $\pi$ can be seen as the sex ratio of the population and since it is something we want to estimate (a hyperparameter of the model), we again have to specify a prior for $\pi$. To express our lack of knowledge about the parameter and account for the fact that being a probability, it can only take values between 0 and 1, we choose $\pi \sim Uniform(0,1)$.  The model specification in panel \ref{covariates.panel.SCRsex} demonstrates how to 
+incorporate a partially observed covariate, here, specifically sex.  
 
-In both {\bf JAGS} or {\bf BUGS} missing data are specified as {\tt NA}. In terms of setting up the data that means we need to create a vector of  
-length $M$ with the first $n$ elements being 0 if individual $i$ is a female, or 1 if $i$ is a male (for the Ft. Drum black bear data we can extract 
-this information from XXX HOW IS BEARSEX GONNA GO INTO THE R PACKAGE???? XXXX), and the subsequent $M-n$ elements being {\tt NA}.  It is generally a 
-good idea to provide starting values for the missing data, but we cannot provide starting values for observed data; in this case where one vector 
-(or other object) contains both observed and missing data, initial values for the observed data have to be specified as {\tt NA}. 
-The code snippet below shows you how to set up the  data including the{\tt sex} vector and the initial values function, 
-as well as the {\jags} model specifications (the remainder of the code is identical to what we've shown before).
+In both {\bf JAGS} or {\bf BUGS} missing data are specified as {\tt NA}. In terms of setting 
+up the data that means we need to create a vector of  
+length $M$ with the first $n$ elements being 0 if individual $i$ is a female, 
+or 1 if $i$ is a male (for the Ft. Drum black bear data we can extract 
+this information from XXX HOW IS BEARSEX GONNA GO INTO THE R PACKAGE???? XXXX), 
+and the subsequent $M-n$ elements being {\tt NA}.  It is generally a 
+good idea to provide starting values for the missing data, but we cannot provide 
+starting values for observed data; in this case where one vector 
+(or other object) contains both observed and missing data, initial 
+values for the observed data have to be specified as {\tt NA}. 
 
 
+
+\begin{panel}[htp]
+\centering
+\rule[0.1in]{\textwidth}{.03in}
 {\small
-\begin{verbatim}
-bearsex<-read.csv("bearsex.csv")   #we read in the sex data for captured individual
-sex<-c(as.numeric(bearsex[,2])-1, rep(NA, nz))
-data0<-list(y=Yaug,M=M,K=K, J=ntraps, Xl=Xl, Yl=Yl, Xu=Xu, Yu=Yu, X=X, area=areaX)
-params<-c('psi','p0','N', 'D', 'sigma', 'pi')
-inits =  function() {list(z=zst,psi=runif(1), s=Sst, SEX=c(rep(NA, n), rbinom(nz, 1,0.5)),pi=runif(1), sigma=runif(2,2,3),alpha0=runif(2)) }
+\begin{Verbatim}[commandchars=\\\{\}]
+model\{
 
-XXX JUST FILLED THIS STUFF ABOVE IN, NEVER RAN THIS XXXXX
+psi \mytilde dunif(0,1)
+pi \mytilde dunif(0,1)
 
-cat("
-model {
-
-psi~dunif(0,1)
-pi~dunif(0,1)
-
-for(t in 1:2){
-alpha0[t]~dnorm(0,.1)
+for(t in 1:2) \{
+alpha0[t] \mytilde dnorm(0,.1)
 logit(p0[t])<- alpha0[t]
 alpha1[t]<-1/(2*sigma[t]*sigma[t])
-sigma[t]~dunif(0, 15)
+sigma[t] \mytilde dunif(0, 15)
 }
 
-for(i in 1:M){
- z[i] ~ dbern(psi)
- SEX[i]~dbern(pi)
+for(i in 1:M)\{
+ z[i] \mytilde dbern(psi)
+ SEX[i] \mytilde dbern(pi)
 SEX2[i]<-SEX[i] + 1
- s[i,1]~dunif(Xl,Xu)
- s[i,2]~dunif(Yl,Yu)
+ s[i,1] \mytilde dunif(Xl,Xu)
+ s[i,2] \mytilde dunif(Yl,Yu)
 
-for(j in 1:J){
+for(j in 1:J)\{
 d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
-y[i,j] ~ dbin(p[i,j],K)
+y[i,j] \mytilde dbin(p[i,j],K)
 p[i,j]<- z[i]*p0[SEX2[i]]*exp(-alpha1[SEX2[i]]*d[i,j]*d[i,j])
-}
-}
+\}
+\}
 N<-sum(z[])
 D<-N/area
-}
-",file = "SCRsex.txt")
-\end{verbatim}
-}
-
-Running the fully sex specific model produces the follwing output: 
-{\small
-\begin{verbatim}
-> summary(outSCRsex)
-
-Iterations = 501:20500
-Thinning interval = 1
-Number of chains = 3
-Sample size per chain = 20000
-
-1. Empirical mean and standard deviation for each variable,
-   plus standard error of the mean:
-
-            Mean    SD  Naive SE Time-series SE
-D          0.168  0.022 8.932e-05      0.0010252
-N        509.982 66.355 2.709e-01      3.1092473
-p0[1]      0.136  0.025 1.027e-04      0.0002936
-p0[2]      0.092  0.017 6.994e-05      0.0002564
-pi         0.310  0.068 2.767e-04      0.0017374
-psi        0.784  0.103 4.203e-04      0.0048169
-sigma[1]   1.542  0.132 5.404e-04      0.0019245
-sigma[2]   2.682  0.389 1.588e-03      0.0119850
-\end{verbatim}
+\}
+\end{Verbatim}
 }
 
-
-Our estimate of density is still very similar, and while the baseline detection was not very different
-between males and females, we can see that they had very different $\sigma$ estimates (note that the BCIs do not
-overlap XXXX WHERE ARE THE BCIS? XXXX).  
-
-
-
-
+\rule[-0.1in]{\textwidth}{.03in}
+\caption{
+\jags~ model specification for the SCR model with sex as a covariate on baseline detection
+and sigma.}
+\label{covariates.panel.SCRsex}
+\end{panel}
 
 
 
+Running the fully sex specific model for the Ft. Drum bear data results in the parameters
+shown in Table \ref{XXXXX}. The estimate of density ($D = 0.168$) is very similar to that of the baseline model ($D=0.167$).  Although the baseline detection was not very different
+between males and females, we can see that they had very different $\sigma$ estimates ($\sigma_M = 2.682$ and $\sigma_F = 1.542$ with no overlap in the 95\% BCIs, see Table \ref{XXX}). 
 
-
-
-
-
-
-
-
-
+The ability to deal with partially observed covariates, as we have done here with 'sex', is an 
+advantage of the Bayesian implementation over the MLE.  Below, in the demonstration of \secr~, the
+model must be fitted essentially for each sex separately.  For example, this type of implementation doesn't allow for the population sex ratio to be determine.  
 
 
 
@@ -946,8 +905,6 @@ Models called from secr.bear function. }
 \end{panel}
 
 
-
-
 \subsection{Sex Effects}
 \label{covariates.secr.sex}
 
@@ -1072,25 +1029,17 @@ juxtaposition of individuals with traps and the resulting
 heterogeneity that is induced by heterogeneity in exposure to
 trapping.
 
-
-
 While the advent of SCR models may appear to have rendred the use of
 classical model $M_h$ obsolete (because the heterogeneity is being
-accounted for explicitly) we probably still wish to consider
-heterogeneity models for biological reasons.
-In particular, consider a basic capture-recapture model of the form:
-\[
- cloglog(p[i,j]) = \alpha + \alpha_1*||s_{i} - x_{j}||^2
-\]
-where $\alpha_{1} = (1/\sigma^{2})$.  
-In all applications of such models that we are aware of the scale
-parameter has been constant or a function of explicit covariates
+accounted for explicitly) there are likely still biological reasons to consider
+heterogeneity models. In all the previous applications of SCR models the scale
+parameter ($\sigma$) has been constant or a function of explicit covariates
 (e.g., sex; \citet{gardner_etal:2010}). Conversely, it is reasonable
-to expect in real biological populations that there exists
+to expect in real populations that there exists
 heterogeneity in home range size and so we think that $\alpha_{1}$
-should exhibit heterogeneity among individuals. 
+could exhibit heterogeneity among individuals. 
 
-Here we develop and evaluate a new class of spatial capture-recapture
+Here we develop and evaluate a class of spatial capture-recapture
 models which allow for individual heterogeneity in encounter
 probability.  In particular, one class of models we propose explicitly
 admits individual heterogeneity in home range {\it size}. In addition,
@@ -1110,32 +1059,59 @@ SCR+Mh in some form or another yields a good approximation to
 heterogeneity in encounter probability that is due to heterogeneity in
 home range size.
 
+
+
+In particular, consider a basic capture-recapture model of the form:
+\[
+ cloglog(p[i,j]) = \alpha + \alpha_1*||s_{i} - x_{j}||^2
+\]
+where $\alpha_{1} = (1/\sigma^{2})$.  
+
+\[
+\mbox{logit}(p0_{ijk}) = \alpha_0 + \alpha_2*\mbox{\tt Date}_{k}
+p_{ijk} = p0_{ijk} \exp(- \alpha_1*||{\bf s}_{i}-{\bf x}_{j}||^2)
+\]
+
+
 \subsection{Models of Heterogeneity}
 
 An obvious model extends the SCR model by including an additive individual effect, analogous to classical ``Model $M_{h}$''. We'll call this model ``SCR+Mh'':
 \[
- cloglog(p) = \alpha + \beta*d(i,j)^2  + \eta_{i}
+\mbox{logit}(p0_{ij}) = \alpha_0 + \eta_{i}
+p_{ijk} = p0_{ijk} \exp(- \alpha_1*||{\bf s}_{i}-{\bf x}_{j}||^2)
 \]
 where $\eta_{i}$ is an individual random effect having distribution
 $g(\eta|\theta)$.  A popular class of models arises by assuming
 $\eta_{i} \sim Normal(0,\tau^{2})$ (\citet{coull_agresti:1999};
-\citet{dorazio_royle:2003}; etc..).  Many other random effects
+\citet{dorazio_royle:2003}; etc.).  Many other random effects
 distributions are possible. \citet{norris_pollock:1996} propose a
 finite mixture of point supports which has been addressed considerably
-in the literature \citep{pledger:2003, dorazio_royle:2003, link:2003}.  Our view is that such models are not very realistic, yet data hugry as they require many more parameters. Heterogeneity seems naturally continuous unless one expects the heterogeneity to be due to meaningful biological groupings in which case such information would normally be collected if possible.  Even so the more likely scenario is that heterogeneity is due to a lot of different sources contributing independent components of variation, and so the normal model seems sensible in that regard. We note that Efford (XXX) considered a finite-mixture type of representation for SCR models. These are fit in the R package secr() which we do in section XYZ below.
+in the literature \citep{pledger:2003, dorazio_royle:2003, link:2003}.  
+Our view is that such models are not very realistic, yet data hungry 
+as they require many more parameters. Heterogeneity seems naturally 
+continuous unless one expects the heterogeneity to be due to meaningful 
+biological groupings in which case such information would normally be 
+collected if possible.  Even so the more likely scenario is that 
+heterogeneity is due to a lot of different sources contributing 
+independent components of variation, and so the normal model seems 
+sensible in that regard. We note that Efford (XXX) considered a 
+finite-mixture type of representation for SCR models. 
+These are fit in the R package \secr~ which we do in section \ref{XXX} below.
 
-{\bf Heterogeneity Induced by Variation in Home Range Size} -- We suggest an alternative heterogeneity model, one that has more of a direct biological motivation and interpretation. Specifically , we suppose that there exists heterogeneity in home range size among individuals. This is manifest in the scale parameter of the detection function $\sigma^{2}$ or its inverse $\beta = 1/\sigma^{2}$. We might
+{\bf Heterogeneity Induced by Variation in Home Range Size} -- We suggest an alternative heterogeneity model, one that has more of a direct biological motivation and interpretation. Specifically , we suppose that there exists heterogeneity in home range size among individuals. This is manifest in the scale parameter of the detection function $\sigma$ or as we have be using it throughout the book $\alpha_1 = 1/2\sigma^{2}$. We might
 thus assume a distribution for either $\sigma^{2}$ or its inverse,
-$\beta$.  We thus propose ``Model SCR + Ah'' (Ah for area-induced
+$\alpha_1$.  We thus propose ``Model SCR + Ah'' (Ah for area-induced
 heterogeneity).
 \[
- cloglog(p) = \alpha + \beta_{i}*d(i,j)^2
+\[
+\mbox{logit}(p0) = \alpha_0 
+p_{ijk} = p0_{ij} \exp(- \alpha_{1,i}*||{\bf s}_{i}-{\bf x}_{j}||^2)
 \]
 This model is a model of heterogeneity in home range area. For example
-if we assume that $\beta_{i} \sim \mbox{Normal}(\beta_0,\tau^{2})$
+if we assume that $\alpha_{1,i} \sim \mbox{Normal}(\beta_0,\tau^{2})$
 with $\beta_{0} = 2$ and $\tau = 0.50$. Then the population
 distribution of $\sigma$ in this case is given in Figure
-\ref{fig.one}. The motivating point of this model is that we expect
+\ref{fig.one} XXXWhere is thisXXXX. The motivating point of this model is that we expect
 such variability in natural populations. Thus we suggest this
 biologically sensible model of heterogeneity, which fills a
 methodological gap in the literature in the sense that SCR models have
@@ -1150,7 +1126,7 @@ Population distribution of $\sigma$ if $(1/\sigma^{2}) \sim \mbox{Normal}(2, 0.5
 \label{fig.one}
 \end{figure}
 
-Interesting point: $\beta_{i}$ might have an Inverse-Gamma
+Interesting point: $\alpha_{1,i}$ might have an Inverse-Gamma
 distribution so we need to parameterize the IG in terms of mean and
 variance.... but this is not conjugate in the present context and so
 there is no compelling reason to do that. Instead, we use a normal
@@ -1175,31 +1151,6 @@ This could also be viewed as suggesting an over-dispersed count model for encoun
 
 \subsection{Doing it in WinBUGS}
 
-Here we will simulate some data and fit SCR, SCR + Mh, SCR + Ah
-
-\subsection{Doing it in secr}
-
-Secr fits the most bizarre type of heterogeneity models - they use the
-``finite mixture'' models \citep{norris_pollock:1996,
-  pledger:2000}. These are expensive in terms of parameters and not
-very typically used outside of their use in secr and a few other
-specialized software packages that do capture-recapture
-things. Historically they were adopted because they are easy to
-compute with. More recently, continuous mixtures have been adopted in
-many settings because they are natural extensions of standard GLMs. We
-don't favor the use of finite mixtures. Despite this we give some
-examples here using secr.
-
-
-\section{Efford's Possum Data}
-
-Maybe we should do an analysis of Efford's Possum data -- using a
-gamma kind of mixture model.  Is there a way to compare this with secr
-mle?
-not sure where to go with this
-
-
-Behavioral: global and local effect?
 
 
 \section{Summary and Outlook}
