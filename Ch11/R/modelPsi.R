@@ -8,10 +8,6 @@
 
 
 
-
-
-
-
 # Trap locations in [0,1] x [0,1] state-space
 X <- cbind(rep(seq(.3,.7,,5), 5), rep(seq(.3,.7,,5), times=5))
 X
@@ -26,11 +22,12 @@ levelplot(apply(grid, 1, elev) ~ grid[,1] + grid[,2])
 
 
 # Simulate data
-M <- 400 # Data augmentation size. Could be anything, but we need it
-s <- cbind(runif(M), runif(M)) # activity centers
-beta0 <- -4
+M <- 800 # Data augmentation size. Could be anything, but we need it
+s <- cbind(runif(M, 0, 1), runif(M, 0, 1)) # activity centers
+beta0 <- -5
 beta1 <- 2
-pr <- plogis(beta0 + beta1*apply(s, 1, elev))  # thinning prob
+elev.s <- apply(s, 1, elev)
+pr <- plogis(beta0 + beta1*elev.s)  # thinning prob
 mean(pr)*M
 w <- rbinom(M, 1, pr) # Thinned guys
 N <- sum(w) # Number of real guys
