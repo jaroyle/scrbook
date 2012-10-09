@@ -1,6 +1,6 @@
 modelMhBUGS <-
 function(Yarr,engine="winbugs",M=500,ni=10000,nb=1000){
-if( sum(engine == c("jags","winbugs"))==0) return("not a valid MCMC engine: use winbugs or jags")
+if( sum(engine == c("jags","winbugs","r2jags"))==0) return("not a valid MCMC engine: use winbugs or jags")
 
 nind<-dim(Yarr)[1]
 K<-dim(Yarr)[3]
@@ -36,14 +36,19 @@ N<-sum(z[1:(nind+nz)])
 ",file="modelMh.txt")
 
 
-data1<-list(y=ytot, nz=nz, nind=nind,K=K) 
+data1<-list(y=ytot, nz=nz, nind=nind,K=K)
 params1= c('p0','sigmap','psi','N')
 inits =  function() {list(z=as.numeric(ytot>=1), psi=.6, p0=runif(1),sigmap=runif(1,.7,1.2),lp=rnorm(M,-2)) }
 
 if(engine=="winbugs"){
 library("R2WinBUGS")
-out = bugs(data1, inits, params1, model.file="modelMh.txt",working.directory=getwd(),    
+out = bugs(data1, inits, params1, model.file="modelMh.txt",working.directory=getwd(),
        debug=FALSE, n.chains=3, n.iter=(ni+nb), n.burnin=nb, n.thin=1)
+}
+if(engine=="r2jags"){
+library("R2jags")
+out = jags(data1, inits, params1, model.file="modelMh.txt",working.directory=getwd(),
+      n.chains=3, n.iter=(ni+nb), n.burnin=nb, n.thin=1)
 }
 
 
