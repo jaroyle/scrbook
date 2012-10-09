@@ -544,10 +544,10 @@ pars2 <- c("sigma", "lam0", "beta0", "beta1", "N")
 
 jm2 <- jags.model("ippDiscrete2.txt", jags.data2, init2,
                   n.chains=2, n.adapt=500)
-jc2 <- coda.samples(jm2, pars2, n.iter=1000)
+jc1 <- coda.samples(jm2, pars2, n.iter=1000)
 
-plot(jc2, ask=TRUE)
-summary(jc2)
+plot(jc1, ask=TRUE)
+summary(jc1)
 
 
 
