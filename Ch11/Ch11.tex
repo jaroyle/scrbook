@@ -10,26 +10,30 @@ Modeling Spatial Variation in Density
 
 \vspace{0.3cm}
 
-\begin{comment} ok this is a minor tech mpoint for now: but this is introduced as a ``point process''
-but what is being decribed here is a REALiZATION of a point process. Lets clarify this in the final
-draft
-\end{comment}
-Underlying all spatial capture recapture models is a point process
-model describing the distribution of individual activity
-centers (${\bf s}_i$) within the state space ($\cal{S}$). So far we have focused our
-attention on the homogeneous binomial point process,
+Underlying all spatial capture-recapture models is a point process
+model that describes the distribution of individual activity
+centers (${\bf s}$) within the state space ($\cal{S}$).
+%, which is
+%typically a two-dimensional polygon defining the study area.
+Point process models are charcterized by $\mathcal{S}$ and by an
+intensity parameter defined at each point in $\mathcal{S}$. If this
+intensity is constant, the point process is said to be homogeneous,
+and thus far we have focused our
+attention on the homogeneous binomial point process whose realized
+values are:
 ${\bf s}_i \sim \mbox{Unif}({\cal S}), i=1,2,\dots,N$, where $N$ is the
 size of the population. This is a model of
 ``spatial-randomness''\footnote{The phrase ``complete
   spatial-randomness'' is reserved for the homogeneous Poisson point
   process}
 because the intensity of the
-activity centers is constant across the study area and the activity
-centers are distributed independently of each other.
+activity centers is constant across the study area.
+% and the activity
+%centers are distributed independently of each other.
 
 The spatial-randomness assumption is often viewed as restrictive
 because ecological processes such as
-territoriality and habitat selection can result in non-random
+territoriality and habitat selection can result in non-uniform
 distributions of organisms. We have argued, however, that this
 assumption is less restrictive than may be recognized because the
 homogeneous point process actually allows for infinite
@@ -37,20 +41,24 @@ possible configurations of activity centers. Furthermore, given enough data,
 the uniform prior will have very little influence on the estimated
 locations of activity centers. Nonetheless, the homogeneous point
 process model does not allow one to model population density using
-covariates---a central objective of much ecological research.
+covariates, which is a central objective of much ecological research.
 For example, a homogeneous point process model
 may result in a density surface map indicating that individuals were
 more abundant in one habitat than another, but it does not do so
-explicitly. A more direct approach would be to model density using
-covariates as is done in generalized linear models (GLMs)
-\citep{mccullagh_nelder:1989}. % where a
+explicitly and so cannot be used to make predictions about
+habitat-specific abundance in other regions. A more direct approach would be to replace
+the homogeneous model with an inhomogeneous model in which the point process
+intensity varies spatially.
+%density using covariates as is done in generalized linear models (GLMs)
+%\citep{mccullagh_nelder:1989}. % where a
 %link function is used to connect the intensity parameter to the linear
 %predictor.
 
 In this chapter we present a method
-for fitting inhomogeneous binomial point process models using
-covariates in much the same way as is done with GLMs. The
-covariates we consider differ
+for fitting inhomogeneous binomial point process models by modeling
+the intensity parameter as a function of
+covariates in much the same way as is done with generalized linear
+models. The covariates we consider differ
 from those covered in previous chapters, which were typically
 attributes of the animal ({\it e.g.} sex or age) or the trap ({\it
   e.g.} baited or not) and were used to model movement or encounter
@@ -61,58 +69,59 @@ state-space covariates or density covariates. These may
 include continuous covariates such as elevation, or discrete
 covariates such as habitat type.
 
-\citet{borchers_efford:2008} were the first to propose an
-inhomogeneous point process model for SCR models, and our approach is
-similar to theirs with the exception that we will use a binomial
+Inhomogeneous Poisson point process models were discussed in the original
+formulation of SCR models \citep{efford:2004} and were described in
+detail by \citet{borchers_efford:2008}. Our approach is
+similar to that of \citet{borchers_efford:2008}, except that we use a binomial
 rather than a Poisson model because the binomial model is
-easily integrated into our MCMC algorithm %data augmentation scheme
-and is consistent
-with the objective of determining how a {\it fixed} number of activity
-centers are distributed with respect to covariates.
-
+easily integrated into our MCMC algorithm.  %data augmentation scheme
+%and is consistent
+%with the objective of determining how a {\it fixed} number of activity
+%centers are distributed with respect to covariates.
 The method we use to accommodate inhomogeneous binomial point process
-models within our MCMC algorithm is simple---we
+models %within our MCMC algorithm
+is simple---we
 replace the uniform prior with a prior describing the
 distribution of the $N$ activity centers conditional on the
 covariates. Development of this prior, which does not have a
-standard form, is a central component of this chapter. First we %will
+standard form, is a central component of this chapter. First we
 begin with a review of homogeneous point process models.
 
 
 \section{Homogeneous point process revisited}
 
-The homogeneous Poisson point process is \emph{the} model of ``complete
+The homogeneous Poisson point process is \textit{the} model of ``complete
 spatial randomness'' and is often used in ecology as a null model
 to test for departures from randomness
 \citep{diggle:2003,illian_etal:2008}. Given its central role in the
-analysis of point processes, it is helpful to compare it with
-the binomial model that we use in our SCR models. The
-primary descriptor of the homogeneous point process model is the
-``intensity'' parameter, $\mu$ which describes the expected number
-% start with \mu(x)???? Or, wait for inhomogeneous case?
-of points in an infinitesimally small area. The intensity
-parameter can also be used to determine the expected number of points
-in any region $B$ of the state-space $\cal{S}$. To denote this, we say
-that the expected number of points in region $B \in \cal{S}$ is
-$\mathbb{E}[n(B)] = A(B)\mu$ where $A(B)$ is the area of region $B$.  In words,
-the expected number of points in $B$ is simply the area of $B$
-multiplied by the intensity parameter. One property
-of the Poisson model is that if we divide the entire state-space into $K$
-%$k=1,\dots,K$
-disjunct regions, the vector of counts $\{ n(B_k): k=1,\dots,K \}$ are
-independent and identically distributed, ({\it i.i.d.}). This is one
-of the distinctions between the Poisson model and the binomial model,
-for which the counts $\{n(B_k)\}$ are not {\it i.i.d.}, as we will explain
-shortly.
+analysis of point processes, it is helpful to describe it briefly and
+compare it with the binomial model that we use in our SCR models. The
+homogeneous Poisson point process has two defining
+characteristics. First, the number of realized points, e.g. activity
+centers, in any finite region $B$ of the state-space $\mathcal{S}$ is
+Poisson distributed, $n(B) \sim \text{Pois}(\mu|B|)$ where $\mu>0$ is
+the intensity parameter and $|B|$ is the area of the region
+$B$. Second, the points are assumed to be
+uniformly distributed within $\mathcal{S}$ or $B$, implying that they neither repel or attract
+each other. A third property of the Poisson point process, which we
+will describe in more detail momentarily, is that the number of points
+in two disjunct regions are independent of one another.
+%describes the expected number
+%of points per unit area. The number . Specifically,
+%$\mathbb{E}[n(B)] = A(B)\mu$ where $A(B)$ is the area of region $B$.
+%This just says that
+%the expected number of points is the area of $B$
+%multiplied by the intensity parameter.
+%This is one
+%of the distinctions between the Poisson model and the binomial model,
+%for which the counts $\{n(B_k)\}$ are not i.i.d., as we will explain
+%shortly.
 
-The two models also differ in how they regard the number of points
-$N$. %This difference is also related to another distinction
-%between the two models, namely that
-The binomial model conditions on $N$, \textit{i.e.}, $N$ is fixed; whereas under
-the Poisson model $N$ is random. Here is some simple \R~code to
-illustrate this point.
-
-\begin{center} % doesn't work
+An important distinction between the Poisson point process and the
+binomial point process is that the number of points $N$ is a random
+variable in the former model, but not in
+the latter. In other words, the binomial point process conditions on $N$.
+Here is some simple \R~code to illustrate this point:
 \begin{verbatim}
 mu <- 4                            # intensity
 Np <- rpois(1, mu)                 # Np is random
@@ -121,53 +130,60 @@ PPP <- cbind(runif(Np), runif(Np)) # Poisson point process
 Nb <- 4                            # Nb is fixed
 BPP <- cbind(runif(Nb), runif(Nb)) # Binomial point process
 \end{verbatim}
-\end{center}
+which generates realizations from Poisson and binomial point
+processes in the unit square ($\mathcal{S} = [0,1]\times[0,1]$).
+For both models, the $N$ points are
+%independent of one another and
+distributed uniformly
+in $\mathcal{S}$, and they have the same intensity parameter,
+$\mu=4$. However, in the binomial case $N$ is a fixed constant and the
+intensity parameter is
+defined differently, being a function of $N$ and the area of the
+state-space, $\mu = N/|\mathcal{S}|$.
 
-Note that in both models, the $N$ points are independent
-of one another and distributed uniformly
-throughout $\mathcal{S}$. Thus, the intensity at any point $x \in
-\cal{S}$ is $\mu = 1 / A(\mathcal{S})$ where $A(\mathcal{S})$ denotes
-the area of the state-space. In the \R~code above, the area of the
-state-space is 1 unit, and thus the intensity is $\mu = 1/1$.
-
-Although the Poisson model is typically described in terms of $\mu$,
-the binomial model is not; rather, it
-is more common to consider a discrete state-space, such as a grid with
-with $K$ pixels. Under the binomial model, the number of points in
-each region is $n(B_k) \sim Bin(N, p_k)$
-where $p_k = A(B)/A(\cal{S})$, \emph{i.e.} $p_k$ is simply the proportion of
-the state-space area in $B_k$. This discrete space representation of
-the binomial point process is shown in Fig.~\ref{ch9.fig.homo}. The
-state-space in this case is the unit square, and thus the probability of a
-point falling in each of the 25 disjunct regions is $p_k = 1/25$ and
-the expected counts are simply $\mathbb{E}(n(B_k)) = Np_k$. In
-the figure $N=50$, and consequently, we would expect 2 points per pixel, which
-happens to be the empirical mean of the data in
-Fig.~\ref{ch9.fig.homo}. Note also that these counts are not
-independent realizations from a binomial distribution since $\sum_{k=1}^K
-n(B_k) = N$. Instead, the model for the entire vector
-is ${\bf n(B)} \sim \mbox{Multin}(N, {\bm{\pi}} = \{p_1, p_2, \dots,
-p_K \})$ \citep{illian_etal:2008}. The dependence among counts has virtually
-no practical consequence when the number of pixels is large. For
-example, if there are 100 pixels, the number of points in one pixels
-carries very little about the expected number of points in another
-pixel. However, if there are only 2 pixels, then clearly the number of
-points in one pixel allows one to determine how many points will occur in the
-remaining pixel. To gain familiarity with the multinomial distribution
-and the discrete representation of space, use the \verb+rmultinom+
-function in \R~to simulate counts similar to those shown in
-Fig.~\ref{ch9.fig.homo}, for example using commands
-such as:
+Another distinction between the two models is that if we divide the
+state-space into $K$ disjunct regions, the number of points in each
+region $\{ n(B_k): k=1,\dots,K \}$ are
+independent and identically distributed (i.i.d.) under the Poisson model,
+but some dependence exists under the binomial model.
+%In the Poisson case
+%we have $\n(B_k) \sim \text{Pois}(A(B_k)\mu)$, and if the points were independent
+%$n(B_k) \sim Bin(N, p(B_k))$ for the binomial,
+%where $p(B_k)$ is simply the proportion of the state-space in region
+%$B_k$.
+Fig.~\ref{state-space.fig.homo} illustrates this point.
+The depicted state-space is the unit square, and thus the probability of a
+point falling in each of the 25 disjunct regions is $p(B_k) = 1/25$ and
+the expected counts are $\mathbb{E}(n(B_k)) = Np(B_k)$.
+%In
+%the figure $N=50$, and consequently we would expect 2 points per pixel, which
+%happens to be the empirical mean in this instance.
+However, these counts are not
+independent realizations from a binomial distribution since $\sum_k %{k=1}^K
+n(B_k) = N$. Instead, the model for the entire vector is
+$\{n(B_1), n(B_2), \dots, n(B_k)\} \sim \mbox{Multinom}(N, \{p(B_1), p(B_2), \dots,
+p(B_K) \})$ \citep{illian_etal:2008}. If you need a refresher on the
+multinomial distribution, refer to Sec.~\ref{modeling.sec.multinom}, and
+consider the following \R~code, which generates counts such as those
+seen in Fig.~\ref{state-space.fig.homo}:
 \begin{verbatim}
 n.Bk <- rmultinom(1, size=50, prob=rep(1/25, 25))
 matrix(n.Bk, 5, 5)
 \end{verbatim}
 
+The dependence among counts has virtually
+no practical consequence when the number of pixels is large. For
+example, if there are 100 pixels, the number of points in one pixels
+carries very little information about the expected number of points in another
+pixel. However, if there are only 2 pixels, then clearly the number of
+points in one pixel allows one to determine how many points will occur in the
+remaining pixel.
 
-\begin{figure}[ht]
+
+\begin{figure}[ht!]
 \centering
 \includegraphics[width=5in,height=2.5in]{Ch11/figs/homoPlots}
-\label{ch9.fig.homo}
+\label{state-space.fig.homo}
 \caption{Homogeneous binomial point process with $N$=50 points
   represented in continuous and discrete space.}
 \end{figure}
@@ -176,11 +192,19 @@ matrix(n.Bk, 5, 5)
 The discrete space representation of the binomial point process is of
 practical importance when fitting SCR models because spatial covariates
 are almost always represented in a discrete-space format called
-``rasters'' in GIS-speak. In such cases, we often need to change our
-definition of the prior for an activity center from ${\bf s}_i \sim
-\mbox{Unif}(\cal{S})$ to ${\bf s}_i \sim \mbox{Multin}(1, \mathbf{\pi})$. In the
-latter case, the activity center is simply defined as an integer
-representing pixel ``id''.
+``rasters'' in GIS-speak. In such cases, we need to change the
+the definition of the prior for activity centers from the probability
+that $\bf s$ occurs at some point in space to the probability that $s$
+occurs in some pixel of the raster. To do this, we can change the
+prior from the uniform distribution to the
+multinomial distribution, or equivalently, the categorical
+distribution as demonstrated in Sec.~\ref{modeling.sec.discrete}.
+%  with because the multinomial distribution describes the
+%probability that an activity center occurs in one of the $G$ pixels.
+%${\bf s} \sim
+%\mbox{Unif}(\cal{S})$ to ${\bf s} \sim \mbox{Categorical}(1, \mathbf{\pi})$. In the
+%latter case, the activity center is simply defined as an integer
+%representing pixel ``id''.
 %Note also that the multinomial distribution
 %with an index of 1 (\emph{i.e.} \verb+size=1+ in \verb+rmultinom+)
 %is referred to as the categorical distribution,
@@ -190,82 +214,134 @@ representing pixel ``id''.
 
 \section{Inhomogeneous binomial point process}
 
-As with the homogeneous model, the inhomogeneous binomial point process
-model is developed conditional on $N$. The primary distinction is that
-the uniform distribution is replaced with another distribution
-allowing for the intensity parameter to vary spatially. To arrive at
-this new distribution, replace the scalar intensity parameter $\mu$
-with the function $\mu(x, {\bm \beta})$, where $\bm \beta$ is a
-vector of coefficients describing the effects of
-spatially-referenced covariates on the point process intensity. In
-what follows, we will often abbreviate the intensity function as $\mu(x)$ by
-dropping the vector of coefficients. Since an intensity must be strictly
-positive, and because the logarithm is the canonical link function of the Poisson
-generalized linear model, it is natural to model $\mu(x, \beta)$ as
-\[
-\log(\mu(x, \beta)) = \sum_{j=1}^J \beta_j v_j(x), \quad  x \in \cal{S}
-\]
+The principal difference between homogeneous and inhomogeneous point
+processes is that the intensity parameter $\mu$ is allowed to vary spatially
+in the inhomogeneous model. Thus, rather than $\mu$ being a fixed constant,
+it is now a function defined at each point $s \in
+\mathcal{S}$. Typically, the function is determined by
+spatially-referenced covariates and a vector of regression
+coefficients $\bm \beta$, thus we denote the function $\mu(s,
+\bm{\beta})$. Since the intensity must be strictly
+positive, and because the natural logarithm is the canonical link
+function of the Poisson generalized linear model, it is natural to
+consider the following model:
+\begin{equation}
+  \log(\mu(s, \beta)) = \beta_0 + \sum_{j=1}^J \beta_j v_j(s), \quad  s \in \cal{S}
+  \label{state-space.eq.loglin}
+\end{equation}
 where $\beta_j$ is the regression coefficient for covariate
-$v_j(x)$. To be clear, $v(x)$ is the value of any covariate, such as
-habitat type or elevation, defined at all points in  the state-space.
+$v_j(s)$. To be clear, $v_j(s)$ is the value of a covariate, such as
+habitat type or elevation, at location $s$, and it assumed to be
+defined at all locations in the state-space.
 This equation should look
 familiar because it is the standard linear predictor used in log-linear
-GLMs. Note, however, that we have no need
-for an intercept because it would be confounded with
-$N$ (see Chapt. \ref{chapt.hscr}). This should be intuitive since an intercept would
-represent the expected value of $N$ when $\beta=0$, but we already
-have a parameter in the model for expected abundance, namely $\mathbb{E}[N] =
-\psi M$\footnote{Remember, $M$ is the size of the augmented population, and
-$\psi$ is the probability that a member of $M$ is an actual
-constituent of the population (Chapt. ~\ref{chapt.scr0}).}. Thus an intercept would be
-redundant, and without it we are still able to achieve our goal of
-describing the distribution of $N$ activity centers as a function of
-spatial covariates.
+GLMs.
 
-Now that we have a model of the intensity parameter $\mu(x)$,
-we need to develop the associated probability density function to use
-in place of the uniform prior. Remembering that
-the integral of a pdf must be unity, we can create a pdf by dividing
-$\mu(x)$ by a normalizing constant, which in this case is the integral
-of $\mu(x)$ evaluated over the entire
-state-space. \begin{comment}
-this is the conditional probability distribution of location -- i.e., conditional on their being a point in x, this
-is the probability distribution of its location. I think we need to use the term ``conditional probability distribution''
-and maybe a concise coherent justification can be copied out of Illian at a later date. we can also contemplate
-this later and resolve things
-\end{comment}
-The
-probability density function is therefore
+In the context of spatial capture-recapture models, if one assumes an
+inhomogeneous Poisson point process for the activity centers, then
+each of the $\bm \beta$ parameters is identifiable, and the intercept
+$\beta_0$ is interpretted as population density when all covariates
+equal zero. However, in the case of an inhomogeneous binomial point
+process, in which we condition on $N$, the intercept $\beta_0$ is not a
+unique parameter to be estimated because it is entirely confounded
+with $N$. In other words, $beta_0$ has already been defined. For
+example, in our MCMC algorithm we model population size as $N \sim
+\text{Binomial}(M, \psi)$
+%Note, however, that we have not included
+%an intercept. The reason for this is that it would be confounded with
+%$N$ (see Chapt. \ref{chapt.hscr}).
+%The reason for this is that %This should be intuitive since
+$\beta_0$ represents population density at the location $s$ when
+%, the expected value of $N$ in some infinitesimally
+%small area when
+%the other $\beta$'s equal 0. However, we already
+%have a parameter in the model for expected abundance, namely $\mathbb{E}[D] =
+%N/A(\mathcal{S}) =  \psi M / A(\mathcal{S})$
+\footnote{Remember, $M$ is the size of the augmented population, and
+$\psi$ is the probability that a member of $M$ is an actual
+constituent of the population (Chapt.~\ref{chapt.scr0}).}
+and hence it would be redundant to also try
+to estimate $\beta_0$. Instead, simply define the intercept as
+$\beta_0 = N/|\mathcal{S}|$. %, which is to say that the intercept is
+
+In practice, we could remove $\beta0$ from
+Eq.~\ref{state-space.eq.loglin} altogether, which would still allow us
+to model a value proportional to the intensity. However, if we wish to
+make predictions from our fitted model, such as predictions of
+abundance in unsampled regions, it is necessary to retain
+$\beta_0$ in the model.
+%an intercept would be
+%redundant, and without it we are still able to achieve our goal of
+%describing the distribution of $N$ activity centers as a function of
+%spatial covariates. One caveat is that if we wish to make predictions
+%to unsampled regions, it is useful to include the intercept $\beta_0 =
+%\log(N)$.
+
+We have now described an approach to modeling the point process
+intensity, yet in order to define the likelihood or to develop an MCMC
+algorithm for the inhomogeneous model, we need to specify the prior
+distribution for the activity centers. Recall that under the
+homogeneous binomial point process, the prior was
+$\mathbf{s} \sim \text{Uniform}(\mathcal{S})$, or equivalently:
 \begin{equation}
-f(x, \beta) = \frac{\mu(x, \beta)}{\int_{x \in \mathcal{S}} \mu(x, \beta)\, \mathrm{d}x}
-\label{eq.pdf.ipp}
+  \label{state-space.eq.uprior}
+  [\mathbf{s}] = 1/|\mathcal{S}|
 \end{equation}
-Substituting this distribution for the
-uniform prior allows us to fit inhomogeneous binomial point process
+where once again $|\mathcal{S}|$ denotes the area of the
+state-space. This simply indicates that an activity center is equally
+likely to occur at any location in the state-space, which is
+consistent with the fact that the intensity parameter is a fixed
+constant. However, if animals exhibit habitat selection or simply
+occur in one region more often than another, it would be preferable to
+replace this prior with one describing the spatial variation in
+density. Clearly this prior should be determined in some way by
+spatially-varying intensity function $\mu(s, \bm{\beta})$.
+% using our MCMC approach, we need to
+% As with the homogeneous model, the inhomogeneous binomial point process
+% model is developed conditional on $N$. The primary distinction is that
+% the uniform distribution is replaced with another distribution
+% allowing for the intensity parameter to vary spatially. To arrive at
+% this new distribution, we need to allow thereplace the scalar intensity parameter $\mu$
+% with the function $\mu(s, {\bm \beta})$, where $\bm \beta$ is a
+% vector of coefficients describing the effects of
+% spatially-referenced covariates on the point process intensity.
+%Now that we have a model of the intensity parameter $\mu(s)$,
+%we need to develop the associated probability density function
+%$[\bf s]$ to use in place of the uniform prior.
+The key to determining this prior is to recall that
+the integral of a probability density function (pdf) must be unity,
+and we can always convert any function into a pdf by dividing it by a
+normalzing constant. In this case, the normalizing constant is the integral
+of $\mu(s, \bm{\beta})$ evaluated over the entire state-space.
+The probability density function is therefore
+\begin{equation}
+[\mathbf{s} | \bm{\beta}] = \frac{\mu(s, \bm{\beta})}{\int_{s \in \mathcal{S}} \mu(s, \bm{\beta})\, \mathrm{d}s}
+\label{state-space.eq.pdf.hetero}
+\end{equation}
+Substituting the uniform prior with this new distribution
+allows us to fit inhomogeneous binomial point process
 models to spatial capture-recapture data. We can also use this
 distribution to obtain the expected number of individuals in any given
-region. Specifically, the proportion of $N$ expected to occur in any
-region $B$ %when heterogeneity in density is present
-is $p(B) = \int_B
-f(x, \beta)\, \mathrm{d}x$. These are
+region $B \in \mathcal{S}$. Specifically, the proportion of $N$ expected to occur in
+$B$ is $p(B) = \int_B [\mathbf{s} | \bm{\beta}]\, \mathrm{d}x$. These are
 also the multinomial cell probabilities if the regions are
 disjoint and compose the entire state-space. We provide an example in
-the next section, and in Fig.\ref{ch9.fig.hetero}.
+the next section, and in Fig.\ref{state-space.fig.hetero}.
 
 As a practical matter, note that the integral in the
-denominator of $f(x, \beta)$ is evaluated over space, and since we always regard
-space as two-dimensional, this is a two-dimensional integral that can
+denominator of $[\mathbf{s}, \bm{\beta}]$ is evaluated over space, and since we always regard
+space as two-dimensional (the state-space is planar), this is a two-dimensional integral that can
 be approximated using the methods discussed in
 Chapter~\ref{chapt.poisson-mn}, which include
 Monte Carlo integration and Gaussian quadrature. Alternatively, if
-our state-space covariates are in raster format, \emph{i.e} they are
+our state-space covariates are in raster format, i.e. they are
 in discrete space, the integral can be replaced with a sum over
 all pixels,
 \begin{equation}
-f(x, \beta) = \frac{\mu(x, \beta)}{\sum_{x \in \mathcal{S}} \mu(x, \beta)\, \mathrm{d}x}
+[\mathbf{s}, \bm{\beta}] = \frac{\mu(s, \bm{\beta})}{\sum_{s \in \mathcal{S}} \mu(\mathbf{s}, \bm{\beta})\, \mathrm{d}s}
 \label{eq.pdf.dipp.d}
 \end{equation}
-which is much more efficient computationally.
+where $s$ is now defined as ``pixel ID'' rather than a point in space.
 
 Although the discrete space approach is standard practice, it is
 technically unjustified because covariate values must be known for all
@@ -283,31 +359,34 @@ approaches are technically necessary, we do not demonstrate them here
 because it seems likely that they will be inconsequential in most
 cases where the raster data are of high resolution, such that the loss
 of information is negligible when going from continuous space to
-discrete space.
+discrete space. Furthermore, the validity of this assertion, and the
+level of resolution required to adequately approximate continuous
+space can often be assessed by checking the consistency of the
+parameter estimates among varying levels of resolution.
 
 We now have all the tools needed to fit inhomogeneous point process
-(IPP) models. If we refer to the distribution for the
-inhomogeneous point process as ``IPP'', we can write a
-hierarchical description of a SCR model with a Poisson encounter process and
-a half-normal detection function as
+(IPP) models. If we refer to the distribution $[\mathbf{s} |
+\bm{\beta}]$ as ``IPP'', we can write a
+hierarchical description of a SCR model with a Poisson encounter
+process and a half-normal detection function as
 \begin{gather*}
 w_i \sim \mbox{Bern}(\psi) \\
-{\bf s_i} \sim \mbox{IPP}(\mu(x,\beta)) \\
+{\bf s_i} \sim \mbox{IPP}(\mu(s,\beta)) \\
 \lambda_{ij} = \lambda_0 \exp(-\|{\bf s_i} - {\bf x_{j}}\|^2/(2\sigma^2)) \\
 y_{ij} \sim \mbox{Poisson}(\lambda_{ij} w_i)
 \end{gather*}
-The use of $\mbox{IPP}(\mu(x, \beta))$ instead of
+The use of $\mbox{IPP}(\mu(s, \beta))$ instead of
 $\mbox{Unif}(\cal{S})$ is the only difference between a homogeneous
 point process model and an inhomogeneous point process model, and the
-two are equivalent when $\beta=0$.
+two are equivalent when $\bm{\beta}=0$.
 
 \begin{comment}
 The IPP for the activity centers
-results in another IPP for the observation process, $\lambda(x)$, the
+results in another IPP for the observation process, $\lambda(s)$, the
 expected number of captures for a trap
 at point. As was true for the homogeneous model, this
 intensity function is a product of the point process intensity
-and the encounter rate function, $\lambda(x) = \mu(x, {\bm \beta})
+and the encounter rate function, $\lambda(s) = \mu(s, {\bm \beta})
 \lambda_{ij}$.
 \end{comment}
 
@@ -340,9 +419,9 @@ used to fit SCR models with IPP.
 
 Suppose we knew the locations of 100 animals' activity
 centers, perhaps as the result of an extensive telemetry study. To
-estimate the intensity surface $\mu(x, \beta)$ underlying these
+estimate the intensity surface $\mu(s, \beta)$ underlying these
 points, we need to derive the likelihood for our data under this
-model. Given the probability density function $f(x, \beta)$
+model. Given the probability density function $f(s, \beta)$
 (Eq.~\ref{eq.pdf.ipp}) and assuming that the points are
 mutually independent of one another,
 the likelihood is given by the product
@@ -350,7 +429,7 @@ of $R$ such terms, where $R=100$ is the sample size in our
 hypothetical example,
 \emph{i.e.} the observed number of activity centers.
 \[
-\mathcal{L}({\bf \beta} | {\bf x}_i, \beta) = \prod_{i=1}^R f(x_i)
+\mathcal{L}({\bf \beta} | {\bf x}_i, \beta) = \prod_{i=1}^R f(s_i)
 \]
 Having defined the likelihood we could choose a prior distribution for
 $\beta$ and obtain the posterior distribution of
@@ -366,7 +445,7 @@ rejecting each sample using probabilities defined by the distribution
 of interest. For more information, readers should consult an
 accessible text such as \citet{robert_casella:2010}. In our example, we
 simulate from a uniform distribution and then accept or reject using
-the (scaled) probability density function $f(x, \beta)$. Note that we first define a
+the (scaled) probability density function $f(s, \beta)$. Note that we first define a
 spatial covariate (elevation) that is a simple function of the spatial
 coordinates increasing from the southwest to the northeast of our
 state-space.\footnote{Such functional forms of
@@ -375,7 +454,7 @@ covariates are more often measured on a discrete grid.}
 
 The following \R~commands demonstrate the use of rejection sampling to
 simulate an inhomogeneous point process for the covariate depicted in
-Fig.~\ref{ch9.fig.hetero}. The code uses the \verb+cuhre+ function in
+Fig.~\ref{state-space.fig.hetero}. The code uses the \verb+cuhre+ function in
 the {\tt R2Cuba} package to integrate the intensity function over
 space \citep{hahn_etal:2011}. An alternative would be to evaluate the
 integral on a fine grid of points as we have done in previous
@@ -385,9 +464,9 @@ integration functions in \R.
 \begin{small}
 \begin{verbatim}
 # spatial covariate (with mean 0)
-elev.fn <- function(x) x[1]+x[2]-1
+elev.fn <- function(s) x[1]+x[2]-1
 # intensity function
-mu <- function(x, beta) exp(beta*elev.fn(x=x))
+mu <- function(s, beta) exp(beta*elev.fn(s=x))
 
 # Simulate IPP using rejection sampling
 set.seed(300225)
@@ -395,9 +474,9 @@ N <- 100
 count <- 1
 s <- matrix(NA, N, 2)
 beta <- 2 # parameter of interest
-elev.fn <- function(x) x[1]+x[2]-1
-# Intensity function, mu(x,beta)
-mu <- function(x, beta) exp(beta*elev.fn(x=x))
+elev.fn <- function(s) x[1]+x[2]-1
+# Intensity function, mu(s,beta)
+mu <- function(s, beta) exp(beta*elev.fn(x=x))
 # 2-dimensional integration over space
 int.mu <- R2Cuba:::cuhre(2, 1, mu, beta=beta)$value
 elev.min <- elev.fn(c(0,0)) #elev.fn(cbind(0,0))
@@ -420,19 +499,19 @@ while(count <= 100) {
 \begin{figure}[ht]
 \centering
 \includegraphics[width=5in,height=2.5in]{Ch11/figs/heteroPlots}
-\label{ch9.fig.hetero}
+\label{state-space.fig.hetero}
 \caption{An example of a spatial covariate, say elevation, and a
   realization of a inhomogeneous binomial point process with $N$=100
-  and $\mu(x) = exp(\beta \mbox{elev}(x))$ where $\beta=2$.}
+  and $\mu(s) = exp(\beta \mbox{elev}(s))$ where $\beta=2$.}
 \end{figure}
 
-The simulated data are shown in Fig~\ref{ch9.fig.hetero}. High elevations
+The simulated data are shown in Fig~\ref{state-space.fig.hetero}. High elevations
 are represented by light green and low elevations by dark green. The
 activity centers of 100 animals are shown as
 points, and it is clear that these simulated animals prefer the high
 elevations.  %Perhaps they are mountain goats.
 The underlying model describing this preference is
-$\log(\mu(x)) = \exp(\beta \times elev(x))$
+$\log(\mu(s)) = \exp(\beta \times elev(s))$
 where $\beta=2$ is the parameter to be estimated.
 
 Given these points, we will now estimate $\beta$ by minimizing the
@@ -477,7 +556,7 @@ we can simply add the methods described above into our existing MCMC
 algorithm to simulate the posterior distributions of $\beta$ conditional on the
 simulated values of $\mathbf{s}$. To demonstrate, we will continue with
 the previous example. Specifically, we will overlay a grid of
-traps on the map shown in Fig.~\ref{ch9.fig.hetero}. We will then
+traps on the map shown in Fig.~\ref{state-space.fig.hetero}. We will then
 simulate capture histories conditional upon the activity
 centers. Then, we will attempt to estimate the activity center
 locations as though we did not know where they were, as is the case in
@@ -610,6 +689,7 @@ covariates are, or can be, defined as such.
 
 
 \subsection{Discrete space}
+\label{modeling.sec.discrete}
 
 To fit IPPs using covariates in discrete space, \emph{i.e.} in raster
 format, we follow the same steps
@@ -617,13 +697,13 @@ as outlined in Chapter~\ref{chapt.poisson-mn}---we define ${\bf s}_i$ as
 pixel ID, and we use the categorical distribution as a prior. A good
 example is found in \citep{mollet_etal:2012}. Here we present
 an analysis of the simulated data shown in the %right panel of
-Fig.~\ref{ch9.fig.hetero}. The spatial covariate, let's call it
+Fig.~\ref{state-space.fig.hetero}. The spatial covariate, let's call it
 elevation again, was simulated
 using using the code shown on the help page
 \verb+ch9simData+ in \scrbook. The points are the number of
 activity centers in each pixel, generated from a single realization of
 the inhomogeneous point process model with intensity
-$\mu(x) = 2 \times \mbox{elev}(x)$.
+$\mu(x) = 2 \times \mbox{elev}(s)$.
 \begin{figure}[ht]
 \centering
 \includegraphics[width=3in,height=3in]{Ch11/figs/discrete}
@@ -731,7 +811,7 @@ forest cover is a covariate of both density and encounter probability,
 and we could model it as such by combining the methods described in
 this chapter and in Chapter~\ref{chapt.ecoldist}. To demonstrate, we
 continue with our analysis of the data shown in
-Fig~\ref{ch9.fig.hetero}. Once again, we suppose that density
+Fig~\ref{state-space.fig.hetero}. Once again, we suppose that density
 increases with elevation, but this time, we also make the
 assumption that home range size decreases as density increases. This
 commonly-observed phenomenon can be explained by numerous factors such
@@ -760,7 +840,7 @@ example analysis is provided on the help page for the function in our
 the capture history data, the trap locations, and the raster data
 formatted using the {\tt raster} package
 \citep{hijmans_vanetten:2012}. The linear model for the
-intensity parameter $\mu(x, \beta)$ and the least-cost distance
+intensity parameter $\mu(s, \beta)$ and the least-cost distance
 function $lcd(\theta)$ are specified using \R's formula interface. A
 simple function call is
 \begin{verbatim}

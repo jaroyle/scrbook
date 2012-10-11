@@ -67,11 +67,11 @@ traps<-wolverine$wtraps
 traplocs<-traps[,1:2]/10000
 K.wolv<-apply(traps[,3:ncol(traps)],1,sum)
 traps<-cbind(1:nrow(traps),traps)  # pad an ID variable
-y3d<-SCR23darray.fn(wolverine$wcaps,traps)
+y3d<-SCR23darray(wolverine$wcaps,traps)
 y2d<-apply(y3d,c(1,3),sum)
 
 
-starts<-c(-1.5,1.2,log(4))
+starts<-c(-1.5,0,3)
 frog<-nlm(intlik3,starts,hessian=TRUE,y=y2d,K=K.wolv,X=traplocs,delta=.2,ssbuffer=2)
 
 #
