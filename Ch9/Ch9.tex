@@ -893,7 +893,49 @@ Which has this additive individual effect that varies also by trap. It might be 
 this by SCR+Mh is better than nothing and it could also be viewed as suggesting an 
 over-dispersed count model for encounter frequencies.
 
-In panel \ref{covariates.panel.Mhjags}, we show how to implement the SCR + Mh model.  
+In panel \ref{covariates.panel.SCRMhjags}, we show how to implement the SCR + Mh model.  
+
+
+\begin{panel}[htp]
+\centering
+\rule[0.1in]{\textwidth}{.03in}
+{\small
+\begin{Verbatim}[commandchars=\\\{\}]
+model \{
+alpha0 \mytilde dnorm(0,.1)
+alpha1<-1/(2*sigma*sigma)
+sigma \mytilde dunif(0, 15)
+psi \mytilde dunif(0,1)
+tau_p \mytilde dgamma(.001,.001)
+
+for(i in 1:M)\{
+  eta[i]\mytilde dnorm(0, tau_p)
+    z[i] \mytilde dbern(psi)
+  s[i,1] \mytilde dunif(Xl,Xu)
+  s[i,2] \mytilde dunif(Yl,Yu)
+   for(j in 1:J)\{
+   d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
+   y[i,j] \mytilde dbin(p[i,j],K)
+ logit(p0[i,j])<-alpha0 + eta[i]
+    p.eff[i,j]<- z[i]*p0[i,j]*exp(- alpha1*d[i,j]*d[i,j])
+\}
+\}
+N<-sum(z[])
+D<-N/area
+\}
+
+\end{Verbatim}
+}
+
+\rule[-0.1in]{\textwidth}{.03in}
+\caption{
+\jags~ model specification for the SCR + Mh model with half-normal distance
+function.}
+\label{covariates.panel.SCRMhjags}
+\end{panel}
+
+
+
 
 
 
@@ -1024,14 +1066,12 @@ There are at least two other ways that one could
 specify the model (M. Efford, pers. comm).  One way is that we could
 list sex as a categorical individual covariate and then maximize the
 conditional likelihood XXX{\bf Is this NOT what secr does in the above
-  approach? explain...} XXXXX.  The second way is that we could treat males and females as groups (in \secr~ denoted by ``g''), specify the
+  approach? explain...} XXXXX.  The second way is that we could treat males and 
+females as groups (in \secr~ denoted by ``g''), specify the
 model as $model = list(D~g, g0~g, \sigma~g)$ and list \mbox{\tt groups = 'sex'}
 where we have specified sex as a 2-level individual covariate XXX How
 is this different then the first way? XXXXX.  
 
-
-XXX I left this section, but cut it way down since we are likely gonna move the other part up and 
-these are just notes on the secr XXX
 
 \subsection{Individual heterogeneity}
 \label{covariates.sec.secrH2}
@@ -1060,10 +1100,9 @@ individual heterogeneity is different from that which we demonstrated in Sec.
 XX insert ref XX above.  Here, a finite mixture model is used, which effectively
 puts the individuals into one of two (or three) latent classes and
 then assigns each class a distribution for the specified detection
-parameter.   This same model can be fit in \jags or \bugs, 
+parameter.   This same model can be fit in \jags or \bugs, but we only showed
+the SCR + Mh continuous mixture in the version above.
 
-XX okay, I need to read over the heterogeneity stuff again before finishing off this 
-paragraph XXX
 
 
 \subsection{Model selection in \secr~ with AIC}
