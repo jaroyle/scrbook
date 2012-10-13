@@ -439,7 +439,7 @@ occasions.
 
 To implement this in \jags, $\alpha_0$ has to be
 estimated for each time period $k$ either using an index vector or
-dummy variables XXX \ref{Ch1b} XXXXXX and this can be done by only 
+dummy variables (as described in Chapt. \ref{chapt.modeling}) and this can be done by only 
 changing only a few lines in 
 panel \ref{covariates.panel.basicSCR}.
 \[
@@ -538,7 +538,6 @@ XXXX Did we put in a time trend model to the function?  I can write one
 if we want to XXXXXXX
 
 
-
 \subsection{Trap-specific covariates}
 
 In some studies it makes sense to model encounter probability as a
@@ -587,6 +586,7 @@ yield identical results, sometimes one parameterization might work
 better than the other in {\bf WinBUGS} or {\bf JAGS}
 \citep{kery:2010}.
  
+XXX ANDY - Can you clarify the second part of this paragraph??
 If the trap-specific covariate describes local conditions, e.g., of
 the habitat, this suggests a more fundamental role of encounter
 probability as being related to space usage or resource
@@ -595,7 +595,6 @@ formulation of classical resource selection models yield precisely an
 additive model of the XXXWHAT FORM?XXX form here, where the covariate
 $z({\bf x})$ is the same as that contained in the resource selection
 model. XXX ISNT Z OUR INDICATOR OF PART OF THE POPULATION??XXX
-
 
 
 \subsection{Behavior or Trap Response by Individual}
@@ -629,75 +628,31 @@ p_{ijk} = p0_{ik} \exp(- \alpha_1*||{\bf s}_{i}-{\bf x}_{j}||^2)
 For the local behavioral response, which is trap specific, we create
 an array, $C_{ijk}$, that indicates if an individual $i$ has been
 previously captured in trap $j$ at time $k$.  We then include this in
-the model in the exact same form as above (with the sole difference that both $C$ and $p$ are now also indexed by $k$):
+the model in the exact same form as above (with the sole difference that both $C$ and $p$ 
+are now also indexed by $k$):
 \[
 logit(p0_{ijk}) = \alpha_{0} + \alpha_2*C_{i,j,k}
 p_{ijk} = p0_{ijk} \exp(- \alpha_1*||{\bf s}_{i}-{\bf x}_{j}||^2)
 \]
 
-
-XXXX BETH; NOT SURE WHY THIS IS IN HERE TWICE; ARE YOU GONNA USE ANY OF THE SECOND BEHAVIOR SECTION? XXXXX
-XXXX ALSO NEED TO FILL IN RESULTS FOR THE BLACK BEAR ANALYSIS HERE - RUNNING XXXXX
-\subsection{Behavioral Response}
-
-The behavioral response can be constructed in two ways -- either as a
-global response (i.e., was the individual previously captured in any trap) or
-as a local response (i.e., was the animal previously captured in this
-trap).  To do this, we have to first
-construct an indicator of whether an animal has been capture before or not.  For
-example, if $C_{ijk} = 1$, then individual $i$ has been captured at trap $j$
- at least once during
-sample occasions $1 \dots k-1$.  Specifying the trap at which the individual was
-previously captured would allow us to estimate the local behavioral response.  If
-we condensed this array to a matrix of individual by occasion, where $C_{ik} = 1$ indicates
-that individual i was previously captured at any trap at least once during
-sample occasions $1 \dots k-1$, then we
-could model the global behavioral response.
-
-In either case, because the behavioral response is occasion specific, we will have to use the 3-d array of the
+Since the behavioral response is occasion specific, to implement either the local or global response model in \jags~, we will have to use the 3-d array of the
 capture histories ($\mbox{\tt nind} \times \mbox{\tt ntraps} \times
 \mbox{\tt nreps}$) as we did for the time-varying encounter probability
-model.
-Here, we demonstrate the local behavioral response model and start by constructing the
-indicator of previous capture array $C_{ijk}$.
-
-
+model above. The code must loop over each sampling occasion, but otherwise, the model
+varies only a little from the basic SCR model show in panel \ref{covariates.panel.basicSCR}.  
+Here is the specification of the the occasion specific (k) loop:
 {\small
 \begin{verbatim}
-
-model {
-alpha0~dnorm(0,.1)
-alpha2~dnorm(0,.1)
-alpha1<-1/(2*sigma*sigma)
-sigma~dunif(0, 15)
-psi~dunif(0,1)
-
-for(i in 1:M){
- z[i] ~ dbern(psi)
- s[i,1]~dunif(Xl,Xu)
- s[i,2]~dunif(Yl,Yu)
-for(j in 1:J){
-d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
-
 for(k in 1:K){
 logit(p0[i,j,k])<- alpha0 + alpha2*C[i,j,k]
 y[i,j,k] ~ dbin(p[i,j,k],1)
 p[i,j,k]<- z[i]*p0[i,j,k]*exp(- alpha1*d[i,j]*d[i,j])
 }
-}
-}
-N<-sum(z[])
-D<-N/area
-}
-",file = "SCRb.txt")
 
+Despite the minor changes to the code, this model can require quite a bit of time and computational 
+effort to carry out the local response model.  
 
-
-
-
-
-
-
+XXXX NEED TO FILL IN RESULTS FOR THE BLACK BEAR ANALYSIS HERE - RUNNING XXXXX
 
 
 \subsection{Individual Covariates}
@@ -828,17 +783,117 @@ $\sigma_{male}$ & 2.682 & 0.389 & 2.09 & 3.62 \\
 
 
 
+\section{Individual heterogeneity.}
 
-\begin{comment}
-XXX whole section on this below so commented out here XXXXX
-\subsection{Heterogeneity}
+Finally, we consider individual heterogeneity, 
+a covariate that is completely latent. 
+Capture-recapture models with individual heterogeneity in detection
+probability, so-called model $M_{h}$, have a long history in classical
+capture recapture models and they have
+special relevance to SCR as we noted in sec. \ref{closed.sec.modelmh}.  We
+note that their use has been called into question by \citet{link:2003}
+who noted that $N$ may not be identifiable across arbitrary classes of
+mixture models.  One possible way to get around this problem is to
+identify explicit sources of heterogeneity in detection probability
+and model those directly. For example, we can do this by using
+individual covariate models (e.g., sec. \ref{closed.sec.indcov}). Of
+course, spatial capture-recapture models are such a class of models
+which seek to explain heterogeneity in detection by describing the
+underlying mechanism explicitly. In particular, that mechanism is the
+juxtaposition of individuals with traps and the resulting
+heterogeneity that is induced by heterogeneity in exposure to
+trapping.
 
-Heterogeneity is a covariate that is completely latent.  This can
-include many things such as an additive individual effect or an
-individual-specific effect of distance.  We address these models
-separately in Section 8.5 below and show a simple example of a finite
-mixture model carried out in secr in Section 8.4.4.
-\end{comment}
+While the advent of SCR models may appear to have rendered the use of
+classical model $M_h$ obsolete (because the heterogeneity is being
+accounted for explicitly) we may still wish to consider
+heterogeneity models for other biological reasons.
+It is reasonable
+to expect in real populations that there exists
+heterogeneity in home range size and so we think that $\alpha_{1}$
+could exhibit heterogeneity among individuals. 
+
+Here we develop and evaluate a class of spatial capture-recapture
+models which allow for individual heterogeneity in encounter
+probability.  In particular, one class of models we propose explicitly
+admits individual heterogeneity in home range {\it size}. In addition,
+we consider a standard representation for heterogeneity in which an
+additive individual-specific random effect is included in the linear
+predictor for baseline encounter probability.  
+
+\subsection{Models of Heterogeneity}
+
+An obvious model extends the SCR model by including an additive individual effect, analogous to classical ``Model $M_{h}$''. We'll call this model ``SCR+Mh'':
+\[
+\mbox{logit}(p0_{i}) = \alpha_0 + \eta_{i}
+p_{ijk} = p0_{i} \exp(- \alpha_1*||{\bf s}_{i}-{\bf x}_{j}||^2)
+\]
+where $\eta_{i}$ is an individual random effect having distribution
+$g(\eta|\theta)$.  A popular class of models arises by assuming
+$\eta_{i} \sim Normal(0,\tau^{2})$ (\citet{coull_agresti:1999};
+\citet{dorazio_royle:2003}; etc.).  Many other random effects
+distributions are possible. \citet{norris_pollock:1996} propose a
+finite mixture of point supports which has been addressed considerably
+in the literature \citep{pledger:2003, dorazio_royle:2003, link:2003}. We demonstrate how to fit 
+finite-mixture models using \secr~ in sec. \ref{covariates.sec.secrH2}.  However, 
+heterogeneity seems naturally continuous unless one expects the heterogeneity to be 
+due to meaningful biological groupings in which case such information would normally 
+be collected if possible.  Even so the more likely scenario is that heterogeneity 
+is due to a lot of different sources contributing independent components of variation, 
+and so the normal model seems sensible in that regard.  
+
+{\bf Heterogeneity Induced by Variation in Home Range Size} -- An alternative heterogeneity model, one that has more of a direct biological motivation and interpretation, describes heterogeneity in home range size among individuals. This is manifest in the scale parameter of the detection function $\sigma^{2}$ or its inverse $\alpha_1 = 1/\sigma^{2}$. We might
+thus assume a distribution for either $\sigma^{2}$ or its inverse,
+$\alpha_1$.  We thus propose ``Model SCR + Ah'' (Ah for area-induced
+heterogeneity).
+\[
+\mbox{logit}(p0) = \alpha_0 
+p_{ijk} = p0 \exp(- \alpha_{1,i}*||{\bf s}_{i}-{\bf x}_{j}||^2)
+\]
+This model is a model of heterogeneity in home range area. For example
+if we assume that $\alpha_{1,i} \sim \mbox{Normal}(\beta_0,\tau^{2})$
+with $\beta_{0} = 2$ and $\tau = 0.50$. Then the population
+distribution of $\sigma$ in this case is given in Figure
+\ref{covariates.fig.one}. The motivating point of this model is that we expect
+such variability in natural populations. Thus we suggest this
+biologically sensible model of heterogeneity, which fills a
+methodological gap in the literature in the sense that SCR models have
+all been homogeneous with respect to their explicit treatment of home
+range morphology.
+
+\begin{figure}[ht]
+%%\centerline{\psfig{figure=fig1.ps,height=4in,width=4in}}
+\caption{
+Population distribution of $\sigma$ if $(1/\sigma^{2}) \sim \mbox{Normal}(2, 0.50)$.
+}
+\label{fig.one}
+\end{figure}
+
+XXX Andy, do you still think this is necessary? XXX
+It is interesting to consider alternative distributions for $\alpha_{1,i}$, here we 
+use a Normal prior which might result in a negative value for $\alpha_{1,i}$ which is
+not expected but also not entirely nonsensical.  We could also use the the Inverse-Gamma
+distribution, but it is not conjugate in the present context and so
+there is no compelling reason to do that.  Also important to note is that if A[i] 
+is the home range area of individual $i$, and we have related area to $\sigma$ through a specified
+function, then we can move back and forth between distributions for
+A[i], $\sigma_i$, and $\alpha_{1,i}$.
+
+
+{\bf Approximation: }
+Note that ``SCR + Mh'' might be a good approximation to ``SCR + Ah''.  If we write $\alpha_{1,i} =
+\alpha_{1} + \eta_{i}$ then
+we can take the expectation over  $\alpha_{i}$ to arrive at
+\[
+\mbox{logit}(p0) = \alpha_0 
+p_{ijk} = p0 \exp(- \alpha_{1}*||{\bf s}_{i}-{\bf x}_{j}||^2) +  \eta_{i}*||{\bf s}_{i}-{\bf x}_{j}||^2)
+\]
+
+Which has this additive individual effect that varies also by trap. It might be that approximating
+this by SCR+Mh is better than nothing and it could also be viewed as suggesting an 
+over-dispersed count model for encounter frequencies.
+
+In panel \ref{covariates.panel.Mhjags}, we show how to implement the SCR + Mh model.  
 
 
 
@@ -846,27 +901,11 @@ mixture model carried out in secr in Section 8.4.4.
 \section{Likelihood analysis in \secr}
 \label{likelihood.secr}
 
-\begin{comment}
-XXX THIS ENTIRE PARAGRAPH IS UNCLEAR - WHY IS IT THERE AND WHAT DOES IT WANT TO SAY? XXXX
-
-Before we describe the types of covariates and demonstrate how to
-implement them, a brief note about the different inference approaches.
-In taking a Bayesian approach to analysis of covariate models,
-inference is always based on analysis of the ``joint likelihood''
-based on data augmentation. That is, the conditional-on-N likelihood,
-with $N$ removed by integration (as described in
-Chapt. \ref{chapt.closed} XXXXXX specific section XXXXX).
-However, likelihood analysis
-based on the conditional likelihood is often done in practice and, in
-particular, in the {\tt secr} package. XXX THIS SENTENCE ISNT CLEAR TO ME XXXX A variant of the conditional
-likelihood which is kind of distinct and relevant to the individual
-covariates is the ``Huggins-Alho'' idea which is based on thinking
-about Horwitz-Thompson estimators involving unequal probabilities of
-sampling. XXX I DONT THINK THIS MEANS ANYTHING TO MOST READERS WITHOUT ADDITIONAL EXPLANATION XXX 
-\end{comment}
-
-Previously in the book, we have introduced the \R package \secr~ and described how
-to use the package generally. 
+Previously in the book, we have introduced the \R package \secr~ and described in 
+detail the likelihood based approach taken in the package(see sec. \ref{mle.sec.secrguts}).
+Here we cover how to implement a series of covariate models in \secr~ and show briefly an 
+example of model selection using AIC.
+In general,
  \secr~ allows the user to simulate data and fit a
 suite of models with various detection functions and covariate
 responses.  As we saw in Chapt. \ref{chapt.mle}, \secr~ uses the standard \R model
@@ -899,7 +938,6 @@ certain models in \secr~ and compare them using AIC, and give a few helpful note
 % \secr.
 
 \subsection{Notes for fitting standard models}
-XXXXX BETH I THINK WE SHOULD MOVE THE TABLE WITH THE DETECTION FUNCTIONS DOWN HERE XXXXX
 
 In the \secr~ package, the detection functions are specified
 by changing the ``\mbox{\tt detectfn}'' option (an integer code)
@@ -996,6 +1034,8 @@ XXX I left this section, but cut it way down since we are likely gonna move the 
 these are just notes on the secr XXX
 
 \subsection{Individual heterogeneity}
+\label{covariates.sec.secrH2}
+
 To incorporate heterogeniety, \secr~ fits the
 ``finite mixture'' models \citep{norris_pollock:1996,
   pledger:2000}. These are expensive in terms of parameters and not
@@ -1073,143 +1113,31 @@ AIC, but considering the large dAICc compared to the local trap response model w
 % conducting model comparisons. 
 
 
-\section{Individual heterogeneity.}
-
-Capture-recapture models with individual heterogeneity in detection
-probability, so-called model $M_{h}$, have a long history in classical
-capture recapture models (see sec. XXXX link here XXX), and they have
-special relevance to SCR as we noted in sec. XXXX link here XXXX.  We
-note that their use has been called into question by \citet{link:2003}
-who noted that $N$ may not be identifiable across arbitrary classes of
-mixture models.  One possible way to get around this problem is to
-identify explicit sources of heterogeneity in detection probability
-and model those directly. For example, we can do this by using
-individual covariate models (e.g., sec. XXX link here XXXX). Of
-course, spatial capture-recapture models are such a class of models
-which seek to explain heterogeneity in detection by describing the
-underlying mechanism explicitly. In particular, that mechanism is the
-juxtaposition of individuals with traps and the resulting
-heterogeneity that is induced by heterogeneity in exposure to
-trapping.
-
-
-While the advent of SCR models may appear to have rendered the use of
-classical model $M_h$ obsolete (because the heterogeneity is being
-accounted for explicitly) we may still wish to consider
-heterogeneity models for other biological reasons.
-It is reasonable
-to expect in real populations that there exists
-heterogeneity in home range size and so we think that $\alpha_{1}$
-could exhibit heterogeneity among individuals. 
-
-Here we develop and evaluate a class of spatial capture-recapture
-models which allow for individual heterogeneity in encounter
-probability.  In particular, one class of models we propose explicitly
-admits individual heterogeneity in home range {\it size}. In addition,
-we consider a standard representation for heterogeneity in which an
-additive individual-specific random effect is included in the linear
-predictor for baseline encounter probability.  
-
-\begin{comment}
-We evaluate the following
-questions concerning heterogeneity models: First, we evaluate the
-influence of ``variable home range area'' heterogeneity on estimates
-of density obtained under the misspecified model that does not contain
-such heterogeneity.  Second, we evaluate how much data is needed to
-fit the model with heterogeneous home range area using a limited
-simulation study -- limited because of computational considerations.
-Most studies yield sparse data and it is clear that the SCR+Ah model
-requires sufficient spatial recaptures of individuals to gauge home
-range size.  Thirdly, we want to evaluate the extent to which Model
-SCR+Mh in some form or another yields a good approximation to
-heterogeneity in encounter probability that is due to heterogeneity in
-home range size.
-\end{comment}
-
-\subsection{Models of Heterogeneity}
-
-An obvious model extends the SCR model by including an additive individual effect, analogous to classical ``Model $M_{h}$''. We'll call this model ``SCR+Mh'':
-\[
-\mbox{logit}(p0_{i}) = \alpha_0 + \eta_{i}
-p_{ijk} = p0_{i} \exp(- \alpha_1*||{\bf s}_{i}-{\bf x}_{j}||^2)
-\]
-where $\eta_{i}$ is an individual random effect having distribution
-$g(\eta|\theta)$.  A popular class of models arises by assuming
-$\eta_{i} \sim Normal(0,\tau^{2})$ (\citet{coull_agresti:1999};
-\citet{dorazio_royle:2003}; etc.).  Many other random effects
-distributions are possible. \citet{norris_pollock:1996} propose a
-finite mixture of point supports which has been addressed considerably
-in the literature \citep{pledger:2003, dorazio_royle:2003, link:2003}. We demonstrate how to fit 
-finite-mixture models using \secr~ in section XYZ below.  However, 
-heterogeneity seems naturally continuous unless one expects the heterogeneity to be 
-due to meaningful biological groupings in which case such information would normally 
-be collected if possible.  Even so the more likely scenario is that heterogeneity 
-is due to a lot of different sources contributing independent components of variation, 
-and so the normal model seems sensible in that regard.  
-
-{\bf Heterogeneity Induced by Variation in Home Range Size} -- We suggest an alternative heterogeneity model, one that has more of a direct biological motivation and interpretation. Specifically , we suppose that there exists heterogeneity in home range size among individuals. This is manifest in the scale parameter of the detection function $\sigma^{2}$ or its inverse $\alpha_1 = 1/\sigma^{2}$. We might
-thus assume a distribution for either $\sigma^{2}$ or its inverse,
-$\alpha_1$.  We thus propose ``Model SCR + Ah'' (Ah for area-induced
-heterogeneity).
-\[
-\mbox{logit}(p0) = \alpha_0 
-p_{ijk} = p0 \exp(- \alpha_{1,i}*||{\bf s}_{i}-{\bf x}_{j}||^2)
-\]
-This model is a model of heterogeneity in home range area. For example
-if we assume that $\alpha_{1,i} \sim \mbox{Normal}(\beta_0,\tau^{2})$
-with $\beta_{0} = 2$ and $\tau = 0.50$. Then the population
-distribution of $\sigma$ in this case is given in Figure
-\ref{fig.one}. The motivating point of this model is that we expect
-such variability in natural populations. Thus we suggest this
-biologically sensible model of heterogeneity, which fills a
-methodological gap in the literature in the sense that SCR models have
-all been homogeneous with respect to their explicit treatment of home
-range morphology.
-
-\begin{figure}[ht]
-%%\centerline{\psfig{figure=fig1.ps,height=4in,width=4in}}
-\caption{
-Population distribution of $\sigma$ if $(1/\sigma^{2}) \sim \mbox{Normal}(2, 0.50)$.
-}
-\label{fig.one}
-\end{figure}
-
-Interesting point: $\alpha_{1,i}$ might have an Inverse-Gamma
-distribution so we need to parameterize the IG in terms of mean and
-variance.... but this is not conjugate in the present context and so
-there is no compelling reason to do that. Instead, we use a normal
-prior ..... Note: negative values are bad, but not nonsensical.
-
-One idea that needs to be explicit is that if A[i] is the home range
-area of individual i, which is the following function of sigma[i] ,
-then we should be able to go back and forth between distributions for
-A[i], sigma[i], and beta[i]. Note I did all of this stuff long ago but
-will never find those notes, ever!
-
-{\bf Approximation: }
-Note that ``SCR + Mh'' might be a good approximation to ``SCR + Ah''.  If we write $beta_{i} =
-beta_{0} + \eta_{i}$ then
-we can take the expectation over  $\beta_{i}$ to arrive at
-\[
- cloglog(p_{ij} ) = \alpha + \beta_{0}*d(i,j)^2 +  \eta_{i}*d(I,j)^2
-\]
-Which has this additive individual effect that varies also by trap. It might be that approximating
-This by SCR+Mh is better than nothing.
-This could also be viewed as suggesting an over-dispersed count model for encounter frequencies.
-
-
-
-
-
 \section{Summary and Outlook}
 
+There are endless covariates and detection functions that can be defined
+and our goal in this chapter was to introduce some basic concepts for how
+to construct and implement such models.  Essentially, SCR's are GLMMS and
+therefore it is easy to incorporate covariates into the model for encounter
+probability.
 
-SCR's are GLMS and covariate models just look like GLMs too.
+The move to spatially explicit models in capture-recapture studies has not rendered the
+basic CR models obsolete, instead, we continue to use those models and incorporate
+space into them. Now, we can include not only these standard CR models, 
+e.g., $M_0$, $M_t$, $M_b$, and $M_h$, but also new models that allow for trap-specific
+information such as "baited/not-baited" or "on/off road".  In Chapt. XXX, we continue to
+incorporate new methods for explaining variation in encounter probability (and density) 
+by also considering spatial covariates.  
 
-Various types of covariates including the standard CR models Mb Mt etc..
-but also some new types like trap-specific. We consider spatial covariates
-in Chapt. XXXXXXX.
+Researchers are often concerned with describing the factors or covariates that influence
+variation in detection or encounter probability, particularly as this can directly influence
+other parameters in the model such as density.  These covariates have various levels - specific
+to individual, trap, sampling occasion and can be fully or partially observed as well as 
+completely latent.  In SCR models, these more complex covariate models are fairly easy to fit, 
+though one should take caution not to over parameterize the models particularly when a study
+has produced a limited dataset.
 
+\begin{comment}
 
 Different detection models: We can make up detection models {\it all fucking
 day}, to no end, with no point, and with no biological justification for
@@ -1221,10 +1149,4 @@ to do with the 2nd moment structure of some correlated spatial process...
 i.e., correlation functions (Higdon et al. 1998; etc...) and , insofar
 as chooing detection functions is like choosing a correlation function,
 it probably wont have much affect on inferences.
-
-
-
-not sure what else to say in this ``covariates'' chapter.
-
-
-
+\end{comment}
