@@ -363,7 +363,7 @@ a fixed sex ratio of $\psi_{sex} = 0.50$, {\it which is the implied model
 when there is no session effect on density}.
 
 We fit the same models but now using a modified state-space which
-excludes the ocean (this is a habitat mask in \mbox{\tt secr} terminology}.
+excludes the ocean (this is a habitat mask in \mbox{\tt secr} terminology).
 Results are shown in Tab. \ref{gof.tab.aic}
 along with the previous models without a mask. 
 We see AIC is better for the model without the mask -- it is to
@@ -417,7 +417,8 @@ D(sex),g0(sex)\sigma(sex)  3.87 0.07 5859.40 4.41 0.03 7039.09
 
 \begin{table}[ht]
 \centering
-\caption{TABLE: AIC Results wolverine data with/without habitat mask. fitted
+\caption{
+AIC Results wolverine data with/without habitat mask. fitted
 in secr. half-normal encounter probability model. Models ordered by
 AIC within each class of models (no mask or with mask).  Density, D,
 reported in units of individuals per 1000 $km^2$.
@@ -426,7 +427,7 @@ reported in units of individuals per 1000 $km^2$.
 \hspace{1in} NO HABITAT MASK \\
 \begin{tabular}{lcccc}
   model & npar & AIC & AICc & D \\ \hline
-D$\sim$1 g0$\sim$1 sigma$\sim$1                &    3&  1260.521& 1261.932 &\\
+D$\sim$1 g0$\sim$1 sigma$\sim$1                &    3&  1260.521& 1261.932 & \\
 D$\sim$session g0$\sim$session sigma$\sim$1    &    5&  1259.810& 1263.810 &\\
 D$\sim$session g0$\sim$1 sigma$\sim$1          &    4&  1262.473& 1264.973 &\\
 D$\sim$session g0$\sim$session sigma$\sim$session&  6&  1261.326& 1267.326 &\\
@@ -716,6 +717,7 @@ deviance  441.731 & 12.499& 439.814&  12.516& 443.285&  12.661&441.272&  12.743 
 \multicolumn{2}{c}{pD = 79.9} & \multicolumn{2}{c}{pD =81.1}  \\
   & \multicolumn{2}{c}{DIC = 519.8} &\multicolumn{2}{c}{DIC = 518.1} &    
 \multicolumn{2}{c}{DIC = 523.2} &     \multicolumn{2}{c}{DIC = 522.4} 
+\end{tabular}
 \label{blahblahblah}
 \end{table}
 
@@ -781,14 +783,14 @@ On Thu, May 24, 2012 at 9:57 AM, Jeffrey Royle <jaroyle@gmail.com> wrote:
 
 
 
-\subsection{Bayesian model averaging: indicator variables}
+\subsection{Bayesian model averaging with indicator variables}
 
 A convenient way to deal with model selection and averaging problems
 in Bayesian analysis by MCMC is to use the method of model indicator
 variables \citep{kuo_mallick:1998}. Using this approach, we expand the
 model to include a set of prescribed models as specific reductions of
 a larger model.  This has been demonstrated in some specific
-capture-recapture models in \citep[][sec. 3.xxx]{royle_dorazio:2008},
+capture-recapture models in \citep[][sec. 3.4.3]{royle_dorazio:2008},
 \citep{royle:2009} and in the context of SCR by
 \citep{tobler_etal:2012}.  A useful aspect of this method is that
 model-averaged parameters are produced by default. We emphasize the
@@ -912,9 +914,9 @@ effect has posterior probability $0.34$ and the remaining posterior mass is dist
 over the other two models.
 We produce direct model-averaged estimates of $N$ and $D$ from this model:
 \begin{verbatim}
-          mu.vect sd.vect    2.5\%     25\%     50\%     75\%   97.5\%  Rhat n.eff
-D           5.726   1.136   3.759   4.916   5.591   6.458   8.193 1.003   870
-N          59.401  11.781  39.000  51.000  58.000  67.000  85.000 1.003   870
+    mu.vect sd.vect   2.5\%   25\%    50\%    75\%   97.5\%  Rhat n.eff
+D     5.726   1.136  3.759   4.916   5.591   6.458   8.193 1.003   870
+N    59.401  11.781 39.000  51.000  58.000  67.000  85.000 1.003   870
 \end{verbatim}
 Comment?
 
@@ -940,12 +942,15 @@ which, i.e., so that
 \end{verbatim}
 where \mbox{\tt probs[l] = 1/(\# models)}. Then we can fill in a bigger
 array of $p$ instead of $p[i,j]$ we build $p[i,j,l]$ for each of
-$l=1,2,\ldots,L$ models and we define our data component like so:
+$l=1,2,\ldots,L$ models. An example with 3 distinct models is:
 \begin{verbatim}
-pi[i,j]<- bigpi[i,j,mod]
-y[i,j] ~ dbern(pi[i,j])
+   p[i,j,1]  <-  beta0.vec[i,1]*exp( - beta.vec[i,1]*dd[i,j] )
+   p[i,j,2] <-  1-exp(-beta0.vec[i,2]*exp( - beta.vec[i,2]*dd[i,j] ) )
+   logit(p[i,j,3])<- beta0.vec[i,3] - beta.vec[i,3]*dd[i,j]
+
+   mu[i,j]<-w[i]*p[i,j,catmod]
+   ncaps[i,j]~ dbin(mu[i,j],K[j])
 \end{verbatim}
-(or something like that).
 As before the posterior probabilities can be highly sensitive to
 priors on the different model parameters and sometimes mixing is
 really poor.
@@ -963,8 +968,62 @@ model. Then,  we create a probability of encounter for each
 individual, trap {\it and} model so that the holder object '\mbox{\tt p}' in the
 model description is a 3-dimensional array. (sometimes this would have to be a 4
 or 5-d array in more complex models with time effects, etc..)
-This is in the scrbook library called XXXXX XXXXXXX
-run this code and report the results XXXXX XXXXXXXX
+This is 
+the function \mbox{\tt wolvSCR0ms2} in the \mbox{\tt scrbook} library.
+Results are summarized below, to be worked into the text here.
+
+\begin{verbatim}
+10 chains , 1000 burn then 1000 post burn-in
+
+> table(toad$sims.list$catmod)
+
+   1    2    3 
+4144 3484 2372 
+> table(toad$sims.list$catmod)/10000
+
+     1      2      3 
+0.4144 0.3484 0.2372 
+
+Hardly a difference in density
+> tapply(toad$sims.list$D,toad$sims.list$catmod,mean)
+       1        2        3 
+5.858606 6.032470 5.770849 
+
+The model averaged density: Convergence is not pretty, but fuck it
+> print(toad,digits=3)
+Inference for Bugs model at "modelfile5.txt", fit using WinBUGS,
+ 10 chains, each with 2000 iterations (first 1000 discarded)
+ n.sims = 10000 iterations saved
+             mean     sd    2.5%     25%     50%     75%   97.5%  Rhat n.eff
+catmod      1.823  0.788   1.000   1.000   2.000   2.000   3.000 1.052   120
+beta.sex   -0.016  1.715  -2.842  -1.496  -0.029   1.460   2.846 1.001 10000
+alpha.sex   0.030  1.721  -2.851  -1.452   0.063   1.522   2.849 1.001 10000
+psi         0.506  0.107   0.314   0.430   0.499   0.576   0.734 1.009   650
+psi.sex     0.523  0.103   0.321   0.451   0.524   0.595   0.720 1.001  6700
+beta[1]     1.123  0.487   0.088   0.840   1.213   1.450   1.921 1.015   550
+beta[2]     1.111  0.506   0.083   0.760   1.206   1.476   1.919 1.019   330
+beta[3]     1.067  0.529   0.075   0.649   1.152   1.465   1.939 1.006  1000
+alpha0[1]  -1.318  2.551  -5.169  -2.875  -2.566   0.126   4.837 1.057   130
+alpha0[2]  -0.966  2.905  -5.477  -2.883  -2.269   0.984   5.794 1.053   120
+alpha0[3]  -0.602  3.076  -5.933  -2.846  -1.117   1.468   6.110 1.021   270
+N          61.191 12.012  40.000  53.000  60.000  69.000  88.000 1.010   590
+D           5.898  1.158   3.856   5.109   5.784   6.651   8.483 1.010   590
+beta[1]     1.123  0.487   0.088   0.840   1.213   1.450   1.921 1.015   550
+beta[2]     1.111  0.506   0.083   0.760   1.206   1.476   1.919 1.019   330
+beta[3]     1.067  0.529   0.075   0.649   1.152   1.465   1.939 1.006  1000
+mod[1]      0.496  0.500   0.000   0.000   0.000   1.000   1.000 1.001  7700
+mod[2]      0.507  0.500   0.000   0.000   1.000   1.000   1.000 1.001 10000
+deviance  440.864 12.476 418.800 432.200 440.000 448.800 467.600 1.008   760
+
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+
+DIC info (using the rule, pD = var(deviance)/2)
+pD = 0.1 and DIC = 1.2
+DIC is an estimate of expected predictive error (lower deviance is better).
+> 
+
+\end{verbatim}
 
 
 \begin{panel}[htp]
@@ -996,13 +1055,14 @@ for(i in 1:M){
  log(beta.vec[i,3])<- log( beta[3] )
 
  for(j in 1:ntraps){
-   mu[i,j]<-w[i]*p[i,j,catmod]
-   ncaps[i,j]~ dbin(mu[i,j],K[j])
    dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2)
 
    p[i,j,1]  <-  beta0.vec[i,1]*exp( - beta.vec[i,1]*dd[i,j] )
    p[i,j,2] <-  1-exp(-beta0.vec[i,2]*exp( - beta.vec[i,2]*dd[i,j] ) )
    logit(p[i,j,3])<- beta0.vec[i,3] - beta.vec[i,3]*dd[i,j]
+
+   mu[i,j]<-w[i]*p[i,j,catmod]
+   ncaps[i,j]~ dbin(mu[i,j],K[j])
   }
 }
 N<-sum(w[1:M])
@@ -1015,8 +1075,8 @@ D<-N/area
 \caption{
 Part of the BUGS specification
 of the indicator variable idea to choose among
-  different detection models..... this code is contained in an R
-  script in scrbook package called XXXXXX.
+  different detection models. A template {\bf R} script that fits this model
+  to the wolverine data is called \mbox{\tt wolvSCR0ms2}.
 }
 \label{gof.panel.modsel}
 \end{panel}
@@ -1110,7 +1170,6 @@ Node statistics
 \end{comment}
 
 
-XXXX ANDY STOPPED HERE
 
 
 \section{Evaluating Goodness-of-Fit}
@@ -1297,9 +1356,13 @@ activity centers should not extend any further from the traps than 5 km.
 
 \subsubsection{GOF issue 2}
 
-
-Standard deviance
-based GoF statistic for binary regression are not useful.  
+GoF based on quadrat counts in Point process models are sensitive to
+the number of grid cells (Illian et al. XXXX p. 87-88).  This is really
+realted to the classical problem of GoF testing for binary regression
+because in a point process model, as the number of grid cells gets
+small, the grid cell counts go to 0 or 1 and standard fit statistics
+(e.g., based on deviance or Pearson residuals) are known to not be
+very useful. 
 There is some good discussion of this in 
 \citet[][sec. 4.4.5]{mccullagh_nelder:1989}\footnote{Thanks to
   M. K\'{e}ry for pointing this out.}
@@ -1312,23 +1375,24 @@ In the context of testing CSR,
 the test statistic we described above has us bin the region ${\cal S}$
 into a bunch of bins and
 tally up $n_{g}$ the frequency of activity centers in bin $g$.
-Then we typically recommend the XXXX statistic:
+Then we typically recommend the Freeman-Tukey kind of statistic:
 \[
- \sum_{g}  (\sqrt(n_{g}) - \sqrt(E(n_{g})))^{2}
+T =  \sum_{g}  (\sqrt{n_{g}} - \sqrt{E(n_{g})})^{2}
 \]
 In testing CSR the investigator has to choose the bin size and suppose
 that we choose the bin size to be extremely small.
-In this case, $E(n_{g})$ tends to N/G  (N being the number of activity
+In this case, $E(n_{g})$ tends to $N/G$  ($N$ being the number of activity
 centers).
 Further, $n_{g}$ tends to a binary outcome. Therefore the fit statistic has  $N$
 components that represent the $n_{g} = 1$ values and it has $G-N$
 components 
 that represent the $n_{g} = 0$ values. So the fit statistic resembles this:
 \[
-T = \sum_{g \st n_{g} = 1}^{N}  (1 - \sqrt(N/G))^2 +
-\sum_{g \st n_{g} = 1}^{G-N} (N/G)^2
+T = \sum_{g \ni n_{g} = 1}^{N}  (1 - \sqrt(N/G))^2 +
+\sum_{g \ni n_{g} = 1}^{G-N} (N/G)^2
  = N(1 + (G-N)/G)
 \]
+(note $\ni$ is used here to mean ``such that'').
 If $G$ is huge relative to $N$, then we see that this tends to about
 $2*N$, which does not provide any meaningful assessment of model fit.
 So if you look at this in the limit in which the bin counts become
@@ -1337,20 +1401,19 @@ binary,
  used and is just a deterministic function of $N$.
 
 
-and everyone
-knows that GoF tests are sensitive to the grid size with diminishing power
-as grid size gets small or if its too coarse [you see this everywhere, and
-there are some references cited which I haven't looked into].
-Anyhow, check out what happens if you let the grid cell size go to 0.
 
-Richard said someting about this.................
-
- 
- 
-Yeah, they talk about it starting on page 86, Sec 2.7.2. Table 2.5 (page 88) even shows how the chi-squared test is sensitive to the grid size. 
-
-After this, they discuss a generalization of the chi-squared test in which counts in the neighboring grid cells are taken into account. Then they move on to "distance methods".
- 
+There are some extensions that help resolve the issue based not just
+on quadrat counts but also the neighboring quadrat counts -- this is
+the Greig-Smith method (Greig-Smith 1964). 
+The analysis of GoF for SCR models has scarcely scratched the surface
+and we think there is considerable research to be done on this problem.
+There are a myriad of ``distance methods'' for evaluating point
+process models and we believe that many of these can (and will) be
+adapted to SCR models. Again the main feature is that the point
+process for which inference is focused on is completely latent in SCR
+models -- so this makes the fit assessment slightly different than in
+classical point processes. That said, the methods should be adaptable
+e.g., in a Bayesian p-value kind of way.
  
 
 
