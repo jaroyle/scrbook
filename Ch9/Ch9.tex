@@ -73,14 +73,14 @@ also have trap-specific covariates, or covariates that vary spatially
 over the landscape, and because we generally have more than one 
 parameter describing the detection function:
 Most detection functions include a baseline encounter
-rate termed $\lambda_0$ XXX $p_0$ ??? XXX and a shape parameter
-termed $\sigma$, which takes on different interpretations depending on
-the selected function. 
+rate ($\lambda_0$) or probability ($p_0$) parameter, and a shape parameter
+($\sigma$), which takes on different interpretations depending on
+the specific encounter probability function under consideration.
 
 
 In this chapter, we generalize the basic SCR model to accommodate both 
 alternative detection functions as well as
-many different kinds of covariates. We focus on the Binomial encounter
+many different kinds of covariates. We focus on the binomial encounter
 model used in Chapts. \ref{chapt.scr0} and \ref{5} and the half-normal 
 detection function (although we do show you some alternatives to the half-normal),
 but the extension to other encounter and detection models is
@@ -99,8 +99,8 @@ example, the home range size of individuals, or unstructured random
 
 
 We will see that models containing these different types of
-covariates are relatively easy to describe in the {\bf WinBUGS} or
-{\bf JAGS} languages, and
+covariates are relatively easy to describe in {\bf WinBUGS} or
+{\bf JAGS}, and
 therefore to analyze using Bayesian analysis of the joint likelihood
 based on data augmentation thus providing a coherent and flexible
 framework for inference for all classes of SCR models.  Throughout the
@@ -108,7 +108,7 @@ chapter, we will continue to develop the analysis of the black bear
 study introduced in \ref{Chapter 3}, using the software
 \jags.  We also
 consider the likelihood analysis of many of these models; to do so, we
-will demonstrate the use of the R package \secr~ and how to do model
+will demonstrate the use of the {\bf R} package \secr~ and how to do model
 comparison with AIC (this section is at the end of the chapter \ref{likelihood.secr}).
 There are other types of covariates that we do {\it not} cover in this
 chapter; for example, covariates that vary across the
@@ -122,11 +122,11 @@ probability in which covariates affect space usage in Chapt. \ref{chapt.ecoldist
 
 \section{Detection Functions}
 
-In Chapt. \ref{chapt.scr0}, we developed the basic spatial capture
+In Chapt. \ref{chapt.scr0}, we developed a basic spatial capture
 recapture model using a standard distance function based on the kernel
 of a normal (Gaussian) probability distribution:
 \[
-p_{ij} = p0 \exp(-\alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||^2)
+p_{ij} = p_{0} \exp(-\alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||^2)
 \]
 where $||{\bf s}_{i}-{\bf x}_{j}||$ is the distance between ${\bf
   s}_{i}$ and ${\bf x}_{j}$ and
@@ -144,35 +144,46 @@ form:
 \end{equation}
 
 However, there's nothing preventing us from constructing a myriad of
-other models for encounter probability, as long as detection decreases
-with distance (otherwise $N$ would be unidentifiable). The most
+other models for encounter probability.
+% this next bit is not true.............
+%, as long as detection decreases
+%with distance (otherwise $N$ would be unidentifiable). 
+The most
 commonly used detection functions are also those used in the distance
-sampling literature: the half-normal, the hazard, and the negative
+sampling literature: the half-normal (Gaussian), the hazard, and the negative
 exponential.  The negative exponential model is: 
 \[
-p_{ij} = p0*\exp(-\alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||)
+p_{ij} = p_{0}*\exp(-\alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||)
 \]
-or we could use the general power model which includes both the
-Gaussian and exponential models \citep{russell_etal:2012}: XXX What is
-this model called? CITE from Buckland et al. XXXXX
-XX hazard rate is Hayes and Buckland (1983), but not sure which Buckland we want hereXXX
+or we could use the general power model \citep{russell_etal:2012} which includes both the
+Gaussian and exponential models as special cases {\bf XXXX Ref for
+  this model? Name for it? XXXXX}:
 \[
 p_{ij} = p0*\exp(-\alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||^{\theta} )
+\]
+or the hazard rate model \citep{hayes_buckland:1983} of which the
+Gaussian hazard rate model which we have considered previously is a
+special case: 
+\[
+p_{ij} = 1-\exp(-\lambda_{0}* \exp(-\alpha_{1} *||{\bf s}_{i}-{\bf
+  x}_{j}||^{2}) ).
 \]
 The {\bf R} package
 {\tt secr} allows the user to access 12 different detection models, of which
 some are only used for simulating data (see \ref{covariates.tab.detmodels}). These detection
-functions can  also be coded in {\bf R}, {\bf WinBUGS},
+functions can  also be implemented in {\bf R}, {\bf WinBUGS},
 {\bf JAGS} etc.
 
 Insofar as all these detection functions are symmetric and stationary, they are pretty
-coarse descriptions of space usage by real animals. But this is not to
-say they are inadequate descriptions of the data XXX this is no longer true, Andy
-is showing that they might be inadequate now, right?? XXX
-We don't believe in doing too much
-selection among these different detection models because there is no biological basis for
-choosing any one of over any other. We do describe more
-realistic models in Chapt. XXXXX.
+crude descriptions of space usage by real animals. But this is not to
+say they are inadequate descriptions of the data and, as we discuss in
+Chapts. \ref{chapt.ecoldist} and \ref{chapt.rsf} we can use them as the
+basis for producing more realistic models of space usage.  
+%is showing that they might be inadequate now, right?? XXX
+%We don't believe in doing too much
+%selection among these different detection models because there is no biological basis for
+%choosing any one of over any other. We do describe more
+%realistic models in Chapt. XXXXX.
 
 
 \begin{table}[ht]
@@ -640,6 +651,8 @@ capture histories ($\mbox{\tt nind} \times \mbox{\tt ntraps} \times
 model above. The code must loop over each sampling occasion, but otherwise, the model
 varies only a little from the basic SCR model show in panel \ref{covariates.panel.basicSCR}.  
 Here is the specification of the the occasion specific (k) loop:
+
+
 {\small
 \begin{verbatim}
 for(k in 1:K){
@@ -647,7 +660,8 @@ logit(p0[i,j,k])<- alpha0 + alpha2*C[i,j,k]
 y[i,j,k] ~ dbin(p[i,j,k],1)
 p[i,j,k]<- z[i]*p0[i,j,k]*exp(- alpha1*d[i,j]*d[i,j])
 }
-
+\end{verbatim}
+}
 Despite the minor changes to the code, this model can require quite a bit of time and computational 
 effort to carry out the local response model.  
 
