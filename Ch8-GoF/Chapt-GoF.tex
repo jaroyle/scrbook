@@ -1333,16 +1333,28 @@ that CSR is not really the conventional term for a binomial point
 process, but it does imply independent and uniformity.
 
  The basic technical framework for evaluating the CSR
-hypothesis is that the cell counts i.e., precisely those we computed
-to produce a density map, should have a binomial distribution and we
-can use a standard chi-square goodness-of-fit test to evaluate that.
-It will usually suffice to approximate the binomial cell counts by
+hypothesis is based on  counts of activity centers in cells or bins.
+For that we 
+use a 
+standard chi-square goodness-of-fit test statistic, based on gridding (binning)
+the state-space of the point process into $g=1,2,\ldots,G$ cells or bins, and
+we tabulated $N(g)$ the number of activity centers in bin $g$ (see below).
+We typically recommend the Freeman-Tukey kind of statistic:
+\[
+T =  \sum_{g}  (\sqrt{N_{g}} - \sqrt{E(N_{g})})^{2}
+\]
+(note $E(N_{g})$ is estimated by the mean bin count). 
+A more standard assessment of fit is as follows: 
+Conditional on $N$, the total number of activity centers, the $N(g)$
+should have a binomial distribution but 
+it will usually suffice to approximate the binomial cell counts by
 Poisson cell counts in which case we can use the classical
 ``index-of-dispersion'' test (e.g., Illian et al. 2008; p. 87):
 \[
    I =  (\# cells -1)*s^2/\bar{n}
 \]
-which has approximately a Chi-square distribution on $(ncells - 1)$ degrees-of-freedom.  If $s^2/nbar
+which has approximately a Chi-square distribution on $(ncells - 1)$
+degrees-of-freedom under the spatial randomness hypothesis.  If $s^2/nbar
 > 1$ this suggests clustering and if $s^2/nbar <1$ then this suggests the
 point process is too regular.  
 {\it The} important technical issue is that we don't observe the point
@@ -1351,24 +1363,10 @@ computed directly.  However, using Bayesian analysis, we do have a
 posterior sample of the underlying point process and so we suggest
 computing the posterior distribution of the index-of-dispersion
 statistic in a Bayesian p-value framework.
-XXXXXXXXX slightly out of order here.... XXXXXXXXXXXXXXX
-As an alternative to the index-of-dispersion, we 
-use a 
-standard chi-square goodness-of-fit test statistic, based on gridding (binning)
-the state-space of the point process into $g=1,2,\ldots,G$ cells or bins, and
-we tabulated $n(g)$ the number of activity centers in bin $g$.
- A standard goodness-of-fit statistic for CSR is based on the
-ratio of the variance of $n(g)$ to the mean (see Table 8.3 in Cressie
-1996). In particular, in parametric likelihood theory, $I = (G
--1)*s^2/\bar{n}$ should have a chi-square on $(G - 1)$ df under the
-CSR hypothesis.  However, we used this statistic as the basis for our
-Bayesian p-value calculation, comparing a posterior sample of $I$
-computed using each posterior realization of the point process with a
-value of $I$ obtained by simulating ${\bf s}$ under CSR.  XXXXX
-redundant XXXXXXX
 
 
 \subsubsection{GOF issue 1}
+
 An issue is that this is probably sensitive to the size of the
 state-space. As the size of the state-space increases then the cell
 counts {\it are} independent binomial counts with constant density,
@@ -1402,21 +1400,17 @@ In the context of testing CSR,
 the test statistic we described above has us bin the region ${\cal S}$
 into a bunch of bins and
 tally up $n_{g}$ the frequency of activity centers in bin $g$.
-Then we typically recommend the Freeman-Tukey kind of statistic:
-\[
-T =  \sum_{g}  (\sqrt{n_{g}} - \sqrt{E(n_{g})})^{2}
-\]
 In testing CSR the investigator has to choose the bin size and suppose
 that we choose the bin size to be extremely small.
-In this case, $E(n_{g})$ tends to $N/G$  ($N$ being the number of activity
+In this case, $E(N_{g})$ tends to $N/G$  ($N$ being the number of activity
 centers).
-Further, $n_{g}$ tends to a binary outcome. Therefore the fit statistic has  $N$
-components that represent the $n_{g} = 1$ values and it has $G-N$
+Further, $N_{g}$ tends to a binary outcome. Therefore the fit statistic has  $N$
+components that represent the $N_{g} = 1$ values and it has $G-N$
 components 
-that represent the $n_{g} = 0$ values. So the fit statistic resembles this:
+that represent the $N_{g} = 0$ values. So the fit statistic resembles this:
 \[
-T = \sum_{g \ni n_{g} = 1}^{N}  (1 - \sqrt(N/G))^2 +
-\sum_{g \ni n_{g} = 1}^{G-N} (N/G)^2
+T(N_{g}) = \sum_{g \ni N_{g} = 1}^{N}  (1 - \sqrt(N/G))^2 +
+\sum_{g \ni N_{g} = 1}^{G-N} (N/G)^2
  = N(1 + (G-N)/G)
 \]
 (note $\ni$ is used here to mean ``such that'').
@@ -1426,7 +1420,6 @@ So if you look at this in the limit in which the bin counts become
 binary, 
  the fit statistic loses all its variability to the specific model
  used and is just a deterministic function of $N$.
-
 
 
 There are some extensions that help resolve the issue based not just
@@ -1476,18 +1469,38 @@ First, our expected value per cell is N({\cal S})/area({\cal S}).
 OR if we are computing the bin counts only in the vicinity of the trap
 array (not using thee whole state-space) we need to adjust thinggs
 accordingly. Subset the posterior draws of s in each case to compute
-the binned counts and their expected values. We have an R function
-XXXXX in the R package to do this....... 
+the binned counts and their expected values. We have an {\bf R} function
+XXXXX in the {\bf R} package to do this....... 
 ok, then we compute our fit statistics:
-
-Tdata = 
-
-Tnew = 
-
-And we compute Pr(Tnew>Tdata) ????
+\[
+T({\bf N},\theta) = \sum_{x}  (\sqrt{N(x)} - \sqrt{ \bar{N(x)}})^2
+\]
+\[
+T({\bf N}^{sim},\theta) = \sum_{x}  (\sqrt{N(x)^{sim}} - \sqrt{ \bar{N(x)}})^2
+\]
+And we compute the Bayesian p-value by
+$p = \Pr(Tnew>Tdata)$
 
 
 \subsection{Example: Wolverine data}
+
+
+The wolverine camera trapping data. We used the wolvSCR0ms
+function to fit a model with constant parameter values for males and
+females. So we're thinking that the detectino model shouldn't have a
+huge affect on whehterh the spatial randomness assumption is adequate
+or not, so we fit that basic model.
+we wrote a function that uses the bin counts for a prescribed number
+of bins ...... it actually takes the
+output from a BUGS or JAGS run -- requiring the activity center
+coordinates and the data augmentation variables and some additional
+input data...... it also needs a buffer width around the trap array
+.....
+this buffer could be the
+buffer used for the state-space in the model fitting but we think it
+should be realtively tighter to the trap array. so we're using 10km
+grid cells (1 unit = 10 km) and so we used the buffer = 0.5 for
+computing the GoF even though buffer = 2 was used in the fitting. 
 
 
 \section{Assessing  Fit of the Encounter Probability Model}
@@ -1514,22 +1527,29 @@ the expected value under any encounter model is:
 \[
  E(y_{ij}) = p_{ij} K
 \]
-(or $K_{j}$ if the traps are operational for variable periods). Then
+(or $K_{j}$ if the traps are operational for variable periods). If
+there is time-varying structure to the model, then expected values
+would have to be computed
+according to $E(y_{ij}) = \sum_{k} p_{ijk}$.
+ Then
 we can define a fit statistic from the Freeman-Tukey residuals
 according to:
 \[
  T_{1}({\bf y}, \theta) = \sum_{i}\sum_{j} (\sqrt{ y_{ij} } - \sqrt{ E(y_{ij}) })^2
 \]
+where we use $\theta$ here to represent the collection of all
+parameters in the model.
 This is conditional on ${\bf s}$ as well as on the data
 augmentation variables ${\bf z}$. We
 compute this statistic for {\it each} iteration of the MCMC algorithm
 for the observed data set and also for a data set simulated from the
 posterior distribution, say ${\bf y}^{new}$.
 
-We could also have the summaries individual x replicate , aggregated
-over traps. 
-We imagine that all of these are probably too disaggregated in
-practical settings. 
+We could also use a similar fit statistic derived from
+summarizing over traps to obtain an \mbox{\tt nind} $\times$ $K$
+matrix of count statistics.
+We imagine that either summary of the data will probably be to disaggregated in
+most practical settings. 
 
 
 {\bf Fit statistic 2: Individual encounter frequencies. }
@@ -1710,49 +1730,57 @@ SYS
 
 
 We offered some general strategies for model selection and model
-checking.
-We think the selection ideas we talked about are probably ok, although
-some more work is needed on Bayesian model selection to make it more
-generally useful and accessible. 
-Bayesian model selection can be tediously slow even for small data sets.
-We recommend model averaging over a small set of distinct models for
-estimating density. But we think using a single model or the best
-model for asessing the importance of effects is probably ok despite
-that the SE's will be biased.
-There are technicazl issues that are features of Bayesian analysis
-which we can't do anything about, sensitivity to priors being the
-important one. That is life and you should just be aware of it and
-don't put too much faith in model selection, in general. 
+checking -- or assessment of model fit.  We think strategies for model
+selection are pretty standard and probably effective as applied to SCR
+models, We recommend model averaging over a small set of distinct
+models for estimating density. But we think using a single model or
+the best model for asessing the importance of effects is probably ok
+despite that the SE's will be biased.  There are technicazl issues
+that are features of Bayesian analysis at the present time and some
+more work is needed on Bayesian model selection to make it make the
+methods more generally useful and accessible.  For one thing, Bayesian
+model selection can be tediously slow even for small data sets, and so
+improved computation will improve our ability to do Bayesian model
+selection in practical situations.  Also, sensitivity to priors is an
+important issue. Further research and practice might identify
+preferred prior configurations for SCR that provide a good calibration
+in relevant model selection problems.
+
 
 Goodness-of-fit assessment is pretty experimental in all of SCR
-models. There is not a lot of 
-guidance in the literature on GoF in SCR models although we have
-offered up a general framework based on independent testing of the
-spatial model of independence and uniformity, and testing fit of the
-observation model conditional on the underlying point process.  Well
-we think this general strategy is a good one, 
-there is essentially nothing known at all about power to detect various
-departures.  There is some interesting and useful research to be done
-on this. Do we have power to detect departures and does it matter in
-terms of estimating $N$? 
-WE used a classical quadrat binning approach to testing model fit,
+models. There is not a lot of guidance in the literature on GoF in SCR
+models although we have offered up a general framework based on
+independent testing of the spatial model of independence and
+uniformity, and testing fit of the observation model conditional on
+the underlying point process.  Well we think this general strategy is
+a good one, there is essentially nothing known at all about power to
+detect various departures.  There is some interesting and useful
+research to be done on this. Do we have power to detect departures and
+does it matter in terms of estimating $N$?  For testing the spatial
+randomness hypothesis, we used a classical quadrat binning approach,
 although other approaches from spatial point process modeling should
-be pursued including 
-nearest-neighbor methods or distance-based metrics. 
+be pursued including nearest-neighbor methods or distance-based
+metrics.
 
-A question of great practical relevance is what do we do if our model
+A question of great practical relevance is what do we do if one
+component of our model
 seems not to fit the data -- what if the spatial randomness hypothesis
 is rejected? What can we do?
-
-Effect of non-fitting models .....
-I think inference about Density is going to be insensitive to
-departures from CSR but probably somewhat sensitive to bad models for
-the observation process.  Why do I think this? Well spatial variation
-is not important to inference about the aggregate population size, but
+We  think inference about density should be realtively  insensitive to
+departures from spatial randomness 
+and perhaps somewhat more sensitive to bad-fitting models for
+the observation process.  Why do we think this? Spatial variation is
+ not important to inference about the aggregate population size, but
 it is relevant to "within population" inference, such as predicting on
-small areas.  Conversely, inference about total population size is
-known to be highly sensitive to the observation model (Dorazio and
-Royle 2003; Link 2003).
+small areas.  Further, we get to observe direct information on some
+component of the population -- so  a component of density is observed
+-- and, for those activity centers, the
+assumed model of the point process should exert little over placement
+of the activity centers.
+Conversely, inference about total population size is
+known to be highly sensitive to the observation model
+\citep{dorazio_royle:2003: link:2003}.
+
 
 
 
