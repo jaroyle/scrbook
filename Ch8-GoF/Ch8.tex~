@@ -1,0 +1,758 @@
+\chapter{
+Model Selection and Assessment
+}
+\markboth{Model Assessment}{}
+\label{chapt.gof}
+
+\vspace{.3in}
+
+There are 4 main inference tasks that we do with a model: estimate
+parameters, make predictions of unobserved random variables
+(e.g., of density), evaluate the relative
+merits of different models or choose a best model (model selection),
+and we check whether a specific model is reasonable or not (assessment).
+
+
+In this chapter, we focus on the last two of these inference tasks:
+model selection (which model or models seem preferred), and model
+assessment (do the data appear to be consistent with a particular model?).
+
+
+
+Conceptually, we can think of this last thing as follows: if we simulate
+under that model, do the simulated realizations look like our data?
+In a sense, it is that last element that is most relevant to science.
+That is beyond the basic construction of the model which presumably
+contains some basic scientific hypotheses and thus requires some
+understanding and thinking about the system. After that it is the
+assessment that provides what is essentially a basis for falsification
+of the model, and hence learning..  By saying that the data are
+inconsistent with a model, then we're rejecting at least one of the
+hypotheses embodied by that model.
+
+
+Paradox: we carryout inference using parametric inference paradigms
+which suppose that the model is properly specified. that is,
+truth. This is paradoxical because we all know that ``all models are
+wrong'' but possibly, ``some are useful''
+In fact, the notion that an ``assumption''
+could even be correct is an oxymoron and people who suggest that are,
+therefore, actual morons.
+Therefore we don't expect or hope to make assumptions that are
+``correct'' in any way. Gelman and Shalizi (2010) say it this way: ``there is general agreement that, in this domain, all models in use
+are wrong -- not just merely falsibiable, but actually false.''
+
+
+In the context of SCR models we discuss some specific methods of model
+selection and assessment, and focus on
+a few specific application contexts such as choosing among
+models of detection,
+or other aspects of model structure.
+We use DIC and AIC for this, and we evaluated
+whether DIC and AIC tend to indicate the correct model, and wehther
+the estimates of N are badly biased when it does not.
+For model checking or assessment we rely exclusively on Bayesian p-values
+(REF XYZ) to evaluate "goodness-of-fit". Part of the challenge thus far is
+coming up with good fit statistics, we suggest a few here and evaluate them
+by simulation. We break the problem up into 2 components which we attack
+separately (Royle et al. 2011): Does the observation model fit? Does the
+uniformity assumption appear adequate? The latter has a huge amount of
+precedent in the ecological literature as it is equivalent to the test of
+``complete spatial randomness'' which Royle et al. (2011)
+applied to SCR models. Really this is a test of ``spatial randomness''
+because CSR really means Poisson point process.
+
+A few specific questions to resolve:
+\begin{itemize}
+\item[(1)]  Can AIC or DIC choose among detection models and does it matter?
+\item[(2)]  Can AIC or DIC choose among more substantial models?  We should
+ assume it does. Can we rig up a test?  Suggest: (1) trap level
+ covariate and trying DIC; (2) Model Mb vs. not
+\item[(3)] Simultaneous to above, see if we can do that.......
+Posterior model probabilities: Can we demo this?   With detection models?
+ Don't do much analysis of the situation, just demo it maybe?
+\item[(4)]  Basic framework for Bayesian GoF. Power under alternatives.
+(clustering, regularity, uniformity) and misspecified encounter models
+-- do they show a lack of fit?
+\end{itemize}
+
+
+
+
+\begin{comment}
+\subsection{The Role of model assumptions}
+
+Referees are quick to point out that bivariate normal distributions as
+models for home range are simply wrong. As if using wrong models
+somehow invalidates something. (is that a statistical paradigm that I
+missed?). The issues are whether its an adequate model, whether we can
+refute it, whether resulting inferences are sensitive to it, and
+whether the model is useful for its intended purpose regardless.
+If  we really wanted a great description of a home range then we would do
+something different besides conduct an SCR study. The purpose of most
+SCR models is not to study home range geometry and morphology but, rather,
+to estimate density and possibly other vital rates such as survival and
+recruitment. In addition, it is my experience that the same people who
+criticize models as implying overly simple models actually cannot describe
+alternative models except using jargon and procedures like "kernel
+smoothing", "utilization distributions" and "neural networks". So, on
+the one hand, the bivariate normal distribution is overly simple, and
+therefore we should use "neural networks"?  What irritates me even more
+is referees who emphatically assert that "real home ranges aren't bivariate
+normal" and then they go on to cite references who somehow "proved" they
+are not. These people have no clue what statistics is good for and what
+the point of SCR models is, nor can they grasp the relevance of the home
+range model - namely, as a model for explaining heterogeneity in
+capture-probability. To be sure, the bivariate normal model is an
+over-simplification but so far it has not been shown to be ineffective
+in SCR problems, and besides  substantially more flexible models have been
+developed \citep{royle_etal:2012ecol}.
+
+What we care about in models of capture-recapture data is whether the
+bivariate normal (or any model) provides an adequate description of the
+encounter process. That is the question we will evaluate here.
+\end{comment}
+
+
+\section{Model Selection: General Strategies}
+
+If you're doing a classical analysis based on likelihood then model
+selection is easily accomplished using AIC \citep{burnham_anderson:xxxx}
+which we demonstrate below. The AIC of a model is simply twice the
+negative log-likelihood then penalized by the number of parameters
+\[
+ AIC = -2 logL  + 2 np
+\]
+and models with small values of AIC are preferred. Now people do
+model-weighting of things by AIC, and there are various flavors for
+small-sample adjustment and so forth. We don't advocate for rules of
+thumb or whatever and so we stick with basic AIC here.  We don't
+believe in model averaging parameters that do not have a consistent
+meaning across models. In the case of SCR models, it does make sense
+to model-average estimates of density and related quatnties.
+
+Model selection is somewhat less straightforward
+as a Bayesian and there is no such canned all-purpose method like AIC
+although the Deviance Information Criterion (DIC)
+\citep{spiegelhalter_etal:2002} was meant to be such a thing. But
+there seems to be too many types of DIC, no consistent version
+reported across platforms, and highly variable effectiveness at using
+DIC. Even the high-end statisticians don't have a unified front on the
+practical issues related to the use of DIC.
+As such we recommend more of a pragmatic approach, in general, for all
+problems, based on a number of basic considerations:
+\begin{itemize}
+\item[(1)] For a small number of fixed effects we recommend a standard
+hypothesis testing ideas -- i.e., if the posterior for a parameter overlaps
+zero or whatever then toss out the effect.
+\item[(2)] Posterior model probabilities: In some cases we can implement
+the "variable weights" idea from \citep{kuo_mallick:XXXXX}.
+The idea is introduce a latent variable $w \sim Bern(.5)$ and then
+construct  your model according to, for example,
+\[
+ logit(p) = a + w*\beta*covariate
+\]
+There are examples in \citep{royle_dorazio:2008}
+ (perhaps Marc has an example in the new BPA book?)
+\item[(3)] DIC -- the Deviance Information Criterion.
+Bayesian model selection is now routinely carried-out using the
+Deviance Information
+Criterion (DIC; Spiegelhalter et al. 2002) although its effectiveness
+in hierarchical models depends very much on the manner in which it is
+constructed \citep{millar:2009}.
+We recommend using it if it leads to
+sensible results but also we think it should be calibrated to the
+extent possible for specific classes of models.  For most SCR models
+it is easier and understandable to look at whether parameters appear
+to be important based on their magnitude and posterior variance.
+\item[(4)] Logical argument: For something like M/F differences it seems
+to make sense to leave the extra parameters in the model no matter what,
+because of course you expect , biologically, there to be a difference in
+these things. Thus the hypothesis test itself is meaningless (Doug Johnson
+wrote a paper on this kind of stuff once) and you would only reject the
+null because of low power anyhow.
+\end{itemize}
+
+In all modeling activities, as in life itself, the use of logical argument should not be under-utilized.
+
+\subsection{Omnibus Model Selection Based on AIC and DIC}
+
+We recommend using AIC whenever likelihood analysis is done as long as
+the likelihoods are scaled equivalently.
+
+
+DIC might work for selection among various classes of
+fixed effects models.
+Problem is: there are different flavors of DIC and they seem to
+perform differently. And  furthermore it doesn't seem good for
+choosing among hierarchical structures....................
+
+What is the DIC for a SCR model? The models are just
+binomial or Poisson regressions and so we can define the DIC as
+ -loglikelihood().  But what about the data augmentation part?
+The current Conventional Wisdom is that DIC doesn't really work so
+well in hierarchical models (    ). But there doesn't really seem to be
+general theory to support this. It seems maybe like its ok sometimes. So
+we take a look at its use here to pick among fixed effects models.
+
+
+\begin{comment}
+As is pointed out in one of those posts, it's interesting to me that
+both AIC and DIC are attempts at mimicking leave-one-out
+cross-validation. Perhaps we could make the point that if DIC cannot
+be trusted then one could always implement their own x-val
+procedure... assuming it doesn't take months to complete.
+
+Richard
+
+On Thu, May 24, 2012 at 9:57 AM, Jeffrey Royle <jaroyle@gmail.com> wrote:
+> hi all -- DIC is a hopeless black hole with, I think, no real possibility of
+> making it seem reasonable to people.
+> There is some good discussion on Gelman's blog, along with a number of
+> papers (all cited there)
+> http://andrewgelman.com/2006/07/number_of_param/
+> http://andrewgelman.com/2011/06/plummer_on_dic/
+> http://andrewgelman.com/2011/06/deviance_dic_ai/
+>
+> I gather that there are 3 version of DIC. The original one, and then
+> Plummer's version which seems to be in JAGS and then the dumb version based
+> on .5*var(deviance) which, I gather, you should never use -- I guess it
+> sucks.
+>
+> I still can't compute Plummer's version using JAGS -- I think maybe I need
+> to update my JAGS version or something.
+\end{comment}
+
+
+\subsection{Choosing Biological models}
+
+Behavior, time of year, trap type (biated or not), seasonal variation
+in encounter probability, things that make a
+biological difference we should be able to choose among
+
+Different model structures: e.g., with/without behavioral response.
+With/without some trap covariate. Other things?
+
+The expectation is that it should make a big difference for covariate
+effects such as Mb and so forth which has been demonstrated in
+practice repeatedly. So can we choose among those models effectively?
+Do an analysis of some data set by AIC and also DIC... Maybe the
+ovenbird data?
+
+
+\subsection{Choosing detection models}
+
+HERE WE SET UP A SIMULATION WITH 5 MODELS. FOR EACH MODEL WE SIMULATE
+A DATA SET AND FIT ALL 5 MODELS USING MLE AND USING JAGS. THATS 10
+MODEL FITS.  WE DO THAT 100 TIMES AND LOOK AT THE OUTPUT.
+THIS IS A TOTAL OF 1000 MODEL FITS FOR EACH ``TRUE MODEL''
+SO TO DO THIS FOR ALL 10 MODELS REQUIRES 10,000 FITS.
+QUESTION: SHOULD WE FIX ``AVERAGE E[n]''??????? I think so. This needs
+evaluated ahead of time.
+
+For all 5 models choose parameters: (1) same effective home range
+size; (2) same net capture probability.  e.g., 60\% of population for
+N=100 and N=200  (huge sample sizes).
+
+I have a 2x2 factorial arrangement in mind for a 7 x 7 grid of traps
+with unit spacing:
+\begin{verbatim}
+                     N=100              N=200
+
+sigma = 0.50   low spatial recaps      low spatial recaps
+               low n                   high n
+sigma = 1.00   high spatial recaps     high/high
+               low n
+\end{verbatim}
+
+There could be two dimensions to this study:
+
+(1)	Selection from among different detection models.
+E.g., Comparison of logit vs. cloglog and linear vs quadratic vs.
+log() distance functions.  That's 6 total models, for
+delta = 2, 3 and 4.  Why should DIC work?
+
+(3)	For each unique detection model, we simulate data under that model
+and fit all of the other models and compute DIC, variable weights and
+perhaps use likelihood to compute AIC and see how the results differ.
+
+Since all the detection models give about the same answer there's no
+point in acting like we're engaging in some profound act of pure
+science by doing model selection on detection functions.
+
+
+\subsection{Model selection using posterior model probabilities}
+
+A convenient way to deal with model selection problems in Bayesian
+analysis by MCMC is
+to expand the model to include the set of prescribed models as
+specific sub-models with ``model identity'' is itself a parameter
+of the model.
+For a model set in which all models are nested subsets of one larger
+model, such as for models containing explicit covariates,
+we expand the model to include the latent
+variables say $w_{l}$ for each variable in the model that pre-multiply
+covariates.
+ The latent indicator variables
+are:
+%% RBC commented this out to avoid build error
+%\begin{eqnarray*}
+%w_{l} = \left\{ \begin{array} 1 \mbox{linear predictor includesn  covariable k} \\
+%                              0 \mbox{linear predictor does not
+%                                include covariable k}
+% \end{array}
+%\right.
+%\end{eqnarray*}
+being mutually independent with priors
+\[
+w_k \sim Bernoulli(0.5).
+\]
+The
+ expanded model has the linear predictor:
+\[
+logit(p_{ij}) = Œ±0 + Œ±1w1x1,ij + Œ±2w2yi,j‚àí1 + Œ±3w3x2,i.
+\]
+In this case, model identity is the sequence of $w$ variables
+defining unique models.
+
+Model selection by this method was covered in
+various places -- e.g., sec. 3.xxx in \citep{royle_dorazio:2008} and
+maybe in the Kery and Schaub book? This
+notion was suggested by Kuo and Mallick (1998).
+Conceptually, analysis of this expanded model within the data augmentation
+framework does not pose anyadditional difficulty. One
+broader, technical consideration is that posterior model probabilities
+are well known to be sensitive to priors on parameters
+(e.g., Aitkin, 1991; Link and Barker, 2006) and vague priors
+are not usuallyinno cuous or ‚Äúuninformative‚Äù when evaluating
+posterior model probabilities. The use of Akaike‚Äôs information
+criterion seems to avoid this problem largely by imposing a
+specific and perhaps undesirable prior that is a function of
+the sample size (Kadane and Lazar, 2004). One solution to
+this problem is to compute posterior model probabilities under
+a model in which the prior for parameters is fixed at the
+posterior distribution under the full model (Aitkin, 1991).
+
+
+[example with made up data]
+
+[reference to some chapter with example -- perhaps the overnbird data]
+
+
+The other way is to introduce a categorical model identity variable
+which, depending on its value, the nature of the model in a more
+fundamental way.  For example, for
+ different basic encounter probability models, we cannot specify the
+linear predictor of some general model in a manner that reduces to the
+various alternative models simply by switching binary variables on and
+off. For this case we do something like this:
+\begin{verbatim}
+ mod \sim dcat(probs[])
+\end{verbatim}
+where \mbox{\tt probs[l] = 1/(\# models)}. Then we can fill in a bigger
+array of $p$ instead of $p[i,j]$ we build $p[i,j,l]$ for each of
+$l=1,2,\ldots,L$ models and we define our data component like so:
+\begin{verbatim}
+pi[i,j]<- bigpi[i,j,mod]
+y[i,j] ~ dbern(pi[i,j])
+\end{verbatim}
+(or something like that).
+
+As before the posterior probabilities can be highly sensitive to
+priors on the different model parameters and sometimes convergence
+really sucks. But we give a JAGS script in the {\bf R} package
+\mbox{\tt scrbook} which has an example that works. For that we
+estimated each parameter in the models one-at-a-time and used the
+estimated posterior mean and variance as the prior distributions in
+the model-selection analysis.
+
+This can all be very  tedious to implement but
+produces posterior model probabilities which have a direct
+interpretation that is desireable.
+
+
+
+\section{Evaluating Goodness-of-Fit}
+
+Using classical inference methods, it is sometimes possible to
+identify a test statistic, with known asymptotic distribution, to
+evaluate goodness-of-fit using a chi-square statistic. Examples from
+the closed capture-recapture setting includes XXXXXX XXXXXXXX.  When
+this is not the case, goodness-of-fit is ususally assessed using
+bootstrap methods \citep{dixon:2002}. Using a bootstrap method
+we identify a fit
+statistic and we compute the value for which is more or less the
+standard approach, in general.  To date, we are unaware of any
+goodness-of-fit applications based on likelihood analysis of SCR
+models (XXX WE NEED TO DO SOME RESEARCH ON THIS XXXXX).  We give some
+ideas in sec. xxxxxx below.
+
+For either Bayesian or classical inference,
+the basic strategy is to come up with a fit statistic that depends on the
+parameters and the data set, which we denote by
+$T({\bf y}, \theta)$, and then
+ we compute this for the observed data set, and then compare its value
+ to that computed for perfect data sets simulated under the correct
+ model.  In the case of classical inference, we use a parametric
+ bootstrap where we simulate data sets conditional on the MLE
+ $\hat{\theta}$. For Bayesian analysis we use the Bayesian p-value
+ (REF) in which data sets are simulated for a posterior sample of
+ $\theta$.
+
+
+For SCR
+models it is usually possible to devise such an evaluation using the
+so-called Bayesian p-value (Gelman XYZ.XYZ) approach (see section 2.XYZ).
+However, there has not been a definitive or
+general proposal for a fit statistic for use in computing the Bayesian
+p-value although a few specialized implementations of Bayesian p-values
+have been provided (Royle 2009; Gardner et al. 2010 ???).
+As a general matter, we recommend use of Bayesian p-values but caution
+that there is not general expectation to support how well they should
+do, in general. As such, one should expect to do some kind of custom
+evaluation for every use of such methods if the ability to reject
+under specific departures from the model is of paramount interest.
+This is not a weakness of a Bayesian approach because the same issue
+applies in doing parametric bootstrapping.
+
+For SCR models,
+there are at least two components to model fit for most models,
+making an omnibus measure of fit difficult to describe.
+First we can consider whether the model explains the observation
+process - we can evaluate this based on the encounter frequencies of
+individuals {\it conditional} on ${\bf s}_{1}, \ldots, {\bf s}_{N}$
+Second, we might also be
+interested in evaluating the hypothesis concerning the distribution of
+the activity centers. For the simple model developed in this chapter,
+this is the assumption of {\it complete spatial randomness} (CSR)
+which we consider in section XXX.YYY below. Actually, as we noted in
+sec. XXX this is not strictly CSR per se because of the binomial
+assumption on $N$ but we refer to it as that because it is essentially
+equivalent. And besides we generate the reference distribution within
+the context of a Bayesian p-value.
+
+
+We propose analyzing the separate elements of fit individually.
+To evaluate fit of the detection component of the model, we consider
+two distinct fit statistics based on the individual encounter
+frequencies and also the trap encounter frequencies.
+
+I think inference about Density is going to be insensitive to
+departures from CSR but probably somewhat sensitive to bad models for
+the observation process.  Why do I think this? Well spatial variation
+is not important to inference about the aggregate population size, but
+it is relevant to "within population" inference, such as predicting on
+small areas.  Conversely, inference about total population size is
+known to be highly sensitive to the observation model (Dorazio and
+Royle 2003; Link 2003).
+
+
+\section{Testing Uniformity or Spatial Randomness}
+
+Historically, especially in ecology, there has been a huge amount of
+interest in whether a realization of a point process indicates
+"complete spatial randomness," i.e., that the points are distributed
+uniformly and independently in space.  A good reference for such
+things is Cressie (1996; ch. 8) and XYZ.XYZ and I also like Tony
+Smith's lecture notes (Univ. of Penn. ESE
+502)\footnote{
+\url{http://www.seas.upenn.edu/~ese502/NOTEBOOK/Part_I/3_Testing_Spatial_Randomness.pdf}}. In
+the context of animal capture-recapture studies, the CSR hypothesis is
+manifestly false, purely on biological grounds. Typically individuals
+will be clustered or more uniform (for territorial species) than
+expected under spatial randomness. That said, it may be a reasonable
+approximation to truth in some situations and
+might be largely irrelevant so far as obtaining estimates of density
+is concerned (given that we do observe a portion of the population,
+$n$).  Furthermore, in realistic sample sizes we might expect
+relatively low power to detect departures from CSR although this is a
+research question worthy of attention (see section XX.YY).
+
+Before proceeding with the development of a framework for evaluating
+the point process model - we note that if $N$ is fixed, the resulting
+point process is not, strictly speaking, one of "complete spatial
+randomness". This is because when $N$ is fixed, a slight bit of
+correlation is induced in the number of points within any particular
+subset of the state-space. That said, this is negligible for most
+purposes and, besides, we use a simulation based approach to testing
+in which we simulate under the appropriate model.  But the point is
+that CSR is not really the conventional term - maybe we call this
+"uniformity".  The basic technical framework for evaluating the CSR
+hypothesis is that the cell counts i.e., precisely those we computed
+to produce a density map, should have a binomial distribution and we
+can use a standard chi-square goodness-of-fit test to evaluate that.
+It will usually suffice to approximate the binomial cell counts by
+Poisson cell counts in which case we can use the classical
+"index-of-dispersion" test (e.g., Illian et al. 2008; p. 87):
+\[
+   I =  (cells -1)*s^2/\bar{n}
+\]
+which has approximately a chi-square on $(ncells - 1)$ df.  If $s^2/nbar
+> 1$ this suggests clustering and if $s^2/nbar <1$ then this suggests the
+point process is too regular.  I think this test is sensitive to the
+number and size of the grid cells chosen and I don't know much about
+that but it should be researched.
+{\it The} important technical issue is that we don't observe the point
+process and so the standard statistics for evaluating CSR cannot be
+computed directly.  However, using Bayesian analysis, we do have a
+posterior sample of the underlying point process and so we suggest
+computing the posterior distribution of the chi-square statistic and
+seeing how it compares to 1. As an alternative to the chi-square
+statistic based on CSR there are various "nearest-neighbor"
+methods. For example EXAMPLE XXXXXXXXX which is also easy to compute.
+
+To evaluate the uniformity assumption (i.e.,
+``complete spatial randomness'') for the activity centers, we use a
+standard chi-square goodness-of-fit test statistic, based on gridding
+the state-space of the point process into $g=1,2,\ldots,G$ cells, and
+we tabulated $n(g)$ the number of activity centers in each grid
+cell. A standard goodness-of-fit statistic for CSR is based on the
+ratio of the variance of $n(g)$ to the mean (see Table 8.3 in Cressie
+1996). In particular, in parametric likelihood theory, $I = (G
+-1)*s^2/\bar{n}$ should have a chi-square on $(G - 1)$ df under the
+CSR hypothesis.  However, we used this statistic as the basis for our
+Bayesian p-value calculation, comparing a posterior sample of $I$
+computed using each posterior realization of the point process with a
+value of $I$ obtained by simulating ${\bf s}$ under CSR.
+
+
+An issue is that this is probably sensitive to the size of the
+state-space. As the size of the state-space increases then the cell
+counts {\it are} independent binomial counts with constant density,
+and so we can overwhelm the fit statistic with extraneous ``data''
+simulated from the posterior, which is equal to the prior as we move
+away from the data, and therefore uninformed by the actual data in the
+vincinity of the trap array.
+Therefore we recoommend computing these fit statistics in the vicinity
+of the trap array only.
+
+\subsection{Computing the cell counts}
+
+In chapter 4 we talked about computing summaries of individual
+locations, such as for producing a density map. We need these for the
+GoF analysis...In the present context, the number of individuals
+living in any well-defined polygon is a derived
+parameter. Specifically, let $B(x)$ indicate a pixel
+ centered at x then
+$N(x)=sum_{i} I(s[i] in B(x))$ is the population size of box B(x), and
+$D(x) = N(x)/||B(x)||$ is the local density. These are just "derived
+parameters" (see Chapt. 2) which are estimated from MCMC output using
+the appropriate Monte Carlo average. Note that we are assuming in our
+illustration that N is known and so this is easily done by taking all
+of the output for MCMC iterations m=1,2,Ö, and doing this:
+\[
+   N(x,m) = sum_{z[i,m]=1} I(s[i,m] in B(x))
+\]
+Thus, N(x,1),N(x,2),, is the Markov chain for parameter N(x).
+
+It is worth emphasizing here that density maps will not usually appear
+uniform despite that we have assumed that activity centers are
+uniformly distributed because the observed encounters of individuals
+provide direct information about the location of the i=1,2,Ö.,n
+activity centers and thus their "estimated" locations will be affected
+by the observations. In a limiting sense, were we to sample space
+intensely enough, every individual would be captured a number of times
+and we would have considerable information about all N point
+locations. Consequently, the uniform prior would have almost no
+influence at all.
+
+\section{Is SCR0 adequate for the wolverine data?}
+
+We used the posterior output from the wolverine model fitted previous
+to compute a relatively coarse version of a density map, using a 10 x
+10 grid (Figure XXX.YYY) and using a 30 x 30 grid (Figure XXYYZZ). A
+couple of things are noteworthy: First is that as we move away from
+"where the data live" - away from the trap array - we see that the
+density approaches the mean density (lambda = XX per grid cell Ö
+XXX.YYY how is this computed?). This is a property of the estimator
+when the "detection function" decreases sufficiently
+rapidly. Relatedly, it is also a property of statistical smoothers
+such as splines, kernel smoothers, and regression smoothers -
+predictions tend toward the global mean as the influence of data
+diminishes. Another way to think of it is that it is a consequence of
+the prior - which imposes uniformity, and as you get far away from the
+data, the predictions tend to the prior. The other thing to note about
+this map is that density is not 0 over water. This might be perplexing
+to some who are fairly certain that wolverines do not like
+water. However, there is nothing about the model that recognizes water
+from non-water and so the model predicts over water {\it as if} it
+were habitat similar to that within which the array is nested. But,
+all of this is ok as far as estimating density goes and, furthermore,
+we can compute valid estimates of N over any well-defined region which
+presumably wouldn't include water if we so choose.
+
+\section{Omnibus and Encounter Model Testing}
+
+For the case where there are no time-varying covariates, we can
+summarize the data by individual and trap-specific counts
+$y_{ij}$. Conditional on ${\bf s}_{i}$,
+the expected value under any encounter model is:
+\[
+ E[y_{ij}] = p_{ij} K
+\]
+and we can define a fit statistic from the Freeman-Tukey residual
+\[
+ e_{ij} =  \sqrt{ y_{ij} } - \sqrt{ E(y_{ij}) }
+\]
+Define
+\[
+ T_{1}({\bf y}, \theta) = \sum_{i}\sum_{j} e_{ij}^{2}
+\]
+This is conditional on ${\bf s}$ and conditional on ${\bf z}$ and we
+compute this for {\it each} iteration of the MCMC algorithm to provide
+an assessment of model fit.
+WHY FREEMAN TUKEY XXX FROM CHAPT 2 XXXXXX
+
+Statistic 3: We look also at Trap frequencies
+
+Statistic 2: Individual frequencies
+
+
+If model has time effects then y[i,j] is binary ... we recommend
+computing individual/trap or individual or trap summaries using an
+expected value based on $\sum_{k} p_{ijk}$ (Russell et al. 2012).
+
+
+Probably for choosing among encounter probability models there is no
+ability to detect departures from fit for typical sparse data
+arrays. This is because individuals are observable in only a few
+traps.....
+
+Perhaps behavioral response or other biological models we can have
+some power although there needs to be some basic simulation work done
+on these problems.
+
+
+\subsection{Simulation}
+
+Quick sim study with K=10 and K=40 -- N=100, large sample sizes for
+sure.
+For each model we fitted each of the other 5 models.
+Computed each fit statistic, how often do we reject that the model fits?
+
+
+\subsection{Example: Black bear data? Wolverine data?}
+
+
+
+
+
+\section{A simulation study under alternatives}
+
+The point of this section is to evaluate whether we can effectively reject goodness of fit under various alternatives. In particular, we consider two specific modes of lack of fit:
+
+(1)	Can we detect a lack of fit in the detection model?
+
+(2)	Can we detect a lack of fit in the point process model?
+
+4 or 5 detection models and 3 ponit process models.
+
+7 x 7 grid, set to up to yield 50 individuals out of 100. Also try 49 pseudo-random or systematic points.
+
+
+\subsection{Point Process Alternatives}
+
+1.	Extreme regularity
+2.	Somewhat? Regular
+3.	Extreme clustering (multiple guys with same home range center)
+4.	Somewhat clustered
+5.	Complete randomness
+6.	Spatial drift in the form of a spatial covariate or trend
+
+
+We conducted a limited simulation study to evaluate the basic SCR
+model under point processes that deviate from complete spatial
+randomness. (To be concise we might use the term "uniformity" because
+the abbreviation CSR looks too much like SCR.) Specifically, we
+consider two deviations from complete spatial randomness: clustered
+points, and points that are more systematically distributed than under
+complete spatial randomness. We evaluate two questions: (1) how
+sensitive is the density estimate to violation of complete spatial
+randomness? (2) how much power does the GoF test have?
+
+
+It is clear that there are many possible influences of both power and
+effect of tests for CSR.  For example, N and lambda interact to affect
+the expected size of the data set (n individuals) and also sigma
+interacts with trap configuration and spacing to affect the number of
+unique traps that individuals are captured in. It would be impossible
+to catalog an exhaustive set of "what ifs" and so, instead, we focus
+on the limited situation where N=100 on a state-space with parameters
+set to obtain about 44 individuals on average. We simulated encounters
+on a 5x5 grid of traps, unit spacing, with a 2 unit buffer defining
+the state-space.
+
+We simulated 3 point process models: Model 1 is CSR. Model 2 is a
+Poisson cluster process (PCP) and Model 3 is a point process generated
+to be more systematically distributed than CSR. For the Poisson
+cluster process, 100 "parents" were distributed randomly over the
+state space and the number of offspring for each parent was assumed to
+be Poisson with mean 4. Offspring locations were generated according
+to a bivariate normal distribution around the parent location, with a
+standard deviation of 0.5.  This generated a list of many more than
+100 final offspring locations within the state-space, and so we kept
+the first 100 points within the state-space and discarded the
+remaining. Effectively the last cluster is truncated if the cumulative
+sum of offspring within the state-space is not precisely equal to 100.
+For the systematic point process we generated 100 uniformly
+distributed points and used that as a starting point to obtain the
+"space-filling design" (Royle and Nychka XXXX) which is implemented in
+the R package {\it fields} (Nychka et al XXXX) using the function {\it
+  cover.design}.
+
+
+Things to varyÖ.
+
+Point processÖ. [random, clustered, regular]   3 levels
+
+Trapping grid: 5 x 5 unit spacing. Also try random traps?   2 levels
+
+State-space: buffered by 2 or 3 units.   2 levels
+
+[N,lambda] fixed at a single value.
+
+[sigma] = .75
+
+GoF grid size = 100 cells, 225 cells, 400 cells with 0, 1 or 2 buffer?
+
+Table:
+                      Mode N  Mean N     RejectCSR   meanN(reject) modeN(reject)
+CSR
+PCP
+SYS
+
+
+4.6.2. GoF under complete spatial randomness.
+
+4.6.3. GoF under the Poisson cluster process.
+
+4.6.4. GoF under the inhibition process.
+
+
+
+
+\section{ Summary and Outlook  }
+
+
+Model fit: other ideas:
+Richard brings up a good point which is related to using
+cross-validation.  Given that SCR models are a type of model for
+spatialy correlation, modeling spatial dependence in counts, similar
+to the Wolpert and Ickstadt idea, why not use techniques commonly used
+in spatial models for SCR models?  Cross-validation is a standard
+method of fitting spatial models such as kriging and splines. So we
+could as well use cross-validation based on the TRAP-SPECIFIC
+frequencies or some other measure.  We should try that here.
+
+\subsection{What to do if CSR rejected?}
+
+What can we do? We don't knowÖ.. depends on the laternative and how sensitive estimates are?
+
+
+
+
+
+
+
+
+
