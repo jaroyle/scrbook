@@ -1,0 +1,380 @@
+wolvSCR0ms <-
+function(y3d,traps,wsex,nb=1000,ni=2000,delta=2,M=200,model=1,parm="a"){
+# parm a = effect on log(sigma)
+# parm b = effect on 1/(2*sigma*sigma)
+
+library("R2WinBUGS")
+
+# trapping grid scaled appropriately
+traplocs<-as.matrix(traps[,2:3])
+mingridx<-min(traplocs[,1])
+mingridy<-min(traplocs[,2])
+traplocs[,1]<-traplocs[,1] -min(traplocs[,1])
+traplocs[,2]<-traplocs[,2]- min(traplocs[,2])
+traplocs<-traplocs/10000
+# units of 10 km
+ntraps<- nrow(traplocs)
+
+# set the state-space
+Xl<-min(traplocs[,1] - delta)
+Xu<-max(traplocs[,1] + delta)
+Yl<-min(traplocs[,2] - delta)
+Yu<-max(traplocs[,2] + delta)
+area<- (Xu-Xl)*(Yu-Yl)/10
+plot(traplocs,pch=20,xlim=c(Xl,Xu),ylim=c(Yl,Yu))
+
+# ARRAY having dimensions individual x rep x trap
+# MASK is trap x rep
+nz<-M-dim(y3d)[1]
+wsex<-c(wsex,rep(NA,nz))
+
+MASK<-traps[,4:ncol(traps)]
+Dmat<-as.matrix(dist(traplocs))
+nind<-dim(y3d)[1]
+K<-dim(y3d)[2]
+
+## Data Augmentation
+
+newy<-array(0,dim=c(nind+nz,K,ntraps))
+for(j in 1:nind){
+newy[j,1:K,1:ntraps]<-y3d[j,1:K,1:ntraps]
+}
+y3d<-newy
+M<-nind+nz
+# compute trap-specific sample size
+K<-apply(MASK,1,sum)
+ncaps<- apply(y3d,c(1,3),sum)
+
+
+
+
+if(parm=="b"){
+sink("modelfile0.txt")
+cat("
+model {
+
+alpha.sex ~ dunif(-3,3)
+beta.sex  ~ dunif(-3,3)
+sigma~dunif(0,50)
+alpha0~dnorm(0,.1)
+beta<- (1/(2*sigma*sigma) )
+psi ~ dunif(0,1)
+psi.sex  ~ dunif(0,1)
+
+for(i in 1:M){
+ wsex[i] ~ dbern(psi.sex)
+ w[i]~dbern(psi)
+ s[i,1]~dunif(Xl,Xu)
+ s[i,2]~dunif(Yl,Yu)
+ logit(p0[i])<- alpha0 +  mod[1]*alpha.sex*wsex[i]
+log(beta.vec[i])<- log( beta ) + mod[2]*wsex[i]*beta.sex
+for(j in 1:ntraps){
+   mu[i,j]<-w[i]*p[i,j]
+mu2[i,j]<- mu[i,j]*K[j]
+ ncaps[i,j]~ dbin(mu[i,j],K[j])
+ dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2)
+
+ p[i,j]  <-  p0[i]*exp( - beta.vec[i]*dd[i,j] )
+ncapsnew[i,j]~dbin(mu[i,j],K[j])
+err[i,j]<-  pow(pow(ncaps[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
+errnew[i,j]<- pow(pow(ncapsnew[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
+}
+
+expected[i]<- sum(mu2[i,])
+nsum[i]<- sum(ncaps[i,])
+nsumnew[i] <- sum(ncapsnew[i,])
+
+err1[i]<- pow( pow(nsum[i],.5)  - pow(expected[i],0.5),2)
+err1new[i]<- pow( pow(nsumnew[i],.5) - pow(expected[i],0.5),2)
+}
+for(j in 1:ntraps){
+traptotals[j]<- sum(ncaps[1:M,j])
+traptotalsnew[j]<-sum(ncapsnew[1:M,j])
+expectedtrap[j]<- sum(mu[,j]) *K[j]
+err3[j]<- pow( pow(traptotals[j],.5) - pow(expectedtrap[j],.5),2)
+err3new[j]<- pow( pow(traptotalsnew[j],.5) - pow(expectedtrap[j],.5),2)
+}
+X3obs<- sum(err3[])
+X3new<- sum(err3new[])
+X1obs<- sum(err1[])
+X1new<- sum(err1new[])
+Xobs<-sum(err[,])
+Xnew<-sum(errnew[,])
+
+N<-sum(w[1:M])
+D<-N/area
+}
+",fill=TRUE)
+sink()
+}
+
+if(parm=="a"){
+sink("modelfile0.txt")
+cat("
+model {
+alpha.sex ~ dunif(-3,3)
+beta.sex  ~ dunif(-3,3)
+sigma~dunif(0,50)
+alpha0~dnorm(0,.1)
+beta<- (1/(2*sigma*sigma) )
+psi ~ dunif(0,1)
+psi.sex  ~ dunif(0,1)
+
+for(i in 1:M){
+ wsex[i] ~ dbern(psi.sex)
+ w[i]~dbern(psi)
+ s[i,1]~dunif(Xl,Xu)
+ s[i,2]~dunif(Yl,Yu)
+ logit(p0[i])<- alpha0 +  mod[1]*alpha.sex*wsex[i]
+log(sigma.vec[i])<- log(sigma) + mod[2]*wsex[i]*beta.sex
+beta.vec[i]<- 1/(2*sigma.vec[i]*sigma.vec[i])
+for(j in 1:ntraps){
+   mu[i,j]<-w[i]*p[i,j]
+mu2[i,j]<- mu[i,j]*K[j]
+ ncaps[i,j]~ dbin(mu[i,j],K[j])
+ dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2)
+
+ p[i,j]  <-  p0[i]*exp( - beta.vec[i]*dd[i,j] )
+ncapsnew[i,j]~dbin(mu[i,j],K[j])
+err[i,j]<-  pow(pow(ncaps[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
+errnew[i,j]<- pow(pow(ncapsnew[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
+}
+
+
+expected[i]<- sum(mu2[i,])
+nsum[i]<- sum(ncaps[i,])
+nsumnew[i] <- sum(ncapsnew[i,])
+
+err1[i]<- pow( pow(nsum[i],.5)  - pow(expected[i],0.5),2)
+err1new[i]<- pow( pow(nsumnew[i],.5) - pow(expected[i],0.5),2)
+}
+for(j in 1:ntraps){
+traptotals[j]<- sum(ncaps[1:M,j])
+traptotalsnew[j]<-sum(ncapsnew[1:M,j])
+expectedtrap[j]<- sum( mu[,j]) *K[j]
+err3[j]<- pow( pow(traptotals[j],.5) - pow(expectedtrap[j],.5),2)
+err3new[j]<- pow( pow(traptotalsnew[j],.5) - pow(expectedtrap[j],.5),2)
+}
+X3obs<- sum(err3[])
+X3new<- sum(err3new[])
+X1obs<- sum(err1[])
+X1new<- sum(err1new[])
+Xobs<-sum(err[,])
+Xnew<-sum(errnew[,])
+
+N<-sum(w[1:M])
+D<-N/area
+}
+",fill=TRUE)
+sink()
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if(parm=="b"){
+
+sink("modelfile5.txt")
+cat("
+model {
+alpha.sex ~ dunif(-3,3)
+beta.sex  ~ dunif(-3,3)
+sigma~dunif(0,10)
+beta0<- 1/(2*sigma*sigma)
+alpha0~dnorm(0,.1)
+psi ~ dunif(0,1)
+psi.sex  ~ dunif(0,1)
+mod[1] ~ dbern(.5)
+mod[2] ~ dbern(.5)
+for(i in 1:M){
+ wsex[i] ~ dbern(psi.sex)
+ w[i]~dbern(psi)
+ s[i,1]~dunif(Xl,Xu)
+ s[i,2]~dunif(Yl,Yu)
+ logit(p0[i])<- alpha0 +  mod[1]*alpha.sex*wsex[i]
+ beta.vec[i]<- beta0 + mod[2]*wsex[i]*beta.sex
+
+for(j in 1:ntraps){
+   mu[i,j]<-w[i]*p[i,j]
+mu2[i,j]<- mu[i,j]*K[j]
+ ncaps[i,j]~ dbin(mu[i,j],K[j])
+ dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2)
+
+ p[i,j]  <-  p0[i]*exp( - beta.vec[i]*dd[i,j] )
+ncapsnew[i,j]~dbin(mu[i,j],K[j])
+err[i,j]<-  pow(pow(ncaps[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
+errnew[i,j]<- pow(pow(ncapsnew[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
+}
+
+
+expected[i]<- sum(mu2[i,])
+nsum[i]<- sum(ncaps[i,])
+nsumnew[i] <- sum(ncapsnew[i,])
+
+err1[i]<- pow( pow(nsum[i],.5)  - pow(expected[i],0.5),2)
+err1new[i]<- pow( pow(nsumnew[i],.5) - pow(expected[i],0.5),2)
+}
+for(j in 1:ntraps){
+traptotals[j]<- sum(ncaps[1:M,j])
+traptotalsnew[j]<-sum(ncapsnew[1:M,j])
+expectedtrap[j]<- sum( mu[,j]) *K[j]
+err3[j]<- pow( pow(traptotals[j],.5) - pow(expectedtrap[j],.5),2)
+err3new[j]<- pow( pow(traptotalsnew[j],.5) - pow(expectedtrap[j],.5),2)
+}
+X3obs<- sum(err3[])
+X3new<- sum(err3new[])
+X1obs<- sum(err1[])
+X1new<- sum(err1new[])
+Xobs<-sum(err[,])
+Xnew<-sum(errnew[,])
+
+N<-sum(w[1:M])
+D<-N/area
+}
+",fill=TRUE)
+sink()
+}
+if(parm=="a"){
+sink("modelfile5.txt")
+cat("
+model {
+alpha.sex ~ dunif(-3,3)
+beta.sex  ~ dunif(-3,3)
+sigma~dunif(0,10)
+alpha0~dnorm(0,.1)
+psi ~ dunif(0,1)
+psi.sex  ~ dunif(0,1)
+mod[1] ~ dbern(.5)
+mod[2] ~ dbern(.5)
+for(i in 1:M){
+ wsex[i] ~ dbern(psi.sex)
+ w[i]~dbern(psi)
+ s[i,1]~dunif(Xl,Xu)
+ s[i,2]~dunif(Yl,Yu)
+ logit(p0[i])<- alpha0 +  mod[1]*alpha.sex*wsex[i]
+
+log(sigma.vec[i])<- log(sigma) +mod[2]*wsex[i]*beta.sex
+beta.vec[i]<- 1/(2*sigma.vec[i]*sigma.vec[i])
+
+
+for(j in 1:ntraps){
+   mu[i,j]<-w[i]*p[i,j]
+mu2[i,j]<- mu[i,j]*K[j]
+ ncaps[i,j]~ dbin(mu[i,j],K[j])
+ dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2)
+
+ p[i,j]  <-  p0[i]*exp( - beta.vec[i]*dd[i,j] )
+ncapsnew[i,j]~dbin(mu[i,j],K[j])
+err[i,j]<-  pow(pow(ncaps[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
+errnew[i,j]<- pow(pow(ncapsnew[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
+}
+
+
+expected[i]<- sum(mu2[i,])
+nsum[i]<- sum(ncaps[i,])
+nsumnew[i] <- sum(ncapsnew[i,])
+
+err1[i]<- pow( pow(nsum[i],.5)  - pow(expected[i],0.5),2)
+err1new[i]<- pow( pow(nsumnew[i],.5) - pow(expected[i],0.5),2)
+}
+for(j in 1:ntraps){
+traptotals[j]<- sum(ncaps[1:M,j])
+traptotalsnew[j]<-sum(ncapsnew[1:M,j])
+expectedtrap[j]<- sum( mu[,j]) *K[j]
+err3[j]<- pow( pow(traptotals[j],.5) - pow(expectedtrap[j],.5),2)
+err3new[j]<- pow( pow(traptotalsnew[j],.5) - pow(expectedtrap[j],.5),2)
+}
+X3obs<- sum(err3[])
+X3new<- sum(err3new[])
+X1obs<- sum(err1[])
+X1new<- sum(err1new[])
+Xobs<-sum(err[,])
+Xnew<-sum(errnew[,])
+
+N<-sum(w[1:M])
+D<-N/area
+}
+",fill=TRUE)
+sink()
+}
+
+sst<-sample(1:nrow(traplocs),M,replace=TRUE)
+wst<-c(rep(1,nind),rep(0,M-nind))
+
+if(model==5){
+data <- list ("ncaps","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex")
+inits <- function(){   list (sigma=runif(1,.4,1),alpha0=rnorm(1,-2,.2),w=wst,alpha.sex=0,
+beta.sex=0,mod=c(1,1)) }
+parameters <- c("mod","beta.sex","alpha.sex","psi","psi.sex","sigma","alpha0",
+"N","D","Xobs","Xnew","X1obs","X1new","X3obs","X3new") ###,"Xobs","Xnew","s","w")
+out <- jags(data, inits, parameters, "modelfile5.txt", n.thin=1,n.chains=3, n.burnin=nb,
+n.iter=ni,working.dir=getwd())
+}
+
+
+
+if(model==1){
+mod<-c(0,0)
+data <- list ("ncaps","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex","mod")
+inits <- function(){   list (sigma=runif(1,.4,1),alpha0=rnorm(1,-2,.2),w=wst,alpha.sex=0,
+beta.sex=0) }
+parameters <- c("beta.sex","alpha.sex","psi","psi.sex","sigma","alpha0","N","D","beta","Xobs","Xnew","X1obs","X1new","X3obs","X3new") ###,"Xobs","Xnew","s","w")
+out <- jags(data, inits, parameters, "modelfile0.txt", n.thin=1,n.chains=3, n.burnin=nb,n.iter=ni,working.dir=getwd())
+}
+
+if(model==2){
+mod<-c(1,0)
+data <- list ("ncaps","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex","mod")
+inits <- function(){   list (sigma=runif(1,.4,1),alpha0=rnorm(1,-2,.2),w=wst,alpha.sex=0,beta.sex=0) }
+parameters <- c("beta.sex","alpha.sex","psi","psi.sex","sigma","alpha0","N","D","beta","Xobs","Xnew","X1obs","X1new","X3obs","X3new") ###,"Xobs","Xnew","s","w")
+out <- jags(data, inits, parameters, "modelfile0.txt", n.thin=1,n.chains=3, n.burnin=nb,n.iter=ni,working.dir=getwd())
+}
+
+if(model==3){
+mod<-c(0,1)
+data <- list ("ncaps","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex","mod")
+inits <- function(){   list (sigma=runif(1,.4,1),alpha0=rnorm(1,-2,.2),w=wst,alpha.sex=0,beta.sex=0) }
+parameters <- c("beta.sex","alpha.sex","psi","psi.sex","sigma","alpha0","N","D","beta","Xobs","Xnew","X1obs","X1new","X3obs","X3new") ###,"Xobs","Xnew","s","w")
+out <- jags(data, inits, parameters, "modelfile0.txt", n.thin=1,n.chains=3, n.burnin=nb,n.iter=ni,working.dir=getwd())
+}
+
+if(model==4){
+mod<-c(1,1)
+data <- list ("ncaps","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex","mod")
+inits <- function(){   list (sigma=runif(1,.4,1),alpha0=rnorm(1,-2,.2),w=wst,alpha.sex=0,beta.sex=0) }
+parameters <- c("beta.sex","alpha.sex","psi","psi.sex","sigma","alpha0","N","D","beta","Xobs","Xnew","X1obs","X1new","X3obs","X3new") ###,"Xobs","Xnew","s","w")
+out <- jags(data, inits, parameters, "modelfile0.txt", n.thin=1,n.chains=3, n.burnin=nb,n.iter=ni,working.dir=getwd())
+}
+
+
+
+
+out
+
+}
+
+
