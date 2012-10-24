@@ -450,7 +450,78 @@ In the previous example, where we knew the number of marked individuals, we sepa
 }
 Whether you have a known or an unknown number of marked individuals is included as an option in {\tt scrPID}.
  
-XXXX Add sim example XXXX
+{\flushleft \bf A simulation example}
+For illustration purposes we simulated a data set with $N=80$ individuals randomply distributed across a state space of 10x10 units. Of those, we randomly choose 40 to be marked and identifiable, and then simulate encounter data for both marked and unmarked individuals on an 8x8 grid with unit spacing over $K=5$ occasions, with $\sigma=0.5$ and $\lambda_0=0.5$, adopting a Poisson encounter process. To do so we use the {\tt scrbook} function {\tt sim.data}, which also allows you to create data sets from a Binomial observation process, known number of marked individuals, and with telemetry locations (\ref{partialID.sec.telemetry}) or individual identification rate $<$ 100 \% (\ref{partialID.sec.IDrate}). We analyzed the simulated data both assuming we do not know the total number of marked animals in our state space, and assuming we do know this number, using the {\tt scrPID} function and running 20000 iterations. You can repeat the analysis by executing the R code below.
+
+{\small
+\begin{verbatim}
+XXXcheck seed xxxxx
+set.seed(178)
+
+#set input values
+N=80
+lam0=0.5
+knownID=40
+rat=0.8
+sigma=0.5
+K=5
+
+#create grid and state space
+coords<-seq(0,7, 1)
+grid<-expand.grid(coords, coords)
+trapmat<-as.matrix(grid)
+buff<- 3*sigma
+xl<-min(trapmat[,1])-buff
+xu<-max(trapmat[,1])+buff
+yl<-min(trapmat[,2])-buff
+yu<-max(trapmat[,2])+buff
+xlims=c(xl, xu)
+ylims=c(yl,yu)
+area<-(xu-xl)*(yu-yl)
+
+#simulate data
+dat<-sim.data(N=N, K=K, sigma=sigma, lam0=lam0, knownID=knownID,X=trapmat,
+              xlims=xlims, ylims=ylims,  obsmod= "pois", 
+			  nmarked="unknown",rat=1, tel =0, nlocs=0)
+
+#create initial values function for scrPID, set M and tuning parameters
+inits<-function(){list(S=cbind(runif(M, xlims[1], xlims[2]), runif(M, ylims[1], ylims[2])), 
+	lam0=runif(1, 0.4, 0.6), sigma=runif(1, 0.4, 0.6), psi=runif(1, 0.4, 0.6))}
+M<-160
+delta=c(0.1, 0.01, 2)
+
+#run model, first m=unknown, then m=known
+mod<-scrPID(n=dat$n, X=trapmat, y=dat$Yobs, M=M, obsmod = "pois",nmarked="unknown", niters=20000, 
+    xlims=xlims, ylims=ylims, inits=inits(), delta=delta ) )
+mod2<-scrPID(n=dat$n, X=trapmat, y=dat$Yknown, M=M, obsmod = "pois",nmarked="known", niters=20000, 
+    xlims=xlims, ylims=ylims, inits=inits(), delta=delta ) 
+    
+\end{verbatim}
+}
+ 
+  
+\begin{table}[ht]
+\label{partialID.tab.unknownsim}
+\centering
+  \caption{Posterior summaries of the spatial mark-resight model for a simulated data set analyzed with number of marked individuals $m$ assumed to be unknown and known.}
+  \begin{tabular}{lccccc}
+\hline
+			&     	   &  Mean &   SD   & 2.5\% &  97.5\% \\
+\hline
+$m$ unknown	& $\sigma$ & 0.454 & 0.0239 & 0.411 & 0.505 \\
+			& $\lambda_0$  & 0.620 & 0.081 & 0.465 & 0.794 \\
+			& $\psi$   & 0.544 & 0.063 & 0.425 & 0.673 \\
+			& $N$     & 87.041 & 8.009 & 72  & 104  \\
+\hline
+$m$ known	& $\sigma$ 
+			& $\lambda_0$  
+			& $\psi$
+			& $N$  
+\hline 
+  \end{tabular}
+\end{table}
+
+Results are listed in Table \ref{partialID.tab.unknownsim}. 
 
 \section  {Individual identification rate $<$ 100 \%}
 \label{partialID.sec.IDrate}
