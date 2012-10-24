@@ -93,8 +93,9 @@ npix.x<-length(xg)
 npix.y<-length(yg)
 G<-cbind(rep(xg,npix.y),sort(rep(yg,npix.x)))
 
-# not sure how to access this
-SSp<-readShapeSpatial('Sim_Polygon.shp')
+data("fakeshapefile")
+#### replaces this:
+#####SSp<-readShapeSpatial('Sim_Polygon.shp')
 Pcoord<-SpatialPoints(G)
 PinPoly<-over(Pcoord,SSp)
 Pin<-as.numeric(!is.na(PinPoly[,1]))

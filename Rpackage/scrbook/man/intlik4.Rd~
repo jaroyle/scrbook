@@ -66,7 +66,7 @@ intlik4(start = NULL, y = y, K = NULL, delta = 0.3, X = traplocs, G = NULL, ssbu
 
 # fake data with a shapefile
 
-data<-simSCR0.fn(discard0=TRUE,sd=2013)
+data<-simSCR0(discard0=TRUE,rnd=2013)
 y<-data$Y
 traplocs<-data$traplocs
 nind<-nrow(y)
@@ -101,7 +101,7 @@ Pin<-as.numeric(!is.na(PinPoly[,1]))
 ### over() returns NA when the point is not within any polygon, or the ID number of the polygon the point is in; 
 ### so it works for more complex multi-polygons, too. 
 G<-G[Pin==1,]
-frog<-nlm(intlik4,c(-2.5,2,log(4)),hessian=TRUE,y=y,K=K,delta=.3,X=traplocs,G=G)
+frog<-nlm(intlik4,c(-2.5,0,3),hessian=TRUE,y=y,K=K,delta=.3,X=traplocs,G=G)
 
 
 ####
@@ -118,7 +118,7 @@ traps<-cbind(1:nrow(traps),traps)  # pad an ID variable
 y3d<-SCR23darray.fn(wolverine$wcaps,traps)
 y2d<-apply(y3d,c(1,3),sum)
 G<-wolverine$grid2/10000    ## Use the 2km grid
-starts<-c(-1.5,1.2,log(4))
+starts<-c(-1.5,0,3)
 frog<-nlm(intlik4,starts,hessian=TRUE,y=y2d,K=K.wolv,X=traplocs,G=G,ssbuffer=2)
 
 
