@@ -1,4 +1,4 @@
-wolvSCR0ms.fn <-
+wolvSCR0ms <-
 function(y3d,traps,wsex,nb=1000,ni=2000,delta=2,M=200,model=1,parm="a"){
 # parm a = effect on log(sigma)
 # parm b = effect on 1/(2*sigma*sigma)
