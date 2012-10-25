@@ -1,5 +1,5 @@
 wolvSCR0ms <-
-function(y3d,traps,wsex,nb=1000,ni=2000,delta=2,M=200,model=1,parm="a"){
+function(y3d,traps,wsex,nb=1000,ni=2000,buffer=2,M=200,model=1,parm="a"){
 # parm a = effect on log(sigma)
 # parm b = effect on 1/(2*sigma*sigma)
 
@@ -16,10 +16,10 @@ traplocs<-traplocs/10000
 ntraps<- nrow(traplocs)
 
 # set the state-space
-Xl<-min(traplocs[,1] - delta)
-Xu<-max(traplocs[,1] + delta)
-Yl<-min(traplocs[,2] - delta)
-Yu<-max(traplocs[,2] + delta)
+Xl<-min(traplocs[,1] - buffer)
+Xu<-max(traplocs[,1] + buffer)
+Yl<-min(traplocs[,2] - buffer)
+Yu<-max(traplocs[,2] + buffer)
 area<- (Xu-Xl)*(Yu-Yl)/10
 plot(traplocs,pch=20,xlim=c(Xl,Xu),ylim=c(Yl,Yu))
 

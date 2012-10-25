@@ -43,7 +43,7 @@ y3d<-newy
 M<-nind+nz
 # compute trap-specific sample size
 K<-apply(MASK,1,sum)
-ncaps<- apply(y3d,c(1,3),sum)
+y<- apply(y3d,c(1,3),sum)
 
 
 
@@ -71,25 +71,25 @@ log(beta.vec[i])<- log( beta ) + mod[2]*wsex[i]*beta.sex
 for(j in 1:ntraps){
    mu[i,j]<-w[i]*p[i,j]
 mu2[i,j]<- mu[i,j]*K[j]
- ncaps[i,j]~ dbin(mu[i,j],K[j])
+ y[i,j]~ dbin(mu[i,j],K[j])
  dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2)
 
  p[i,j]  <-  p0[i]*exp( - beta.vec[i]*dd[i,j] )
-ncapsnew[i,j]~dbin(mu[i,j],K[j])
-err[i,j]<-  pow(pow(ncaps[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
-errnew[i,j]<- pow(pow(ncapsnew[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
+ynew[i,j] ~ dbin(mu[i,j],K[j])
+err[i,j]<-  pow(pow(y[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
+errnew[i,j]<- pow(pow(ynew[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
 }
 
 expected[i]<- sum(mu2[i,])
-nsum[i]<- sum(ncaps[i,])
-nsumnew[i] <- sum(ncapsnew[i,])
+nsum[i]<- sum(y[i,])
+nsumnew[i] <- sum(ynew[i,])
 
 err1[i]<- pow( pow(nsum[i],.5)  - pow(expected[i],0.5),2)
 err1new[i]<- pow( pow(nsumnew[i],.5) - pow(expected[i],0.5),2)
 }
 for(j in 1:ntraps){
-traptotals[j]<- sum(ncaps[1:M,j])
-traptotalsnew[j]<-sum(ncapsnew[1:M,j])
+traptotals[j]<- sum(y[1:M,j])
+traptotalsnew[j]<-sum(ynew[1:M,j])
 expectedtrap[j]<- sum(mu[,j]) *K[j]
 err3[j]<- pow( pow(traptotals[j],.5) - pow(expectedtrap[j],.5),2)
 err3new[j]<- pow( pow(traptotalsnew[j],.5) - pow(expectedtrap[j],.5),2)
@@ -131,26 +131,26 @@ beta.vec[i]<- 1/(2*sigma.vec[i]*sigma.vec[i])
 for(j in 1:ntraps){
    mu[i,j]<-w[i]*p[i,j]
 mu2[i,j]<- mu[i,j]*K[j]
- ncaps[i,j]~ dbin(mu[i,j],K[j])
+ y[i,j]~ dbin(mu[i,j],K[j])
  dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2)
 
  p[i,j]  <-  p0[i]*exp( - beta.vec[i]*dd[i,j] )
-ncapsnew[i,j]~dbin(mu[i,j],K[j])
-err[i,j]<-  pow(pow(ncaps[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
-errnew[i,j]<- pow(pow(ncapsnew[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
+ynew[i,j]~dbin(mu[i,j],K[j])
+err[i,j]<-  pow(pow(y[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
+errnew[i,j]<- pow(pow(ynew[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
 }
 
 
 expected[i]<- sum(mu2[i,])
-nsum[i]<- sum(ncaps[i,])
-nsumnew[i] <- sum(ncapsnew[i,])
+nsum[i]<- sum(y[i,])
+nsumnew[i] <- sum(ynew[i,])
 
 err1[i]<- pow( pow(nsum[i],.5)  - pow(expected[i],0.5),2)
 err1new[i]<- pow( pow(nsumnew[i],.5) - pow(expected[i],0.5),2)
 }
 for(j in 1:ntraps){
-traptotals[j]<- sum(ncaps[1:M,j])
-traptotalsnew[j]<-sum(ncapsnew[1:M,j])
+traptotals[j]<- sum(y[1:M,j])
+traptotalsnew[j]<-sum(ynew[1:M,j])
 expectedtrap[j]<- sum( mu[,j]) *K[j]
 err3[j]<- pow( pow(traptotals[j],.5) - pow(expectedtrap[j],.5),2)
 err3new[j]<- pow( pow(traptotalsnew[j],.5) - pow(expectedtrap[j],.5),2)
@@ -221,26 +221,26 @@ for(i in 1:M){
 for(j in 1:ntraps){
    mu[i,j]<-w[i]*p[i,j]
 mu2[i,j]<- mu[i,j]*K[j]
- ncaps[i,j]~ dbin(mu[i,j],K[j])
+ y[i,j]~ dbin(mu[i,j],K[j])
  dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2)
 
  p[i,j]  <-  p0[i]*exp( - beta.vec[i]*dd[i,j] )
-ncapsnew[i,j]~dbin(mu[i,j],K[j])
-err[i,j]<-  pow(pow(ncaps[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
-errnew[i,j]<- pow(pow(ncapsnew[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
+ynew[i,j]~dbin(mu[i,j],K[j])
+err[i,j]<-  pow(pow(y[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
+errnew[i,j]<- pow(pow(ynew[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
 }
 
 
 expected[i]<- sum(mu2[i,])
-nsum[i]<- sum(ncaps[i,])
-nsumnew[i] <- sum(ncapsnew[i,])
+nsum[i]<- sum(y[i,])
+nsumnew[i] <- sum(ynew[i,])
 
 err1[i]<- pow( pow(nsum[i],.5)  - pow(expected[i],0.5),2)
 err1new[i]<- pow( pow(nsumnew[i],.5) - pow(expected[i],0.5),2)
 }
 for(j in 1:ntraps){
-traptotals[j]<- sum(ncaps[1:M,j])
-traptotalsnew[j]<-sum(ncapsnew[1:M,j])
+traptotals[j]<- sum(y[1:M,j])
+traptotalsnew[j]<-sum(ynew[1:M,j])
 expectedtrap[j]<- sum( mu[,j]) *K[j]
 err3[j]<- pow( pow(traptotals[j],.5) - pow(expectedtrap[j],.5),2)
 err3new[j]<- pow( pow(traptotalsnew[j],.5) - pow(expectedtrap[j],.5),2)
@@ -284,26 +284,26 @@ beta.vec[i]<- 1/(2*sigma.vec[i]*sigma.vec[i])
 for(j in 1:ntraps){
    mu[i,j]<-w[i]*p[i,j]
 mu2[i,j]<- mu[i,j]*K[j]
- ncaps[i,j]~ dbin(mu[i,j],K[j])
+ y[i,j]~ dbin(mu[i,j],K[j])
  dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2)
 
  p[i,j]  <-  p0[i]*exp( - beta.vec[i]*dd[i,j] )
-ncapsnew[i,j]~dbin(mu[i,j],K[j])
-err[i,j]<-  pow(pow(ncaps[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
-errnew[i,j]<- pow(pow(ncapsnew[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
+ynew[i,j]~dbin(mu[i,j],K[j])
+err[i,j]<-  pow(pow(y[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
+errnew[i,j]<- pow(pow(ynew[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
 }
 
 
 expected[i]<- sum(mu2[i,])
-nsum[i]<- sum(ncaps[i,])
-nsumnew[i] <- sum(ncapsnew[i,])
+nsum[i]<- sum(y[i,])
+nsumnew[i] <- sum(ynew[i,])
 
 err1[i]<- pow( pow(nsum[i],.5)  - pow(expected[i],0.5),2)
 err1new[i]<- pow( pow(nsumnew[i],.5) - pow(expected[i],0.5),2)
 }
 for(j in 1:ntraps){
-traptotals[j]<- sum(ncaps[1:M,j])
-traptotalsnew[j]<-sum(ncapsnew[1:M,j])
+traptotals[j]<- sum(y[1:M,j])
+traptotalsnew[j]<-sum(ynew[1:M,j])
 expectedtrap[j]<- sum( mu[,j]) *K[j]
 err3[j]<- pow( pow(traptotals[j],.5) - pow(expectedtrap[j],.5),2)
 err3new[j]<- pow( pow(traptotalsnew[j],.5) - pow(expectedtrap[j],.5),2)
@@ -326,7 +326,7 @@ sst<-sample(1:nrow(traplocs),M,replace=TRUE)
 wst<-c(rep(1,nind),rep(0,M-nind))
 
 if(model==5){
-data <- list ("ncaps","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex")
+data <- list ("y","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex")
 inits <- function(){   list (sigma=runif(1,.4,1),alpha0=rnorm(1,-2,.2),w=wst,alpha.sex=0,
 beta.sex=0,mod=c(1,1)) }
 parameters <- c("mod","beta.sex","alpha.sex","psi","psi.sex","sigma","alpha0",
@@ -339,7 +339,7 @@ n.iter=ni,working.dir=getwd())
 
 if(model==1){
 mod<-c(0,0)
-data <- list ("ncaps","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex","mod")
+data <- list ("y","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex","mod")
 inits <- function(){   list (sigma=runif(1,.4,1),alpha0=rnorm(1,-2,.2),w=wst,alpha.sex=0,
 beta.sex=0) }
 parameters <- c("beta.sex","alpha.sex","psi","psi.sex","sigma","alpha0","N","D","beta","Xobs","Xnew","X1obs","X1new","X3obs","X3new") ###,"Xobs","Xnew","s","w")
@@ -348,7 +348,7 @@ out <- jags(data, inits, parameters, "modelfile0.txt", n.thin=1,n.chains=3, n.bu
 
 if(model==2){
 mod<-c(1,0)
-data <- list ("ncaps","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex","mod")
+data <- list ("y","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex","mod")
 inits <- function(){   list (sigma=runif(1,.4,1),alpha0=rnorm(1,-2,.2),w=wst,alpha.sex=0,beta.sex=0) }
 parameters <- c("beta.sex","alpha.sex","psi","psi.sex","sigma","alpha0","N","D","beta","Xobs","Xnew","X1obs","X1new","X3obs","X3new") ###,"Xobs","Xnew","s","w")
 out <- jags(data, inits, parameters, "modelfile0.txt", n.thin=1,n.chains=3, n.burnin=nb,n.iter=ni,working.dir=getwd())
@@ -356,7 +356,7 @@ out <- jags(data, inits, parameters, "modelfile0.txt", n.thin=1,n.chains=3, n.bu
 
 if(model==3){
 mod<-c(0,1)
-data <- list ("ncaps","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex","mod")
+data <- list ("y","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex","mod")
 inits <- function(){   list (sigma=runif(1,.4,1),alpha0=rnorm(1,-2,.2),w=wst,alpha.sex=0,beta.sex=0) }
 parameters <- c("beta.sex","alpha.sex","psi","psi.sex","sigma","alpha0","N","D","beta","Xobs","Xnew","X1obs","X1new","X3obs","X3new") ###,"Xobs","Xnew","s","w")
 out <- jags(data, inits, parameters, "modelfile0.txt", n.thin=1,n.chains=3, n.burnin=nb,n.iter=ni,working.dir=getwd())
@@ -364,7 +364,7 @@ out <- jags(data, inits, parameters, "modelfile0.txt", n.thin=1,n.chains=3, n.bu
 
 if(model==4){
 mod<-c(1,1)
-data <- list ("ncaps","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex","mod")
+data <- list ("y","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex","mod")
 inits <- function(){   list (sigma=runif(1,.4,1),alpha0=rnorm(1,-2,.2),w=wst,alpha.sex=0,beta.sex=0) }
 parameters <- c("beta.sex","alpha.sex","psi","psi.sex","sigma","alpha0","N","D","beta","Xobs","Xnew","X1obs","X1new","X3obs","X3new") ###,"Xobs","Xnew","s","w")
 out <- jags(data, inits, parameters, "modelfile0.txt", n.thin=1,n.chains=3, n.burnin=nb,n.iter=ni,working.dir=getwd())
