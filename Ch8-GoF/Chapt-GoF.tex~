@@ -706,8 +706,7 @@ parameter & \multicolumn{2}{c}{model 1} &
 \multicolumn{2}{c}{model 2} &
 \multicolumn{2}{c}{model 3} &
 \multicolumn{2}{c}{model 4}  \\
-        &    mean &   sd &      mean &   sd &      mean &   sd &
-        mean&     sd \\
+        &    mean &   sd &      mean &   sd &      mean &   sd &   mean&     sd \\
 D           5.776 &  1.121&  5.723 &  1.136 &  5.714 &  1.145 & 5.677&   1.156 \\
 N          59.925 & 11.627&  59.370&  11.790&  59.275&  11.874& 58.892&  11.995 \\
 alpha0     -2.816 &  0.175&  -2.439&   0.248&  -2.813&   0.176& -2.420&   0.259 \\
@@ -803,7 +802,8 @@ capture-recapture models in \citep[][sec. 3.4.3]{royle_dorazio:2008},
 model-averaged parameters are produced by default. We emphasize the
 need to be careful of reporting model-averaged parameters that don't
 have a common interpretation in the different models because they are
-meaningless.  For example, if a regression parameter is in a specific
+meaningless (averaging apples and oranges....).  
+For example, if a regression parameter is in a specific
 model then the posterior is informed by the data and a specific MCMC
 draw is from the appropriate posterior distribution. On the other
 hand, if the regression parameter is not in the model then the MCMC
@@ -844,7 +844,7 @@ by individual level covariates such as sex:
  \log(\sigma_{i}) = \beta_{0} + \beta_{1} I_{3} C_{1,i}
 \]
 
-In this formulation of the model selection problem we can characterize
+In this indicator variable formulation of the model selection problem we can characterize
 unique models by the sequence of $I$ variables. In this case, each
 unique sequence $(I_{1},I_{2},I_{3})$ represents  a model, and we can
 tabulate the posterior frequencies of each model by post-processing
@@ -860,27 +860,30 @@ are well known to be sensitive to priors on parameters
 \citep[][sec. 7.2.5]{link_barker:2010}.  What might normally be viewed
 as vague or non-informative priors, are not usually innocuous or
 uninformative when evaluating posterior model probabilities. The use
-of Akaike's information criterion seems to avoid this problem largely
+of AIC
+seems to avoid this problem largely
 by imposing a specific and perhaps undesirable prior that is a
 function of the sample size \citep{kadane_lazar:2004}. One solution is
 to compute posterior model probabilities under a model in which the
 prior for parameters is fixed at the posterior distribution under the
 full model \citep{aitkin:1991}. At a minimum, one should evaluate
-posterior model probabilities under different vague prior
+the sensitivity of posterior model probabilities to  different prior
 specifications.
 
 
-\subsubsection{Wolverine data}
+\subsubsection{Analysis of the wolverine data}
 
-Our {\bf R} script \mbox{\tt wolvSCR0ms} in \mbox{\tt scrbook} also
+Our {\bf R} script \mbox{\tt wolvSCR0ms} in \mbox{\tt scrbook} 
 provides the model indicator variable implementation for the fully
-sex-specific SCR0 model.  It is run by setting \mbox{\tt model=5}. We
+sex-specific SCR0 model.  It is run by setting \mbox{\tt model=5} in
+the function call. We
 note that it is not very useful to report most parameter estimates
 from this model because their marginal posterior is a mixture of being
-pure prior and being informed by the data. On the other hand, the
+draws from the prior and draws  being informed by the data (i.e., from
+the posterior). On the other hand, the
 parameters $N$ and density $D$ should be reported and they represent
 marginal posteriors over all models in the model set. In effect, model
-averaging is done as part of the MCMC.
+averaging is done as part of the MCMC sampling.
  The variable 'mod'
 contains the two binary indicator variables ($I$ above) which pre-multiply the 'sex'
 term in each of the $p_{0}$ and $\sigma$ model components, like this:
@@ -892,7 +895,7 @@ and
  \mbox{log}(\sigma_{i}) = \log(\sigma_{0}) + mod[2]*\beta_{sex}*\mbox{\tt sex}_{i}
 \]
 The MCMC output for 'mod' was post-processed to obtain the
-model-weights. The {\bf R} commands are as follows:
+model-weights using the following  {\bf R} commands:
 \begin{verbatim}
 > mod<-toad5$BUGSoutput$sims.list$mod
 > mod<-paste(mod[,1],mod[,2])
@@ -904,12 +907,16 @@ mod
 mod
        0 0        0 1        1 0        1 1
 0.34331667 0.02480000 0.58376667 0.04811667
-
-above reuslts based on dunif(-3,3) prior
-
-now using the dnorm(0,.1) prior
-]
-> mod<-paste(a[,1],a[,2],sep=" ")
+\end{verbatim}
+We note that these were obtained using a discrete uniform prior
+(\mbox{\tt dunif(-3,3)} {\bf JAGS})
+for the sex effect parameters. To evaluate that choice of prior
+distributions, we modified the {\bf R} script to run the same model
+but with \mbox{\tt dnorm(0,.1)} prior distributions, producing the
+following results:
+\begin{verbatim}
+> mod<-toad5$BUGSoutput$sims.list$mod
+> mod<-paste(mod[,1],mod[,2])
 > table(mod)/length(mod)
 mod
        0 0        0 1        1 0        1 1
@@ -918,38 +925,57 @@ mod
 We see that the model with sex-specific baseline encounter probability
 $p_{0}$ has posterior model weight of $0.584$, the model with no sex
 effect has posterior probability $0.34$ and the remaining posterior mass is distributed
-over the other two models.
-We produce direct model-averaged estimates of $N$ and $D$ from this model:
+over the other two models. We could arrive at a qualittatively similar
+conclusion using a more ad hoc approach based on looking at the
+posterior mass for each parameter under each of the 4 models (see
+Table XXXX, in part). Considering the sex-specific intercept, it
+appears to be very important as its posterior mass is mostly away from 0.
+On the other hand,  the
+coefficient on log-sigma is more concentrated around 0 with a
+posterior mean of 
+0.172 and standard deviation of 0.087.  We might be inclined to
+discard the sex effect on $log(\sigma)$ based 
+on classical thinking-like-a-hypothesis testing guy and settle for the
+model with a sex-specific intercept. This is consistent with our
+indicator variable approach which found that model (1,0)
+has at least 51 - 58\% of the
+posterior probability (depending on which prior). So we're not really
+misled too much in looking at the posteriors for each parameter.
+We can obtain model-averaged estimates from the indicator variable
+approach, which 
+ produces direct model-averaged estimates of $N$ and $D$:
 \begin{verbatim}
     mu.vect sd.vect   2.5\%   25\%    50\%    75\%   97.5\%  Rhat n.eff
 D     5.726   1.136  3.759   4.916   5.591   6.458   8.193 1.003   870
 N    59.401  11.781 39.000  51.000  58.000  67.000  85.000 1.003   870
 \end{verbatim}
-Comment?
-
-
+We obtain a model-averaged estimate for density of $D=5.726$
+(posterior mean) which is hardly any different from our
+model specific estimates (Table XXXX) and, in particular, from model 2
+which has only a sex-specific intercept. 
 
 
 
 \subsubsection{Choosing among detection functions}
 
-Another approach to implementing model indicator variables is
- to introduce a categorical model identity variable
-which, i.e., so that
- ``model identity'' is itself a parameter of the model and each
- distinct model is associated with a unique covariate combination or
- other set of model features. This is convenient especially when we
- cannot specify the linear predictor as some general model that
- reduces to various alternative sub-models simply by switching binary
- variables on or off. In the context of SCR models, choosing among
- different encounter probability models would be an example.
- For this case we do something like this:
+Another approach to implementing model indicator variables is to
+introduce a categorical model identity variable which, i.e., so that
+``model identity'' is itself a parameter of the model and each
+distinct model is associated with a unique covariate combination or
+other set of model features. This is convenient especially when we
+cannot specify the linear predictor as some general model that reduces
+to various alternative sub-models simply by switching binary variables
+on or off. In the context of SCR models, choosing among different
+encounter probability models would be an example.  For this case we do
+something like this:
 \begin{verbatim}
  mod \sim \mbox{dcat}(probs[])
 \end{verbatim}
 where \mbox{\tt probs[l] = 1/(\# models)}. Then we can fill in a bigger
 array of $p$ instead of $p[i,j]$ we build $p[i,j,l]$ for each of
 $l=1,2,\ldots,L$ models. An example with 3 distinct models is:
+{\bf XXXX Notation is all messed up here -- not consistent at all with
+  our conventions ..... XXXXXX}
 \begin{verbatim}
    p[i,j,1]  <-  beta0.vec[i,1]*exp( - beta.vec[i,1]*dd[i,j] )
    p[i,j,2] <-  1-exp(-beta0.vec[i,2]*exp( - beta.vec[i,2]*dd[i,j] ) )
@@ -958,6 +984,8 @@ $l=1,2,\ldots,L$ models. An example with 3 distinct models is:
    mu[i,j]<-w[i]*p[i,j,catmod]
    ncaps[i,j]~ dbin(mu[i,j],K[j])
 \end{verbatim}
+
+
 As before the posterior probabilities can be highly sensitive to
 priors on the different model parameters and sometimes mixing is
 really poor.
@@ -1028,8 +1056,6 @@ and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
 DIC info (using the rule, pD = var(deviance)/2)
 pD = 0.1 and DIC = 1.2
 DIC is an estimate of expected predictive error (lower deviance is better).
-> 
-
 \end{verbatim}
 
 
@@ -1267,7 +1293,7 @@ increases at least to some extent.
 To date, we are unaware of any goodness-of-fit applications based on
 likelihood analysis of SCR models ({\bf XXX WE NEED TO DO SOME
   RESEARCH ON THIS XXXXX}) although the approach is standard in
-distance sampling XXX REF HERE ??? XXXX.  Similarly, for Bayesian
+distance sampling {\bf XXX REF HERE ??? XXXX}.  Similarly, for Bayesian
 analysis of SCR models, there has not been a definitive or general
 proposal for a fit statistic or even a class of fit statistics,
 although a few specialized implementations of Bayesian p-values have
@@ -1409,13 +1435,14 @@ output for MCMC iterations $m=1,2,\ldots,$ and doing this:
 Thus, $N({\bf x})^{(1)}, N({\bf x})^{(2)}, \ldots,$ is the Markov
 chain for the derived parameter $N({\bf x})$.
 
-Ok so we compute the N(x,m) counts for each iteration of the MCMC
-algorithm. At the same time we generate a realization of the locations
-${\bf s}_{i}$ and we obtain $N(x)^{(new)}$. For each of the posterior samples
--- that of the real data, and that of the posterior predicted data, we
+In addition to computing the bin counts for each iteration of the MCMC
+algorithm, at the same time we generate a realization of the activity
+centers 
+${\bf s}_{i}$ under the spatial randomness model,  and we obtain bin
+counts for these ``new'' data, $N(x)^{(new)}$. For each of the posterior samples
+-- that of the real data, and that of the posterior simulated data, we
 compute the fit-statistic.  
- We have an {\bf R} function XXXXX in the {\bf
-  R} package to do this....... whats it do? .............  Our fit
+Our fit
 statistic based on the actual data:
 \[
 T({\bf N},\theta) = \sum_{x}  (\sqrt{N(x)} - \sqrt{ \bar{N(x)}})^2
@@ -1430,8 +1457,9 @@ times that
 $T({\bf N}^{sim},\theta)$
 is larger than $T({\bf N},\theta)$, as an estimate of:
 $p = \Pr(T({\bf N}^{new},\theta) > T({\bf N},\theta))$.
-
-
+The {\bf R} function 
+ {\tt SCRgof} in our package \mbox{\tt scrbook} will do this, given 
+(1) the output from {\bf JAGS} (see below).
 
 
 
@@ -1643,10 +1671,13 @@ realtively tighter to the trap array. so we're using 10km grid cells
 even though buffer = 2 was used in the fitting.  (4) the trap
 locations.  To run the function do this
 \begin{verbatim}
-toad1<-wolvSCR0ms.fn(y3d,traps,wsex=wsex,nb=1000,ni=2000,buffer=2,M=200,model=1)
+toad1<-wolvSCR0ms(y3d,traps,wsex=wsex,nb=1000,ni=2000,buffer=2,M=200,model=1)
 bleen<- toad1$BUGSoutput$sims.list
 
+#
 # unfortunately, traplocs needs scaled same as in script.....
+# andy needs to fix this
+
 traplocs<-wolverine$wtraps[,2:3]
 traplocs[,1]<-traplocs[,1] -min(traplocs[,1])
 traplocs[,2]<-traplocs[,2]- min(traplocs[,2])
@@ -1659,7 +1690,9 @@ Cluster index simulated:  15.0829
 P-value  index of dispersion:  0.4143333
 P-value2 freeman-tukey:  0.432
 \end{verbatim}
-
+Because our p-value isn't too close to 0 or 1, we judge that the model
+provides an adequate fit to the data. Of course this is subject to the
+caveats discussed above.
 
 
 Next, we did a Bayesian p-value analysis using the 3 fit statistics
@@ -1670,10 +1703,26 @@ we computed them in the function XXXX
 code here
 \end{verbatim}
 The result for the wolverine data was as follows.....
+[show a scatter plot?]
 
-What this means is ............................
+XXXXXXXXXXXXXXXX ANDY HERE XXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+> mean(toad1$BUGSoutput$sims.list$Xnew>toad1$BUGSoutput$sims.list$Xobs)
+[1] 0
+> mean(toad1$BUGSoutput$sims.list$X1new>toad1$BUGSoutput$sims.list$X1obs)
+[1] 0.1756667
+> mean(toad1$BUGSoutput$sims.list$X3new>toad1$BUGSoutput$sims.list$X3obs)
+[1] 0.024
+
+ -- trap counts not well-explained. Not using clipped state-space! Try
+ now with clipped-state-space and see!!!!
 
 
+what this means is...........wow, not a very good fit of the
+observation model. Fuck.
+
+Also this might have been the NO SEX EFFECT model -- so double check
+that. Run sex-effect model. 
 
 
 
