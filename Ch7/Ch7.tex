@@ -1590,7 +1590,7 @@ The MCMC algorithms developed here and in other parts of this book come with ple
 Let's go back to the Ft. Drum black bear data we analyzed above with the cloglog version of the binomial SCR model (sec. \ref{mcmc.subsec.output}) and run 3 parallel chains using {\tt snowfall}. All we need to do is wrap our function {\tt SCR0binom.cl} within another function that can then be executed in parallel, returning a list with one output matrix for each chain (install {\tt snowfall} before executing the code below; we assume the data objects are already in your workspace from the previous analysis):
 
 \small{
-\begin verbatim 
+\begin {verbatim} 
 library(snowfall) 
 ## create wrapper function
 wrapper<-function(a){
@@ -1604,7 +1604,7 @@ return(out)
 After creating the wrapper function we need to initialize the cluster of cores, defining that we want computation to be implemented in parallel and how many cores we want it to be run on. here, we assume we have e cores, but if your computer only has 2, make sure to adjust the code accordingly (i.e. set {\tt cpus=2}). In this case, 2 of the 3 chains will be run in parallel and whichever core finishes first will then pick up the third chain. Further, we have to export all {\bf R} libraries and data to all the cores, and set up a random number generator, so that we do not get identical results from the different cores:
 
 \small{
-\begin verbatim 
+\begin {verbatim} 
 sfInit( parallel=TRUE, cpus=3 ) #initialize cluster
 sfLibrary(scrbook) #export library scrbook
 sfExportAll() #export all data in current workspace
@@ -1615,7 +1615,7 @@ outL=sfLapply(1:3,wrapper) # execute 'wrapper' 3 times
 
 The object {\tt outL} is a list of length 3, with one {\tt out} matrix from the function {\tt SCR0binom.cl} for each chain. After computation is complete, terminate the cluster using the command {\tt sfStop()}. Note that the intermediate output of current values and acceptance rates is suppressed when using parallel computing. We can now look at the output as described previously using the package {\tt coda}, by first defining {\tt outL} to be a list of {\tt mcmc} objects. 
 \small{
-\begin verbatim 
+\begin {verbatim} 
 library(coda)
 #turn output into MCMC list
 res<-mcmc.list(as.mcmc(outL[[1]]), as.mcmc(outL[[2]]), as.mcmc(outL[[3]]))
@@ -1626,14 +1626,20 @@ ADD OUTPUT
 }
 Now that we have parallel chains we can also use the function {\tt gelman.diag} to evaluate if our chains have converged:
 \small{
-\begin verbatim 
+\begin {verbatim} 
 gelman.diag(res) #asses chain convergence
 ADD OUTPUT
 \end {verbatim}
 }
 
+XXXX ADD A FEW LINES ABOUT OUTPUT, compare times XXXX
 
- 
+\subsection{Using {\bf c++}}
+Without going into the underlying reasons, it is a fact that for-loops in {\bf R} are time consuming, whereas they are handled much more time efficiently in other languages such as {\bf c++}. As we saw above, MCMC algorithms consist of for-loops within for-loops, so that it stands to reason that implementing them in a language like {\bf c++} should make those algorithms run much faster. Being avid {\bf R} users, we cannot claim to be fluent in {\bf c++} or to be aware of all the opportunities this language brings for faster computing. It is also beyond the scope of this book to go into the nuts and bolts of how {\bf c++} works, and we refer you to the vast amounts of online ad print material designed to give the interested user an introduction to {\bf c++}. Just google ``introduction c++'' and you are sure to come across sites such as \url{''http://www.cplusplus.com''} that provide step by step instructions to get you started. 
+
+Here, we only want to point out two reasonably straight-forward approaches to linking {\bf R} with {\bf c++}: the {\tt .C} function and the packages {\tt inline}, {\tt Rcpp} and {\tt RcppArmadillo}. If you are interested, we suggest you refer to the package manuals and vignettes, as well as the online document ``Writing R extensions'' (at \url{''http://cran.r-project.org/doc/manuals/R-exts.html''}) for a much more thorough treatment of this topic.
+
+
 % \section{MCMC software packages}
 
 % Throughout most of this book we  use {\bf WinBUGS} and {\bf JAGS} to run MCMC analyses. 
