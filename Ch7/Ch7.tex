@@ -1619,20 +1619,52 @@ The object {\tt outL} is a list of length 3, with one {\tt out} matrix from the 
 library(coda)
 #turn output into MCMC list
 res<-mcmc.list(as.mcmc(outL[[1]]), as.mcmc(outL[[2]]), as.mcmc(outL[[3]]))
-options(scipen=3) #set number of output digits to 3
 summary(window(res, start=1001)) #remove first 1000 iterations as burn-in
-ADD OUTPUT
+
+[... some output removed ...]
+
+          Mean       SD  Naive SE Time-series SE
+sigma   1.9723  0.13093 0.0011952      0.0087055
+lam0    0.1115  0.01535 0.0001401      0.0009003
+psi     0.7130  0.10787 0.0009847      0.0077910
+N     499.6166 74.74934 0.6823650      5.4232653
+
+2. Quantiles for each variable:
+
+           2.5%      25%      50%      75%    97.5%
+sigma   1.74339   1.8811   1.9637   2.0530   2.2618
+lam0    0.08443   0.1007   0.1105   0.1211   0.1438
+psi     0.52046   0.6350   0.7093   0.7814   0.9627
+N     366.00000 446.0000 497.0000 547.0000 674.0000
 \end {verbatim}
 }
 Now that we have parallel chains we can also use the function {\tt gelman.diag} to evaluate if our chains have converged:
 \small{
 \begin {verbatim} 
-gelman.diag(res) #asses chain convergence
-ADD OUTPUT
+gelman.diag(window(res, start=1001)) #assess chain convergence
+
+Potential scale reduction factors:
+
+      Point est. Upper C.I.
+sigma       1.01       1.04
+lam0        1.01       1.02
+psi         1.07       1.21
+N           1.07       1.21
+
+Multivariate psrf
+
+1.05
 \end {verbatim}
 }
+We can see that estimates are similar to what we observed when running a single chain (see sec. \ref{mcmc.subsec.output}) and that all 3 chains appear to have converged, based on their point estimates of the $\hat(R)$ statistic, but, as already noted before, for a real analysis we might want to run this model for quite a bit longer, to bring down the upper confidence interval limits on $\hat(R)$ for $\psi$ and $N$. If you have 3 cores then running these 3 parallel chains should not have taken longer than running a single chain. yet if you look at the effective sample size now using {\tt effectiveSize(res)}, you can see that it has roughly tripled, as we would expect:
+\small{
+\begin {verbatim} 
+effectiveSize(window(res, start=1001))
 
-XXXX ADD A FEW LINES ABOUT OUTPUT, compare times XXXX
+   sigma     lam0      psi        N 
+272.6935 411.8384 167.4192 168.3355 
+\end {verbatim}
+}
 
 \subsection{Using {\bf c++}}
 Without going into the underlying reasons, it is a fact that for-loops in {\bf R} are time consuming, whereas they are handled much more time efficiently in other languages such as {\bf c++}. As we saw above, MCMC algorithms consist of for-loops within for-loops, so that it stands to reason that implementing them in a language like {\bf c++} should make those algorithms run much faster. Being avid {\bf R} users, we cannot claim to be fluent in {\bf c++} or to be aware of all the opportunities this language brings for faster computing. It is also beyond the scope of this book to go into the nuts and bolts of how {\bf c++} works or provide a tutorial, and we refer you to the vast amounts of online and print material designed to give the interested user an introduction to {\bf c++}. Just google ``introduction c++'' and you are sure to come across sites such as \url{''http://www.cplusplus.com''} that provide step by step instructions to get you started. Here, we only want to point out two reasonably straight-forward approaches to linking {\bf R} with {\bf c++}: the {\tt .C} function and the packages {\tt inline}, {\tt Rcpp} and {\tt RcppArmadillo}. If you are interested, we suggest you refer to the package manuals and vignettes, as well as the online document ``Writing R extensions'' (at \url{''http://cran.r-project.org/doc/manuals/R-exts.html''}) for a much more thorough treatment of this topic.
