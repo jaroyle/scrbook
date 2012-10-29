@@ -1589,7 +1589,7 @@ The MCMC algorithms developed here and in other parts of this book come with ple
 
 Let's go back to the Ft. Drum black bear data we analyzed above with the cloglog version of the binomial SCR model (sec. \ref{mcmc.subsec.output}) and run 3 parallel chains using {\tt snowfall}. All we need to do is wrap our function {\tt SCR0binom.cl} within another function that can then be executed in parallel, returning a list with one output matrix for each chain (install {\tt snowfall} before executing the code below; we assume the data objects are already in your workspace from the previous analysis):
 
-\small{
+{\small
 \begin{verbatim} 
 library(snowfall) 
 ## create wrapper function
@@ -1603,7 +1603,7 @@ return(out)
 
 After creating the wrapper function we need to initialize the cluster of cores, defining that we want computation to be implemented in parallel and how many cores we want it to be run on. here, we assume we have e cores, but if your computer only has 2, make sure to adjust the code accordingly (i.e. set {\tt cpus=2}). In this case, 2 of the 3 chains will be run in parallel and whichever core finishes first will then pick up the third chain. Further, we have to export all {\bf R} libraries and data to all the cores, and set up a random number generator, so that we do not get identical results from the different cores:
 
-\small{
+{\small
 \begin{verbatim} 
 sfInit( parallel=TRUE, cpus=3 ) #initialize cluster
 sfLibrary(scrbook) #export library scrbook
@@ -1614,7 +1614,7 @@ outL=sfLapply(1:3,wrapper) # execute 'wrapper' 3 times
 }
 
 The object {\tt outL} is a list of length 3, with one {\tt out} matrix from the function {\tt SCR0binom.cl} for each chain. After computation is complete, terminate the cluster using the command {\tt sfStop()}. Note that the intermediate output of current values and acceptance rates is suppressed when using parallel computing. We can now look at the output as described previously using the package {\tt coda}, by first defining {\tt outL} to be a list of {\tt mcmc} objects. 
-\small{
+{\small
 \begin{verbatim} 
 library(coda)
 #turn output into MCMC list
@@ -1639,7 +1639,7 @@ N     366.00000 446.0000 497.0000 547.0000 674.0000
 \end{verbatim}
 }
 Now that we have parallel chains we can also use the function {\tt gelman.diag} to evaluate if our chains have converged:
-\small{
+{\small
 \begin{verbatim} 
 gelman.diag(window(res, start=1001)) #assess chain convergence
 
@@ -1657,7 +1657,7 @@ Multivariate psrf
 \end{verbatim}
 }
 We can see that estimates are similar to what we observed when running a single chain (see sec. \ref{mcmc.subsec.output}) and that all 3 chains appear to have converged, based on their point estimates of the $\hat(R)$ statistic, but, as already noted before, for a real analysis we might want to run this model for quite a bit longer, to bring down the upper confidence interval limits on $\hat(R)$ for $\psi$ and $N$. If you have 3 cores then running these 3 parallel chains should not have taken longer than running a single chain. yet if you look at the effective sample size now using {\tt effectiveSize(res)}, you can see that it has roughly tripled, as we would expect:
-\small{
+{\small
 \begin{verbatim} 
 effectiveSize(window(res, start=1001))
 
@@ -1669,8 +1669,8 @@ effectiveSize(window(res, start=1001))
 \subsection{Using {\bf c++}}
 Without going into the underlying reasons, it is a fact that for-loops in {\bf R} are time consuming, whereas they are handled much more time efficiently in other languages such as {\bf c++}. As we saw above, MCMC algorithms consist of for-loops within for-loops, so that it stands to reason that implementing them in a language like {\bf c++} should make those algorithms run much faster. Being avid {\bf R} users, we cannot claim to be fluent in {\bf c++} or to be aware of all the opportunities this language brings for faster computing. It is also beyond the scope of this book to go into the nuts and bolts of how {\bf c++} works or provide a tutorial, and we refer you to the vast amounts of online and print material designed to give the interested user an introduction to {\bf c++}. Just google ``introduction c++'' and you are sure to come across sites such as \url{''http://www.cplusplus.com''} that provide step by step instructions to get you started. Here, we only want to point out two reasonably straight-forward approaches to linking {\bf R} with {\bf c++}: the {\tt .C} function and the packages {\tt inline}, {\tt Rcpp} and {\tt RcppArmadillo}. If you are interested, we suggest you refer to the package manuals and vignettes, as well as the online document ``Writing R extensions'' (at \url{''http://cran.r-project.org/doc/manuals/R-exts.html''}) for a much more thorough treatment of this topic.
 
-In order to use {\bf c++} you need a compiler such as {\bf Rtools}, which you can easily download from the web. Further, to our knowledge, interfacing with {\bf c++} can only be done from a 32 bit version of {\bf R}. To  give you a taste of {\bf c++} we will show you how to write a function that calculates the squared distances of individual activity centers to all traps, as is implemented in the {\tt scrbook} package in the function {\tt e2dist}, and compare performance between {\bf R} and {\bf c++}. First, let us set up dummy data --  a matrix holding the coordinates of the trap array, outer limits of the state space and uniformly distributed activity centers for $M=700$ individuals:
-\small{
+In order to use {\bf c++} you need a compiler such as {\bf Rtools}, which you can easily download from the web. Make sure the version of {\bf Rtools} matches your version of {\bf R} or you may run into compilation errors later on. Further, to our knowledge, interfacing with {\bf c++} can only be done from a 32 bit version of {\bf R}. To give you a taste of {\bf c++} we will show you how to write a function that calculates the squared distances of individual activity centers to all traps, as is implemented in the {\tt scrbook} package in the function {\tt e2dist}, and compare performance between {\bf R} and {\bf c++}. First, let us set up dummy data --  a matrix holding the coordinates of the trap array, outer limits of the state space and uniformly distributed activity centers for $M=700$ individuals:
+{\small
 \begin{verbatim} 
 gx<-seq(1,10,1)
 gy<-seq(1,10,1)
@@ -1686,7 +1686,7 @@ S<-cbind(runif(M, xl, xu), runif(M, yl,yu))
 \end{verbatim}
 }
 Next, we can write a ``pedestrian'' version of {\tt e2dist} and check how long it takes to calculate the squared distance matrix:
-\small{
+{\small
 \begin{verbatim} 
 Dfun<-function(M, J, S, X){
 D2<-matrix(0, nrow=M, ncol=J)
@@ -1706,8 +1706,6 @@ system.time(
 \end{verbatim}
 }
 The code to implement the same function in {\bf c++} using the {\tt .C} command is shown in panel \ref{mcmc.panel.C1}. You will see that the way the code is set up is reasonably similar to {\bf R}, but it is worthy to point out a few differences: {\bf (1)} This manner of accessing {\bf c++} through {\bf R} only allows for vectors and scalars to be passed as data to the function. Matrices are not supported so that we have to separate the matrices holding the trap array and the activity centers into vectors for x and y coordinates, respectively. This also means that we have to use some slightly convoluted indexing to pair each activity center with all traps. {\bf (2)} We have to provide a container for the output values, which we pass to the function. Here, we pass a vector holding all zeros; once computations are finished, the manipulated vector will contain the distances we computed and will be an element of the list that comprises the {\bf R} object we assigned the function to ({\tt Dvector} in the code). After computations, this object contains a list with all function arguments, so in this case has a length of 7. {\bf (3)} Indexes for vectors range from 0 to $n-1$, NOT from 1 to $n$, as in {\bf R}. {\bf (4)} This kind of computing does not allow for vector operations; everything has to be done element-by-element (this is not true for the entire {\bf c++} language but only for this manner of using it). 
-
-Overall, the process of using the {\tt .C} function consists of 3 steps: compiling the function in {\bf c++} from a .c file containing the code using the {\tt system} function (during this step the syntax of the code is checked for errors and the function will not be compiled if errors are detected); loading the .dll library resulting from the previous step into the workspace; and using the function within the {\tt .C} call. If you happen to pass data to the function that does not match the type or dimension declared in the function itself, {\bf R} will usually crash. If you have to edit the function itself, you have to (1) {\tt dyn.unload} the current version in the workspace, (2) delete the corresponding .o and .dll files in your working directory, (3) re-compile and load the corrected version of the function. All these steps are taken care of in panel \ref{mcmc.panel.C1} and if you execute the entire chunk of code, you will see that the {\bf c++} version of the distance function beats our ``pedestrian'' {\bf R} version by a lot. Even compared with the much more efficient {\tt e2dist}, the {\bf c++} version performs better -- you can try that for yourself.
 
 \begin{panel}[ht]
 \centering
@@ -1788,11 +1786,43 @@ Code to compute squared distance between individual activity centers and traps i
 \label{mcmc.panel.C1}
 \end{panel}
 
-Still, with all these compilation and loading steps involved, writing a function in {\bf c++} seems rather tiring. It is. Especially in the beginning. But there are tools designed to make it easier, namely the packages {\tt inline} in combination with {\tt RcppArmadillo}. Not only do these packages allow you to use other data formats such as lists and matrices, they also take care of the compilation of code in {\bf c++}. The syntax of these libraries is yet a little different, but the basics aren't too hard to pick up. 
+Overall, the process of using the {\tt .C} function consists of 3 steps: compiling the function in {\bf c++} from a .c file containing the code using the {\tt system} function (during this step the syntax of the code is checked for errors and the function will not be compiled if errors are detected); loading the .dll library resulting from the previous step into the workspace; and using the function within the {\tt .C} call. If you happen to pass data to the function that does not match the type or dimension declared in the function itself, {\bf R} will usually crash. If you have to edit the function itself, you have to (1) {\tt dyn.unload} the current version in the workspace, (2) delete the corresponding .o and .dll files in your working directory, (3) re-compile and load the corrected version of the function. All these steps are taken care of in panel \ref{mcmc.panel.C1} and if you execute the entire chunk of code, you will see that the {\bf c++} version of the distance function beats our ``pedestrian'' {\bf R} version by a lot. Even compared with the much more efficient {\tt e2dist}, the {\bf c++} version performs better -- you can try that for yourself.
 
+Still, with all these compilation and loading steps involved, writing a function in {\bf c++} seems rather tiring. It is. Especially in the beginning. But there are tools designed to make it easier, namely the packages {\tt inline} in combination with {\tt RcppArmadillo}. Not only do these packages allow you to use other data formats such as lists and matrices, they also take care of the compilation of code in {\bf c++}. The syntax of these libraries is a little different again, but the basics aren't too hard to pick up. The code below shows you how to implement the same distance function using {\tt inline} in combination with {\tt RcppArmadillo}. Note that we only need to write the core of the code and define the type of the variables we want to pass to the function, while the {\tt cxxfunction} call takes care of the rest (i.e., adding the standard pieces of code surrounding the core of the function, the compiling and the loading). This is also referred to compiling {\bf c++} code ``on the fly''. Much of the code is very similar to what we saw before when using the {\tt .C} function; but we need to declare our data matrices as such within the {\tt RcppArmadillo} syntax. Executing the code below shows that it is also faster than our {\bf R} version or {\tt e2dist}. If you wanted to test for speed differences between the 2 {\bf c++} versions you can create a larger data set. 
 
-XXX this is not working on my work computer; need to debug from home xxx
-  
+{\small
+\begin{verbatim}
+### calculate squared distances using RcppArmadillo
+library(inline)
+library(RcppArmadillo)
+
+#write core of function code
+code<-'
+arma::mat Sn=Rcpp::as<arma::mat>(S);
+arma::mat Xn=Rcpp::as<arma::mat>(X);
+int Ntot=Rcpp::as<int>(M);
+int ntraps=Rcpp::as<int>(J);
+arma::mat D2(Ntot, ntraps);
+
+for (int i=0; i<Ntot; i++){
+	for(int j=0; j<ntraps; j++){
+	D2(i,j)= pow(Sn(i,0)-Xn(j,0), 2) + pow(Sn(i,1)-Xn(j,1), 2);
+	}
+}
+return Rcpp::wrap(D2);
+'
+
+# compile and load 
+DfunArma<-cxxfunction(signature(M="integer", J="integer", S="numeric", X="numeric"), 
+			plugin="RcppArmadillo", body=code)
+
+#run function
+system.time(
+(out<-DfunArma(M,J,S,X))
+)
+\end{verbatim}
+}
+
 % \section{MCMC software packages}
 
 % Throughout most of this book we  use {\bf WinBUGS} and {\bf JAGS} to run MCMC analyses. 
