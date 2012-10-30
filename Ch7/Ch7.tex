@@ -1213,6 +1213,7 @@ formulation the updater for $p_0$ becomes:
 
 
 \subsection{Looking at model output}
+\label{mcmc.subsec.output}
 Now that you have an MCMC algorithm to analyze spatial capture-recapture 
 data with, let's run an actual analysis so we can look at the output. As 
 an example, we will use the Fort Drum 
@@ -1318,24 +1319,24 @@ be part of evaluating your model output. If you use {\bf WinBUGS}
  to do so. The function \verb#effectiveSize()# will directly give you an estimate 
  of the effective sample size for the parameters:
 \begin{verbatim}
-effectiveSize(chain)
+effectiveSize(window(chain, start=1001))
     sigma      lam0       psi         N 
- 3.126890 73.019018  9.867273  9.116547 
+ 93.89807 163.72311  51.96443  46.45394 
 \end{verbatim}
 
 Alternatively, you can use the \verb#autocorr.diag()# function, which will show you the degree of autocorrelation for different lag values (which you can specify within the function call, we use the defaults below):
 \begin{verbatim}
-autocorr.diag(chain)
-           sigma      lam0       psi         N
-Lag 0  1.0000000 1.0000000 1.0000000 1.0000000
-Lag 1  0.9985872 0.9704262 0.9941343 0.9927297
-Lag 5  0.9935938 0.8614026 0.9697146 0.9703636
-Lag 10 0.9878771 0.7332325 0.9489093 0.9507547
-Lag 50 0.9392096 0.1341815 0.8345999 0.8370000
+autocorr.diag(window(chain, start=1001))
+           sigma       lam0       psi         N
+Lag 0  1.0000000 1.00000000 1.0000000 1.0000000
+Lag 1  0.9316928 0.91464875 0.9745833 0.9663320
+Lag 5  0.7603332 0.67445407 0.8525272 0.8500215
+Lag 10 0.6065374 0.48724122 0.7514657 0.7530124
+Lag 50 0.1122331 0.06564406 0.3811939 0.3823236
 \end{verbatim}
 In the present case we see that autocorrelation is especially high for the 
-parameter $\sigma$ and our effective sample size for this parameter is 
-3! 
+parameter $\psi$ and our effective sample size for this parameter is 
+only 52! 
 This means we would have to run the model for much longer to 
 obtain a reasonable effective sample size. Unfortunately, with many SCR data sets we observe high degrees of serial autocorrelation. For now, let's continue using this small number of samples to look at the output.
 
@@ -1543,7 +1544,7 @@ extracted directly from the state-space object \mbox{\tt SSp}:
 To include this polygon into our MCMC sampler we need one last spatial 
 {\bf R} package, \mbox{\tt sp} \citep{pebesma_bivand:2011}, which has a 
 function, \verb#over()#, which allows us to check if a pair of coordinates 
-falls within a polygon or not. All we have to do is embed this new check 
+falls within a polygon or not.\footnote{Remember from the previous chapter (\ref{mle.sec.shapefile}) that the {\tt over} function takes as its second argument (among others) an object of the class ``SpatialPolygons'' or ``SpatialPolygonsDataFrame''. The former produces a vector while the latter produces a data frame (e.g., in the example above), which is important for how you index the output.} All we have to do is embed this new check 
 into the updating steps for the $s_i$:
 \begin{verbatim}
     #draw candidate value
@@ -1577,6 +1578,251 @@ may center all coordinates on 0. No matter what kind of transformation you
 use on your coordinates, make sure to always convert candidate values for 
 ${\cal S}$ back to the original scale (UTM) before running the 
 \verb#over()# command.
+
+\section{Increasing computational speed}
+Using custom written MCMC algorithms in {\bf R} is not only more flexible but can also be faster than using programs such as {\bf JAGS} and especially {\bf BUGS}. Also, {\bf R} tends to use much less memory than {\bf JAGS}, which can be crucial if you are running a large model but only have limited memory available. For example, you will see in Chapt. \ref{detection models} that even with a reasonable sized data set certain parameterizations of SCR models can max out the memory of a 16 GB computer when using {\bf JAGS}. These are mostly the models that require us to look at individual sampling occasions instead of joining observations across the entire study, which requires us to introduce another for-loop into the {\bf JAGS} model. {\bf BUGS} is limited in the amount of memory it can access and thus will likely not max out your memory, but as a trade-off, it will take a long time to run such models. In this chapter we have provided you with the guidelines to write your own MCMC sampler. But beyond the material that we have covered there are a number of ways you can make your sampler more efficient, through parallel computing or by accessing an alternative computer language such as {\bf c++}. Exploring these options exhaustively is beyond the scope of this book; instead, in this section we will give you some pointers to get started with these more advanced computational issues.
+
+\subsection{Parallel computing}
+If you are using a computer with several cores, you can make use of parallel computing to speed up overall computation. In parallel computing we execute commands simultaneously on different cores of the computer, instead of running them serially on one single core. For example, imagine you have 4 cores available and you want to implement a for-loop in {\bf R}; instead of going through the loop iteration by iteration, you can prompt {\bf R} to execute iterations 1 to 4 at the same time on the 4 different cores. The core that finishes first will then continue with iteration 5, and so on.  There are several packages in {\bf R} that allow you to induce parallel computing, such as {\tt snow} \citep{tierney_etal:2011} and {\tt snowfall} \citep{knaus:2010}, and the more current versions of {\bf R} (from 2.14.0 upwards) come with a pre-installed set of functions grouped under the name {\tt parallel}.  
+ 
+The MCMC algorithms developed here and in other parts of this book come with plenty of opportunities to parallelize computation. In various instances within the algorithm, we have for-loops across our augmented data set of size $M$, or we may have for-loops across sampling occasions. We also have for-loops across iterations of the algorithm, but since one iteration of the Markov chain depends on the preceding iteration these should always be run serially, not in parallel. There is another dimension we can think of, and that is running multiple chains of an algorithm to assess convergence. This is a comparatively easy implementation of parallel computing and thus provides a good starting point to understand how it works in {\bf R}.
+
+Let's go back to the Ft. Drum black bear data we analyzed above with the cloglog version of the binomial SCR model (sec. \ref{mcmc.subsec.output}) and run 3 parallel chains using {\tt snowfall}. All we need to do is wrap our function {\tt SCR0binom.cl} within another function that can then be executed in parallel, returning a list with one output matrix for each chain (install {\tt snowfall} before executing the code below; we assume the data objects are already in your workspace from the previous analysis):
+
+{\small
+\begin{verbatim} 
+library(snowfall) 
+## create wrapper function
+wrapper<-function(a){
+out<-SCR0binom.cl(y=Xaug, X=trapmat, M=M, xl=xl, xu=xu, yl=yl, 
+                   yu=yu, K=8, delta=c(0.1, 0.05, 2), niter=5000)
+return(out)
+}
+\end{verbatim}
+}
+
+After creating the wrapper function we need to initialize the cluster of cores, defining that we want computation to be implemented in parallel and how many cores we want it to be run on. Here, we assume we have 3 cores, but if your computer only has 2, make sure to adjust the code accordingly (i.e., set {\tt cpus=2}). In that case, 2 of the 3 chains will be run in parallel and whichever core finishes first will then pick up the third chain. Further, we have to export all {\bf R} libraries and data to all the cores, and set up a random number generator, so that we do not get identical results from the different cores:
+
+{\small
+\begin{verbatim} 
+sfInit( parallel=TRUE, cpus=3 ) #initialize cluster
+sfLibrary(scrbook) #export library scrbook
+sfExportAll() #export all data in current workspace
+sfClusterSetupRNG() #set up random number generator
+outL=sfLapply(1:3,wrapper) # execute 'wrapper' 3 times
+\end{verbatim}
+}
+
+The object {\tt outL} is a list of length 3, with one {\tt out} matrix from the function {\tt SCR0binom.cl} for each chain. After computation is complete, terminate the cluster using the command {\tt sfStop()}. Note that the intermediate output of current values and acceptance rates is suppressed when using parallel computing. We can now look at the output as described previously using the package {\tt coda}, by first defining {\tt outL} to be a list of {\tt mcmc} objects. 
+{\small
+\begin{verbatim} 
+library(coda)
+#turn output into MCMC list
+res<-mcmc.list(as.mcmc(outL[[1]]),as.mcmc(outL[[2]]),as.mcmc(outL[[3]]))
+summary(window(res, start=1001)) #remove first 1000 iterations as burn-in
+
+[... some output removed ...]
+
+          Mean       SD  Naive SE Time-series SE
+sigma   1.9723  0.13093 0.0011952      0.0087055
+lam0    0.1115  0.01535 0.0001401      0.0009003
+psi     0.7130  0.10787 0.0009847      0.0077910
+N     499.6166 74.74934 0.6823650      5.4232653
+
+2. Quantiles for each variable:
+
+           2.5%      25%      50%      75%    97.5%
+sigma   1.74339   1.8811   1.9637   2.0530   2.2618
+lam0    0.08443   0.1007   0.1105   0.1211   0.1438
+psi     0.52046   0.6350   0.7093   0.7814   0.9627
+N     366.00000 446.0000 497.0000 547.0000 674.0000
+\end{verbatim}
+}
+Now that we have parallel chains we can also use the function {\tt gelman.diag} to evaluate if chains have converged:
+{\small
+\begin{verbatim} 
+gelman.diag(window(res, start=1001)) #assess chain convergence
+
+Potential scale reduction factors:
+
+      Point est. Upper C.I.
+sigma       1.01       1.04
+lam0        1.01       1.02
+psi         1.07       1.21
+N           1.07       1.21
+
+Multivariate psrf
+
+1.05
+\end{verbatim}
+}
+We can see that estimates are similar to what we observed when running a single chain (see sec. \ref{mcmc.subsec.output}) and that all 3 chains appear to have converged, based on their point estimates of the $\hat{R}$ statistic, but, as already noted before, for a real analysis we might want to run this model for quite a bit longer, to bring down the upper confidence interval limits on $\hat{R}$ for $\psi$ and $N$. If you have 3 cores then running these 3 parallel chains should not have taken longer than running a single chain. Yet if you look at the effective sample size now using {\tt effectiveSize(res)}, you can see that it has roughly tripled, as we would expect:
+{\small
+\begin{verbatim} 
+effectiveSize(window(res, start=1001))
+
+   sigma     lam0      psi        N 
+272.6935 411.8384 167.4192 168.3355 
+\end{verbatim}
+}
+
+\subsection{Using {\bf c++}}
+Parallel computing is a great tool to speed up computations, but its usefulness is limited by how many cores you have available. Even with a decent number of cores, large models may still be very time consuming. A major reason for this is that for-loops in {\bf R} are time consuming, whereas they are handled much more time efficiently in other computer languages such as {\bf c++}. As we saw above, MCMC algorithms consist of for-loops within for-loops, so that it stands to reason that implementing them in a language like {\bf c++} should make those algorithms run much faster. Being avid {\bf R} users, we cannot claim to be fluent in {\bf c++} or to be aware of all the opportunities this language brings for faster computing. It is also beyond the scope of this book to go into the nuts and bolts of how {\bf c++} works or provide a tutorial, and we refer you to the vast amounts of online and print material designed to give the interested user an introduction to {\bf c++}. Just google ``introduction c++'' and you are sure to come across sites such as \url{''http://www.cplusplus.com''} that provide step by step instructions to get you started. Here, we only want to point out two reasonably straight-forward approaches to linking {\bf R} with {\bf c++}: the {\tt .C} function and the packages {\tt inline} \citep{sklyar_etal:2010}, {\tt Rcpp} \citep{eddelbuettel_francois:2011} and {\tt RcppArmadillo} \citep{francois_etal:2011}. If you are interested, we suggest you refer to the package manuals and vignettes, as well as the online document ``Writing R extensions'' (at \url{''http://cran.r-project.org/doc/manuals/R-exts.html''}) for a much more thorough treatment of this topic.
+
+In order to use {\bf c++} you need a compiler such as {\bf Rtools}, which you can easily download from the web. Make sure the version of {\bf Rtools} matches your version of {\bf R} or you may run into compilation errors later on. Further, to our knowledge, interfacing with {\bf c++} can only be done from a 32 bit version of {\bf R}. To give you a taste of {\bf c++} we will show you how to write a function that calculates the squared distances of individual activity centers to all traps, as is implemented in the {\tt scrbook} package in the function {\tt e2dist} (to be exact,{\tt e2dist} calculates the distance, not the squared distance), and compare performance between {\bf R} and {\bf c++}. We will refer to these functions as ``distance functions''. First, let us set up dummy data --  a matrix holding the coordinates of the trap array, outer limits of the state space and uniformly distributed activity centers for $M=700$ individuals:
+{\small
+\begin{verbatim} 
+gx<-seq(1,10,1)
+gy<-seq(1,10,1)
+X<-as.matrix(expand.grid(gx, gy))
+M<-700
+J<-dim(X)[1]
+b<-3
+xl<-min(gx)-b
+xu<-max(gx)+b
+yl<-min(gy)-b
+yu<-max(gy)+b
+S<-cbind(runif(M, xl, xu), runif(M, yl,yu))
+\end{verbatim}
+}
+Next, we can write a ``pedestrian'' version of {\tt e2dist} and check how long it takes to calculate the squared distance matrix:
+{\small
+\begin{verbatim} 
+Dfun<-function(M, J, S, X){
+D2<-matrix(0, nrow=M, ncol=J)
+for (i in 1:M){
+for(j in 1:J){
+D2[i,j]<-(S[i,1]-X[j,1])^2 + (S[i,2]-X[j,2])^2
+}}
+return(D2)
+}
+
+system.time(
+(D2R<-Dfun(M, J, S, X))
+)
+
+  user  system elapsed 
+   0.81    0.01    0.82 
+\end{verbatim}
+}
+The code to implement the same function in {\bf c++} using the {\tt .C} command is shown in panel \ref{mcmc.panel.C1}. You will see that the way the code is set up is reasonably similar to {\bf R}, but it is worthy to point out a few differences: {\bf (1)} Accessing {\bf c++} through {\bf R} using {\tt .C} only allows for vectors and scalars to be passed as data to the function. Matrices are not supported so that we have to separate the matrices holding the coordinates of the trap array and the activity centers into vectors for the x and y coordinates, respectively. This also means that we have to use some slightly convoluted indexing to pair each individual activity center with all traps. {\bf (2)} As part of the function arguments we have to provide a container for the output values. Here, we pass a vector of length $M \times J$ holding all zeros; once computations are finished, this vector will contain the distances we computed and will be an element of the list that comprises the {\bf R} object we assigned the function to, {\tt Dvector} in the code. After execution of the {\bf c++} function, this object contains a list with all function arguments including the {\emph manipulated} output vector. {\bf (3)} In {\bf c++} indexes for vectors range from 0 to $n-1$, NOT from 1 to $n$, as in {\bf R}. {\bf (4)} This kind of computing does not allow for vector operations; everything has to be done element-by-element. 
+
+\begin{panel}[ht]
+\centering
+\rule[0.15in]{\textwidth}{.03in}
+%\begin{minipage}{2.5in}
+{\small
+\begin{verbatim}
+#write c++ code to .c file
+cat("
+#include <stdio.h>
+#include <R.h>
+#include <Rmath.h>
+#include <math.h>
+#include <Rinternals.h>
+
+void Dfun_C(int *M, int *J, double *Sx, double *Sy, double *Xx, 
+			double *Xy, double *D2out) {  
+
+/* variables using different names than pointers in function */
+/* always declare type: integer, double, boolean... */
+int Ntot, ntraps;
+
+Ntot=*M;
+ntraps=*J;
+
+/*Set up vectors for trap coordinates*/
+double X_x[ntraps], X_y[ntraps];
+
+for (int j=0;j<ntraps;j++){
+X_x[j]=Xx[j];
+X_y[j]=Xy[j];
+}
+
+/*set up vectors for activity center coordinates*/
+double S_x[Ntot], S_y[Ntot];
+
+for (int i=0;i<Ntot;i++){
+S_x[i]=Sx[i];
+S_y[i]=Sy[i];
+}
+
+for (int i=0; i<Ntot; i++) {
+int ic=i+1;
+	for (int j=ic*ntraps-ntraps; j<ic*ntraps; j++) {
+	D2out[j]=pow((S_x[i] - X_x[(j-i*ntraps)]  ),2) + 
+			 pow((S_y[i] - X_y[(j-i*ntraps)]  ),2);
+	}
+}
+}  /*end function*/
+",file = "Dfun_C.c")
+
+## compile .c function adn load resulting .dll library
+system(paste("Rcmd SHLIB Dfun_C.c"))
+dyn.load("Dfun_C.dll")
+
+##prepare input as vectors and set output vector
+Sx<-S[,1]
+Sy<-S[,2]
+Xx<-as.vector(X[,1])
+Xy<-as.vector(X[,2])
+D2out<-rep(0, M*J)
+
+system.time(
+(Dvector<-.C("Dfun_C",as.integer(M), as.integer(J), as.double(Sx), 
+			as.double(Sy), as.double(Xx),as.double(Xy), 
+			as.double(D2out) ))
+)
+#system.time: 0
+
+#reformat output vector to matrix
+D2<-matrix(Dvector[[7]], nrow=M, ncol=J, byrow=T)
+\end{verbatim}
+}
+\rule[-0.15in]{\textwidth}{.03in}
+\caption{
+Code to compute squared distance between individual activity centers and traps in {\bf c++} from within {\bf R}.
+}
+\label{mcmc.panel.C1}
+\end{panel}
+
+Overall, the process of using {\tt .C} consists of 3 steps: compiling the function we wrote in {\bf c++} from a .c file containing the code by using the {\tt system} call (during this step the syntax of the code is checked for errors and the function will not be compiled if errors are detected); loading the .dll library resulting from the previous step into the workspace; and using the newly created function within the {\tt .C} call. If you happen to pass data the {\tt .C} call that does not match the type or dimension declared in the function itself, {\bf R} will usually crash. If you have to edit the function itself, you have to (1) {\tt dyn.unload} the current version in the workspace, (2) delete the corresponding .o and .dll files in your working directory, (3) re-compile and load the corrected version of the function. All these steps are taken care of in panel \ref{mcmc.panel.C1} and if you execute the entire chunk of code, you will see that the {\bf c++} version of the distance function beats our ``pedestrian'' {\bf R} version by a lot. Even compared with the much more efficient {\tt e2dist}, the {\bf c++} version performs better -- you can try that for yourself.
+
+Still, with all these compilation and loading steps involved, writing a function in {\bf c++} seems rather cumbersome. It is, especially in the beginning. But there are tools designed to make it easier, namely the packages {\tt inline} in combination with {\tt RcppArmadillo}. Not only do these packages allow you to use other data formats such as lists and matrices, they also take care of the compilation of code in {\bf c++}. The syntax of these libraries is a little different from what we just saw, but the basics aren't too hard to pick up. The code below shows you how to implement the same distance function using {\tt inline} in combination with {\tt RcppArmadillo}. Note that we only need to write the core of the code and define the type of the variables we want to pass to the function, while the {\tt cxxfunction} call takes care of the rest (i.e., adding the standard pieces of code surrounding the core of the function, the compiling and the loading). This is also referred to compiling {\bf c++} code ``on the fly''. Much of the code is very similar to what we saw before when using the {\tt .C} function; but we need to declare our data matrices as such within the {\tt RcppArmadillo} syntax. 
+
+{\small
+\begin{verbatim}
+### calculate squared distances using RcppArmadillo
+library(inline)
+library(RcppArmadillo)
+
+#write core of function code
+code<-'
+arma::mat Sn=Rcpp::as<arma::mat>(S);
+arma::mat Xn=Rcpp::as<arma::mat>(X);
+int Ntot=Rcpp::as<int>(M);
+int ntraps=Rcpp::as<int>(J);
+arma::mat D2(Ntot, ntraps);
+
+for (int i=0; i<Ntot; i++){
+	for(int j=0; j<ntraps; j++){
+	D2(i,j)= pow(Sn(i,0)-Xn(j,0), 2) + pow(Sn(i,1)-Xn(j,1), 2);
+	}
+}
+return Rcpp::wrap(D2);
+'
+
+# compile and load 
+DfunArma<-cxxfunction(signature(M="integer", J="integer", S="numeric", 
+		X="numeric"), plugin="RcppArmadillo", body=code)
+
+#run function
+system.time(
+(out<-DfunArma(M,J,S,X))
+)
+\end{verbatim}
+}
+Executing this code shows that it is also faster than the {\bf R} version of the distance function or {\tt e2dist}. While speed differences of less than 1 second may seem negligible, remember that each command has to executed at each iteration of the Markov chain. Especially with time-consuming models such as those for open populations (Chapt. \ref{chapt.open}) or multi-session models (Chapt. \ref{chapt.hscr}) we believe that {\bf c++} holds large potential to make implementation of such models more feasible.   
 
 % \section{MCMC software packages}
 
