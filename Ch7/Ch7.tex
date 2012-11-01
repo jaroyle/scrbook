@@ -1667,15 +1667,10 @@ effectiveSize(window(res, start=1001))
 }
 
 \subsection{Using {\bf C++}}
-Parallel computing is a great tool to speed up computations, but its usefulness is limited by how many cores you have available. Even with a decent number of cores, large models may still be very time consuming. A major reason for this is that for-loops in {\bf R} are time consuming, whereas they are handled much more time efficiently in other computer languages such as {\bf C++}. As we saw above, MCMC algorithms consist of for-loops within for-loops, so that it stands to reason that implementing them in a language like {\bf C++} should make those algorithms run much faster. Being avid {\bf R} users, we cannot claim to be fluent in {\bf C++} or to be aware of all the opportunities this language brings for faster computing. It is also beyond the scope of this book to go into the nuts and bolts of how {\bf C++} works or provide a tutorial, and we refer you to the vast amounts of online and print material designed to give the interested user an introduction to {\bf C++}. Just google ``introduction C++'' and you are sure to come across sites such as \url{http://www.cplusplus.com} that provide step by step instructions to get you started. Here, we only want to point out two reasonably straight-forward approaches to linking {\bf R} with {\bf C++}: the {\tt .C} function
-%XXXX .C is for calling C code, not C++ code. Perhaps we should focus on .Call() instead or just stick with Rcpp? XXXX
- and the packages {\tt inline} \citep{sklyar_etal:2010}, {\tt Rcpp} \citep{eddelbuettel_francois:2011} and {\tt RcppArmadillo} \citep{francois_etal:2011}. If you are interested, we suggest you refer to the package manuals and vignettes, as well as the online document ``Writing R extensions'' (at \url{http://cran.r-project.org/doc/manuals/R-exts.html}) for a much more thorough treatment of this topic.
+Parallel computing is a great tool to speed up computations, but its usefulness is limited by how many cores you have available. Even with a decent number of cores, large models may still be very time consuming. A major reason for this is that for-loops in {\bf R} are time consuming, whereas they are handled much more time efficiently in other computer languages such as {\bf C++}. As we saw above, MCMC algorithms consist of for-loops within for-loops, so that it stands to reason that implementing them in a language like {\bf C++} should make those algorithms run much faster. Being avid {\bf R} users, we cannot claim to be fluent in {\bf C++} or to be aware of all the opportunities this language brings for faster computing. It is also beyond the scope of this book to go into the nuts and bolts of how {\bf C++} works or provide a tutorial, and we refer you to the vast amounts of online and print material designed to give the interested user an introduction to {\bf C++}. Just google ``introduction C++'' and you are sure to come across sites such as \url{http://www.cplusplus.com} that provide step by step instructions to get you started. Here, we only want to point out two reasonably straight-forward approaches to linking {\bf R} with {\bf C++}: the {\tt .Call} function and the packages {\tt inline} \citep{sklyar_etal:2010} and {\tt RcppArmadillo} \citep{francois_etal:2011}. If you are interested, we suggest you refer to the package manuals and vignettes, as well as the online document ``Writing R extensions'' (at \url{http://cran.r-project.org/doc/manuals/R-exts.html}) for a much more thorough treatment of this topic.
 
 In order to use {\bf C++} you need a compiler such as \verb!g++!
-% XXX Rtools contains a bunch of compilers like g++, gcc, and gfortran. All are part of the GNU compiler collection. Maybe we should cite that.
-that comes with {\bf Rtools}, which you can easily download from the web. Make sure the version of {\bf Rtools} matches your version of {\bf R} or you may run into compilation errors later on.
-%Further, to our knowledge, interfacing with {\bf C++} can only be done from a 32 bit version of {\bf R}.
-% XXXX It works with 64-bit R too XXXX
+that (together with other compilers, for example for {\bf C} and {\bf FORTRAN}) comes with {\bf Rtools}, which you can easily download from the web (at \url{http://cran.r-project.org/bin/windows/Rtools/}). All of these compilers are part of the GNU compiler collection (\url{http://gcc.gnu.org/}). Make sure the version of {\bf Rtools} matches your version of {\bf R} or you may run into compilation errors later on.
 To give you a taste of {\bf C++} we will show you how to write a function that calculates the squared distances of individual activity centers to all traps, as is implemented in the {\tt scrbook} package in the function {\tt e2dist} (to be exact,{\tt e2dist} calculates the distance, not the squared distance), and compare performance between {\bf R} and {\bf C++}. We will refer to these functions as ``distance functions''. First, let us set up dummy data --  a matrix holding the coordinates of the trap array, outer limits of the state space and uniformly distributed activity centers for $M=700$ individuals:
 {\small
 \begin{verbatim}
@@ -1713,131 +1708,146 @@ system.time(
 \end{verbatim}
 }
 The code to implement the same function in {\bf C++}
-% XXXX Your example is actually C code, not C++ code. XXXXX
-using the {\tt .C} command is shown in panel \ref{mcmc.panel.C1}. You will see that the way the code is set up is reasonably similar to {\bf R}, but it is worthy to point out a few differences: {\bf (1)} Accessing {\bf C++} through {\bf R} using {\tt .C} only allows for vectors and scalars to be passed as data to the function. Matrices are not supported so that we have to separate the matrices holding the coordinates of the trap array and the activity centers into vectors for the x and y coordinates, respectively. This also means that we have to use some slightly convoluted indexing to pair each individual activity center with all traps. {\bf (2)} As part of the function arguments we have to provide a container for the output values. Here, we pass a vector of length $M \times J$ holding all zeros; once computations are finished, this vector will contain the distances we computed and will be an element of the list that comprises the {\bf R} object we assigned the function to, {\tt Dvector} in the code. After execution of the {\bf C++} function, this object contains a list with all function arguments including the {\emph manipulated} output vector. {\bf (3)} In {\bf C++} indexes for vectors range from 0 to $n-1$, NOT from 1 to $n$, as in {\bf R}. {\bf (4)} This kind of computing does not allow for vector operations; everything has to be done element-by-element.
+using the {\tt inline} and {\tt RcppArmadillo} packages is shown in panel \ref{mcmc.panel.C1}. These packages allow you to use a range of data formats such as lists and matrices, and they take care of compiling the code in {\bf C++} and loading the resulting function into {\bf R}. This is also referred to compiling {\bf C++} code ``on the fly''. You will see that the way the code is set up is reasonably similar to {\bf R}. One difference that is worthy to point out is that in {\bf C++} indexes for vectors range from 0 to $n-1$, NOT from 1 to $n$, as in {\bf R}. Note that with {\tt inline} we only need to write the core of the code and define the type of the variables we want to pass to the function, while the {\tt cxxfunction} call takes care of the rest. Once your function is compiled and loaded you should check out the full {\bf C++} code by calling {\tt DfunArma@code}
 
 \begin{panel}[ht]
 \centering
 \rule[0.15in]{\textwidth}{.03in}
-%\begin{minipage}{2.5in}
+\begin{minipage}{2.5in}
 {\small
-% XXXX This is C code XXXX
-\begin{verbatim}
-#write C++ code to .c file
-cat("
-#include <stdio.h>
-#include <R.h>
-#include <Rmath.h>
-#include <math.h>
-#include <Rinternals.h>
-
-void Dfun_C(int *M, int *J, double *Sx, double *Sy, double *Xx,
-			double *Xy, double *D2out) {
-
-/* variables using different names than pointers in function */
-/* always declare type: integer, double, boolean... */
-int Ntot, ntraps;
-
-Ntot=*M;
-ntraps=*J;
-
-/*Set up vectors for trap coordinates*/
-double X_x[ntraps], X_y[ntraps];
-
-for (int j=0;j<ntraps;j++){
-X_x[j]=Xx[j];
-X_y[j]=Xy[j];
-}
-
-/*set up vectors for activity center coordinates*/
-double S_x[Ntot], S_y[Ntot];
-
-for (int i=0;i<Ntot;i++){
-S_x[i]=Sx[i];
-S_y[i]=Sy[i];
-}
-
-for (int i=0; i<Ntot; i++) {
-int ic=i+1;
-	for (int j=ic*ntraps-ntraps; j<ic*ntraps; j++) {
-	D2out[j]=pow((S_x[i] - X_x[(j-i*ntraps)]  ),2) +
-			 pow((S_y[i] - X_y[(j-i*ntraps)]  ),2);
-	}
-}
-}  /*end function*/
-",file = "Dfun_C.c")
-
-## compile .c function adn load resulting .dll library
-system(paste("Rcmd SHLIB Dfun_C.c"))
-dyn.load("Dfun_C.dll")
-
-##prepare input as vectors and set output vector
-Sx<-S[,1]
-Sy<-S[,2]
-Xx<-as.vector(X[,1])
-Xy<-as.vector(X[,2])
-D2out<-rep(0, M*J)
-
-system.time(
-(Dvector<-.C("Dfun_C",as.integer(M), as.integer(J), as.double(Sx),
-			as.double(Sy), as.double(Xx),as.double(Xy),
-			as.double(D2out) ))
-)
-#system.time: 0
-
-#reformat output vector to matrix
-D2<-matrix(Dvector[[7]], nrow=M, ncol=J, byrow=T)
-\end{verbatim}
-}
-\rule[-0.15in]{\textwidth}{.03in}
-\caption{
-Code to compute squared distance between individual activity centers and traps in {\bf C++} from within {\bf R}.
-}
-\label{mcmc.panel.C1}
-\end{panel}
-
-Overall, the process of using {\tt .C} consists of 3 steps: compiling the function we wrote in {\bf C++} from a .c file containing the code by using the {\tt system} call (during this step the syntax of the code is checked for errors and the function will not be compiled if errors are detected); loading the .dll library resulting from the previous step into the workspace; and using the newly created function within the {\tt .C} call. If you happen to pass data the {\tt .C} call that does not match the type or dimension declared in the function itself, {\bf R} will usually crash. If you have to edit the function itself, you have to (1) {\tt dyn.unload} the current version in the workspace, (2) delete the corresponding .o and .dll files in your working directory, (3) re-compile and load the corrected version of the function. All these steps are taken care of in panel \ref{mcmc.panel.C1} and if you execute the entire chunk of code, you will see that the {\bf C++} version of the distance function beats our ``pedestrian'' {\bf R} version by a lot. Even compared with the much more efficient {\tt e2dist}, the {\bf C++} version performs better -- you can try that for yourself.
-
-Still, with all these compilation and loading steps involved, writing a function in {\bf C++} seems rather cumbersome. It is, especially in the beginning. But there are tools designed to make it easier, namely the packages {\tt inline} in combination with {\tt RcppArmadillo}. Not only do these packages allow you to use other data formats such as lists and matrices, they also take care of the compilation of code in {\bf C++}. The syntax of these libraries is a little different from what we just saw, but the basics aren't too hard to pick up. The code below shows you how to implement the same distance function using {\tt inline} in combination with {\tt RcppArmadillo}. Note that we only need to write the core of the code and define the type of the variables we want to pass to the function, while the {\tt cxxfunction} call takes care of the rest (i.e., adding the standard pieces of code surrounding the core of the function, the compiling and the loading). This is also referred to compiling {\bf C++} code ``on the fly''.
-% XXXX I would mention that instead of using inline, you can also write an R package, which avoids the need to compile the function every time you start % R XXXX
-Much of the code is very similar to what we saw before when using the {\tt .C} function; but we need to declare our data matrices as such within the {\tt RcppArmadillo} syntax.
-
-{\small
-%% XXXXX It might help to add some comments to your C++ code below XXX
-\begin{verbatim}
 ### calculate squared distances using RcppArmadillo
 library(inline)
 library(RcppArmadillo)
 
 #write core of function code
 code<-'
+/*define input, assign correct class (matrix, vector etc)*/
 arma::mat Sn=Rcpp::as<arma::mat>(S);
 arma::mat Xn=Rcpp::as<arma::mat>(X);
 int Ntot=Rcpp::as<int>(M);
 int ntraps=Rcpp::as<int>(J);
+/*create matrix to hold squared distances*/
 arma::mat D2(Ntot, ntraps);
 
+/*loop over M and J to calculate distances*/
 for (int i=0; i<Ntot; i++){
 	for(int j=0; j<ntraps; j++){
 	D2(i,j)= pow(Sn(i,0)-Xn(j,0), 2) + pow(Sn(i,1)-Xn(j,1), 2);
 	}
 }
+/*return D2 in R format*/
 return Rcpp::wrap(D2);
 '
 
 # compile and load
 DfunArma<-cxxfunction(signature(M="integer", J="integer", S="numeric",
 		X="numeric"), plugin="RcppArmadillo", body=code)
-
-#run function
-system.time(
-(out<-DfunArma(M,J,S,X))
-)
 \end{verbatim}
 }
-Executing this code shows that it is also faster than the {\bf R} version of the distance function or {\tt e2dist}. While speed differences of less than 1 second may seem negligible,
-% XXX Can you show a relative time difference? Is it 5x faster or 20x faster? XXXX
+\rule[-0.15in]{\textwidth}{.03in}
+\caption{
+Code to compute squared distance between individual activity centers and traps in {\bf C++} from within {\bf R} using {\tt inline} and {\tt RcppArmadillo}.
+}
+\label{mcmc.panel.C1}
+\end{panel}
+
+Executing this code shows that it is also faster than the {\bf R} version of the distance function or {\tt e2dist}; in fact it is too fast for the time resolution of the {\tt system.time()} function to even give us a time estimate:
+{\small
+\begin{verbatim}
+system.time(
+(out<-DfunArma(M,J,S,X)))
+
+   user  system elapsed 
+      0       0       0 
+\end{verbatim}
+}
+While speed differences of less than 1 second may seem negligible,
 remember that each command has to executed at each iteration of the Markov chain. Especially with time-consuming models such as those for open populations (Chapt. \ref{chapt.open}) or multi-session models (Chapt. \ref{chapt.hscr}) we believe that {\bf C++} holds large potential to make implementation of such models more feasible.
+
+
+
+
+% \begin{panel}[ht]
+% \centering
+% \rule[0.15in]{\textwidth}{.03in}
+% \begin{minipage}{2.5in}
+% {\small
+% XXXX This is C code XXXX
+% \begin{verbatim}
+% #write C++ code to .c file
+% cat("
+% #include <stdio.h>
+% #include <R.h>
+% #include <Rmath.h>
+% #include <math.h>
+% #include <Rinternals.h>
+
+% void Dfun_C(int *M, int *J, double *Sx, double *Sy, double *Xx,
+% 			double *Xy, double *D2out) {
+
+% /* variables using different names than pointers in function */
+% /* always declare type: integer, double, boolean... */
+% int Ntot, ntraps;
+
+% Ntot=*M;
+% ntraps=*J;
+
+% /*Set up vectors for trap coordinates*/
+% double X_x[ntraps], X_y[ntraps];
+
+% for (int j=0;j<ntraps;j++){
+% X_x[j]=Xx[j];
+% X_y[j]=Xy[j];
+% }
+
+% /*set up vectors for activity center coordinates*/
+% double S_x[Ntot], S_y[Ntot];
+
+% for (int i=0;i<Ntot;i++){
+% S_x[i]=Sx[i];
+% S_y[i]=Sy[i];
+% }
+
+% for (int i=0; i<Ntot; i++) {
+% int ic=i+1;
+% 	for (int j=ic*ntraps-ntraps; j<ic*ntraps; j++) {
+% 	D2out[j]=pow((S_x[i] - X_x[(j-i*ntraps)]  ),2) +
+% 			 pow((S_y[i] - X_y[(j-i*ntraps)]  ),2);
+% 	}
+% }
+% }  /*end function*/
+% ",file = "Dfun_C.c")
+
+% ## compile .c function adn load resulting .dll library
+% system(paste("Rcmd SHLIB Dfun_C.c"))
+% dyn.load("Dfun_C.dll")
+
+% ##prepare input as vectors and set output vector
+% Sx<-S[,1]
+% Sy<-S[,2]
+% Xx<-as.vector(X[,1])
+% Xy<-as.vector(X[,2])
+% D2out<-rep(0, M*J)
+
+% system.time(
+% (Dvector<-.C("Dfun_C",as.integer(M), as.integer(J), as.double(Sx),
+% 			as.double(Sy), as.double(Xx),as.double(Xy),
+% 			as.double(D2out) ))
+% )
+% #system.time: 0
+
+% #reformat output vector to matrix
+% D2<-matrix(Dvector[[7]], nrow=M, ncol=J, byrow=T)
+% \end{verbatim}
+% }
+% \rule[-0.15in]{\textwidth}{.03in}
+% \caption{
+% Code to compute squared distance between individual activity centers and traps in {\bf C++} from within {\bf R}.
+% }
+% \label{mcmc.panel.C1}
+% \end{panel}
+
+
 
 % \section{MCMC software packages}
 
