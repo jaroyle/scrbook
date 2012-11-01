@@ -1,4 +1,4 @@
-wolvSCR0.fn <-
+wolvSCR0 <-
 function(y3d,traps,nb=1000,ni=2000,delta=2,M=200){
 
 library("R2WinBUGS")
@@ -17,7 +17,7 @@ Xu<-max(traplocs[,1] + delta)
 Yl<-min(traplocs[,2] - delta)
 Yu<-max(traplocs[,2] + delta)
 area<- (Xu-Xl)*(Yu-Yl)/10
-plot(traplocs,pch=20,xlim=c(Xl,Xu),ylim=c(Yl,Yu))
+#####plot(traplocs,pch=20,xlim=c(Xl,Xu),ylim=c(Yl,Yu))
 ### ARRAY having dimensions individual x rep x trap
 ## MASK is trap x rep
 nz<-M-dim(y3d)[1]
@@ -42,14 +42,13 @@ sink("modelfile.txt")
 cat("
 model {
 
-#beta~dnorm(0,.01)
+
 sigma~dunif(0,50)
-#alpha~dnorm(0,.01)
-#p0<-exp(alpha)/(1+exp(alpha))
+
 p0~dunif(0,1)
-#logit(logitlam0)<-p0
-beta<- (1/(2*sigma*sigma) )
-#sigma<- sqrt(1/(2*beta))
+
+alpha1<- (1/(2*sigma*sigma) )
+
 psi ~ dunif(0,1)
 for(i in 1:M){
  z[i]~dbern(psi)
@@ -61,7 +60,7 @@ for(j in 1:ntraps){
    mu[i,j]<-z[i]*p[i,j]
  ncaps[i,j]~ dbin(mu[i,j],K[j])
  dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2)
-  p[i,j]  <-  p0*exp( - beta*dd[i,j] )
+  p[i,j]  <-  p0*exp( - alpha1*dd[i,j] )
 ncapsnew[i,j]~dbin(mu[i,j],K[j])
 err[i,j]<-  pow(pow(ncaps[i,j],.5) - pow(K[j]*p[i,j],.5),2)
 errnew[i,j]<- pow(pow(ncapsnew[i,j],.5) - pow(K[j]*p[i,j],.5),2)
@@ -69,9 +68,9 @@ errnew[i,j]<- pow(pow(ncapsnew[i,j],.5) - pow(K[j]*p[i,j],.5),2)
 
 
 }
-#for(j in 1:ntraps){
-#traptotals[j]<-sum(ncapsnew[1:M,j])
-#}
+
+
+
 
 Xobs<-sum(err[,])
 Xnew<-sum(errnew[,])
@@ -88,7 +87,7 @@ zst<-c(rep(1,nind),rep(0,M-nind))
 inits <- function(){
   list (sigma=runif(1,.4,1),p0=runif(1,.01,.2),z=zst)
 }
-parameters <- c("psi","sigma","p0","N","D","beta","s","z") ###,"Xobs","Xnew","s","w")
+parameters <- c("psi","sigma","p0","N","D","alpha1","s","z") ###,"Xobs","Xnew","s","w")
 out <- bugs(data, inits, parameters, "modelfile.txt", n.thin=1,n.chains=3, n.burnin=nb,n.iter=ni,working.dir=getwd(),debug=FALSE)
 out
 }
