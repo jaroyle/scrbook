@@ -4,7 +4,7 @@ function(y3d,traps,nb=1000,ni=2000,delta=2,M=200){
 library("R2WinBUGS")
 
 # trapping grid scaled appropriately
-traplocs<-as.matrix(traps[,1:2])
+traplocs<-as.matrix(traps[,2:3])
 mingridx<-min(traplocs[,1])
 mingridy<-min(traplocs[,2])
 traplocs[,1]<-traplocs[,1] -min(traplocs[,1])
@@ -21,7 +21,7 @@ area<- (Xu-Xl)*(Yu-Yl)/10
 ### ARRAY having dimensions individual x rep x trap
 ## MASK is trap x rep
 nz<-M-dim(y3d)[1]
-MASK<-traps[,3:ncol(traps)]
+MASK<-traps[,4:ncol(traps)]
 Dmat<-as.matrix(dist(traplocs))
 nind<-dim(y3d)[1]
 K<-dim(y3d)[2]
@@ -82,10 +82,18 @@ D<-N/area
 sink()
 
 data <- list ("ncaps","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area")
-sst<-sample(1:nrow(traplocs),M,replace=TRUE)
+
+sst<-cbind(runif(M,Xl,Xu),runif(M,Yl,Yu))  # starting values for s
+for(i in 1:nind){
+if(sum(ncaps[i,])==0) next
+sst[i,1]<- mean( traplocs[ncaps[i,]>0,1] )
+sst[i,2]<- mean( traplocs[ncaps[i,]>0,2] )
+}
+
+
 zst<-c(rep(1,nind),rep(0,M-nind))
 inits <- function(){
-  list (sigma=runif(1,.4,1),p0=runif(1,.01,.2),z=zst)
+  list (sigma=runif(1,.4,1),p0=runif(1,.01,.2),z=zst,s=sst)
 }
 parameters <- c("psi","sigma","p0","N","D","alpha1","s","z") ###,"Xobs","Xnew","s","w")
 out <- bugs(data, inits, parameters, "modelfile.txt", n.thin=1,n.chains=3, n.burnin=nb,n.iter=ni,working.dir=getwd(),debug=FALSE)
