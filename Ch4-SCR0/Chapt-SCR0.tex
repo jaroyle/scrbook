@@ -808,8 +808,8 @@ well does our estimator perform of $N=50$?
 \includegraphics[height=2.5in]{Ch4-SCR0/figs/binomialpoint}
 \end{center}
 \caption{Realization (small dots) of a binomial point process with $N=20$. The
-  large dots represent trap locations.  {\bf XXXX need to remake this
-  figure XXXXX} }
+  large dots represent trap locations. 
+}
 \label{scr0.fig.bpp}
 \end{figure}
 
@@ -1492,6 +1492,8 @@ nind<-nrow(y)
 X<-data$traplocs
 K<-data$K
 J<-nrow(X)
+xlim<-data$xlim
+ylim<-data$ylim
 \end{verbatim}
 }
  After harvesting the data we
@@ -1511,9 +1513,8 @@ y<-rbind(y,matrix(0,nrow=M-nind,ncol=ncol(y)))
 z<-c(rep(1,nind),rep(0,M-nind))
 
  # starting values for s
-sst<-cbind(runif(M,Xl,Xu),runif(M,Yl,Yu)) 
+sst<-cbind(runif(M,xlim[1],xlim[2]),runif(M,ylim[1],ylim[2])) 
 for(i in 1:nind){
-   if(sum(y[i,])==0) next
    sst[i,1]<- mean( X[y[i,]>0,1] )
    sst[i,2]<- mean( X[y[i,]>0,2] )
 }
@@ -1551,8 +1552,6 @@ D<-N/64
 ",file = "SCR0b.txt")
 \end{Verbatim}
 }
-{\bf XXXX This function needs changed on the repo. edits made in-text
-  here  XXXXX}
 The 
 remainder of the code for bundling the data, creating initial values
 and executing {\bf WinBUGS} looks much the same as before except with more
@@ -1565,7 +1564,7 @@ inits <- function(){
 
 library("R2WinBUGS")
 parameters <- c("alpha0","alpha1","sigma","N","D")
-out <- bugs (data, inits, parameters, "SCR0b.txt", n.thin=1,chains=3,
+out <- bugs (data, inits, parameters, "SCR0b.txt", n.thin=1,n.chains=3,
  n.burnin=1000,n.iter=2000,debug=TRUE,working.dir=getwd())
 \end{verbatim}
 }
@@ -1636,8 +1635,8 @@ We see that the
 estimated parameters ($\alpha_0$ and $\alpha_1$) are comparable to the
 previous results obtained for the known-$N$ case, and also not too
 different from the data-generating values. The posterior of $N$
-overlaps the data-generating value substantially. {\bf XXX possible
-  plot here of posterior summaries XXXXX}
+overlaps the data-generating value substantially. 
+
 
 \begin{comment}
 We note that these results were obtained from a fit of the actual
@@ -1754,8 +1753,8 @@ jinit<- jags.model("SCR0b.txt", data=data, inits=inits,
                    n.chains=3, n.adapt=1000)
 jout <- coda.samples(jinit, parameters, n.iter=1000, thin=1)
 \end{verbatim}
-We find that {\bf JAGS} seems to be 20-30\% faster (and often more)
-for the basic SCR model which you can evaluate using the function
+These commands can be executed 
+using the function
 \mbox{\tt SCR0bayes} provided with the {\bf R} package \mbox{\tt
   scrbook}. \citet{hobbs:2011} provides a good introduction to
 ecological modeling with {\bf JAGS} which we recommend.
@@ -1823,7 +1822,7 @@ trap identity, an
 integer from 1 to $J$, the number of traps.  The structure of the EDF
 is the same as used in the \mbox{\tt secr} package \citep{efford:2011}
 and similar to that used
-in the {\bf SPACECAP} \citep{gopalaswamy_etal:2012}, and
+in the {\bf SPACECAP} \citep{gopalaswamy_etal:2012mee}, and
 \mbox{\tt SCRbayes} \citep{russell_etal:2012} packages, both of which 
 have a 3-column format (\mbox{\tt trapID}, \mbox{\tt indID}, \mbox{\tt
   sampID}).
@@ -1988,8 +1987,7 @@ and total encounter frequencies.
 and columns represent total number of captures
     (e.g., we captured 4 individuals 1 time, necessarily in only 1
     trap; we captured 3 individuals 3 times but in 2 different traps).
-XXX NOTE: This may differ by 1 from Royle et al. 2011 table. Check
-this. XXXX
+%% Kimmy confirmed table is same as in JWM paper
 }
 \centering
 \begin{tabular}{c c c c c c c c c c c}
@@ -2050,7 +2048,7 @@ based on
 buffers from 1.0 to 5.0 units on the scaled coordinate system (10 km to
 50 km). In the {\bf R} package \mbox{\tt scrbook} we provide a
 function
-\mbox{\tt wolvSCR0.fn} which will fit the basic SCR model. For
+\mbox{\tt wolvSCR0} which will fit the basic SCR model. For
 example, to fit the model in 
 {\bf WinBUGS} using data augmentation with $M=300$ potential individuals,
 using 3 Markov chains each of 12000 total iterations, discarding the
@@ -2061,10 +2059,10 @@ library("scrbook")
 data(wolverine)
 traps<-wolverine$wtraps
 y3d <-SCR23darray(wolverine$wcaps,wolverine$wtraps)
-toad<-wolvSCR0.fn(y3d,traps,nb=12000,ni=2000,delta=1,M=300)
+toad<-wolvSCR0(y3d,traps,nb=2000,ni=12000,buffer=1,M=300)
 \end{verbatim}
 }
-The argument \mbox{\tt delta} determines the buffer size of the state-space.
+The argument \mbox{\tt buffer} determines the buffer size of the state-space.
 Note that this analysis takes 
 between 1-2 hours on many machines so we recommend trying it out with
 lower values of $M$ and fewer iterations.
@@ -2293,7 +2291,7 @@ effective ``home range area'' is then the area of this circle, which is
 $\pi \times 15.66^2 = 770.4$ $\mbox{km}^{2}$
 Using our handy function \mbox{\tt hra} we do this:
 \begin{verbatim}
- hra(pGauss,parms=c(-2,1/(2*.64*.64)),xlim=c(-1,7),ylim=c(-1,7))
+ hra(pGauss1,parms=c(-2,1/(2*.64*.64)),xlim=c(-1,7),ylim=c(-1,7))
 
 [1] 7.731408
 \end{verbatim}
@@ -2477,7 +2475,7 @@ data(wolverine)
 traps<-wolverine$wtraps
 y3d <-SCR23darray(wolverine$wcaps,wolverine$wtraps)
 # this takes 341 seconds on a standard CPU circa 2011
-unix.time(bln<-wolvSCR0.fn(y3d,traps,nb=1000,ni=2000,delta=1,M=100))
+unix.time(bln<-wolvSCR0(y3d,traps,nb=1000,ni=2000,buffer=1,M=100))
 Sx<-bln$sims.list$s[,,1]
 Sy<-bln$sims.list$s[,,2]
 z<- bln$sims.list$z
@@ -2586,7 +2584,7 @@ Use of a discrete state-space can be computationally expensive in {\bf
   WinBUGS}. That said, it isn't too difficult to perform the MCMC
 calculations in {\bf R} (discussed in Chapt.
 \ref{chapt.mcmc}. The {\bf R} package {\tt SPACECAP}
-\citep{gopalaswamy_etal:2011} arose from the {\bf R} implementation of
+\citep{gopalaswamy_etal:2012mee} arose from the {\bf R} implementation of
 the SCR model in \citet{royle_etal:2009ecol}.  
 %As we will see in
 %Chapt. \ref{chapt.mle}, we must prescribe the state-space by a
@@ -2759,7 +2757,7 @@ resolution of the state-space grid.
 Interestingly, the 
 effectiveness of the MCMC algorithms, as measured by effective sample
 size (\mbox{\tt n.eff}) is pretty remarkably
-different. Furthermore, the finest grid resolution, $2 km$ spacing, took about
+different. Furthermore, the finest grid resolution ($2$ km spacing) took about
 6 days to run and thus it would not be practical for large problems or
 with many models.
 
@@ -2993,10 +2991,11 @@ Because SCR models formally link individual encounter history data to
 an underlying point process, we can obtain formal inferences about the
 point process. For example, we showed how to produce a density
 map (Fig. \ref{scr0.fig.density}). We can do
-other things we normally do with spatial point processes such as
-compute K-functions  REF XXXXXX, and test for 
-``complete spatial randomness''
-(CSR), which we address in Chapt.  \ref{chapt.gof}. 
+traditional point process analyses such as testing for 
+``complete spatial randomness'' 
+(CSR) (see Chapt.  \ref{chapt.gof}),
+calculation of Ripley's K-functions,
+and related point process summaries \citep{illian_etal:2008}.
 
 One of the things we've introduced in this chapter which has not
 previously been discussed explicitly in the literatre on SCR models,
