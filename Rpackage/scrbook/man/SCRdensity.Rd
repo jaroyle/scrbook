@@ -70,9 +70,9 @@ list with elements Sx Sy and w each is "niters x M" matrices
 library("scrbook")
 data(wolverine)
 traps<-wolverine$wtraps
-y3d <-SCR23darray.fn(wolverine$wcaps,wolverine$wtraps)
+y3d <-SCR23darray(wolverine$wcaps,wolverine$wtraps)
 # this takes 341 seconds on a standard CPU circa 2011
-unix.time(bln<-wolvSCR0.fn(y3d,traps,nb=1000,ni=2000,delta=1,M=100))
+unix.time(bln<-wolvSCR0(y3d,traps,nb=1000,ni=2000,buffer=1,M=100))
 
 Sx<-bln$sims.list$s[,,1]
 Sy<-bln$sims.list$s[,,2]
