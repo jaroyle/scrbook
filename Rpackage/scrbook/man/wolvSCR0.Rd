@@ -1,5 +1,5 @@
-\name{wolvSCR0.fn}
-\alias{wolvSCR0.fn}
+\name{wolvSCR0}
+\alias{wolvSCR0}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 fit SCR0 to Wolverine data %%  ~~function to do ... ~~
@@ -8,7 +8,7 @@ fit SCR0 to Wolverine data %%  ~~function to do ... ~~
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-wolvSCR0.fn(y3d, traps, nb = 1000, ni = 2000, delta = 2, M = 200)
+wolvSCR0(y3d, traps, nb = 1000, ni = 2000,buffer = 2, M = 200)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -24,8 +24,8 @@ wolvSCR0.fn(y3d, traps, nb = 1000, ni = 2000, delta = 2, M = 200)
   \item{ni}{
 %%     ~~Describe \code{ni} here~~
 }
-  \item{delta}{
-%%     ~~Describe \code{delta} here~~
+  \item{buffer}{
+%%     ~~Describe \code{buffer} here~~
 }
   \item{M}{
 %%     ~~Describe \code{M} here~~
@@ -61,8 +61,8 @@ wolvSCR0.fn(y3d, traps, nb = 1000, ni = 2000, delta = 2, M = 200)
 library("scrbook")
 data(wolverine)
 traps<-wolverine$wtraps
-y3d <-SCR23darray.fn(wolverine$wcaps,wolverine$wtraps)
-toad<-wolvSCR0.fn(y3d,traps,nb=1000,ni=2000,delta=1,M=100)
+y3d <-SCR23darray(wolverine$wcaps,wolverine$wtraps)
+toad<-wolvSCR0(y3d,traps,nb=1000,ni=2000,buffer=1,M=100)
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

@@ -57,7 +57,7 @@ SCR0bayes(dataobj, M = 200, engine = "jags", ni = 2000, nb = 1000)
 
 
 library("scrbook")
-data<-simSCR0.fn(discard0=TRUE,sd=2013)
+data<-simSCR0(discard0=TRUE,rnd=2013)
 out1<-SCR0bayes(data,M=200,engine="jags",ni=2000,nb=1000)
 
 out2<-SCR0bayes(data,M=200,engine="winbugs",ni=2000,nb=1000)

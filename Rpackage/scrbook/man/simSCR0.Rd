@@ -1,5 +1,5 @@
 \name{simSCR0}
-\alias{simSCR0.fn}
+\alias{simSCR0}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Simulate some SCR data %%  ~~function to do ... ~~
