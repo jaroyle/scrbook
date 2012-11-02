@@ -1580,7 +1580,7 @@ ${\cal S}$ back to the original scale (UTM) before running the
 \verb#over()# command.
 
 \section{Increasing computational speed}
-Using custom written MCMC algorithms in {\bf R} is not only more flexible but can also be faster than using programs such as {\bf JAGS} and especially {\bf BUGS}. Also, {\bf R} tends to use much less memory than {\bf JAGS}, which can be crucial if you are running a large model but only have limited memory available. For example, you will see in Chapt. \ref{detection models} that even with a reasonable sized data set certain parameterizations of SCR models can max out the memory of a 16 GB computer when using {\bf JAGS}. These are mostly the models that require us to look at individual sampling occasions instead of joining observations across the entire study, which requires us to introduce another for-loop into the {\bf JAGS} model. {\bf BUGS} is limited in the amount of memory it can access and thus will likely not max out your memory, but as a trade-off, it will take a long time to run such models. In this chapter we have provided you with the guidelines to write your own MCMC sampler. But beyond the material that we have covered there are a number of ways you can make your sampler more efficient, through parallel computing or by accessing an alternative computer language such as {\bf c++}. Exploring these options exhaustively is beyond the scope of this book; instead, in this section we will give you some pointers to get started with these more advanced computational issues.
+Using custom written MCMC algorithms in {\bf R} is not only more flexible but can also be faster than using programs such as {\bf JAGS} and especially {\bf BUGS}. Also, {\bf R} tends to use much less memory than {\bf JAGS}, which can be crucial if you are running a large model but only have limited memory available. For example, you will see in Chapt. \ref{detection models} that even with a reasonable sized data set certain parameterizations of SCR models can max out the memory of a 16 GB computer when using {\bf JAGS}. These are mostly the models that require us to look at individual sampling occasions instead of joining observations for a given sampling location across the entire study, which requires us to introduce another for-loop into the {\bf JAGS} model. {\bf BUGS} is limited in the amount of memory it can access and thus will likely not max out your memory, but as a trade-off, it will take a long time to run such models. In this chapter we have provided you with the guidelines to write your own MCMC sampler. But beyond the material that we have covered there are a number of ways you can make your sampler more efficient, through parallel computing or by accessing an alternative computer language such as {\bf c++}. Exploring these options exhaustively is beyond the scope of this book; instead, in this section we will give you some pointers to get started with these more advanced computational issues.
 
 \subsection{Parallel computing}
 If you are using a computer with several cores, you can make use of parallel computing to speed up overall computation. In parallel computing we execute commands simultaneously on different cores of the computer, instead of running them serially on one single core. For example, imagine you have 4 cores available and you want to implement a for-loop in {\bf R}; instead of going through the loop iteration by iteration, you can prompt {\bf R} to execute iterations 1 to 4 at the same time on the 4 different cores. The core that finishes first will then continue with iteration 5, and so on.  There are several packages in {\bf R} that allow you to induce parallel computing, such as {\tt snow} \citep{tierney_etal:2011} and {\tt snowfall} \citep{knaus:2010}, and the more current versions of {\bf R} (from 2.14.0 upwards) come with a pre-installed set of functions grouped under the name {\tt parallel}.
@@ -1601,7 +1601,7 @@ return(out)
 \end{verbatim}
 }
 
-After creating the wrapper function we need to initialize the cluster of cores, defining that we want computation to be implemented in parallel and how many cores we want it to be run on. Here, we assume we have 3 cores, but if your computer only has 2, make sure to adjust the code accordingly (i.e., set {\tt cpus=2}). In that case, 2 of the 3 chains will be run in parallel and whichever core finishes first will then pick up the third chain. Further, we have to export all {\bf R} libraries and data to all the cores, and set up a random number generator, so that we do not get identical results from the different cores:
+After creating the wrapper function we need to initialize the cluster of cores, defining that we want computation to be implemented in parallel and how many cores we want it to be run on. Here, we assume we have (at least) 3 cores, but if your computer only has 2, make sure to adjust the code accordingly (i.e., set {\tt cpus=2}). In that case, 2 of the 3 chains will be run in parallel and whichever core finishes first will then pick up the third chain. Further, we have to export all {\bf R} libraries and data to all the cores, and set up a random number generator, so that we do not get identical results from the different cores:
 
 {\small
 \begin{verbatim}
@@ -1613,7 +1613,7 @@ outL=sfLapply(1:3,wrapper) # execute 'wrapper' 3 times
 \end{verbatim}
 }
 
-The object {\tt outL} is a list of length 3, with one {\tt out} matrix from the function {\tt SCR0binom.cl} for each chain. After computation is complete, terminate the cluster using the command {\tt sfStop()}. Note that the intermediate output of current values and acceptance rates is suppressed when using parallel computing. We can now look at the output as described previously using the package {\tt coda}, by first defining {\tt outL} to be a list of {\tt mcmc} objects.
+The object {\tt outL} is a list of length 3, with one {\tt out} matrix from the function {\tt SCR0binom.cl} for each chain. After computation is complete, terminate the cluster using the command {\tt sfStop()}. Note that the intermediate output of current values and acceptance rates in the {\bf R} console is suppressed when using parallel computing. We can now look at the output as described previously using the package {\tt coda}, by first defining {\tt outL} to be a list of {\tt mcmc} objects.
 {\small
 \begin{verbatim}
 library(coda)
@@ -1656,7 +1656,7 @@ Multivariate psrf
 1.05
 \end{verbatim}
 }
-We can see that estimates are similar to what we observed when running a single chain (see sec. \ref{mcmc.subsec.output}) and that all 3 chains appear to have converged, based on their point estimates of the $\hat{R}$ statistic, but, as already noted before, for a real analysis we might want to run this model for quite a bit longer, to bring down the upper confidence interval limits on $\hat{R}$ for $\psi$ and $N$. If you have 3 cores then running these 3 parallel chains should not have taken longer than running a single chain. Yet if you look at the effective sample size now using {\tt effectiveSize(res)}, you can see that it has roughly tripled, as we would expect:
+We can see that estimates are similar to what we observed when running a single chain (see sec. \ref{mcmc.subsec.output}) and that all 3 chains appear to have converged, based on their point estimates of the $\hat{R}$ statistic, but, as already noted before, for a real analysis we might want to run this model for quite a bit longer, to bring down the upper confidence interval limits on $\hat{R}$ for $\psi$ and $N$. If you have 3 cores then running these 3 parallel chains should not have taken longer than running a single chain. Yet if you look at the effective sample size now using {\tt effectiveSize}, you can see that it has roughly tripled, as we would expect:
 {\small
 \begin{verbatim}
 effectiveSize(window(res, start=1001))
@@ -1667,7 +1667,7 @@ effectiveSize(window(res, start=1001))
 }
 
 \subsection{Using {\bf C++}}
-Parallel computing is a great tool to speed up computations, but its usefulness is limited by how many cores you have available. Even with a decent number of cores, large models may still be very time consuming. A major reason for this is that for-loops in {\bf R} are time consuming, whereas they are handled much more time efficiently in other computer languages such as {\bf C++}. As we saw above, MCMC algorithms consist of for-loops within for-loops, so that it stands to reason that implementing them in a language like {\bf C++} should make those algorithms run much faster. Being avid {\bf R} users, we cannot claim to be fluent in {\bf C++} or to be aware of all the opportunities this language brings for faster computing. It is also beyond the scope of this book to go into the nuts and bolts of how {\bf C++} works or provide a tutorial, and we refer you to the vast amounts of online and print material designed to give the interested user an introduction to {\bf C++}. Just google ``introduction C++'' and you are sure to come across sites such as \url{http://www.cplusplus.com} that provide step by step instructions to get you started. Here, we only want to point out two reasonably straight-forward approaches to linking {\bf R} with {\bf C++}: the {\tt .Call} function and the packages {\tt inline} \citep{sklyar_etal:2010} and {\tt RcppArmadillo} \citep{francois_etal:2011}. If you are interested, we suggest you refer to the package manuals and vignettes, as well as the online document ``Writing R extensions'' (at \url{http://cran.r-project.org/doc/manuals/R-exts.html}) for a much more thorough treatment of this topic.
+Parallel computing is a great tool to speed up computations, but its usefulness is limited by how many cores you have available. Even with a decent number of cores, large models may still take a long time to run. A major reason for this is that for-loops in {\bf R} are time consuming, whereas they are handled much more time efficiently in other computer languages such as {\bf C++}. As we saw above, MCMC algorithms consist of for-loops within for-loops, so that it stands to reason that implementing them in a language like {\bf C++} should make those algorithms run much faster. Being avid {\bf R} users, we cannot claim to be fluent in {\bf C++} or to be aware of all the opportunities this language brings for faster computing. It is also beyond the scope of this book to go into the nuts and bolts of how {\bf C++} works or provide a tutorial, and we refer you to the vast amounts of online and print material designed to give the interested user an introduction to {\bf C++}. Just google ``introduction C++'' and you are sure to come across sites such as \url{http://www.cplusplus.com} that provide step by step instructions to get you started. Here, we only want to point out one  approach to linking {\bf R} with {\bf C++}: the packages {\tt inline} \citep{sklyar_etal:2010} and {\tt RcppArmadillo} \citep{francois_etal:2011}.  These two packages provide a very convenient interface between the two languages, but there are other other ways of calling {\bf C++} functions from within {\bf R}, such as the {\tt .Call} command. If you are interested, we suggest you refer to the package manuals and vignettes, as well as the online document ``Writing R extensions'' (at \url{http://cran.r-project.org/doc/manuals/R-exts.html}) for a much more thorough treatment of this topic.
 
 In order to use {\bf C++} you need a compiler such as \verb!g++!
 that (together with other compilers, for example for {\bf C} and {\bf FORTRAN}) comes with {\bf Rtools}, which you can easily download from the web (at \url{http://cran.r-project.org/bin/windows/Rtools/}). All of these compilers are part of the GNU compiler collection (\url{http://gcc.gnu.org/}). Make sure the version of {\bf Rtools} matches your version of {\bf R} or you may run into compilation errors later on.
@@ -1708,13 +1708,14 @@ system.time(
 \end{verbatim}
 }
 The code to implement the same function in {\bf C++}
-using the {\tt inline} and {\tt RcppArmadillo} packages is shown in panel \ref{mcmc.panel.C1}. These packages allow you to use a range of data formats such as lists and matrices, and they take care of compiling the code in {\bf C++} and loading the resulting function into {\bf R}. This is also referred to compiling {\bf C++} code ``on the fly''. You will see that the way the code is set up is reasonably similar to {\bf R}. One difference that is worthy to point out is that in {\bf C++} indexes for vectors range from 0 to $n-1$, NOT from 1 to $n$, as in {\bf R}. Note that with {\tt inline} we only need to write the core of the code and define the type of the variables we want to pass to the function, while the {\tt cxxfunction} call takes care of the rest. Once your function is compiled and loaded you should check out the full {\bf C++} code by calling {\tt DfunArma@code}
+using the {\tt inline} and {\tt RcppArmadillo} packages is shown in panel \ref{mcmc.panel.C1}. These packages allow you to use a range of data formats such as lists and matrices, and they take care of compiling the code in {\bf C++} and loading the resulting function into {\bf R}. This is also referred to compiling {\bf C++} code ``on the fly''. You will see that the way the code is set up is reasonably similar to {\bf R}. One difference that is worthy to point out is that in {\bf C++} indexes for vectors range from 0 to $n-1$, NOT from 1 to $n$, as in {\bf R}. Note that with {\tt inline} we only need to write the core of the code and define the type of the variables we want to pass to the function, while the {\tt cxxfunction} call takes care of the rest. Once your function is compiled and loaded you should check out the full {\bf C++} code by calling {\tt DfunArma@code}.
 
 \begin{panel}[ht]
 \centering
 \rule[0.15in]{\textwidth}{.03in}
-\begin{minipage}{2.5in}
+%\begin{minipage}{2.5in}
 {\small
+\begin{verbatim}
 ### calculate squared distances using RcppArmadillo
 library(inline)
 library(RcppArmadillo)
@@ -1744,11 +1745,12 @@ DfunArma<-cxxfunction(signature(M="integer", J="integer", S="numeric",
 		X="numeric"), plugin="RcppArmadillo", body=code)
 \end{verbatim}
 }
+%\end{minipage}
 \rule[-0.15in]{\textwidth}{.03in}
 \caption{
-Code to compute squared distance between individual activity centers and traps in {\bf C++} from within {\bf R} using {\tt inline} and {\tt RcppArmadillo}.
+Code to compute squared distance between individual activity centers and traps in {\bf C++} from within {\bf R} using {\tt inline} and {\tt RcppArmadillo}
 }
-\label{mcmc.panel.C1}
+\label{mcmc.panel.logitnormal}
 \end{panel}
 
 Executing this code shows that it is also faster than the {\bf R} version of the distance function or {\tt e2dist}; in fact it is too fast for the time resolution of the {\tt system.time()} function to even give us a time estimate:
