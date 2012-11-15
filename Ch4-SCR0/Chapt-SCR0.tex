@@ -2336,6 +2336,321 @@ state-space, we're setting $p=0$ for individuals beyond the prescribed state-spa
 
 
 
+
+\section{Using a Discrete Habitat Mask}
+\label{scr0.sec.discrete}
+
+The SCR model developed previously in this chapter assumes that
+individual activity centers are distributed uniformly over the
+prescribed state-space. Clearly this will not always be a reasonable
+assumption. In Chapt. \ref{chapt.state-space} we talk about developing
+models that allow explicitly for non-uniformity of the activity
+centers by modeling covariate effects on density. A simplistic method
+of 
+affecting the distribution of activity centers, which we address here,
+is to modify the shape and organization of the state-space
+explicitly. For example, we might be able to classify the state-space
+into distinct blocks of habitat and non-habitat. In that case we can
+remove the non-habitat from the state-space and assume uniformity of
+the activity centers over the remaining portions judged to be suitable
+habitat.  There are several ways to approach this: We can use a
+ grid of points to represent the state-space, i.e., by the set
+of coordinates ${\bf s}_1, \ldots, {\bf s}_{G}$, and assign equal
+probabilities to each possible value. Alternatively, we can retain the
+continuous formulation of the state-space but attempt to describe
+constraints analytically, or we can use polygon clipping methods to
+enforce constraints on the state-space in the MCMC analysis. We focus
+here on the formulation of the basic SCR model in terms of a discrete
+state-space but in Chapt. \ref{chapt.mcmc}
+we demonstrate the latter approach based on using polygon
+operations to define an irregular state-space.
+Use of a discrete state-space can be computationally expensive in {\bf
+  WinBUGS}. That said, it isn't too difficult to perform the MCMC
+calculations in {\bf R} (discussed in Chapt.
+\ref{chapt.mcmc}. The {\bf R} package {\tt SPACECAP}
+\citep{gopalaswamy_etal:2012mee} arose from the {\bf R} implementation of
+the SCR model in \citet{royle_etal:2009ecol}.  
+%As we will see in
+%Chapt. \ref{chapt.mle}, we must prescribe the state-space by a
+%discrete mesh of points in order to do integrated likelihood and so if
+%we are using a discrete state-space this can be accommodated directly
+%in our code for obtaining MLEs.
+
+While clipping out non-habitat seems like a good idea, we think
+investigators should go about this very cautiously.  We might prefer
+to do it when non-habitat represents a clear-cut restriction on the
+state-space such as a reserve boundary or a lake, ocean or river. But,
+having the capability to do this also causes people to start defining
+``habitat'' vs. ``non-habitat'' based on their understanding of the
+system whereas it can't be known whether the animal being studied has
+the same understanding.  Moreover, differentiating the landscape by
+habitat or habitat quality must affect the geometry and morphology of
+home ranges (see Chapt. \ref{chapt.rsf}) much more so than the
+plausible locations of activity centers. That is, a home range
+centroid could, in actual fact, occur in a shopping mall parking lot if
+there is pretty good habitat around the shopping mall, so there is probably no
+sense preclude it as the location for
+an activity center.  It would generally be better to include some
+definition of habitat quality in the model for the detection
+probability \citep{royle_etal:2012ecol} which we address in
+Chapts. \ref{chapt.rsf} and \ref{chapt.ecoldist}.
+
+
+\subsection{Evaluation of Coarseness of Discrete Approximation}
+
+The coarseness of the state-space should not really have much of an
+effect on estimates if the grain is sufficiently fine relative to
+typical animal home range sizes.  Why is this?  We have two analogies
+that can help us understand. First is the relationship to model
+$M_{h}$.  As noted in sec. \ref{scr0.sec.scrmh} above, we can think
+about SCR models as a type of finite mixture
+\citep{norris_pollock:1996, pledger:2000} where we are fortunate to be
+able to obtain direct information about which group individuals belong
+to (group being location of activity center).  In the standard finite
+mixture models we typically find that a small number of groups (e.g.,
+2 or 3 at the most) can explain  high levels of heterogeneity
+and are adequate for most data sets of small to moderate sample
+sizes. We therefore expect a similar effect in SCR models when we
+discretize the state-space.  We can also think about discretizing the
+state-space as being related to numerical integration where we find
+(see Chapt. \ref{chapt.mle}) that we don't need a very fine grid of
+support points to evaluate the integral to a reasonable level of
+accuracy. We demonstrate this here by reanalyzing simulated data using
+a state-space defined by a different numbers of support points.  We
+provide an {\bf R} script called \mbox{\tt SCR0bayesDss.fn} in the
+{\bf R} package \mbox{\tt scrbook}.  We note that for this comparison
+we generated the actual activity centers as a continuous random
+variable and thus the discrete state-space is, strictly speaking, an
+approximation to truth. That said, we regard all state-space
+specifications as approximations to truth in the sense that they
+represent a component of the SCR model.  Thus the use of any specific
+discrete state-space is not intrinsically more ``wrong'' than any
+specific continuous representation.
+
+As with our {\bf R} function \mbox{\tt SCR0bayes}, the modification
+\mbox{\tt SCR0bayesDss} will use either {\bf WinBUGS} or {\bf
+  JAGS}. In addition, it requires a grid resolution argument
+(\mbox{\tt ng}) which is the dimension of 1 side of a square state-space.
+To execute this function we do, for example:
+{\small
+\begin{verbatim}
+library("scrbook")
+data<-simSCR0(discard0=TRUE,rnd=2013)   # generate data set
+   # run with JAGS
+out1<-SCR0bayesDss(data,ng=8,M=200,engine="jags",ni=2000,nb=1000) 
+   # run with WinBUGS
+out2<-SCR0bayesDss(data,ng=8,M=200,engine="winbugs",ni=2000,nb=1000) 
+\end{verbatim}
+} 
+We fit this model to the same simulated data set for $6 \times 6$,
+$9 \times 9$, $12 \times 12$, $15\times 15$ state-space grids.  For
+{\bf WinBUGS}, we used 3 chains of 5000 total length with 1000
+burn-in, which yields 12000 total posterior samples.  Summary results
+are shown in Table \ref{scr0.tab.discrete}.  The results are broadly
+consistent except for the $6\times 6$ case.  We see that the run time
+increases with the size of the state-space grid (not unexpected), such
+that we imagine it would be impractical to run models with more than a
+few hundred state-space grid points.  We found (not shown here) that
+the runtime of {\bf JAGS} is much faster and, furthermore, relatively
+{\it constant} as we increase the grid size.  We suspect that {\bf
+  WinBUGS} is evaluating the full-conditional for each activity center
+at all $G$ possible values whereas it may be that {\bf JAGS} is
+evaluating the full-conditional only at a subset of values or perhaps
+using previous calculations more effectively.  While this might
+suggest that one should always use {\bf JAGS} for this analysis, we
+found in our analysis of the wolverine (next section) that {\bf JAGS}
+could be extremely sensitive to starting values, producing MCMC
+algorithms that often simply do not work for some problems, so be
+careful when using {\bf JAGS}. To improve its performance, always
+start the latent activity centers at values near where individuals
+were captured. 
+
+
+{\bf XXXX computing the distance matrix outside of the model should
+  really improve WinBUGS performance. We need to test this. A new
+  version of the code is on the repo that uses that approach. Problem
+  for Kimmy to work on.
+ XXXXXXX}
+
+\begin{table}
+\centering
+\caption{
+Comparison of the 
+effect of state-space grid coarseness on estimates of $N$ for a
+simulated data set. Posterior
+summaries and run time are given. Results obtained  using 
+{\bf WinBUGS} run from {\tt R2WinBUGS}. 
+}
+\begin{tabular}{crrrrrrrc} \hline \hline
+grid  & Mean & SD &   NaiveSE & Time-seriesSE &  runtime (sec) \\ \hline
+6     &    111.6699& 16.61414& 0.1516657 &  0.682008 &     2274 \\
+9     &    114.2294& 17.99109& 0.1642355 &  0.833291 &    4300 \\
+12    &    115.9806& 17.3843 & 0.1586964 &  0.762756 &    7100 \\
+15    &    115.379 & 17.93721& 0.1637436 &  0.832483 &   13010 \\
+\end{tabular}
+\label{scr0.tab.discrete}
+\end{table}
+
+
+\begin{comment}
+\begin{verbatim}
+Table XYZ.Effect of grid coarseness on estimates of N using JAGS and
+WinBUGS.
+
+$I would only show results from one engine. COuld simply say in the text that WB was about 5x slower$
+JAGS run from rjags
+             Mean       SD    NaiveSE  Time-seriesSE  runtime
+6    N     109.7717 15.98959 0.0923160    0.377737    1239
+9    N     114.4621 16.72025 0.0965344    0.468659    1267
+12   N     115.4309 17.12403 0.098866     0.464830    1576
+15   N     114.7699 17.0242  0.0982894    0.425238    1638
+20   N     116.0370 17.10686 0.0987665    0.486867    1647
+25   N     116.3228 16.98323 0.0980527    0.465527    1661
+30   N     116.4252 17.4078  0.100504     0.533735    1806
+WinBUGS run from R2WinBUGS
+             Mean       SD    NaiveSE  Time-seriesSE  runtime
+6    N     111.6699 16.61414 0.1516657   0.682008     2274
+9    N     114.2294 17.99109 0.1642355   0.833291     4300
+12   N     115.9806 17.3843  0.1586964   0.762756     7100
+15   N     115.379  17.93721 0.1637436   0.832483    13010
+
+Note: WinBUGS based on fewer samples too!
+\end{verbatim}
+\end{comment}
+
+
+
+\subsection{Analysis of the wolverine camera trapping data}
+
+
+We reanalyzed the wolverine data using discrete state-space grids with
+points spaced by 2, 4 and 8 km (see 
+Fig. \ref{scr0.fig.wolvgrids}). These were constructed from a 40 km
+buffered state-space, and deleting the points over water 
+\citep[see][]{royle_etal:2011jwm}.  Our interest in doing this was to
+evaluate the relative influence of grid resolution on estimated
+density because the coarser grids will be more efficient from a
+computational stand-point and so we would prefer to use them, but
+only if there is no strong influence on estimated density.
+The density estimates are quite a bit larger than obtained in our
+analysis 
+(Tab. \ref{scr0.tab.wolverine-results})
+based on a rectangular, continuous state-space. 
+We also see that there are slight differences depending on the
+resolution of the state-space grid.
+Interestingly, the 
+effectiveness of the MCMC algorithms, as measured by effective sample
+size (\mbox{\tt n.eff}) is pretty remarkably
+different. Furthermore, the finest grid resolution ($2$ km spacing) took about
+6 days to run and thus it would not be practical for large problems or
+with many models.
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics[height=2.5in,width=5in]{Ch4-SCR0/figs/wolvgrids}
+\end{center}
+\caption{Three habitat mask grids used in the comparison of the effect of pixel size on the estimated
+  density surface of wolverines.  The 3 cases are 
+2 (left), 4 (center) and 8 (right) km spacing of state-space points, extending 
+40 km from the vicinity of the trap array. }
+\label{scr0.fig.wolvgrids}
+\end{figure}
+
+{\small
+\begin{verbatim}
+> print(out.2km,digits=2)
+Inference for Bugs model at "modelfile.txt", fit using WinBUGS,
+ 3 chains, each with 11000 iterations (first 1000 discarded)
+ n.sims = 30000 iterations saved
+       mean    sd  2.5%   25%   50%   75%  97.5% Rhat n.eff
+psi    0.43  0.09  0.27  0.37  0.43  0.49   0.63 1.00   560
+sigma  0.62  0.05  0.54  0.59  0.62  0.65   0.73 1.01   160
+lam0   0.05  0.01  0.04  0.04  0.05  0.06   0.07 1.01   320
+p0     0.05  0.01  0.03  0.04  0.05  0.05   0.06 1.01   320
+N     86.56 16.94 57.00 75.00 85.00 97.00 124.00 1.00   510
+D      8.78  1.72  5.78  7.60  8.62  9.83  12.57 1.00   510
+
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+
+> print(out.4km,digits=2)
+Inference for Bugs model at "modelfile.txt", fit using WinBUGS,
+ 3 chains, each with 11000 iterations (first 1000 discarded)
+ n.sims = 30000 iterations saved
+       mean    sd  2.5%   25%   50%    75%  97.5% Rhat n.eff
+psi    0.45  0.09  0.28  0.38  0.44   0.50   0.64    1  1300
+sigma  0.61  0.04  0.53  0.58  0.61   0.64   0.71    1  1600
+lam0   0.05  0.01  0.04  0.05  0.05   0.06   0.07    1  2500
+p0     0.05  0.01  0.03  0.04  0.05   0.05   0.07    1  2500
+N     89.25 17.44 59.00 77.00 88.00 100.00 127.00    1  1100
+D      9.01  1.76  5.96  7.77  8.88  10.10  12.82    1  1100
+
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+
+> print(out.8km,digits=2)
+Inference for Bugs model at "modelfile.txt", fit using WinBUGS,
+ 3 chains, each with 11000 iterations (first 1000 discarded)
+ n.sims = 30000 iterations saved
+       mean    sd  2.5%   25%   50%   75%  97.5% Rhat n.eff
+psi    0.42  0.09  0.26  0.36  0.41  0.47   0.61 1.00   940
+sigma  0.68  0.05  0.59  0.64  0.67  0.71   0.77 1.01   220
+lam0   0.05  0.01  0.03  0.04  0.05  0.05   0.06 1.00   560
+p0     0.05  0.01  0.03  0.04  0.04  0.05   0.06 1.00   560
+N     83.18 16.14 56.00 72.00 82.00 93.00 119.00 1.00   700
+D      8.28  1.61  5.57  7.17  8.16  9.26  11.84 1.00   700
+
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+\end{verbatim}
+}
+
+
+\begin{comment}
+We did the analysis in JAGS also. The results are shown below. {\bf Note}: I
+am going to run these again but for longer to finalize the results.
+
+{\small
+\begin{verbatim}
+ ### 01/10/2012 -- need to rerun these JAGS runs but use more
+iterations and check results.
+
+
+2km
+Iterations = 7001:13000
+Thinning interval = 1
+Number of chains = 3
+Sample size per chain = 6000
+
+          Mean        SD  Naive SE Time-series SE
+N     86.28522 16.950626 1.263e-01      0.4878973
+lam0   0.04807  0.007512 5.599e-05      0.0002199
+p0     0.04581  0.006820 5.083e-05      0.0001996
+psi    0.28904  0.062117 4.630e-04      0.0017481
+sigma  0.62769  0.043596 3.249e-04      0.0018724
+
+4km
+          Mean        SD  Naive SE Time-series SE
+N     85.53139 16.998966 1.267e-01      0.5181297
+lam0   0.04636  0.007542 5.621e-05      0.0002382
+p0     0.04425  0.006867 5.118e-05      0.0002172
+psi    0.28650  0.061922 4.615e-04      0.0018276
+sigma  0.64281  0.048321 3.602e-04      0.0022911
+
+8km
+          Mean        SD  Naive SE Time-series SE
+N     83.97039 16.508146 1.230e-01      0.4548782
+lam0   0.04519  0.006919 5.157e-05      0.0001738
+p0     0.04319  0.006319 4.710e-05      0.0001589
+psi    0.28146  0.060653 4.521e-04      0.0016555
+sigma  0.66956  0.040989 3.055e-04      0.0015070
+\end{verbatim}
+}
+\end{comment}
+
+
+
+
 \section{Constructing Density Maps}
 \label{scr0.sec.mapping}
 
@@ -2553,317 +2868,79 @@ out, which we discuss in the next section.
 \end{comment}
 
 
-\section{Using a Discrete Habitat Mask}
-\label{scr0.sec.discrete}
+\section{Effective Sample Area}
 
-The SCR model developed previously in this chapter assumes that
-individual activity centers are distributed uniformly over the
-prescribed state-space. Clearly this will not always be a reasonable
-assumption. In Chapt. \ref{chapt.state-space} we talk about developing
-models that allow explicitly for non-uniformity of the activity
-centers by modeling covariate effects on density. A simplistic method
-of 
-affecting the distribution of activity centers, which we address here,
-is to modify the shape and organization of the state-space
-explicitly. For example, we might be able to classify the state-space
-into distinct blocks of habitat and non-habitat. In that case we can
-remove the non-habitat from the state-space and assume uniformity of
-the activity centers over the remaining portions judged to be suitable
-habitat.  There are several ways to approach this: We can use a
- grid of points to represent the state-space, i.e., by the set
-of coordinates ${\bf s}_1, \ldots, {\bf s}_{G}$, and assign equal
-probabilities to each possible value. Alternatively, we can retain the
-continuous formulation of the state-space but attempt to describe
-constraints analytically, or we can use polygon clipping methods to
-enforce constraints on the state-space in the MCMC analysis. We focus
-here on the formulation of the basic SCR model in terms of a discrete
-state-space but in Chapt. \ref{chapt.mcmc}
-we demonstrate the latter approach based on using polygon
-operations to define an irregular state-space.
-Use of a discrete state-space can be computationally expensive in {\bf
-  WinBUGS}. That said, it isn't too difficult to perform the MCMC
-calculations in {\bf R} (discussed in Chapt.
-\ref{chapt.mcmc}. The {\bf R} package {\tt SPACECAP}
-\citep{gopalaswamy_etal:2012mee} arose from the {\bf R} implementation of
-the SCR model in \citet{royle_etal:2009ecol}.  
-%As we will see in
-%Chapt. \ref{chapt.mle}, we must prescribe the state-space by a
-%discrete mesh of points in order to do integrated likelihood and so if
-%we are using a discrete state-space this can be accommodated directly
-%in our code for obtaining MLEs.
+One of the key issues in using ordinary capture recapture  models
+which we've brought up over and over again is this issue that the
+area which is sampled by a trapping array is unknown -- in other
+words, the $N$ that is estimated by capture-recapture models does not
+have an explicit region of space associated with it.
+Classically this has been addressed in the ad hoc way of prescribing
+an area that contains the trap array usually by adding a buffer of
+some width, which is not estimated as part of the capture-recapture
+model.
+In SCR models we avoid the problem of not having an explicit linkage
+between N and ``area'', by prescribing explicitly the area within
+which 
+the underlying point process is deffined -- the state-space of the
+point process.
+This state-space is {\it not} the ``effective sampled area'' -- it is
+desireably that it be somewhat arbitrarily larger than in the sense
+that individuals at the edge of the state-space have no probability of
+being captured, but as part of the SCR model we don't try to estimate
+or otherwise characterize the ESA explicitlly.
 
-While clipping out non-habitat seems like a good idea, we think
-investigators should go about this very cautiously.  We might prefer
-to do it when non-habitat represents a clear-cut restriction on the
-state-space such as a reserve boundary or a lake, ocean or river. But,
-having the capability to do this also causes people to start defining
-``habitat'' vs. ``non-habitat'' based on their understanding of the
-system whereas it can't be known whether the animal being studied has
-the same understanding.  Moreover, differentiating the landscape by
-habitat or habitat quality must affect the geometry and morphology of
-home ranges (see Chapt. \ref{chapt.rsf}) much more so than the
-plausible locations of activity centers. That is, a home range
-centroid could, in actual fact, occur in a shopping mall parking lot if
-there is pretty good habitat around the shopping mall, so there is probably no
-sense preclude it as the location for
-an activity center.  It would generally be better to include some
-definition of habitat quality in the model for the detection
-probability \citep{royle_etal:2012ecol} which we address in
-Chapts. \ref{chapt.rsf} and \ref{chapt.ecoldist}.
+However, it is possible to provide a characterization of effective
+sample area under any SCR model. [have to note shortly that it is
+impacted by definition of the state-space].  This is directly
+analogous to the calculation of ``effective strip width'' in distance
+sampling (REF FOR THIS?)
 
 
-\subsection{Evaluation of Coarseness of Discrete Approximation}
-
-The coarseness of the state-space should not really have much of an
-effect on estimates if the grain is sufficiently fine relative to
-typical animal home range sizes.  Why is this?  We have two analogies
-that can help us understand. First is the relationship to model
-$M_{h}$.  As noted in sec. \ref{scr0.sec.scrmh} above, we can think
-about SCR models as a type of finite mixture
-\citep{norris_pollock:1996, pledger:2000} where we are fortunate to be
-able to obtain direct information about which group individuals belong
-to (group being location of activity center).  In the standard finite
-mixture models we typically find that a small number of groups (e.g.,
-2 or 3 at the most) can explain  high levels of heterogeneity
-and are adequate for most data sets of small to moderate sample
-sizes. We therefore expect a similar effect in SCR models when we
-discretize the state-space.  We can also think about discretizing the
-state-space as being related to numerical integration where we find
-(see Chapt. \ref{chapt.mle}) that we don't need a very fine grid of
-support points to evaluate the integral to a reasonable level of
-accuracy. We demonstrate this here by reanalyzing simulated data using
-a state-space defined by a different numbers of support points.  We
-provide an {\bf R} script called \mbox{\tt SCR0bayesDss.fn} in the
-{\bf R} package \mbox{\tt scrbook}.  We note that for this comparison
-we generated the actual activity centers as a continuous random
-variable and thus the discrete state-space is, strictly speaking, an
-approximation to truth. That said, we regard all state-space
-specifications as approximations to truth in the sense that they
-represent a component of the SCR model.  Thus the use of any specific
-discrete state-space is not intrinsically more ``wrong'' than any
-specific continuous representation.
-
-As with our {\bf R} function \mbox{\tt SCR0bayes}, the modification
-\mbox{\tt SCR0bayesDss} will use either {\bf WinBUGS} or {\bf
-  JAGS}. In addition, it requires a grid resolution argument
-(\mbox{\tt ng}) which is the dimension of 1 side of a square state-space.
-To execute this function we do, for example:
-{\small
-\begin{verbatim}
-library("scrbook")
-data<-simSCR0(discard0=TRUE,rnd=2013)   # generate data set
-   # run with JAGS
-out1<-SCR0bayesDss(data,ng=8,M=200,engine="jags",ni=2000,nb=1000) 
-   # run with WinBUGS
-out2<-SCR0bayesDss(data,ng=8,M=200,engine="winbugs",ni=2000,nb=1000) 
-\end{verbatim}
-} 
-We fit this model to the same simulated data set for $6 \times 6$,
-$9 \times 9$, $12 \times 12$, $15\times 15$ state-space grids.  For
-{\bf WinBUGS}, we used 3 chains of 5000 total length with 1000
-burn-in, which yields 12000 total posterior samples.  Summary results
-are shown in Table \ref{scr0.tab.discrete}.  The results are broadly
-consistent except for the $6\times 6$ case.  We see that the run time
-increases with the size of the state-space grid (not unexpected), such
-that we imagine it would be impractical to run models with more than a
-few hundred state-space grid points.  We found (not shown here) that
-the runtime of {\bf JAGS} is much faster and, furthermore, relatively
-{\it constant} as we increase the grid size.  We suspect that {\bf
-  WinBUGS} is evaluating the full-conditional for each activity center
-at all $G$ possible values whereas it may be that {\bf JAGS} is
-evaluating the full-conditional only at a subset of values or perhaps
-using previous calculations more effectively.  While this might
-suggest that one should always use {\bf JAGS} for this analysis, we
-found in our analysis of the wolverine (next section) that {\bf JAGS}
-could be extremely sensitive to starting values, producing MCMC
-algorithms that often simply do not work for some problems, so be
-careful when using {\bf JAGS}. To improve its performance, always
-start the latent activity centers at values near where individuals
-were captured. 
+The conceptual definition of ESA follows from making the following equivalence:
+\[
+ D = N/A   = n/ESA 
+\]
+In other words, ratio of $N$ to the area of the state-space should be
+equal to the ratio of the observed sample size $n$ to some number
+ESA. Both of these should equal density. 
+So to compute ESA for a model we 
+just plug-in E[n] into the equation to get: 
+\[
+ ESA = E[n]/D 
+\]
+Imagine our habitat mask for the wolverine data, or the bins we just
+used to produce a density map, then we can write $E[n]$ according to:
+\[
+E[n] = \sum_{s}  Pr(capture | s) E(  N(s)  ) 
+\]
+where if we prefer to think of this more conceptually we could replace
+the summation with an integration (which, in practice, we would just
+replace with a summation, and so we just begin there).
+In this expression note that 
+$E(N(s))$ is the expected population size at pixel s  which is the
+density times the area of the pixel, i.e., $\mathbb{E}(N(s))= D*a$.
+Therefore
+\[
+ \mathbb{E}(n) = D*a* \sum_{s} \Pr(capture | s)
+\]
+and (plugging this into the expression above for ESA)
+\[
+ ESA = \frac{D*a*\sum_{s} \Pr(capture | s) }{D}
+\]
+We see that $D$ cancels and we have
+\[
+  ESA = a*\sum_{s} \Pr(capture | s) 
+\]
+So what you have to do here is substitute in $\Pr(capture | s)$ and just sum them up over all pixels.  For the Bernoulli model of hair-snares 
+\[
+\Pr(capture|s) =    1-(1-p(s))^{K}
+\]
+with slight modifications when encounter probability depends on
+covariates.
 
 
-{\bf XXXX computing the distance matrix outside of the model should
-  really improve WinBUGS performance. We need to test this. A new
-  version of the code is on the repo that uses that approach. Problem
-  for Kimmy to work on.
- XXXXXXX}
-
-\begin{table}
-\centering
-\caption{
-Comparison of the 
-effect of state-space grid coarseness on estimates of $N$ for a
-simulated data set. Posterior
-summaries and run time are given. Results obtained  using 
-{\bf WinBUGS} run from {\tt R2WinBUGS}. 
-}
-\begin{tabular}{crrrrrrrc} \hline \hline
-grid  & Mean & SD &   NaiveSE & Time-seriesSE &  runtime (sec) \\ \hline
-6     &    111.6699& 16.61414& 0.1516657 &  0.682008 &     2274 \\
-9     &    114.2294& 17.99109& 0.1642355 &  0.833291 &    4300 \\
-12    &    115.9806& 17.3843 & 0.1586964 &  0.762756 &    7100 \\
-15    &    115.379 & 17.93721& 0.1637436 &  0.832483 &   13010 \\
-\end{tabular}
-\label{scr0.tab.discrete}
-\end{table}
-
-
-\begin{comment}
-\begin{verbatim}
-Table XYZ.Effect of grid coarseness on estimates of N using JAGS and
-WinBUGS.
-
-$I would only show results from one engine. COuld simply say in the text that WB was about 5x slower$
-JAGS run from rjags
-             Mean       SD    NaiveSE  Time-seriesSE  runtime
-6    N     109.7717 15.98959 0.0923160    0.377737    1239
-9    N     114.4621 16.72025 0.0965344    0.468659    1267
-12   N     115.4309 17.12403 0.098866     0.464830    1576
-15   N     114.7699 17.0242  0.0982894    0.425238    1638
-20   N     116.0370 17.10686 0.0987665    0.486867    1647
-25   N     116.3228 16.98323 0.0980527    0.465527    1661
-30   N     116.4252 17.4078  0.100504     0.533735    1806
-WinBUGS run from R2WinBUGS
-             Mean       SD    NaiveSE  Time-seriesSE  runtime
-6    N     111.6699 16.61414 0.1516657   0.682008     2274
-9    N     114.2294 17.99109 0.1642355   0.833291     4300
-12   N     115.9806 17.3843  0.1586964   0.762756     7100
-15   N     115.379  17.93721 0.1637436   0.832483    13010
-
-Note: WinBUGS based on fewer samples too!
-\end{verbatim}
-\end{comment}
-
-
-
-\subsection{Analysis of the wolverine camera trapping data}
-
-
-We reanalyzed the wolverine data using discrete state-space grids with
-points spaced by 2, 4 and 8 km (see 
-Fig. \ref{scr0.fig.wolvgrids}). These were constructed from a 40 km
-buffered state-space, and deleting the points over water 
-\citep[see][]{royle_etal:2011jwm}.  Our interest in doing this was to
-evaluate the relative influence of grid resolution on estimated
-density because the coarser grids will be more efficient from a
-computational stand-point and so we would prefer to use them, but
-only if there is no strong influence on estimated density.
-The density estimates are quite a bit larger than obtained in our
-analysis 
-(Tab. \ref{scr0.tab.wolverine-results})
-based on a rectangular, continuous state-space. 
-We also see that there are slight differences depending on the
-resolution of the state-space grid.
-Interestingly, the 
-effectiveness of the MCMC algorithms, as measured by effective sample
-size (\mbox{\tt n.eff}) is pretty remarkably
-different. Furthermore, the finest grid resolution ($2$ km spacing) took about
-6 days to run and thus it would not be practical for large problems or
-with many models.
-
-\begin{figure}[ht]
-\begin{center}
-\includegraphics[height=2.5in,width=5in]{Ch4-SCR0/figs/wolvgrids}
-\end{center}
-\caption{Comparison of the effect of pixel size on the estimated
-  density surface of wolverines in SE Alaska 2007. The 3 cases are 
-2 (left), 4 (center) and 8 (right) km spacing of state-space points, extending 
-40 km from the vicinity of the trap array. }
-\label{scr0.fig.wolvgrids}
-\end{figure}
-
-{\small
-\begin{verbatim}
-> print(out.2km,digits=2)
-Inference for Bugs model at "modelfile.txt", fit using WinBUGS,
- 3 chains, each with 11000 iterations (first 1000 discarded)
- n.sims = 30000 iterations saved
-       mean    sd  2.5%   25%   50%   75%  97.5% Rhat n.eff
-psi    0.43  0.09  0.27  0.37  0.43  0.49   0.63 1.00   560
-sigma  0.62  0.05  0.54  0.59  0.62  0.65   0.73 1.01   160
-lam0   0.05  0.01  0.04  0.04  0.05  0.06   0.07 1.01   320
-p0     0.05  0.01  0.03  0.04  0.05  0.05   0.06 1.01   320
-N     86.56 16.94 57.00 75.00 85.00 97.00 124.00 1.00   510
-D      8.78  1.72  5.78  7.60  8.62  9.83  12.57 1.00   510
-
-For each parameter, n.eff is a crude measure of effective sample size,
-and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
-
-> print(out.4km,digits=2)
-Inference for Bugs model at "modelfile.txt", fit using WinBUGS,
- 3 chains, each with 11000 iterations (first 1000 discarded)
- n.sims = 30000 iterations saved
-       mean    sd  2.5%   25%   50%    75%  97.5% Rhat n.eff
-psi    0.45  0.09  0.28  0.38  0.44   0.50   0.64    1  1300
-sigma  0.61  0.04  0.53  0.58  0.61   0.64   0.71    1  1600
-lam0   0.05  0.01  0.04  0.05  0.05   0.06   0.07    1  2500
-p0     0.05  0.01  0.03  0.04  0.05   0.05   0.07    1  2500
-N     89.25 17.44 59.00 77.00 88.00 100.00 127.00    1  1100
-D      9.01  1.76  5.96  7.77  8.88  10.10  12.82    1  1100
-
-For each parameter, n.eff is a crude measure of effective sample size,
-and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
-
-> print(out.8km,digits=2)
-Inference for Bugs model at "modelfile.txt", fit using WinBUGS,
- 3 chains, each with 11000 iterations (first 1000 discarded)
- n.sims = 30000 iterations saved
-       mean    sd  2.5%   25%   50%   75%  97.5% Rhat n.eff
-psi    0.42  0.09  0.26  0.36  0.41  0.47   0.61 1.00   940
-sigma  0.68  0.05  0.59  0.64  0.67  0.71   0.77 1.01   220
-lam0   0.05  0.01  0.03  0.04  0.05  0.05   0.06 1.00   560
-p0     0.05  0.01  0.03  0.04  0.04  0.05   0.06 1.00   560
-N     83.18 16.14 56.00 72.00 82.00 93.00 119.00 1.00   700
-D      8.28  1.61  5.57  7.17  8.16  9.26  11.84 1.00   700
-
-For each parameter, n.eff is a crude measure of effective sample size,
-and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
-\end{verbatim}
-}
-
-
-\begin{comment}
-We did the analysis in JAGS also. The results are shown below. {\bf Note}: I
-am going to run these again but for longer to finalize the results.
-
-{\small
-\begin{verbatim}
- ### 01/10/2012 -- need to rerun these JAGS runs but use more
-iterations and check results.
-
-
-2km
-Iterations = 7001:13000
-Thinning interval = 1
-Number of chains = 3
-Sample size per chain = 6000
-
-          Mean        SD  Naive SE Time-series SE
-N     86.28522 16.950626 1.263e-01      0.4878973
-lam0   0.04807  0.007512 5.599e-05      0.0002199
-p0     0.04581  0.006820 5.083e-05      0.0001996
-psi    0.28904  0.062117 4.630e-04      0.0017481
-sigma  0.62769  0.043596 3.249e-04      0.0018724
-
-4km
-          Mean        SD  Naive SE Time-series SE
-N     85.53139 16.998966 1.267e-01      0.5181297
-lam0   0.04636  0.007542 5.621e-05      0.0002382
-p0     0.04425  0.006867 5.118e-05      0.0002172
-psi    0.28650  0.061922 4.615e-04      0.0018276
-sigma  0.64281  0.048321 3.602e-04      0.0022911
-
-8km
-          Mean        SD  Naive SE Time-series SE
-N     83.97039 16.508146 1.230e-01      0.4548782
-lam0   0.04519  0.006919 5.157e-05      0.0001738
-p0     0.04319  0.006319 4.710e-05      0.0001589
-psi    0.28146  0.060653 4.521e-04      0.0016555
-sigma  0.66956  0.040989 3.055e-04      0.0015070
-\end{verbatim}
-}
-\end{comment}
-
+For the wolverine data we did this using........
 
 
 
