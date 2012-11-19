@@ -1120,7 +1120,7 @@ where $x_{ik}$ is a covariate indicator variable of previous capture
 encounter probability changes depending on whether an individual was
 captured in the immediate previous period (a Markovian or ephemeral behavioral
 response; \citep{yang_chao:2005}), described by the term
-$\alpha_{1}*y_{i,k-1}$ or in {\it any} previous period (persistent behavioral
+$\alpha_{1} y_{i,k-1}$ or in {\it any} previous period (persistent behavioral
 response), described by the term  $\alpha_{2} x_{ik}$.
 %The former probably models a behavioral response due to
 %individuals moving around their territory relatively slowly over time
@@ -1146,10 +1146,10 @@ distribution, $[\theta]$. We denote this basic model assumption as
 $p_{i} \sim [\theta]$. This type of model is similar in concept to
 extending a GLM to a GLMM but in the capture-recapture context $N$ is
 unknown.  The basic class of models is often referred to as ``model
-$M_h$'', but really this is a broad class of models, each being
+$M_h$'' ('h' for heterogeneity), but really this is a broad class of models, each being
 distinguished by the specific distribution assumed for $p_{i}$.  There
 are many different varieties of model $M_{h}$ including parametric and
-various %putatively
+various 
 non-parametric approaches
 \citep{burnham_overton:1978, norris_pollock:1996, pledger:2000}. One
 important practical matter is that estimates of $N$ can be extremely
@@ -1158,7 +1158,8 @@ sensitive to the choice of heterogeneity model
 \citet{link:2003} showed that in some cases it's possible to find
 models that yield precisely the same expected data, yet produce wildly
 different estimates of $N$. In that sense, $N$ for most practical
-purposes is not identifiable across classes of mixture models, and
+purposes is not identifiable across classes of different heterogeneity
+models, and
 this should be understood before fitting any such model. One solution
 to this problem is to seek to model explicit factors that contribute
 to heterogeneity, e.g., using individual covariate models (See
@@ -1185,7 +1186,7 @@ Imagine a quadrat that can be uniformly searched by a crew of
 biologists for some species of reptile (see
 \citet{royle_young:2008}).  Figure \ref{closed.fig.quadrat} shows a
 sample quadrat searched repeatedly over a period of time. Further,
-suppose that species exhibits some sense of spatial fidelity in the
+suppose that the species exhibits some sense of spatial fidelity in the
 form of a home range or territory, and individuals move about their
 home range (home range centroids are given by the blue dots) in some
 kind of random fashion.
@@ -1233,13 +1234,15 @@ of individuals about their home range.
 \label{closed.fig.quadrat}
 \end{figure}
 
-We will work with a specific type of model $M_{h}$ here, that in which
-we extend the basic binomial observation model of model $M_{0}$ so
+We will work with a specific type of model $M_{h}$ here which is a
+natural extension of
+the basic binomial observation model of model $M_{0}$ so
 that
 \[
 \mbox{logit}(p_{i}) = \mu + \eta_{i}
 \]
-where
+where $\mu$ is a fixed parameter (the mean) to be estimated, and
+$\eta_{i}$ is an individual random effect assumed to be normally distributed:
 \[
 \eta_{i} \sim \mbox{Normal}(0, \sigma_{p}^2)
 \]
@@ -1321,11 +1324,11 @@ N<-sum(z[1:(nind+nz)])  # N is a derived parameter
 \end{comment}
 Another common default prior is to assume
 $\tau = 1/\sigma^{2} \sim \mbox{Gamma}(.1,.1)$, although we usually
-choose the $\sigma \sim \mbox{Unif}(0,B)$.
+choose the $\sigma \sim \mbox{Uniform}(0,B)$.
 
 
 
-\subsection{Analysis of the Fort Drum data}
+\subsection{Analysis of the Fort Drum data with model $M_{h}$}
 \label{closed.sec.Mhbear}
 
 Here we provide an analysis of the Fort Drum bear survey data using
@@ -1395,7 +1398,7 @@ also develop MCMC  algorithms for spatial capture-recapture models.
 Running this through {\bf JAGS} with 3 chains of 1 {\it million} iterations 
 (mixing is poor for this model and this data set) produces the posterior distribution for $N$ shown
 in Fig. \ref{closed.fig.bearMh}. Posterior summaries of parameters are
-given as follows:
+given as follows: {\bf XXXX rerun and change \# iterations XXXXX}
 {\small
 \begin{verbatim}
 Inference for Bugs model at "modelMh.txt", fit using jags,
@@ -1441,6 +1444,8 @@ so the point estimate, characterized by the posterior mean, is around
 $0.43$ bears per square km and a 95\% Bayesian credible interval is
 $(0.224, 1.068)$.
 
+{\bf XXXX Kimmy recreate this figure XXXXXX. Pretty up the x-labels
+  and x-axis. }
 
 \begin{figure}
 \centering
@@ -1465,22 +1470,23 @@ posterior mean
 %500000 iterations).  
 Further, it may be surprising that the posterior
 mode does not compare well with the MLE which we presented in
-Chapt. \ref{chapt.intro}.
+Chapt. \ref{chapt.intro}. {\bf XXXX provide here XXXXX}
 To see this, we compute the posterior mode\index{posterior mode,
   calculation of} by finding
 the posterior value of $N$ with the highest mass, which is a
-relatively easy proposition because $N$ is discrete
+relatively easy proposition. Because $N$ is discrete, we can just use
+the \mbox{\tt table()} function in {\bf R} and find the most frequent value
 \footnote{For a continuous random variable we can use the function
  \mbox{\tt
     density()} to smooth the posterior samples and obtain the mode.}.
- Here are the
-commands for doing this:
-\begin{verbatim}
- N<-table(jout$BUGSoutput$sims.list$N)
- N[N==max(N)]
-   84 
- 41961 
-\end{verbatim}
+% Here are the
+%commands for doing this:
+%\begin{verbatim}
+% N<-table(jout$BUGSoutput$sims.list$N)
+% N[N==max(N)]
+%   84 
+% 41961 
+%\end{verbatim}
 If we want to smooth out some of the Monte
 Carlo error a bit, we can use a smoother of some sort applied to the tabled
 posterior frequencies of $N$. Here we use a smoothing spline ({\bf R}
@@ -1769,12 +1775,16 @@ function of the observation-level individual covariate, ``group size''
 Such ``individual covariate models'' are similar in structure to model
 $M_{h}$, except that the individual effects are {\it observed} for the
 $n$ individuals that appear in the sample. These models are important
-here because spatial capture-recapture models can be descrived
-precisely as a form of individual covariate model, an idea that we
-will develop here and elsewhere. Specifically, they are such models,
+here because spatial capture-recapture models can be described
+precisely as a form of individual covariate model, where the covariate
+describes {\it where} the individual is located in relation to the
+trapping array. 
+ Specifically, they are such models,
 but where the individual covariate is a partially observed latent
-variable for captured individuals. As such, it is a type of
-measurement error.  That is, unlike model $M_h$, we do have some
+variable for captured individuals. 
+%As such, it is a type of
+%measurement error.  
+Unlike model $M_h$, in individual covariate models (and SCR models) we do have some
 direct information about the latent variable, which comes from the
 spatial locations/distribution of individual recaptures.
 
@@ -1799,11 +1809,18 @@ where $p_{i}$ is a function of parameters $\alpha_{0}$ and $\alpha_{1}$
 according to Eq. \ref{closed.eq.ha}.  In practice, parameters are
 estimated from the conditional-likelihood of the observed encounter
 histories which is, for observation $y_{i}$,
-\[
+\begin{equation}
 {\cal L}_{c}( {\bm \alpha} | y_{i}) = \frac{ \mbox{Binomial}(y_{i}|{\bm \alpha}) } { \tilde{p}_{i}}.
-\]
-{\bf XXXx Andy should write out why this is the way it is, in words, or conceptually,
-XXXXX}
+\label{closed.eq.cond}
+\end{equation}
+This derives from a straightforward application of the law of total
+probability. Conceptually, we partition $\Pr(y)$ according to 
+$\Pr(y) = \Pr(y|y>0)\Pr(y>0) + \Pr(y|y=0)\Pr(y=0)$. For any positive
+value of $y$ the 2nd term is necessarily 0, and so we rearrange to
+obtain
+$\Pr(y|y>0) = \Pr(y)/\Pr(y>0)$ which, in the specific case where
+$\Pr(y)$ is the 
+binomial pmf produces Eq. \ref{closed.eq.cond}.
 
 
 Here we take a formal model-based approach to Bayesian analysis of
@@ -1842,7 +1859,7 @@ for the parameters of that distribution.
 Here we consider a special type of individual covariate model that is
 especially relevant to spatial capture-recapture.
 Intuitively, some measure of  distance from home range center to
-traps for an individual should therefore be a reasonable  covariate to explain
+traps for an individual should be a reasonable  covariate to explain
 heterogeneity in encounter probability, i.e., individuals with more
 exposure to traps should have higher encounter probabilities and vice
 versa. So we can imagine {\it estimating} such a  quantity, say average
