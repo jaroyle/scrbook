@@ -277,6 +277,14 @@ $d_{ij} = \|\textbf{s}_i - \textbf{x}_j\| = \sqrt{(s_{i1}-x_{j1})^2 +
   (s_{i2}-x_{j2})^2}$,
 and
  $\alpha_{0} = log(\lambda_{0})$ and $\alpha_{1} = -1/(2\sigma^2)$.
+A similar model is the Gaussian hazard model:
+\begin{equation}
+\mbox{ cloglog}(p_{ij}) = \alpha_{0}  -\frac{1}{2\sigma^{2}}
+d({\bf x}_{j},{\bf s}_{i})^{2} + \alpha_{2}  z({\bf x}_{j})
+\label{eq.hazard}
+\end{equation}
+where $\mbox{cloglog}(u) = log(-log(1-u))$ is the complementary
+log-log function. 
 Alternative detection models are used, but all are
 functions of Euclidean distance and so we do not consider them
 further here.
@@ -834,8 +842,9 @@ f({\bf m}_{i}|{\bm \alpha}).
 
 A key technical aspect of computing these likelihoods is the
 evaluation of the 2-dimensional integral over the state-space ${\cal
-  S}$, which we approximate (Appendix 1) by a
-summation over a fine mesh of points.
+  S}$, which we approximate (Appendix 1) numerically by summing over
+each point ${\bf x}$ of the landscape.
+%%%summation over a fine mesh of points.
 % XXXX If we are working with a discrete landscape, then the "fine
 % mesh of points" is already defined, right? XXXX
 We note also that the binomial form of the likelihood here is
@@ -884,10 +893,103 @@ obtained approximately once per hour and a total of 1,948 fixes on the
 producing 195 telemetry locations used in the RSF component of the
 model.  We use the covariate elevation in the model, derived from a
 one arc-second digital elevation model (USGS National Elevation
-Dataset, accessed June 2012).  This is shown in Fig. 2 (on a
+Dataset, accessed June 2012).  This is shown in
+Fig. \ref{fig.elevation} (on a
 standardized scale) which also shows the locations of each capture
 (multiple captures at a trap location are dithered by adding random
 noise).  
+
+
+We fitted a sequence of models based on the Gaussian hazard model
+(eq. \ref{eq.hazard})  including an ordinary SCR model with no
+covariates or telemetry data, the SCR model with elevation affecting either
+$\lambda_{0}$ or density $D({\bf x})$, and models that use telemetry data. We have not discussed modeling
+covariate effects on density, but such models are described by
+\citet{borchers_efford:2008} and we have not provided any novel
+treatment of that modeling aspect here. 
+The full list of models (with labels) is as follows:
+\begin{itemize}
+\item[] Model 1: SCR -- ordinary SCR model 
+\item[] Model 2: SCR+p(x) -- ordinary SCR model with elevation as a
+  covariate on baseline encounter probability $\lambda_{0}$.
+\item[] Model 3: SCR+D(x) -- ordinary SCR model with elevation as a
+  covariate on density only.
+\item[] Model 4: SCR+p(x)+D(x) -- ordinary SCR model with elevation as
+  a covariate on both baseline encounter probability and density.
+\item[] Model 5: SCR+p(x)+RSF -- SCR model including data from 3
+  telemetered individuals. 
+\item[] Model 6: SCR+p(x)+RSF+D(x) -- SCR model including telemetered 
+  individuals and with elevation as a covariate on density.
+\end{itemize}
+The first 4 models can be viewed together for purposes of
+model-selection by AIC since they are nested models. The last two
+models can be viewed together but cannot be compared to the first 4
+because they include telemetry data.
+The results of fitting these 6 models -- the parameter estimates and
+standard errors are shown in Table \ref{tab.nyresults}.
+We provide a full R script for fitting  all of these models to
+simulated data in Appendix 1. 
+
+
+Among models 1-4, those models {\it without} the telemetry data, we
+see that the two models with elevation affecting density  are preferred -- and, there is this
+large positive response to elevation. This is consistent with the
+visual pattern apparent in Fig. \ref{fig.elevation} where we see
+individual captures favoring high elevation sites.  We also see a
+negative effect of elevation on {\it space usage} (the parameter
+$\alpha_{2}$.  It is interesting and probably worth pointing out that
+the sign of the estimate of $\alpha_{2}$ flips from positive to
+negative when we add elevation as a covariate on density. Thus, the
+effect of elevation on density appears to have masked its effect on
+space usage.  The estimate of $N$ for the 4600 km$^2$ state-space is
+about 103 bears $(exp(4.25)+33)$.
+
+In the two models that include the additional telemetry, a couple
+things stand out: Clearly the elevation effect on density is
+important, reducing the negative loglikelihood by 5 units. The effect
+of elevation on density and space usage are roughly consistent with
+Model 4 which didn't have telemetry data. Furthermore, the SEs of
+those two parameter estimates are reduced considerably as is the SE
+for estimating $log(\sigma)$.  The SE for estimating $\log(n_{0})$ is
+only improved incrementally compared to the models without telemetry
+data.  The cool thing about these models is we can make pretty
+multi-colored maps of things.  A map of density under the SCR+p(x)+RSF+D(x)
+model is shown in fig. \ref{fig.density}.  A map of space usage in
+terms of the relative probability of using pixel x relative to the
+average pixel is shown in Fig. \ref{fig.spaceusage}.
+
+\begin{table}
+\centering
+\caption{
+Summary of model-fitting results for the black bear study. Parameter
+estimates are $\alpha_{0} = log(\lambda_{0})$ and $\sigma$ is the
+scale parameter of the half-normal encounter model.
+SCR data has n=33 individuals captured by SCR
+RSF models include 
+3 telemetered guys.....
+}
+\begin{tabular}{c|cccccc}
+\hline \hline
+model & $\alpha_0$ & $log(\sigma)$ & $\alpha_{2}$ & $log(n_{0})$ &
+$\beta$ & -loglik \\ \hline
+SCR+p(x)     & -2.860  & -1.117  &  0.175 &  4.140   &        &122.738  \\
+   SE        &  0.3899 &  0.1390 &  0.2478&  0.3657  &        & \\
+ SCR         & -2.729  &  -1.122 &  ---&  4.110   &        &              122.990   \\
+   SE        &  0.3454 &   0.1404&        &  0.3618  &        &       \\
+SCR+D(x)     & -2.715  & -1.133  &  ---  &  4.114   & 1.247  &   118.007  \\
+   SE        &  0.3526 & 0.1394  &        &  0.3575  & 0.4083 &       \\
+SCR+p(x)+D(x)& -2.484  & -1.157  &-0.384  &  4.255   & 1.571  &      117.075 \\
+   SE        &  0.3910 &  0.1421 & 0.2761 &  0.3768  & 0.4630 & \\
+SCR+RSF    &   -3.068  & -0.814  &-0.281  &  3.884   &        &   1271.739 \\
+   SE      &    0.2722 &  0.0364 & 0.1176 &  0.3626  &        & \\
+SCR+RSF+D(x)&  -3.070  &-0.810   &-0.371  &  4.028   & 1.273  &   1266.700 \\
+   SE       &   0.2720 & 0.0368  & 0.1239 &  0.3661  & 0.4110 &    \\
+\end{tabular}
+\label{tab.nyresults}
+\end{table}
+
+
+
 
 
 \section{Simulation Analysis}
@@ -906,39 +1008,36 @@ for $u,v = 1,2,3,4,5,6,7$. The SCR encounter model was of the form
 \mbox{ cloglog}(p_{ij}) = \alpha_{0}  -\frac{1}{2\sigma^{2}}
 d({\bf x}_{j},{\bf s}_{i})^{2} + \alpha_{2}  z({\bf x}_{j})
 \]
-with $\alpha_{0} = -2$ (baseline encounter probability),  $\sigma =2$ (scale parameter of the bivariate
-normal availability model) and $\alpha_{2} = 1$ (the coefficient on
-the landscape covariate $z({\bf x})$).
-In the absence of the covariate $z$, this corresponds
-to a RSF that is bivariate normal with standard
-deviation 2.
-These settings yielded an average of about $n=61$ individuals captured for
-the $N=100$ case and about $n=123$ for the $N=200$ case. The latter case
-represents what we believe is an extremely large sample size based on
-our own experience and thus it should serve to gauge the large sample
-bias of the likelihood estimator.
+with $\alpha_{0} = -2$ (baseline encounter probability), $\sigma =2$
+(scale parameter of the bivariate normal availability model) and
+$\alpha_{2} = 1$ (the coefficient on the landscape covariate $z({\bf
+  x})$).  In the absence of the covariate $z$, this corresponds to a
+RSF that is bivariate normal with standard deviation 2.  These
+settings yielded an average of about $n=61$ individuals captured for
+the $N=100$ case and about $n=123$ for the $N=200$ case. The latter
+case represents what we believe is an extremely large sample size
+based on our own experience and thus it should serve to gauge the
+large sample bias of the likelihood estimator.
 
 
 In addition to simulating data from this capture-recapture study, we
-simulated 2, 4, 8, 12, 16 telemetered individuals
- to assess the
+simulated 2, 4, 8, 12, 16 telemetered individuals to assess the
 improvement in precision as sample size increases.  For all cases we
-observed 20 independent telemetry fixes {\it per} individual, assuming individuals
-were using space according to a RSF model
-with the same parameters as those generating the
-SCR data. We simulated 500 data sets for each scenario and, for each
-data set, we fit 3 models: (i) the SCR only model, in which the
-telemetry data were not used; (ii) the integrated SCR/RSF model which
-combined all of the data  for jointly estimating model parameters; and
-(iii) the RSF only model which just used the telemetry data alone (and
-therefore $\alpha_{0}$ and $N$ are not  estimable parameters).
-The focus of the simulations was to address the following basic questions:
- (1) how much does
-the root mean-squared error (RMSE) of $\hat{N}$ improve as we add or increase the number of
-telemetered individuals?  (2) How well does the SCR model do at
-estimating the parameter of the RSF with {\it no} telemetry data?  (3)
-How much does the precision of the RSF parameter improve if we add SCR
-data to the telemetry data?
+observed 20 independent telemetry fixes {\it per} individual, assuming
+individuals were using space according to a RSF model with the same
+parameters as those generating the SCR data. We simulated 500 data
+sets for each scenario and, for each data set, we fit 3 models: (i)
+the SCR only model, in which the telemetry data were not used; (ii)
+the integrated SCR/RSF model which combined all of the data for
+jointly estimating model parameters; and (iii) the RSF only model
+which just used the telemetry data alone (and therefore $\alpha_{0}$
+and $N$ are not estimable parameters).  The focus of the simulations
+was to address the following basic questions: (1) how much does the
+root mean-squared error (RMSE) of $\hat{N}$ improve as we add or
+increase the number of telemetered individuals?  (2) How well does the
+SCR model do at estimating the parameter of the RSF with {\it no}
+telemetry data?  (3) How much does the precision of the RSF parameter
+improve if we add SCR data to the telemetry data?
 
 Results for $N=100$, $N=200$ and $N_{tel}=(2,4,8,12,16)$ are presented
 in Table \ref{tab.results1}. We note that the first row of each batch
@@ -1746,6 +1845,37 @@ shown with black dots.}
 Locations of 103 hair snares (right panel).
 \label{rsf.fig.studyarea}
 \end{figure}
+
+
+\begin{figure}
+\centering
+\includegraphics[width=3.5in,height=3.5in]{figs/elev_captures.png}
+\caption{Elevation (standardized) and location of bear captures
+  (dithered from trap coordinates).  
+}
+\label{fig.elevation}
+\end{figure}
+
+
+\begin{figure}
+\centering
+\includegraphics[width=3.5in,height=3.5in]{density.png}
+\caption{Model density in bears per 100 $km^2$.
+}
+\label{fig.density}
+\end{figure}
+
+
+\begin{figure}
+\centering
+\includegraphics[width=3.5in,height=3.5in]{spaceusage.png}
+\caption{Relative probability of using pixel x compared with a pixel
+  of mean elevation, at a constant distance from the activity center. 
+}
+\label{fig.spaceusage}
+\end{figure}
+
+
 
 
 
