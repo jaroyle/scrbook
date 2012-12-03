@@ -210,7 +210,7 @@ regression, with a model for $p_{ij}$ such as:
 \end{equation}
 where, here, $||{\bf s}_{i}-{\bf x}_{j}||$ is the distance between
 ${\bf s}_{i}$ and ${\bf x}_{j}$. We sometimes write $||{\bf
-  s}_{i}-{\bf x}_{j}|| = dist({\bf s}_{i},{\bf x}_{j}) =
+  s}_{i}-{\bf x}_{j}|| = \mbox{dist}({\bf s}_{i},{\bf x}_{j}) =
 d_{ij}$.
 We probably expect that the parameter $\alpha_{1}$ in
 Eq. \ref{scr0.eq.logit} or \ref{scr0.eq.norm} should be negative, so
@@ -218,14 +218,22 @@ that the probability of encounter decreases with distance between the
 trap and individual home range center.  
 Alternatively, a popular model in distance sampling is:
 \begin{equation}
-p_{ij} = p_{0}*\exp(-\alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||^2)
+p_{ij} = p_{0}\exp(-\frac{1}{2\sigma^{2}}||{\bf s}_{i}-{\bf x}_{j}||^2)
 \label{scr0.eq.norm}
 \end{equation}
-which is usually referred to as the ``half-normal'' model,
-with $\alpha_{1} = 1/(2\sigma^{2})$.  Because it
+which is similar to the standard ``half-normal'' model in distance
+sampling, except with an intercept $p_{0}$ which may be $<1$. This
+intercept can be estimated in SCR studies.
+Because it
 is the kernel of a bivariate normal or Gaussian probability density
 function we will refer to it as the ``(bivariate) normal'' or
 ``Gaussian'' model.  
+ To be consistent with
+parameter naming across models, we will sometimes parameterize any encounter probability
+model so that the coefficient on distance (or distance squared) is 
+$\alpha_{1}$. So, for the half-normal model, 
+ $\alpha_{1} = 1/(2\sigma^{2})$.  
+
 There are a large number of standard detection
 models commonly used, and we consider these in
 Chapt. \ref{chapt.covariates}. 
@@ -234,12 +242,17 @@ decreasing in distance, but vary in their characteristic behavior as
 they approach distance = 0.
 We show the standard Gaussian, Gaussian hazard, negative exponential
 and logistic models in Fig. \ref{scr0.fig.detfuncs}.
-
+The negative exponential model has $p_{ij} = p_{0}\exp(-\alpha_{1}
+||{\bf s}_{i}-{\bf x}_{j}||)$
+and the Gaussian hazard model has
+$p_{ij} = 1-\exp(-p_{ij})$.
 \begin{figure}[ht]
 \begin{center}
 \includegraphics[height=2.75in]{Ch4-SCR0/figs/det_functions}
 \end{center}
-\caption{plots of some common encounter probability models.
+\caption{Some common encounter probability models showing the
+  characteristic monotone decrease of encounter probability with
+  distance between activity center and trap location.
 }
 \label{scr0.fig.detfuncs}
 \end{figure}
@@ -469,8 +482,8 @@ area used some prescribed percentage of the time. So we might say,
 for example, 95\% of animal movements are within some distance from an
 individual's activity center.  While we have used the term ``home
 range'' or similar, what we really mean to imply is something that
-would be more clearly identified as space usage or
-(the general term) resource selection. 
+would be more clearly identified as space usage  or
+resource selection. 
 %If the resource is only
 %homogeneous space, i.e., all space is equally suitable to the animal,
 %then we mean space usage is a more descriptive term but,
@@ -483,7 +496,7 @@ to interpret the detection model as the composite of two processes:
 movement of an individual about its home range i.e., how it uses space
 within its home range (``space usage''), and detection {\it
   conditional on use} in the vicinity of a trapping device.
-Formally we decompose encounter probability according to:
+It is natural to decompose encounter probability according to:
 \[
  \Pr(\mbox{encounter at } {\bf x}|{\bf s})
  = \Pr(\mbox{encounter}| \mbox{usage of } {\bf x}, {\bf s}) 
@@ -503,13 +516,14 @@ To motivate a specific model for space usage, imagine some kind of
 perfect observation device (e.g., continuous telemetry) so that we
 observe every time an individual moves into a pixel. After a long
 period of time we observe an enormous sample size of ${\bf x}$
-values. We tally those up into each pixel, producing the frequency
-$m({\bf x},{\bf s})$, so then the usage model should be regarded as a probability
-mass function for these counts. Naturally, we regard the counts
+values. We tally those up into each pixel, producing the frequency 
+$m({\bf x},{\bf s})$, which is something like the ``true'' usage of
+pixel ${\bf x}$ by individual ${\bf s}$.  So, then, the usage model should be regarded as a probability
+mass function for these counts and, naturally, we regard the counts
 $m({\bf x},{\bf s})$
 as a multinomial observation with probabilities $\pi({\bf x}|{\bf s})$ and
 prescribe a suitable model for $\pi({\bf x}|{\bf s})$ that describes how use
-events should accumulate over time. A natural null model for
+events should accumulate in space. A natural null model for
 $\pi({\bf x}|{\bf s})$ has a decreasing probability of use as ${\bf x}$ gets far away
 from ${\bf s}$; i.e., animals spend more time close to their activity
 centers than far away.  
@@ -549,15 +563,17 @@ But, here we use a Gaussian kernel, i.e.,
 \]
 so that space usage occurs according to a a bivariate normal model.
 
-To apply this model of space-usage to SCR problems we just allow for imperfect
-detection by introducing a constant encounter rate $<1$, then this
+To apply this model of space-usage to SCR problems we  allow for imperfect
+detection by introducing a constant ``thinning rate'' of the true
+counts $m({\bf x},{\bf s})$. Then, this
 yields, precisely, our bivariate normal encounter probability model.
 The main take-away point here is that underlying every SCR model is
 some kind of model of space-usage, implied by the 
 specific choice of $k({\bf x},{\bf s})$.  
 Whether or not we have perfect sampling devices, the function we use
 in the encounter probability model equates to some conditional
-distribution of points, or utilization distribution, as in
+distribution of points, a utilization distribution,
+ as in
 Eq. \ref{scr0.eq.ud}, from which we can compute effective home range
 area, i.e., the area that contains some percent of the mass of a
 probability distribution proportional to
@@ -612,36 +628,44 @@ half-normal model (See Chapt. \ref{chapt.poisson-mn}).
 One encounter model that allows direct analytic computation
 of home range area is the Gaussian encounter probability model 
 \[
-p({\bf x},{\bf s}) = p_{0} \exp(-\alpha_{1}*||{\bf x}-{\bf s}||^2)         
+p({\bf x},{\bf s}) = p_{0} \exp(-\frac{1}{2\sigma^2} ||{\bf x}-{\bf s}||^2)         
 \]
 which corresponds to a bivariate normal model of space usage with
-standard deviation $\sigma = \sqrt{1/2\alpha_{1}}$.  Under this model
+standard deviation $\sigma$.  Under this model
 we can compute precisely the effective home range area. In particular,
 if use outcomes are bivariate normal, then $||{\bf x}-{\bf s}||^2$ has
 a chi-square distribution with 2 d.f. and the quantity $B(\alpha)$
 that encloses $(1-\alpha)$\% of all realized distances i.e., $\Pr(d\le
 B(\alpha)) = 1-\alpha$, is $B(\alpha) = \sigma*\sqrt{q(\alpha,2)}$
 where $q(\alpha,2)$ is the $0.05$ chi-square critical value on $2$ df. For
-example, to compute  $q(.05, 2)$ in {\bf R} we do this:
-\begin{verbatim}
-qchisq(.95,2)
-\end{verbatim}
+example, to compute  $q(.05, 2)$ in {\bf R} we execute the  command
+\mbox{\tt qchisq(.95,2)}
 which is $q(2,\alpha) = 5.99$. Then, for $\sigma=1$, $B(\alpha) =
 1*\sqrt{5.99} = 2.447$.  Therefore 95\% of the points used will be
-within 2.447 units of the home range center. So the basic idea is that
-we can estimate $\sigma$ by fitting the encounter model, and then plug
-the estimated $\sigma$ it into this expression for $B(\alpha)$ to
-obtain the home range radius that contains 95\% of space used.
+within 2.447 (standard deviation) units of the home range center. So,
+in practice, 
+we can estimate $\sigma$ by fitting the bivariate normal encounter
+probability model to some SCR data, and then use the estimated 
+ $\sigma$ to compute the ``95\% radius'', say  $r_{.95} = \sigma
+ \sqrt{5.99}$, and convert this to the {\it 95\% use area} -- the area
+around ${\bf s}$ which
+ contains 95\% of the movement outcomes  -- according to $A_{.95} = \pi r_{.95}^{2}$.
 
-An alternative bivariate normal model is based on a bivariate normal hazard rate:
+An alternative bivariate normal model is the bivariate normal hazard
+rate model:
 \begin{equation}
-p({\bf x},{\bf s}) = 1-\exp(-\lambda_{0}*\exp(-\alpha_{1}*||{\bf x}-{\bf s}||^2))
+p({\bf x},{\bf s}) = 1-\exp(-\lambda_{0}*\exp(-\frac{1}{2\sigma^{2}} ||{\bf x}-{\bf s}||^2))
 \label{scr0.eq.hazard}
 \end{equation}
-This arises by assuming a latent ``use frequency'' $m({\bf x},{\bf
-  s})$  is a Poisson with intensity $\lambda_0 k({\bf x},{\bf
-  s})$, which is  distinct from our Gaussian encounter model $p({\bf x},{\bf s}) =
-p_0 k({\bf x},{\bf s})$ used previously.  We discuss these two formulations of
+We use $\lambda_{0}$ here because this parameter, the baseline
+encounter {\it rate}, can be $>1$.
+This arises by assuming the latent ``use frequency'' $m({\bf x},{\bf
+  s})$  is a Poisson random variable with intensity $\lambda_0 k({\bf x},{\bf
+  s})$. The model is  distinct from our Gaussian encounter model $p({\bf x},{\bf s}) =
+p_0 k({\bf x},{\bf s})$ used previously, although we find 
+that they produce similar results in terms of estimates of density or 
+95\% use area, as long as baseline encounter probability is low.
+We discuss these two formulations of
 the bivariate normal model further in 
 Chapt. \ref{chapt.poisson-mn}.
 
