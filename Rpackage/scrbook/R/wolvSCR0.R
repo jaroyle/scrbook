@@ -1,5 +1,5 @@
 wolvSCR0 <-
-function(y3d,traps,nb=1000,ni=2000,buffer=2,M=200){
+function(y3d,traps,nb=1000,ni=2000,buffer=2,M=200,keepz=FALSE){
 
 library("R2WinBUGS")
 
@@ -95,7 +95,10 @@ zst<-c(rep(1,nind),rep(0,M-nind))
 inits <- function(){
   list (sigma=runif(1,.4,1),p0=runif(1,.01,.2),z=zst,s=sst)
 }
-parameters <- c("psi","sigma","p0","N","D","alpha1","s","z") ###,"Xobs","Xnew","s","w")
+parameters <- c("psi","sigma","p0","N","D","alpha1","s","z") ###,"Xobs","Xnew","s")
+if(keepz)
+parameters <- c("psi","sigma","p0","N","D","alpha1","s","z") ###,"Xobs","Xnew","s","z")
+
 out <- bugs(data, inits, parameters, "modelfile.txt", n.thin=1,n.chains=3, n.burnin=nb,n.iter=ni,working.dir=getwd(),debug=FALSE)
 out
 }

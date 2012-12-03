@@ -8,7 +8,7 @@ fit SCR0 to Wolverine data %%  ~~function to do ... ~~
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-wolvSCR0(y3d, traps, nb = 1000, ni = 2000,buffer = 2, M = 200)
+wolvSCR0(y3d, traps, nb = 1000, ni = 2000,buffer = 2, M = 200,keepz=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -28,6 +28,9 @@ wolvSCR0(y3d, traps, nb = 1000, ni = 2000,buffer = 2, M = 200)
 %%     ~~Describe \code{buffer} here~~
 }
   \item{M}{
+%%     ~~Describe \code{M} here~~
+}
+  \item{keepz}{
 %%     ~~Describe \code{M} here~~
 }
 }

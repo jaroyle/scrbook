@@ -72,12 +72,12 @@ data(wolverine)
 traps<-wolverine$wtraps
 y3d <-SCR23darray(wolverine$wcaps,wolverine$wtraps)
 # this takes 341 seconds on a standard CPU circa 2011
-unix.time(bln<-wolvSCR0(y3d,traps,nb=1000,ni=2000,buffer=1,M=100))
+unix.time(out<-wolvSCR0(y3d,traps,nb=1000,ni=2000,buffer=1,M=100,keepz=TRUE))
 
-Sx<-bln$sims.list$s[,,1]
-Sy<-bln$sims.list$s[,,2]
-w<- bln$sims.list$w
-obj<-list(Sx=Sx,Sy=Sy,w=w)
+Sx<-out$sims.list$s[,,1]
+Sy<-out$sims.list$s[,,2]
+w<- out$sims.list$z
+obj<-list(Sx=Sx,Sy=Sy,z=z)
 SCRdensity(obj)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
