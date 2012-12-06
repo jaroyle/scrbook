@@ -6,11 +6,17 @@ Multi-sesssion and Multi-site Data}
 \vspace{0.3cm}
 
 
+In this chapter, we consider developing SCR models when we have
+multiple, distinct groups, strata or ``sessions'' (multi-session
+models using the \mbox{\tt
+  secr} terminology). The models are extremely general and provide a
+flexible hierarchical modeling framework for modeling abundance
+\citep{converse_royle:2012, royle_etal:2012arXiv}.
+We believe that such ``stratified'' situations are extremely
+commonplace yet most SCR applications have been based on models that
+are distinctly single-population models. Either by analyzing seperate
+data sets one-at-a-time or by pooling data from multiple study areasd.
 
-The basic idea of this chapter has to do with aggregating data, using
-hierarchical models, from multiple study sessions or trapping arrays,
-or what we call stratified populations.  In secr, these are referred
-to as ``multi-session'' models. 
 A number of distinct situations arise:
 (1) Multiple sessions:
 It is commong to have samples occur over short intervals but then
@@ -25,7 +31,36 @@ For multiple years we imagine a fully dynamic -- demographically open
 -- model that involves survival and recruitment. We deal with those
 models specifically in Chapt. \ref{chapt.open}.
 We deal here with a more primative type of model in which the
-populations are assumed to be independnet. 
+populations are assumed to be independnet.  There are many specific
+situ9ations that this would be worht doing.
+(1) spatial sampling. We could have grids or patches that are sampled
+that c omprise largely independnet individuals. This is the standard
+istuation covered by the N-mixture and related models but could as
+well appy to SCR models too. Royle and Converse. Converse and Royle.
+(2) We could have a fully open system with $N_{g}$ indexing {\it time}
+and there are Markovian dynamics or whatever, just that we want to
+{\it ignore} that dependence to make life easier.
+
+secr fits multi-session models which we've already seen... we
+reanalyze the ovenbird data set later.
+
+
+Dependence -- is it a problem?
+In time -- ignoring the dependence of $N_{g}$ probably entails a
+little {\it loss} of efficiency but should have no effect on anything.
+In space, there might be some individuals shared by multiple groups
+and we don't think that should cause any bias or anything, even in
+statement of uncertainty. So we view these models as pretty generally
+useful and relevant.
+A few points worht discussing: If you have grids that are in
+relatively close proximity you might want to build a model in which
+the total state-space is used in the model. i.e., form the union of
+the state-spaces and model that. That will be more computationally
+tedious but on the other hand it preserves the real landscape and any
+interactions that might be affecting grids simultaneously. 
+
+
+\section{Multinomial Models}
 
 We do this as follows: We have $g=1,2\ldots, G$ groups -- grids or
 sessions or grid*sessions, and let $N_{g}$ be the population size for
@@ -40,6 +75,7 @@ or we might have measureable covariates that affect N
 \]
 A typicaly example is...........
 
+
 This kind of problem is really common in small mammal trapping stuff
 \citep{converse_royle:xxxx} MORE HERE XXXXXXX.
 Because of the idea of building independent models for $Ng$ and also
@@ -53,6 +89,72 @@ underlying dynamics explictly and also possibly with some loss of
 eficiency. 
 
 GROUPS, STRATA, POPULATIONS, ETC...????
+
+
+We motivate the approach from Royle et al. and Converse and Royle,
+etc.. using a 2 population example.
+
+N1 and N2 are two population sizes. We can data augment the two
+independently with M1 and M2 being the population sizes.  We imagine
+that
+N1 ~ bin(M1,psi)
+N2 ~ bin(M2,psi)
+We could allow psi to vary by population and model covariates in psi
+to explain variation in N. In the present case psi could be population
+specific and we are fully modeling the variation in population
+size. In general, that kind of unconstrained model wouldn't be ideal
+b/c too many parameters and its not clear that it does, or the extent
+to which it does, honor the Poisson model assumption that we used as a
+starting point for the model.
+
+But imagine this: If we assume M1 and M2 are Poisson(lambda) then it
+is clear that N1 and N2 are, marginally, iid Poisson(psi*lambda).  But
+we know M1 and M@ have to be a lot larger than Ng so lets say M1 and
+M2 are Poisson(A*lambda) for a large value of A in which case Ng is
+Poisson(psi*A*lambda) so the point here is that by making the data
+augmented super populations have the same distribution but with a
+scaled mean, we ensure that the marginal for Ng is the desired
+distribution. Note we absorb psi into A and just call it psi* and its
+just the same data augmentation parameter.  But we can't really
+simulate M1 and M2 from ``the right'' Poisson distribution because we
+don't, in general, know what the covariatez are that affect
+lambda. (for the G=2 case we could just simulate 2 Poissons with huge
+mean and it would be ok but once we introduce a covariate in lambda
+then we can't simulate the Mg's in the correct ratio because we don't
+know the coefficient on the covariate).
+
+Ok so what do we do?
+Well if M1 and M2 are Poisson then it is the case that (M1,M2)
+conditional on their total is binomial with sample size M1+M2 and
+parameter pi. So in a sense the multinomial distribution that is
+conditional on the TOTAL augmented super-population size, is
+consistent with the target Poisson distribution we want to ensure, but
+it is conditional on the total which we do not have to simulate
+randomly in the correct ratio.   That is, we only have to choose the
+TOTAL augmented population now and not {\it each} population
+size. Once we do dthis then, in fact,
+N1 = Bin(Mtot, pi*psi)
+N2 = Bin(Mtot, (1-pi)*psi)
+and they total up to be binomial with Mtot and pi. So the uniform data
+augmentation makes these two parameters have binomial distributions
+conditional on Mtot which we know is approximately the target Poisson
+distribution if Mtot is large and psi is really small. 
+
+In this model, to implement it, we can have our da variables z[i] but
+then we have to split each real guy into the 2 groups. To do that we
+have g[i] a cateogrical individual effect which has probabilitys
+pi[1] = lambda[1]/(lambda[1]+lambda[2])... where is this going?
+
+
+
+So the idea is that we work with the binomial model doing a 
+``data augmenation on the total'' instead of data augmenting each
+population by itself. 
+
+In this case then , in the general case, the Ng are, conditional on
+Ntotal, multinomial with probabilities pi(g) = lambda(g)/sum lambda(g).
+
+
 
 \section{Model formulation}
 
@@ -86,15 +188,6 @@ level we just model net change in $N_{g}$.
 
 
 \section{What does \mbox{\tt secr} do?}
-
-
-
-\section{Multi-sites}
-
-
-stuff from manuscripts
-
-
 
 
 
