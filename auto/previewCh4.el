@@ -12,10 +12,13 @@
     (TeX-add-symbols
      "R"
      "bugs"
+     "winbugs"
      "jags"
      "secr"
-     "scrbook")
+     "scrbook"
+     "mytilde")
     (TeX-run-style-hooks
+     "fancyvrb"
      "color"
      "soul"
      "verbatim"
@@ -29,5 +32,5 @@
      "latex2e"
      "bk10"
      "book"
-     "Ch4/Chapter4")))
+     "Ch4-SCR0/Chapt-SCR0")))
 
