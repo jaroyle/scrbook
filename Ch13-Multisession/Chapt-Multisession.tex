@@ -90,6 +90,16 @@ the state-spaces and model that. That will be more computationally
 tedious but on the other hand it preserves the real landscape and any
 interactions that might be affecting grids simultaneously. 
 
+
+Conceptually we can apply models like this which assume Ng are
+independent even if they're not... as long as we dont cear about the
+underlying dynamics explictly and also possibly with some loss of
+eficiency. 
+
+GROUPS, STRATA, POPULATIONS, ETC...????
+
+
+
 \section{Data Structure}
 
 
@@ -164,7 +174,6 @@ with
 multinomial probabilities $\pi_{s} = \lambda_{s}/\sum_{s} \lambda_{s}$.
 
 
-
 To devise a data augmentation scheme for this model of population
 size, we  embed the multinomial for $\{ N_{s} \}$ into a
 multinomial of the same dimension but with larger, fixed sample size. 
@@ -209,8 +218,6 @@ represented, equivalently, by the set of Bernoulli variables:
  z_{i} \sim \mbox{Bern}(\psi)
 \]
 for $i=1,2,\ldots,M$.
-%assumption that
-%yields a marginal $\mbox{Unif}(0,M)$ prior for $N_{T}$.
 
 
 
@@ -235,9 +242,6 @@ both. In this sense,
  pooling data from multiple spatial samples is justifiable (in terms of
 sufficiency arguments) under a Poisson assumption on local abundance
 (which was noted by Royle 2004b; Royle and Dorazio 2008, sec. 5.5.1).
-
-
-
 
 
 
@@ -310,17 +314,81 @@ g_{i}  \sim \mbox{Categorical}( {\bm \pi}^{+} ) \mbox{ for
 
 
 
+Two different implementations...............................
 
 
 
+\begin{panel}[htp]   
+\renewcommand{\baselinestretch}{1.0}
+\centering
+\rule[0.15in]{\textwidth}{.03in}
+\begin{tabular}{cc}
+\begin{minipage}{3.25in}
+{\small
+\begin{verbatim}
+model {
+# This will show that psi and b0 
+#   are confounded
+  p~ dunif(0,1)
+  b0~dnorm(0,.1)
+  b1~dnorm(0,.1)
+  psi ~ dunif(0,1)
+  for(s in 1:S){
+    log(lam[s]) <- b0 + b1*x[s]
+    gprobs[s]<- lam[s]/sum(lam[1:S])
+  }
+  for(i in 1:M){
+    g[i] ~ dcat(gprobs[])
+    z[i] ~ dbern(psi)
+   y[i]~ dbin(mu[i],J)
+   mu[i] <- z[i]*p
+  }
+  N <- sum(z[1:M]) 
+}
+\end{verbatim}
+}
+\end{minipage}
+&
+\begin{minipage}{3.25in}
+{\small
+\begin{verbatim}
+model {
+# This version constrains psi with 
+#   the intercept parameter
+  p~ dunif(0,1)
+  b0~dnorm(0,.1)
+  b1~dnorm(0,.1)
+  psi<- sum(lam[])/M
+  for(j in 1:K){
+    log(lam[j]) <- b0 + b1*x[j]
+    gprobs[j]<- lam[j]/sum(lam[1:K])
+  }
+  for(i in 1:M){
+    g[i] ~ dcat(gprobs[])
+    z[i] ~ dbern(psi)
+   y[i]~ dbin(mu[i],J)
+   mu[i] <- z[i]*p
+  }
+  N <- sum(z[1:M]) 
+}
+\end{verbatim}
+}
+\end{minipage}
+\end{tabular}
+\rule[-0.15in]{\textwidth}{.03in}
+\caption{BUGS model specification for a capture-recapture model with
+  constant encounter probability and Poisson subpopulation sizes,
+  $N_{k}$, with mean depending on a single covariate \mbox{\tt x[j]}. 
+Two version of the model: The first one describes the model in terms
+of the intercept $\beta_0$ and DA parameter $\psi$, which are
+confounded. The required constraint is indicated in the specification
+on the RHS. 
+}
+\label{panel.wbcode}
+\end{panel}
 
 
-Conceptually we can apply models like this which assume Ng are
-independent even if they're not... as long as we dont cear about the
-underlying dynamics explictly and also possibly with some loss of
-eficiency. 
 
-GROUPS, STRATA, POPULATIONS, ETC...????
 
 
 \begin{comment}
