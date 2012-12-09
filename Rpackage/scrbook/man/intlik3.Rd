@@ -32,6 +32,10 @@ intlik3(start = NULL, y = y, K = NULL, delta = 0.3, X = traplocs, ssbuffer = 2)
   \item{ssbuffer}{
 %%     ~~Describe \code{ssbuffer} here~~
 }
+\item{model}{
+}
+\item{predict}{
+}
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
