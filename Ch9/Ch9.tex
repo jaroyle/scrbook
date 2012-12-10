@@ -7,6 +7,19 @@ Modeling Encounter Probability
 
 \vspace{.3in}
 
+\begin{comment}
+XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+- update behavior model results
+- check on greek letters for secr detection function table
+- check on section for ``see sec. gof.sec.XXXXX'' comment
+- AIC for groups in secr
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+\end{comment}
+
+
 \section{Introduction}
 
 % In previous chapters we showed how to fit basic spatial
@@ -144,9 +157,6 @@ form:
 
 However, there's nothing preventing us from constructing a myriad of
 other models for encounter probability.
-% this next bit is not true.............
-%, as long as detection decreases
-%with distance (otherwise $N$ would be unidentifiable). 
 The most
 commonly used detection functions are also those used in the distance
 sampling literature: the half-normal (Gaussian), the hazard, and the negative
@@ -155,8 +165,7 @@ exponential.  The negative exponential model is:
 p_{ij} = p_{0}*\exp(-\alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||)
 \]
 or we could use the general power model \citep{russell_etal:2012} which includes both the
-Gaussian and exponential models as special cases {\bf XXXX Ref for
-  this model? Name for it? XXXXX}:
+Gaussian and exponential models as special cases:
 \[
 p_{ij} = p0*\exp(-\alpha_{1} *||{\bf s}_{i}-{\bf x}_{j}||^{\theta} )
 \]
@@ -178,11 +187,6 @@ crude descriptions of space usage by real animals. But this is not to
 say they are inadequate descriptions of the data and, as we discuss in
 Chapts. \ref{chapt.ecoldist} and \ref{chapt.rsf} we can use them as the
 basis for producing more realistic models of space usage.  
-%is showing that they might be inadequate now, right?? XXX
-%We don't believe in doing too much
-%selection among these different detection models because there is no biological basis for
-%choosing any one of over any other. We do describe more
-%realistic models in Chapt. XXXXX.
 
 
 \begin{table}[ht]
@@ -197,7 +201,10 @@ basis for producing more realistic models of space usage.
   One can read more on this specific table by loading the \secr~ package and using the
   {\tt help} command in {\bf R} ({\tt ?detectfn}).
  {\bf XXXXXXXXXX probably need to change greek letters beta to alpha
-   to be consistent with our notation. Maybe some other changes too? XXXXXXXXXX}
+   to be consistent with our notation. Maybe some other changes too?  
+Beth sez:  I thought maybe it makes sense to leave these different because
+Murray implements them differently than we do in some cases and I don't think it's fair
+to say they are identical to our parameters under all situations.  XXXXXXXXXX}
 }
 \begin{tabular}{cccl}
 \hline \hline
@@ -279,16 +286,16 @@ respectively.
 {\small
 \begin{Verbatim}[commandchars=\\\{\}]
 model \{
-alpha0 \mytilde dnorm(0,.1)
+alpha0 ~ dnorm(0,.1)
 logit(p0)<- alpha0
 alpha1<-1/(2*sigma*sigma)
-sigma \mytilde dunif(0, 15)
-psi \mytilde dunif(0,1)
+sigma ~ dunif(0, 15)
+psi ~ dunif(0,1)
 
 for(i in 1:M)\{
- z[i] \mytilde dbern(psi)
- s[i,1] \mytilde dunif(Xl,Xu)
- s[i,2] \mytilde dunif(Yl,Yu)
+ z[i] ~ dbern(psi)
+ s[i,1] ~ dunif(Xl,Xu)
+ s[i,2] ~ dunif(Yl,Yu)
 for(j in 1:J)\{
 d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
 y[i,j] ~ dbin(p[i,j],K)
@@ -395,15 +402,11 @@ on the baseline encounter rate or probability parameter, $p_{0}$ (or
 $\lambda_{0}$), or the scale parameter of the encounter model,
 $\sigma$ or, in some cases, both parameters.
 
-Broadly speaking, we recognize (here) 2 types of covariates {\bf XXXX ABOVE
-YOU SAY 3 - OBSERVED; PARTIALLY LATENT AND LATENT XXXXXX Ok, well,
-which is it then? Maybe treat heterogeneity differently? Decide on a
-conceptual formulation of the problem and a narrative structure and
-go with it.}: Fixed
+Broadly speaking, we recognize (here) 3 types of covariates. Fixed
 covariates which are fully observable and might vary by trap alone
 (e.g., type of trap, baited or not, disturbance regime, even habitat),
 sample occasion (e.g., day of season or weather conditions), or both
-(e.g., behavior, weather - if over a large region).  The other class
+(e.g., behavior, weather - if over a large region).  Another class
 of covariates are those which vary at the level of the individual (and
 possibly also over time).  As a technical matter, and as noted before,
 these are different from fixed covariates because we cannot see all of
@@ -417,17 +420,29 @@ derive the fully spatial capture-recapture model from the traditional,
 non-spatial model (Chapt. \ref{chapt.scr0}). We do not get to observe
 the activity center for any individuals, but for individuals that are
 encountered we get to observe some information about it in the form of
-which traps the individual was encountered in.
+which traps the individual was encountered in.  And finally, we have
+completely unobserved covariates such as heterogeneity in home range
+size.  We consider heterogeneity in a separate section below since 
+alone there are 
+a suite of models for capturing latent heterogeneity. 
 
+\begin{table}[ht]
+\centering
+\caption{Examples of different covariate classifications.}
+\begin{tabular}{cr}
+\hline
+Covariate type & Examples \\
+\hline
+individual & sex, age, home range \\
+trap  &  baited/not, habitat (see also Chapter \ref{chapt.rsf}) \\
+time  &  season, shedding,  weather  \\
+individual x time    &    global behavioral response \\
+trap x time     &       trap failures  \\ 
+individual x trap x time  &   local behavioral response  \\
+\end{tabular}
+\label{covariates.tab.covclass}
+\end{table}
 
-{\bf XXXXX There's also this classification in which covariates vary
-  by trap, by time, by trap and time, by individual, by individual and
-  trap, by individual and time, by individual and trap and time,
-  etc.,. etc... also covariates on density -- chapter
-  ``state-space''.  I wonder if somewhere in this chapter you could
-  show a table that talks about all the different covariate structures
-  and shows an example or two -- in TABLE FORM --??? 
-XXXXXX}
 
 To develop covariate models, we assume a standard sampling design in which an
 array of $J$ traps is operated for $K$ sample occasions, which produces
@@ -490,9 +505,8 @@ explainable by a polynomial function).
 
 To implement this in \jags, $\alpha_0$ has to be
 estimated for each time period $k$ either using an index vector or
-dummy variables (as described in Chapt. \ref{chapt.modeling}) 
-{\bf  XXXX possibly chapt 3 also can you check? XXXXX}
-and this can be done by only 
+dummy variables (as described in Chapt. \ref{chapt.modeling} and sec. 
+\ref{closed.sec.timebehavefx})and this can be done by only 
 changing only a few lines in panel \ref{covariates.panel.basicSCR}.
 
 \begin{verbatim}
@@ -640,23 +654,6 @@ baseline detection of a trap being of type = 1. While these models
 yield identical results, sometimes one parameterization might work
 better than the other in {\bf WinBUGS} or {\bf JAGS}
 \citep{kery:2010}.
- 
-\begin{comment}
-XXX This can all be deleted. I put a comment in above. The idea is
-that space usage or resource selection is manifest as a covariate at
-the trap level. This is the whole point of the RSF chapter and it is
-also a point that you alluded to above. XXX
-
-XXX ANDY - Can you clarify the second part of this paragraph??
-If the trap-specific covariate describes local conditions, e.g., of
-the habitat, this suggests a more fundamental role of encounter
-probability as being related to space usage or resource
-selection. Indeed, we show in Chapt. \ref{chapt.rsf} how, explicit
-formulation of classical resource selection models yield precisely an
-additive model of the XXXWHAT FORM?XXX form here, where the covariate
-$z({\bf x})$ is the same as that contained in the resource selection
-model. XXX ISNT Z OUR INDICATOR OF PART OF THE POPULATION??XXX
-\end{comment}
 
 \subsection{Behavior or Trap Response by Individual}
 
@@ -704,7 +701,8 @@ are now also indexed by $k$):
           p_{ijk} &= &  p_{0,ijk} \exp(- \alpha_{1}*||{\bf s}_{i}-{\bf x}_{j}||^2)
 \end{eqnarray*}
 
-Since the behavioral response is occasion specific, to implement either the local or global response model in \jags~, we will have to use the 3-d array of the
+Since the behavioral response is occasion specific, to implement either the local or global 
+response model in \jags~, we will have to use the 3-d array of the
 capture histories ($\mbox{\tt nind} \times \mbox{\tt ntraps} \times
 \mbox{\tt nreps}$) as we did for the time-varying encounter probability
 model above. The code must loop over each sampling occasion, but otherwise, the model
@@ -720,11 +718,14 @@ p[i,j,k]<- z[i]*p0[i,j,k]*exp(- alpha1*d[i,j]*d[i,j])
 }
 \end{verbatim}
 }
+
 Despite the minor changes to the {\bf BUGS} code, this model can require quite a bit of time and computational 
 effort to carry out the local response model.  
 
 {\bf XXXX NEED TO FILL IN RESULTS FOR THE BLACK BEAR ANALYSIS HERE -
-  RUNNING XXXXX }
+  RUNNING 
+Beth says: Found a minor kink, running this again as of Dec. 9
+XXXXX }
 
 
 \subsection{Individual Covariates}
@@ -939,6 +940,7 @@ additive individual-specific random effect is included in the linear
 predictor for baseline encounter probability.  
 
 \subsection{Models of Heterogeneity}
+\label{covariates.sec.heterogeneity}
 
 An obvious model extends the SCR model by including an additive
 individual effect, analogous to classical ``model $M_{h}$''. We'll
@@ -993,37 +995,6 @@ Population distribution of $\sigma$ if $(1/\sigma^{2}) \sim \mbox{Normal}(2, 0.5
 \label{fig.one}
 \end{figure}
 
-\begin{comment}
-XXXX Andy sez: probably not -- we can stop here at a basic
-descriptuion of the models XXXX
-
-XXX Andy, do you still think this is necessary? XXX
-It is interesting to consider alternative distributions for $\alpha_{1,i}$, here we 
-use a Normal prior which might result in a negative value for $\alpha_{1,i}$ which is
-not expected but also not entirely nonsensical.  We could also use the the Inverse-Gamma
-distribution, but it is not conjugate in the present context and so
-there is no compelling reason to do that.  Also important to note is that if A[i] 
-is the home range area of individual $i$, and we have related area to $\sigma$ through a specified
-function, then we can move back and forth between distributions for
-A[i], $\sigma_i$, and $\alpha_{1,i}$.
-
-
-{\bf Approximation: }
-Note that ``SCR + Mh'' might be a good approximation to ``SCR + Ah''.  If we write $\alpha_{1,i} =
-\alpha_{1} + \eta_{i}$ then
-we can take the expectation over  $\alpha_{i}$ to arrive at
-\[
-\mbox{logit}(p0) = \alpha_0 
-p_{ijk} = p0 \exp(- \alpha_{1}*||{\bf s}_{i}-{\bf x}_{j}||^2) +  \eta_{i}*||{\bf s}_{i}-{\bf x}_{j}||^2)
-\]
-
-Which has this additive individual effect that varies also by trap. It might be that approximating
-this by SCR+Mh is better than nothing and it could also be viewed as suggesting an 
-over-dispersed count model for encounter frequencies.
-
-XXXXXXXXXXXXXXXXX above commented out 
-
-\end{comment}
 
 In panel \ref{covariates.panel.SCRMhjags}, we show how to implement the SCR + Mh model.  
 
@@ -1033,20 +1004,20 @@ In panel \ref{covariates.panel.SCRMhjags}, we show how to implement the SCR + Mh
 {\small
 \begin{Verbatim}[commandchars=\\\{\}]
 model \{
-alpha0 \mytilde dnorm(0,.1)
+alpha0 ~ dnorm(0,.1)
 alpha1<-1/(2*sigma*sigma)
-sigma \mytilde dunif(0, 15)
-psi \mytilde dunif(0,1)
-tau_p \mytilde dgamma(.001,.001)
+sigma ~ dunif(0, 15)
+psi ~ dunif(0,1)
+tau_p ~ dgamma(.001,.001)
 
 for(i in 1:M)\{
-  eta[i]\mytilde dnorm(0, tau_p)
-    z[i] \mytilde dbern(psi)
-  s[i,1] \mytilde dunif(Xl,Xu)
-  s[i,2] \mytilde dunif(Yl,Yu)
+  eta[i] ~ dnorm(0, tau_p)
+    z[i] ~ dbern(psi)
+  s[i,1] ~ dunif(Xl,Xu)
+  s[i,2] ~ dunif(Yl,Yu)
    for(j in 1:J)\{
    d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
-   y[i,j] \mytilde dbin(p[i,j],K)
+   y[i,j] ~ dbin(p[i,j],K)
  logit(p0[i,j])<-alpha0 + eta[i]
     p.eff[i,j]<- z[i]*p0[i,j]*exp(- alpha1*d[i,j]*d[i,j])
 \}
@@ -1084,10 +1055,7 @@ detection functions and covariate responses.  As we saw in
 Chapt. \ref{chapt.mle}, \secr~ uses the standard \R model
 specification framework, defining the dependent and independent
 variable relationship using tildes (e.g., \Verb+y ~ x+).  Thus, in
-\secr~ we 
-{\bf XXXXXXXXXXXXXX Are these tildes centered vertically?
-  XXXXXXXXXXXXXXXXX} 
-might have \verb+g0 ~ behavior+ or
+\secr~ we might have \verb+g0 ~ behavior+ or
 \verb+sigma ~ time+; when left unspecified or set to 1 (e.g.,
 \verb+g0 ~ 1+), this will default to a model with no covariates (i.e.,
 constant parameter values).  Additionally, \secr~ allows us to specify
@@ -1196,17 +1164,17 @@ males and females (see model 7 in panel
 density estimates, which can then be combined into a total density.
 
 
-There are at least two other ways that one could
+There are a few ways that one could
 specify the model with sex-specific parameters  in \mbox{\tt secr} (M. Efford, pers. comm).  One way is that we could
 list sex as a categorical individual covariate in a Huggins-Alho type
 model \citep{borchers_efford:2008}.
- The second way is to treat males and 
+ A similar approach is to treat males and 
 females as groups (in \secr~ denoted by ``g''), specify the
 model as $model = list(D~g, g0~g, \sigma~g)$ and list \mbox{\tt groups = 'sex'}
-where we have specified sex as a 2-level individual covariate 
-{\bf XXXXXXXXXXXXXXXXXXXX Andy sez: How is this different then the
-multi-session models? has anyone tried this? we need to know more herre or else
-  I think don't mention this ``groups'' thing. Sounds fishy to me.XXXXXXXXXXXXXXXXXXXXXXXXXXX.  }
+where we have specified sex as a 2-level individual covariate.    The \secr~ manual suggests that for many purposes,
+using the `session' implementation is equivalent to the 'groups' with the caveat that the latter is often simpler
+to implement partially due to the fact that multi-session models require the detector array and mask to be 
+specified separately for each session.
 
 
 \subsection{Individual heterogeneity}
@@ -1230,8 +1198,9 @@ model call.   The 2-part mixture is shown in model 8 of panel
 substituting \mbox{\tt h3} for \mbox{\tt h2}.  
 The finite-mixture model 
 can be fit in \jags or \bugs, but we only showed
-the SCR + Mh continuous mixture in the version above {\bf XXXXX cite
-  specific section above XXXXXX}.
+the SCR + Mh continuous mixture in the version above (see
+\sec{covariates.sec.heterogeneity}).
+
 
 
 \subsection{Model selection in \secr~ with AIC}
@@ -1332,6 +1301,39 @@ perfectly fine to pick a model ahead of time and stick with it.
 we note that underlying these different models is basically something
 to do with the 2nd moment structure of some correlated spatial process...
 i.e., correlation functions (Higdon et al. 1998; etc...) and , insofar
-as chooing detection functions is like choosing a correlation function,
+as choosing detection functions is like choosing a correlation function,
 it probably wont have much affect on inferences.
+\end{comment}
+
+
+\begin{comment}
+XXXX Andy sez: probably not -- we can stop here at a basic
+description of the models XXXX
+
+XXX Andy, do you still think this is necessary? XXX
+It is interesting to consider alternative distributions for $\alpha_{1,i}$, here we 
+use a Normal prior which might result in a negative value for $\alpha_{1,i}$ which is
+not expected but also not entirely nonsensical.  We could also use the the Inverse-Gamma
+distribution, but it is not conjugate in the present context and so
+there is no compelling reason to do that.  Also important to note is that if A[i] 
+is the home range area of individual $i$, and we have related area to $\sigma$ through a specified
+function, then we can move back and forth between distributions for
+A[i], $\sigma_i$, and $\alpha_{1,i}$.
+
+
+{\bf Approximation: }
+Note that ``SCR + Mh'' might be a good approximation to ``SCR + Ah''.  If we write $\alpha_{1,i} =
+\alpha_{1} + \eta_{i}$ then
+we can take the expectation over  $\alpha_{i}$ to arrive at
+\[
+\mbox{logit}(p0) = \alpha_0 
+p_{ijk} = p0 \exp(- \alpha_{1}*||{\bf s}_{i}-{\bf x}_{j}||^2) +  \eta_{i}*||{\bf s}_{i}-{\bf x}_{j}||^2)
+\]
+
+Which has this additive individual effect that varies also by trap. It might be that approximating
+this by SCR+Mh is better than nothing and it could also be viewed as suggesting an 
+over-dispersed count model for encounter frequencies.
+
+XXXXXXXXXXXXXXXXX above commented out 
+
 \end{comment}
