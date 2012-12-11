@@ -385,7 +385,10 @@ models. % XXXX OK, but you brought up DA earlier XXXX
 % XXXX Make sure that you say that this is the formulation advanced by
 % royle_dorazio:2008, the book XXXX
 
-The fundamental challenge in carrying out inference under this model
+The fundamental challenge in carrying out a
+Bayesian analysis of
+%inference under
+this model
 is that the parameter $N$ (the total number of individuals alive
 during the study) %at least 1 time period)
 is not known.  We have discussed and
@@ -446,6 +449,7 @@ for $i=1,2,\ldots,N$. Then, for $t>1$
 \[
  r(i,t)|r(i, t-1) \dots r(i, 1) \sim \mbox{Bin}((1 - \sum_{\tau=1}^{t-1} r(i, \tau) ) \times \gamma_{t}, 1)
 \]
+% XXXX What is tau here? XXXX
 Each recruitment variable is conditional on whether the individual was ever
 previously recruited and this construction forces the recruitment
 variable after initial recruitment to be degenerate (have a sample
@@ -475,7 +479,8 @@ be ``recruited'' into the population.  The implementation of this model
 in \jags~is shown in panel \ref{open.panel.nsJS}.
 
 % XXXX Suggest adding comments to this to explain what the key parameters
-% are. XXXX
+% are. Also, some of the notation seems to be different that what is
+% in the text. XXXX
 \begin{panel}[htp]
 \centering
 \rule[0.1in]{\textwidth}{.03in}
@@ -552,9 +557,10 @@ array represents just one individual across all primary periods.
 For the ovenbird dataset, we
 can organize the data by creating a master list of all individuals
 captured during the entire study.  From this list, we can assign each
-individual a unique row in our dataset (in the following R commands,
-we do this by using the \mbox{\tt unique}() command on the row names
-for each year of our 3-D array and use the command \mbox{\tt pmatch}()
+individual a unique row in our dataset (in the following \R~commands,
+we do this by using the \mbox{\tt unique}() function % command
+on the row names
+for each year of our 3-D array and use \mbox{\tt pmatch}()
 to associate the data to the correct column).  Additionally, in
 Chapt. \ref{chapt.poisson-mn} we carried out data augmentation for each year separately;
 however, we must consider for example that individuals captured in
@@ -630,7 +636,7 @@ out2NSJS <- coda.samples(out1,parameters,n.iter=20000)
 We find in this non-spatial JS model that N is estimated to be between about 22 and 33 for each of the 5 years (see
 Table \ref{open.tab.JSmulti} for results).  The posterior mean for detection (p.mean in the model) was 0.14, it
 is not included in the table because the spatial models do not have a parameter that directly corresponds to this one.
-
+% XXXX Can you elaborate? Why isn't it needed in SCR models? XXXX
 
 \subsection{Shortcomings of the traditional JS models}
 
@@ -638,15 +644,23 @@ As we have previously discussed, one of the biggest shortcomings of the non-spat
 JS model is that we estimate $N$ but have no explicit spatial reference area for that
 value.  As you see in Table \ref{open.tab.JSmulti}, the density estimate from the non-spatial JS model
 is listed as NA.  This is because, again, the effective sampling area is unknown leaving us to
-determine that area in an ad hoc manner.  Not making use of the spatial arrangement of the trap array renders
-the estimation of density to a non-formal process.  As we saw in the closed models, the explicit
+determine that area in an ad hoc manner.
+% XXXX do we italicize ad hoc?  XXXX
+Not making use of the
+spatial information in the data makes %arrangement of the trap array renders
+the estimation of density %to
+a non-formal process.  As we saw in the closed models, the explicit
 incorporation of spatial information will allow us to provide a robust estimate of density.  This improvement should
-also carry through in our estimation of other demographic parameters such as survival and recruitment.
+also carry through in our estimation of other demographic parameters
+such as survival and recruitment.
+% XXXX How? XXXX
 Also, while we can potentially model the relationship between density and the
 demographic parameters we are interested in by using standard JS models, we can make no
 inference regarding the spatial arrangement of individuals in the landscape nor the direct
 impact of movement.
-
+% XXXX Suggest deleting this paragraph. It contradicts the earlier
+% statements that density can't be estimated using standard JS, and
+% people do use multi-state models to get at movement
 
 
 \section{Spatial Jolly-Seber Models}
@@ -659,7 +673,8 @@ and the open component is carried out in the process of how we model the transit
 of $z(i,t)$ to $z(i, t+1)$ which is the same as in the non-spatial JS model.
 To do so, we describe the Bernoulli observation model,
 specified conditional on $z(i,t)$, as we have done throughout the book:
- \[
+% XXXX Sometimes Bernoulli, sometimes Bern
+\[
   y_{ijkt}|z(i,t) \sim
 \mbox{Bernoulli}(p_{ijk} z(i,t)).
 \]
@@ -668,23 +683,29 @@ with
 %\mbox{logit}(p_{ijk}) = \alpha_0 + \alpha_1 d_{ij}^2.
 %\]
 \begin{equation}
-p_{ijk} = p_{0}*\exp(-\alpha_{1} d_{ij}^2
+p_{ijk} = p_{0}*\exp(-\alpha_{1} d_{ij}^2)
 \label{scr0.eq.norm}
 \end{equation}
-
 where $d_{ij}$ = $||{\bf s}_{i}-{\bf x}_{j}||$, the distance between
 ${\bf s}_{i}$ and ${\bf x}_{j}$.
+% XXXX Remind the reader what p_0 and the alphas are
 
 If individual $i$ is alive at time $t$ ($z(i,t)=1$), then the
 observations are Bernoulli as before.  Conversely, if the individual is
 not alive ($z(i,t)=0$), then the observations must be fixed zeros with
-probability 1.  We can of course let this encounter model not only be Bernoulli, but
-also Poisson or multinomial as we saw in Chapt. \ref{chapt.poisson-mn}.
+probability 1.  We can of course %let this encounter model not only be
+                                %Bernoulli, but
+consider other encounter models such as the
+%also
+Poisson or multinomial models described %as we saw
+in Chapt. \ref{chapt.poisson-mn}.
 
 We initialize the
 model for time $T=1$
-and then the model describing the transition of individual states from
-$t$ to $t+1$ is:
+and then %the
+model %describing
+the transition of individual states from
+$t$ to $t+1$ as: % is:
 \[
  z(i,t+1) \sim \mbox{Bern}( \phi_t z(i,t)  + \gamma_t (1-z(i,t)) ).
 \]
@@ -692,25 +713,31 @@ Previously, we described how this formulation of the model uses a set of latent 
 variables $r(i,t)$ which describes if individual is recruited into the population during time
 $(t-1, t)$.  Therefore, $r(i,t) = 1$
 if individual $i$ is recruited in time interval $(t-1, t)$ otherwise
-$r(i,t)=0$.  To determine the number of recruits into the population,
-\[
-R_{t} = \sum_{i=1}^{M} (1-z(i,t-1))z(i,t)
-\]
-we can use a set of two steps.
+$r(i,t)=0$.  %To determine
+Determining the number of recruits into the population,
+%\[
+%R_{t} = \sum_{i=1}^{M} (1-z(i,t-1))z(i,t),
+%\]
+%we can use a set of
+can be done using two steps.
 For example, to estimate the number of recruits from time period 1 to 2, we count those
 individuals not in the population at time 1 ($z_{i,1} = 0$) but alive at time 2 ($z_{i,2} = 1$).
 We can determine if individual $i$ has entered the population at time $t=2$ by using the formula:
  $R_{i,2}=(1-z_{i,1})z_{i,2}$ and then sum
 $R_{i,2}$ over $M$ to get the total number of recruits.
-We can do this for all the primary periods in our study, which we implement
-in the \jags  code below.
+We can do this for all the primary periods in our study,
+%which we implement
+as shown
+in the \jags~code below.
 
 
 \subsection{Mist-netting example}
 
 In the previous
-section, we did not make use of the spatial location for each net the ovenbirds
-were captured in.   However, there are 44 mist nets operational during
+%section,
+analysis of the ovenbird data,
+we did not make use of the spatial location for each net the ovenbirdswere captured in.
+However, there were 44 mist nets operational during
 each of the sampling occasions.  We already organized the data above so that our 3-D encounter
 histories are set up.  The data set is then $M=200$ individuals by $K=10$ secondary occasions
 by $T=5$ primary occasions.  In the non-spatial version, we reduced the data to captured or
@@ -718,6 +745,8 @@ not-captured; however, the encounter history array \mbox{\tt Yarr}) contains the
 each individual was captured in and contains a $45$ if the individual was not captured.  The
 encounter history array, \mbox{\tt Yarr}), was created above in the code, so we do not
 reproduce the code here.
+
+% XXXX Suggest putting BUGS code in panel and adding comments  XXXXX
 
 {\small
 \begin{verbatim}
@@ -803,7 +832,8 @@ out2JS <- coda.samples(out1,parameters,n.iter=10000)
 \end{verbatim}
 }
 
-
+% XXXX Suggest avoiding sci numbers by scaling D to indivduals per
+% 100km2 or something XXXX
 \begin{table}
 \centering
 \caption{
@@ -854,6 +884,7 @@ under the  non-spatial JS model are not directly comparable as we do not have a 
 We see from Table \ref{open.tab.JSmulti} that $N$ is smallest for the non-spatial JS model across all years.
 This suggests that the actual effective trapping area is smaller than our state space, but we cannot know how much relative to the state-space to make useful comparisons between the $N$s.
 
+% XXXX Font is too small XXXX
 \begin{figure}
 \centering
 \includegraphics[height=2in,width=2.5in]{Ch12-Open/figs/Nhat5ovenbird.pdf}
