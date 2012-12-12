@@ -41,6 +41,22 @@ dev.off()
 
 
 
+Area <- 1                  # Area of state-space
+M <- 100                   # Data augmentation size
+mu <- 10                   # Intensity (points per area)
+psi <- (mu*Area)/M         # Data augmentation parameter (thinning rate)
+N <- rbinom(1, M, psi)     # Realized value of N under binomial prior
+cbind(runif(N), runif(N))  # Coordinates of activity centers
+
+
+
+
+a
+
+
+
+
+
 
 
 
