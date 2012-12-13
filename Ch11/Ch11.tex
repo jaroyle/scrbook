@@ -289,57 +289,95 @@ psi <- (mu*Area)/M         # Data augmentation parameter (thinning rate)
 N <- rbinom(M, 1, psi)     # Realized value of N under binomial prior
 cbind(runif(N), runif(N))  # Coordinates of activity centers
 \end{verbatim}
+%This code illustrates the fact that $\psi$ can be expressed as a
+%function of the point process intensity $\mu$. Thus each and every
+%MCMC algorithm used in this book could have been parameterized in
+%terms of $\mu$ rather than $\psi$. However, you might have noticed
+%that the above code does not include the indicator variables
 
-We conclude this section by pointing
-out Table\ref{state-space.tab.pvb}, which highlights the differences
-of the homogeneous Poisson and binomial point process models as they
-relate to SCR. % XXXX Need to fill in this table XXXX
+\begin{comment}
+  We conclude this section by pointing out
+  Table\ref{state-space.tab.pvb}, which highlights the differences of
+  the homogeneous Poisson and binomial point process models as they
+  relate to SCR. % XXXX Need to fill in this table XXXX
 
 \begin{table}
   \centering
-  \caption{Characteristics of the homogeneous Poisson and binomial point processes. }
+  \caption{Characteristics of homogeneous point
+    processes. Table~\ref{state-space.tab.hetero} describes the
+    inhomogeneous models.}
   \begin{tabular}{lccc}
     \hline
-    & $\mathbb{E}[N]$  & $\mu$  &  \\
+    & Prior & $\mathbb{E}[N]$    & $\mu$   \\
     \hline
-    Poisson  &    &  &  \\
-    Binomial &    &  &  \\
+    Poisson  & $N \sim \text{Poisson}(\mu|\mathcal{S}|)$   &  &  \\
+    Binomial & $N \sim \text{Binomial}(M, $   & $M\psi = $   &  &  \\
     \hline
   \end{tabular}
-  \label{state-space.tab.pvb}
+  \label{state-space.tab.homo}
 \end{table}
+\end{comment}
+
 
 \section{Inhomogeneous binomial point process}
 
 The principal difference between homogeneous and inhomogeneous point
 processes is that the intensity parameter $\mu$ is allowed to vary spatially
 in the inhomogeneous model. Thus, rather than $\mu$ being a fixed constant,
-it is now a function defined at each point $x \in
+it is now a function defined at each point $\mathbf{s} \in
 \mathcal{S}$. Typically, the function is determined by
 spatially-referenced covariates and a vector of regression
-coefficients $\bm \beta$, thus we denote the function $\mu(x,
+coefficients $\bm \beta$, thus we denote the function $\mu(\mathbf{s},
 \bm{\beta})$. Since the intensity must be %strictly
 positive, and because the natural logarithm is the canonical link
 function of the Poisson generalized linear model, it is natural to
 consider the following model:
 \begin{equation}
-  \log(\mu(x, \beta)) = \beta_0 + \sum_{v=1}^V \beta_v z(x)_v, \quad  s \in \cal{S}
+  \log(\mu(\mathbf{s}, {\bm \beta})) = \beta_0 + \sum_{v=1}^V \beta_v z(\mathbf{s})_v, %\quad  \mathbf{s} \in \cal{S}
   \label{state-space.eq.loglin}
 \end{equation}
-which says that we have $V$ covariates and $\beta_v$ is the regression coefficient for covariate
-$z(s)_v$. To be clear, $z(s)_v$ is the value of a covariate, such as
-habitat type or elevation, at location $s$, and it assumed to be
-defined at all locations in the state-space.
-This equation should look
+which says that there are $V$ covariates and $\beta_v$ is the
+regression coefficient for covariate
+$z(\mathbf{s})_v$. To be clear, $z(\mathbf{s})_v$ is the value of a covariate, such as
+habitat type or elevation, at location $\bf s$, and it assumed to be
+defined at all locations in the state-space. This equation should look
 familiar because it is the standard linear predictor used in log-linear
 GLMs.
 
-For a homogeneous Poisson point process, the expected number of points
-in the state-space is $\mathbb{E}[N] = \mu|\mathcal{S}|$ for a
-homogeneous point process.  , , but what is
-it in the inhomogeneous case in which $\mu$ is no longer constant?
-Contemplating a discrete state-space is useful for figuring this out.
+Recall from the previous section that for a homogeneous point process,
+the expected number of points in the state-space was simply the
+intensity parameter multiplied by area: $\mathbb{E}[N] =
+\mu|\mathcal{S}|$. But now that we are regarding the intensity as a
+function, rather than a scalar, this equation is not very useful. So
+what is $\mathbb{E}[N]$ for an inhomogeneous point process.
+%And why do
+%we care? Well, hopefully you remember that the reason we need a
+%the reason we care is that we want a model that
+Contemplating a discrete state-space is useful for figuring this
+out. Imagine that the state-space is represented as a raster with many
+tiny pixels. In this case, we will associate
+$\bf s$ with pixel ID, i.e. $\bf s$ just references some pixel that
+has $V$ covariates values associated with it. The expected number of
+individuals in this pixel, say $\mathbb{E}[n(\mathbf{s})]$, can intuitively be
+found by evaluating the intensity function
+(Eq.~\ref{state-space.eq.loglin}) and multiplying it by the area of
+the pixel. If we do this for each pixel in the state-space, then
+summing up these values gives us what we are after. Specifically,
+$\mathbb{E}[N] = \sum_{\mathcal{S}} \mathbb{E}[n(\mathbf{s})]$. As the
+area of the pixels approaches zero, such that we move from discrete
+space back to continuous space, the summation must be replaced
+with an integration of the form:
+\[
+\mathbb{E}[N] = \int_{\mathcal{S}} \mu(\mathbf{s}, {\bm \beta}) d\mathbf{s}
+\]
 
+As we have repeatedly said throughout this book, although such
+integrals are required when working in continous space, we can rarely
+work in continous space given the limitations of computers and the
+fact that environmental covariates are virtually always represented in
+discrete space. So although EqXXXX looks nice, we will tend to favor
+the summation instead.
+\hl{XXXXX Break, Dec 12 XXXXX}
 
 \begin{comment}
   In the context of spatial capture-recapture models, if one assumes
