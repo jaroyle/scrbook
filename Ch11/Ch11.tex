@@ -580,11 +580,12 @@ will do in the following example. % is
 This example also illustrates the fundamental process that we will
 later embed in our MCMC algorithm used to fit SCR models with IPP.
 
-Suppose we knew the locations of $N=100$ animals' activity
-centers, perhaps as the result of an extensive telemetry study. To
-estimate the intensity surface $\mu(\mathbf{s}, \bm{\beta})$ underlying these
-points, we need to derive the likelihood for our data under this
-model. If we assume $N$ is Poisson distributed and the points are
+Suppose we knew the locations of $N$ animal activity
+centers, perhaps as the result of an extensive telemetry study. %To
+%estimate the intensity surface $\mu(\mathbf{s}, \bm{\beta})$ underlying these
+%points, we need to derive the likelihood for the data under this
+%model.
+If we assume $N$ is Poisson distributed and the points are
 mutually independent of one another, we can fit the
 inhomogeneous Poisson point process model whose likelihood is
 the product of $N$ densities given by
@@ -604,8 +605,9 @@ below.
 First, we simulate some data under the model $\mu(\mathbf{s},
 \bm{\beta}) = \beta_0 + \beta_1\mathrm{ELEV}(\mathbf{s})$, where
 $\mathrm{ELEV}(\mathbf{s})$ is a spatial covariate, say
-elevation. Simulating such data can be
-accomplished using rejection sampling. Rejection sampling proceeds by
+elevation and we prescribe the values $\beta_0=5$ and
+$\beta_1=2$. Simulating such data can be
+accomplished using rejection sampling, which involves
 simulating data from a standard distribution and then accepting or
 rejecting each sample using probabilities defined by the distribution
 of interest. For more information, readers should consult an
@@ -622,42 +624,41 @@ integral on a fine grid of points as we have done in previous
 chapters, but it is useful to gain familiarity with more efficient
 integration functions in \R.
 
-\begin{small}
+\begin{samepage}
+  \begin{small}
 \begin{verbatim}
 # spatial covariate (with mean 0). Let's call it elevation.
 elev.fn <- function(s) x[1]+x[2]-1
 # intensity function
 mu <- function(s, beta) exp(beta*elev.fn(s=x))
 
-# Simulate IPP using rejection sampling
+# Simulate PP using rejection sampling
 set.seed(300225)
-N <- 100
-count <- 1
-s <- matrix(NA, N, 2)
-beta <- 2 # parameter of interest
-elev.fn <- function(s) x[1]+x[2]-1
-# Intensity function, mu(s,beta)
-mu <- function(s, beta) exp(beta*elev.fn(x=x))
-# 2-dimensional integration over space
-int.mu <- R2Cuba:::cuhre(2, 1, mu, beta=beta)$value
-elev.min <- elev.fn(c(0,0)) #elev.fn(cbind(0,0))
-elev.max <- elev.fn(c(1,1)) #elev.fn(cbind(1,1))
-Q <- max(c(exp(beta*elev.min) / int.mu,   #2d(beta),
-           exp(beta*elev.max) / int.mu))   #2d(beta)))
-while(count <= 100) {
+beta0 <- 5 # intercept of intensity function
+beta1 <- 2 # effect of elevation on intensity
+# Next line computes integral, which is expected value of N
+EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1)$value
+N <- rpois(1, EN) # Realized N
+s <- matrix(NA, N, 2) # This matrix will hold the coordinates
+elev.min <- elev.fn1(c(0,0))
+elev.max <- elev.fn1(c(1,1))
+Q <- max(c(exp(beta0 + beta1*elev.min) / EN,
+           exp(beta0 + beta1*elev.max) / EN))
+counter <- 1
+while(counter <= N) {
   x.c <- runif(1, 0, 1); y.c <- runif(1, 0, 1)
-  s.cand <- c(x.c,y.c)
-  pr <- exp(beta*elev.fn(s.cand)) / int.mu #2d(beta)
-  if(runif(1) < pr/Q) {
-    s[count,] <- s.cand
-    count <- count+1
+  s.cand <- c(x.c,y.c) # Candidate point
+  pr <- mu(s.cand, beta0, beta1) / EN
+  if(runif(1) < pr/Q) { # Keep the candidate if TRUE
+    s[counter,] <- s.cand
+    counter <- counter+1
     }
   }
 \end{verbatim}
-\end{small}
+  \end{small}
+\end{samepage}
 
-
-\begin{figure}[ht]
+\begin{figure}%[ht]
 \centering
 \includegraphics[width=5in,height=2.5in]{Ch11/figs/heteroPlots}
 \label{state-space.fig.hetero}
@@ -666,44 +667,45 @@ while(count <= 100) {
   and $\mu(s) = exp(\beta \mbox{elev}(s))$ where $\beta=2$.}
 \end{figure}
 
-The simulated data are shown in Fig~\ref{state-space.fig.hetero}. High elevations
+The 217 simulated points are shown in
+Fig~\ref{state-space.fig.hetero}. High elevations
 are represented by light green and low elevations by dark green. The
-activity centers of 100 animals are shown as
-points, and it is clear that these simulated animals prefer the high
+density of points in apparently higher in the dark green regions
+suggesting that these simulated animals prefer high
 elevations.  %Perhaps they are mountain goats.
-The underlying model describing this preference is
-$\log(\mu(s)) = \exp(\beta \times elev(s))$
-where $\beta=2$ is the parameter to be estimated.
-
-Given these points, we will now estimate $\beta$ by minimizing the
-negative-log-likelihood using \verb+R+'s \verb+optim+ function.
+%The underlying model describing this preference is
+%$\log(\mu(s)) = \exp(\beta \times elev(s))$
+%where $\beta=2$ is the parameter to be estimated.
+Given these points, we will now estimate $\beta_0$ and $\beta_1$ by
+minimizing the negative-log-likelihood using \R's \verb+optim+
+function.
 
 \begin{small}
 \begin{verbatim}
-# Negative log-likelihood
 nll <- function(beta) {
-    int.mu <- R2Cuba:::cuhre(2, 1, mu, beta=beta)$value
-    -sum(beta*elev.fn(s) - log(int.mu))
+    beta0 <- beta[1]
+    beta1 <- beta[2]
+    EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1)$value
+    -(sum(beta0 + beta1*elev.fn2(s)) - EN)
 }
-starting.value <- 0
-fm <- optim(starting.value, nll, method="Brent",
-            lower=-5, upper=5, hessian=TRUE)
-c(Est=fm$par, SE=sqrt(1/fm$hessian)) # estimates and SEs
+starting.values <- c(5, 2)
+fm <- optim(starting.values, nll, hessian=TRUE)
+cbind(Est=fm$par, SE=sqrt(diag(solve(fm$hessian)))) # estimates and SEs
 \end{verbatim}
 \end{small}
 
-
 Maximizing the likelihood took a small fraction of a second, and we
-obtained an estimate of $\hat{\beta}=1.99$. We could plug
+obtained estimates of $\hat{\beta}_0=5.08$ and $\hat{\beta}_1=1.92$,
+which are very close to the data generating values of 5 and 2. We could plug
 this estimate into our linear model at each point in the state-space to
 obtain the MLE for the intensity surface.
 
 This example demonstrates
-that if we had the data we wish we had, {\it i.e.} if we knew the
-coordinates of the activity centers $\bf s$, we could easily estimate the
+that if we had the data we wish we had, i.e. if we knew the
+coordinates of the activity centers $\{\bf s\}$, we could easily estimate the
 parameters governing the underlying point process. Unfortunately, in
-SCR models, the activity centers cannot be directly observed, but
-spatial re-captures provide us with the information needed to
+SCR models, the activity centers cannot be directly observed; however,
+spatial recaptures provide us with the information needed to
 estimate these latent parameters.
 
 \section{Fitting inhomogeneous point process SCR models}

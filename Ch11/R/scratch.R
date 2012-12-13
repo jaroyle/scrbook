@@ -102,25 +102,24 @@ int2d(2, delta=0.03)
 
 # Simulate PP using rejection sampling
 set.seed(300225)
-#N <- 100
-count <- 1
-beta0 <- 5 # parameter of interest
-beta1 <- 2 # parameter of interest
+beta0 <- 5 # intercept of intensity function
+beta1 <- 2 # effect of elevation on intensity
+# Next line computes integral, which is expected value of N
 EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1)$value
-N <- rpois(1, EN)
-s <- matrix(NA, N, 2)
-elev.min <- elev.fn1(c(0,0)) #elev.fn(cbind(0,0))
-elev.max <- elev.fn1(c(1,1)) #elev.fn(cbind(1,1))
-Q <- max(c(exp(beta0 + beta1*elev.min) / EN,   #2d(beta),
-           exp(beta0 + beta1*elev.max) / EN))   #2d(beta)))
-while(count <= N) {
+N <- rpois(1, EN) # Realized N
+s <- matrix(NA, N, 2) # This matrix will hold the coordinates
+elev.min <- elev.fn1(c(0,0))
+elev.max <- elev.fn1(c(1,1))
+Q <- max(c(exp(beta0 + beta1*elev.min) / EN,
+           exp(beta0 + beta1*elev.max) / EN))
+counter <- 1
+while(counter <= N) {
   x.c <- runif(1, 0, 1); y.c <- runif(1, 0, 1)
   s.cand <- c(x.c,y.c)
-#  int.mu <- cuhre(2, 1, mu, beta=beta)$value
   pr <- mu(s.cand, beta0, beta1) / EN
   if(runif(1) < pr/Q) {
-    s[count,] <- s.cand
-    count <- count+1
+    s[counter,] <- s.cand
+    counter <- counter+1
     }
   }
 
