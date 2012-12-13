@@ -213,10 +213,10 @@ occurs at some location in space to the probability that it occurs in
 some pixel of the raster. As we will explain in
 Sec.~\ref{modeling.sec.discrete}, this typically involves changing the
 prior from a uniform distribution to a multinomial or categorical
-distribution. Such a change will result in very little loss
-of information as long as the pixel resolution is fine enough, which
-can be assessed by altering the resolution as demonstrated in
-Chapt.~\ref{chapt.scr0}.
+distribution. %Such a change will result in very little loss
+%of information as long as the pixel resolution is fine enough, which
+%can be assessed by altering the resolution as demonstrated in
+%Chapt.~\ref{chapt.scr0}.
 
 Up to this point in this chapter we have sketched out the basic characteristics
 of homogeneous Poisson and binomial point process models. Now we need
@@ -364,17 +364,17 @@ $\mathbb{E}[N] = \sum_{\mathcal{S}} \mathbb{E}[n(\mathbf{s})]$. As the
 area of the pixels approaches zero, such that we move from discrete
 space back to continuous space, the summation must be replaced
 with an integration of the form:
-\[
-\mathbb{E}[N] = \int_{\mathcal{S}} \mu(\mathbf{s}, {\bm \beta}) d\mathbf{s}
-\]
-
-As we have repeatedly said throughout this book, although such
-integrals are required when working in continous space, we can rarely
-work in continous space given the limitations of computers and the
-fact that environmental covariates are virtually always represented in
-discrete space. So although EqXXXX looks nice, we will tend to favor
-the summation instead.
-\hl{XXXXX Break, Dec 12 XXXXX}
+\begin{equation}
+\mathbb{E}[N] = \int_{\mathbf{s} \in \mathcal{S}} \mu(\mathbf{s}, {\bm \beta}) d\mathbf{s}
+\label{state-space.eq.EN}
+\end{equation}
+% As we have repeatedly said throughout this book, although such
+% integrals are required when working in continous space, we can rarely
+% work in continous space given the limitations of computers and the
+% fact that environmental covariates are virtually always represented in
+% discrete space. So although Eq.~\ref{state-space.eq.EN} looks nice and
+% makes us feel great about using calculus, we will tend to favor
+% the summation in practice.
 
 \begin{comment}
   In the context of spatial capture-recapture models, if one assumes
@@ -415,21 +415,24 @@ the summation instead.
   % we wish to make predictions to unsampled regions, it is useful to
   % include the intercept $\beta_0 = \log(N)$.
 \end{comment}
+
 We have now described an approach to modeling the point process
 intensity, yet in order to define the likelihood or to develop an MCMC
 algorithm for the inhomogeneous model, we need to specify the prior
 distribution for the activity centers. Recall that under the
-homogeneous binomial point process, the prior was
-$\mathbf{s} \sim \text{Uniform}(\mathcal{S})$, or equivalently:
+homogeneous point process, the prior was
+$\mathbf{s}_i \sim \text{Uniform}(\mathcal{S})$, for $i=1,\dots,N$, or
+equivalently:
 \begin{equation}
   \label{state-space.eq.uprior}
-  [\mathbf{s}] = 1/|\mathcal{S}|
+  [\mathbf{s}_i] = 1/|\mathcal{S}|
 \end{equation}
 where once again $|\mathcal{S}|$ denotes the area of the
 state-space. This simply indicates that an activity center is equally
-likely to occur at any location in the state-space, which is
-consistent with the fact that the intensity parameter is a fixed
-constant. However, if animals exhibit habitat selection or simply
+likely to occur at any location in the state-space.
+%, which is consistent with the fact that the intensity parameter is a
+% constant.
+However, if animals exhibit habitat selection or simply
 occur in one region more often than another, it would be preferable to
 replace this prior with one describing the spatial variation in
 density. Clearly this prior should be determined in some way by
@@ -451,7 +454,7 @@ the integral of a probability density function (pdf) must be unity,
 and we can always convert any function into a pdf by dividing it by a
 normalzing constant. In this case, the normalizing constant is the integral
 of $\mu(s, \bm{\beta})$ evaluated over the entire state-space.
-The probability density function is therefore
+The probability density function of the new prior is therefore:
 \begin{equation}
 [\mathbf{s} | \bm{\beta}] = \frac{\mu(s, \bm{\beta})}{\int_{s \in \mathcal{S}} \mu(s, \bm{\beta})\, \mathrm{d}s}
 \label{state-space.eq.pdf.hetero}
@@ -461,8 +464,8 @@ allows us to fit inhomogeneous binomial point process
 models to spatial capture-recapture data. We can also use this
 distribution to obtain the expected number of individuals in any given
 region $B \in \mathcal{S}$. Specifically, the proportion of $N$ expected to occur in
-$B$ is $p(B) = \int_B [\mathbf{s} | \bm{\beta}]\, \mathrm{d}x$. These are
-also the multinomial cell probabilities if the regions are
+$B$ is $\pi(B) = \int_B [\mathbf{s} | \bm{\beta}]\, \mathrm{d}x$. These are
+also the conditional-on-$N$ multinomial cell probabilities if the regions are
 disjoint and compose the entire state-space. We provide an example in
 the next section, and in Fig.\ref{state-space.fig.hetero}.
 
@@ -476,7 +479,7 @@ our state-space covariates are in raster format, i.e. they are
 in discrete space, the integral can be replaced with a sum over
 all pixels,
 \begin{equation}
-[\mathbf{s}, \bm{\beta}] = \frac{\mu(s, \bm{\beta})}{\sum_{s \in \mathcal{S}} \mu(\mathbf{s}, \bm{\beta})\, \mathrm{d}s}
+[\mathbf{s} | \bm{\beta}] = \frac{\mu(s, \bm{\beta})}{\sum_{s \in \mathcal{S}} \mu(\mathbf{s}, \bm{\beta})}%\, \mathrm{d}s}
 \label{eq.pdf.dipp.d}
 \end{equation}
 where $s$ is now defined as ``pixel ID'' rather than a point in space.
@@ -500,10 +503,17 @@ of information is negligible when going from continuous space to
 discrete space. Furthermore, the validity of this assertion, and the
 level of resolution required to adequately approximate continuous
 space can often be assessed by checking the consistency of the
-parameter estimates among varying levels of resolution.
+parameter estimates among varying levels of resolution, as we
+demonstrated in Chapt.~\ref{chapt-scr0}.
 
 We now have all the tools needed to fit inhomogeneous point process
-(IPP) models. If we refer to the distribution $[\mathbf{s} |
+models. Likelihood-based inference for inhomogeneous Poisson point
+process models was described by \citet{borchers_efford:2008} and
+reviewed in Chapt.~\ref{chapt.mle}. Thus, here we focus on the binomial
+model that we favor when conducting Bayesian inference. In the
+previous section we noted that the data augmenation parameter $\psi$
+can be expressed in terms of the intensity parameter $\mu$. The same
+is true for inhomogeneous models. If we refer to the distribution $[\mathbf{s} |
 \bm{\beta}]$ as ``IPP'', we can write a
 hierarchical description of a SCR model with a Poisson encounter
 process and a half-normal detection function as
