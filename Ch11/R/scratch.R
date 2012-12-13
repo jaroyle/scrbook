@@ -131,9 +131,9 @@ nll <- function(beta) {
     beta0 <- beta[1]
     beta1 <- beta[2]
     EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1)$value
-    -sum(beta0 + beta1*elev.fn2(s) - log(EN))
+    -(sum(beta0 + beta1*elev.fn2(s)) - EN)
 }
-starting.values <- c(2, 0)
+starting.values <- c(5, 2)
 fm <- optim(starting.values, nll, hessian=TRUE)
 cbind(Est=fm$par, SE=sqrt(diag(solve(fm$hessian)))) # estimates and SEs
 
