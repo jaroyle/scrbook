@@ -319,9 +319,11 @@ head(dat)
 
 # Simulate IPP
 set.seed(30275)
-N <- 50
+beta0 <- -3
 beta1 <- 2
-dat$cp <- exp(beta1*dat$elev) / sum(exp(beta1*dat$elev))
+EN <- sum(exp(beta0 + beta1*dat$elev))
+N <- rpois(1, EN)
+dat$cp <- exp(beta0 + beta1*dat$elev) / EN
 s.tmp <- rmultinom(1, N, dat$cp) # a single realization to be ignored later
 
 # Trap locations
@@ -470,14 +472,15 @@ cat("
 model{
 sigma ~ dunif(0, 1)
 lam0 ~ dunif(0, 5)
-beta0 <- log(D) # D=density defined below
-beta1 ~ dnorm(0,0.1)
-psi ~ dbeta(1,1)
+beta0 ~ dnorm(0, 0.1) #log(D) # D=density defined below
+beta1 ~ dnorm(0, 0.1)
+#psi ~ dbeta(1,1)
 
 for(j in 1:nPix) {
   mu[j] <- exp(beta0 + beta1*elevation[j])
   probs[j] <- mu[j]/sum(mu[])
 }
+psi <- sum(mu[])/M
 
 for(i in 1:M) {
   w[i] ~ dbern(psi)
@@ -503,7 +506,17 @@ sink()
 modfile <- "ippDiscrete.txt"
 
 jags.data <- with(ch9simData, {
-    list(y=ch.jags, elevation=drop(spcov.jags$elev),
+    list(y=yz, #ch.jags,
+         elevation=drop(spcov.jags$elev),
+            nPix=nrow(spcov.jags),
+            M=nrow(yz), #nrow(ch.jags),
+            ntraps=nrow(traps),
+            Sgrid=as.matrix(spcov.jags[,1:2]),
+            grid=traps)
+    })
+str(jags.data)
+
+jags.data <- list(y=y, elevation=drop(dat$elev),
             nPix=nrow(spcov.jags),
             M=nrow(ch.jags), ntraps=nrow(traps),
             Sgrid=as.matrix(spcov.jags[,1:2]),
@@ -515,9 +528,9 @@ all(matrix(jags.data$elevation, 20, byrow=T) ==
     matrix(covariates(msk)$elev, 20))
 
 init1 <- function() {
-    list(sigma=runif(1), lam0=runif(1), beta=rnorm(1),
+    list(sigma=runif(1), lam0=runif(1), beta0=rnorm(1, -5), beta1=rnorm(1),
          s=sample.int(jags.data$nPix, jags.data$M, replace=TRUE),
-         w=rep(1, jags.data$M), psi=1)
+         w=ifelse(rowSums(jags.data$y)>0, 1, 0))
 }
 str(init1())
 
@@ -526,9 +539,9 @@ pars1 <- c("sigma", "lam0", "beta0", "beta1", "N")
 # Obtain posterior samples. This takes a few minutes
 # Compile and adapt
 system.time({
-set.seed(03453)
-jm <- jags.model(modfile, jags.data, init1, n.chains=2, n.adapt=1000)
-jags1 <- coda.samples(jm, pars1, n.iter=10000)
+    set.seed(03453)
+    jm <- jags.model(modfile, jags.data, init1, n.chains=2, n.adapt=500)
+    jags1 <- coda.samples(jm, pars1, n.iter=1000)
 })
 
 plot(jags1, ask=TRUE)
