@@ -311,7 +311,7 @@ cbind(runif(N), runif(N))  # Coordinates of activity centers
 \end{comment}
 
 
-\section{Inhomogeneous binomial point process}
+\section{Inhomogeneous point processes}
 
 The principal difference between homogeneous and inhomogeneous point
 processes is that the intensity parameter $\mu$ is allowed to vary spatially
@@ -480,7 +480,7 @@ in discrete space, the integral can be replaced with a sum over
 all pixels,
 \begin{equation}
 [\mathbf{s} | \bm{\beta}] = \frac{\mu(s, \bm{\beta})}{\sum_{s \in \mathcal{S}} \mu(\mathbf{s}, \bm{\beta})}%\, \mathrm{d}s}
-\label{eq.pdf.dipp.d}
+\label{state-space.eq.pdf.hetero.d}
 \end{equation}
 where $s$ is now defined as ``pixel ID'' rather than a point in space.
 
@@ -513,20 +513,31 @@ reviewed in Chapt.~\ref{chapt.mle}. Thus, here we focus on the binomial
 model that we favor when conducting Bayesian inference. In the
 previous section we noted that the data augmenation parameter $\psi$
 can be expressed in terms of the intensity parameter $\mu$. The same
-is true for inhomogeneous models. If we refer to the distribution $[\mathbf{s} |
-\bm{\beta}]$ as ``IPP'', we can write a
-hierarchical description of a SCR model with a Poisson encounter
-process and a half-normal detection function as
+is true for inhomogeneous models. Specifically, rather than
+$\mathbb{E}[N] = \psi M$ as before, we use expected value of $N$ shown
+in Eq.~\ref{state-space.eq.EN} which results in
+\begin{equation}
+\psi = \frac{\int_{\mathbf{s} \in \mathcal{S}} \mu(\mathbf{s}, \bm{\beta})}{M}
+\label{state-space.eq.psimu}
+\end{equation}
+As before, the data augmentation limit $M$ must be high enough so that
+it is greater than the numberator shown above, i.e. the expected value
+of $N$ must be less than $M$.
+
+If we refer to the distribution $[\mathbf{s} | \bm{\beta}]$ as
+``IPP'', we can write a hierarchical description of a SCR model with a
+Binomial encounter process and a half-normal detection function as
 \begin{gather*}
-w_i \sim \mbox{Bern}(\psi) \\
+w_i \sim \mbox{Bernoulli}(\psi) \\
 {\bf s_i} \sim \mbox{IPP}(\mu(s,\beta)) \\
-\lambda_{ij} = \lambda_0 \exp(-\|{\bf s_i} - {\bf x_{j}}\|^2/(2\sigma^2)) \\
-y_{ij} \sim \mbox{Poisson}(\lambda_{ij} w_i)
+p_{ij} = p_0 \exp(-\|{\bf s_i} - {\bf x_{j}}\|^2/(2\sigma^2)) \\
+y_{ij} \sim \mbox{Binomial}(K, p_{ij} w_i)
 \end{gather*}
-The use of $\mbox{IPP}(\mu(s, \beta))$ instead of
-$\mbox{Unif}(\cal{S})$ is the only difference between a homogeneous
-point process model and an inhomogeneous point process model, and the
-two are equivalent when $\bm{\beta}=0$.
+The new prior for $\mathbf{s}_i$ and Eq.~\ref{state-space.eq.psimu}
+%use of $\mbox{IPP}(\mu(s, \beta))$ instead of
+%$\mbox{Uniform}(\cal{S})$ is the
+are the key differences between homogeneous an inhomogeneous
+models. %, and the %two are equivalent when $\bm{\beta}=0$.
 
 \begin{comment}
 The IPP for the activity centers
@@ -542,9 +553,9 @@ In the next sections we walk through a few examples, building up from
 the simplest case where we actually observe the activity centers as
 though they were data. In the second example, we fit our new model to simulated
 data in which density is a function of a single continuous
-covariate. \hl{To build upon the developments in the previous chapter, we
+covariate. \hl{XXXX NOT DONE YET: To build upon the developments in the previous chapter, we
 further consider the plausible case where a state-space covariate is also a
-covariate of ecological distance.} A small simulation study indicates
+covariate of ecological distance. XXXX} A small simulation study indicates
 that both effects can be estimated. A fourth example shows an analysis in discrete space using
 both \secr~\citep{efford:2011} and \jags~\citep{plummer:2003}. In the
 fifth and final example, we model the intensity of
@@ -553,65 +564,67 @@ activity centers for a real dataset collected on jaguars
 
 \section{Observed Point Processes}
 
-In SCR models, the point process is not directly observed, but in
-other contexts it is. Examples include the locations of disease
-outbreaks, the locations of trees in a forest, or the locations of
-radio-tracked animals. Indeed Eq.~\ref{eq.pdf.ipp} has been used
-extensively in the radio-telemetry literature to model so-called
-``resource selection functions'' \citep{manly_etal:2002,lele_keim:2006}.
-When the point locations are directly observed,
-estimating the parameters $\bf \beta$ is straight-forward as
-demonstrated in the following example. This example also illustrates
-the fundamental process that we will later embed in our MCMC algorithm
-used to fit SCR models with IPP.
+In SCR models, the points (e.g. activity centers) are not directly
+observed, but in other contexts they are. Examples include the
+locations of disease outbreaks, the locations of trees in a forest, or
+the locations of radio-tracked animals. In such cases, it is
+straightforward to fit inhomogeneous point process models and estimate the
+%Indeed Eq.~\ref{eq.pdf.ipp}
+%has been used extensively in the radio-telemetry literature to model
+%so-called ``resource selection functions''
+%\citep{manly_etal:2002,lele_keim:2006}. When the point locations are
+%directly observed, estimating
+the parameters $\bm \beta$ from Eq.~\ref{state-space.eq.loglin}, as we
+will do in the following example. % is
+%straight-forward as demonstrated in the following example.
+This example also illustrates the fundamental process that we will
+later embed in our MCMC algorithm used to fit SCR models with IPP.
 
-Suppose we knew the locations of 100 animals' activity
+Suppose we knew the locations of $N=100$ animals' activity
 centers, perhaps as the result of an extensive telemetry study. To
-estimate the intensity surface $\mu(s, \beta)$ underlying these
+estimate the intensity surface $\mu(\mathbf{s}, \bm{\beta})$ underlying these
 points, we need to derive the likelihood for our data under this
-model. Given the probability density function $f(s, \beta)$
-(Eq.~\ref{eq.pdf.ipp}) and assuming that the points are
-mutually independent of one another,
-the likelihood is given by the product
-of $n$ such terms, where $n=100$ is the sample size in our
-hypothetical example,
-\emph{i.e.} the observed number of activity centers.
+model. If we assume $N$ is Poisson distributed and the points are
+mutually independent of one another, we can fit the
+inhomogeneous Poisson point process model whose likelihood is simply
+the product of $N$ densities given by
+Eq.~\ref{state-space.eq.pdf.hetero}. The log-likelihood is thus:
 \[
-\mathcal{L}({\bf \beta} | {\bf x}_i, \beta) = \prod_{i=1}^n f(s_i)
+\ell({\bm \beta} | \{{\bf s}_i\}) = \sum_{i=1}^N
+\log(\mu(\mathbf{s}_i, \bm{\beta})) - \int_{\mathbf{s} \in
+  \mathcal{S}} \log(\mu(\mathbf{s}, \bm{\beta} d\mathrm{s}))
 \]
 Having defined the likelihood we could choose a prior distribution for
-$\beta$ and obtain the posterior distribution of
-$\bf \beta$ using Bayesian methods, or we can find the maximum likelihood
+$\bm \beta$ and obtain the posterior distribution of
+$\bm \beta$ using Bayesian methods, or we can find the maximum likelihood
 estimates (MLEs) using standard numerical methods as is demonstrated
 below.
 
-First, we simulate some data. Simulating data under an inhomogeneous point process model is often
-accomplished using indirect methods such as rejection
-sampling. Rejection sampling proceeds by
+First, we simulate some data under the model $\mu(\mathbf{s},
+\bm{\beta}) = \beta_0 + \beta_1\mathrm{ELEV}(\mathbf{s})$, where
+$\mathrm{ELEV}(\mathbf{s})$ is a spatial covariate, say
+elevation. Simulating data under an inhomogeneous
+point process model is often accomplished using indirect methods such
+as rejection sampling. Rejection sampling proceeds by
 simulating data from a standard distribution and then accepting or
 rejecting each sample using probabilities defined by the distribution
 of interest. For more information, readers should consult an
 accessible text such as \citet{robert_casella:2010}. In our example, we
 simulate from a uniform distribution and then accept or reject using
-the (scaled) probability density function $f(s, \beta)$. Note that we first define a
-spatial covariate (elevation) that is a simple function of the spatial
-coordinates increasing from the southwest to the northeast of our
-state-space.\footnote{Such functional forms of
-covariates are rarely available. Instead,  continuous spatial
-covariates are more often measured on a discrete grid.}
-
-The following \R~commands demonstrate the use of rejection sampling to
-simulate an inhomogeneous point process for the covariate depicted in
+the (scaled) probability density function $[\mathbf{s},
+\bm{\beta}]$. The following \R~commands demonstrate the use of
+rejection sampling to simulate an inhomogeneous point process for the
+elevation covariate depicted in
 Fig.~\ref{state-space.fig.hetero}. The code uses the \verb+cuhre+ function in
-the {\tt R2Cuba} package to integrate the intensity function over
-space \citep{hahn_etal:2011}. An alternative would be to evaluate the
+the {\tt R2Cuba} package to compute the two-dimensional integral
+\citep{hahn_etal:2011}. An alternative would be to evaluate the
 integral on a fine grid of points as we have done in previous
 chapters, but it is useful to gain familiarity with more efficient
 integration functions in \R.
 
 \begin{small}
 \begin{verbatim}
-# spatial covariate (with mean 0)
+# spatial covariate (with mean 0). Let's call it elevation.
 elev.fn <- function(s) x[1]+x[2]-1
 # intensity function
 mu <- function(s, beta) exp(beta*elev.fn(s=x))

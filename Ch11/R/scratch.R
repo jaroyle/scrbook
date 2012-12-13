@@ -12,7 +12,7 @@ n.k <- table(cut(s[,1], seq(0, 1, 0.2)),
 
 
 # plot continuous space and discrete space
-png("figs/homoPlots.png", width=5, height=2.5, units="in", res=400)
+png("../figs/homoPlots.png", width=5, height=2.5, units="in", res=400)
 op <- par(mfrow=c(1, 2), mai=c(0.1, 0.1, 0.1, 0.1))
 plot(s, frame=T, ann=FALSE, axes=FALSE, asp=1, cex=0.5)
 #segments(seq(0, 1, 0.2), 0, seq(0, 1, 0.2), 1, col=gray(0.5))
@@ -75,60 +75,67 @@ a
 
 
 # spatial covariate (with mean 0)
-#elev.fn <- function(x) x[,1]+x[,2]-1
-elev.fn <- function(x) x[1]+x[2]-1
+elev.fn1 <- function(x) x[1]+x[2]-1
+elev.fn2 <- function(x) x[,1]+x[,2]-1
 
-mu <- function(x, beta) exp(beta*elev.fn(x=x))
+mu <- function(x, beta0, beta1) exp(beta0 + beta1*elev.fn1(x=x))
 
 library(R2Cuba)
-xx <- cuhre(2, 1, mu, lower=c(0,0), upper=c(1,1), beta=2)
+xx <- cuhre(2, 1, mu, lower=c(0,0), upper=c(1,1), beta0=0, beta1=2)
 
-xx <- cuhre(2, 1, mu, lower=c(0,0), upper=c(1,1), beta=2,
+xx <- cuhre(2, 1, mu, lower=c(0,0), upper=c(1,1), beta0=0, beta1=2,
             flags=list("verbose"=0))
 
-
 # 2-dimensional integration over unit square
-int2d <- function(beta, delta=0.02) {
+int2d <- function(beta0=0, beta1=2, delta=0.02) {
   z <- seq(delta/2, 1-delta/2, delta)
   len <- length(z)
   cell.area <- delta*delta
   S <- cbind(rep(z, each=len), rep(z, times=len))
-#  sum(exp(beta*elev.fn(S)) * cell.area)
-  sum(exp(beta*(S[,1]+S[,2]-1)) * cell.area)
+  sum(exp(beta0 + beta1*elev.fn2(S)) * cell.area)
   }
+
+int2d(2, delta=0.001)
+int2d(2, delta=0.01)
+int2d(2, delta=0.02)
+int2d(2, delta=0.03)
 
 # Simulate PP using rejection sampling
 set.seed(300225)
-N <- 100
+#N <- 100
 count <- 1
+beta0 <- 5 # parameter of interest
+beta1 <- 2 # parameter of interest
+EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1)$value
+N <- rpois(1, EN)
 s <- matrix(NA, N, 2)
-beta <- 2 # parameter of interest
-int.mu <- cuhre(2, 1, mu, beta=beta)$value
-elev.min <- elev.fn(c(0,0)) #elev.fn(cbind(0,0))
-elev.max <- elev.fn(c(1,1)) #elev.fn(cbind(1,1))
-Q <- max(c(exp(beta*elev.min) / int.mu,   #2d(beta),
-           exp(beta*elev.max) / int.mu))   #2d(beta)))
-while(count <= 100) {
+elev.min <- elev.fn1(c(0,0)) #elev.fn(cbind(0,0))
+elev.max <- elev.fn1(c(1,1)) #elev.fn(cbind(1,1))
+Q <- max(c(exp(beta0 + beta1*elev.min) / EN,   #2d(beta),
+           exp(beta0 + beta1*elev.max) / EN))   #2d(beta)))
+while(count <= N) {
   x.c <- runif(1, 0, 1); y.c <- runif(1, 0, 1)
   s.cand <- c(x.c,y.c)
 #  int.mu <- cuhre(2, 1, mu, beta=beta)$value
-  pr <- exp(beta*elev.fn(s.cand)) / int.mu #2d(beta)
+  pr <- mu(s.cand, beta0, beta1) / EN
   if(runif(1) < pr/Q) {
     s[count,] <- s.cand
     count <- count+1
     }
   }
 
+plot(s)
 
 # Maximum likelihood
 nll <- function(beta) {
-    int.mu <- cuhre(2, 1, mu, beta=beta)$value
-    -sum(beta*elev.fn(s) - log(int.mu))
+    beta0 <- beta[1]
+    beta1 <- beta[2]
+    EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1)$value
+    -sum(beta0 + beta1*elev.fn2(s) - log(EN))
 }
-starting.value <- 0
-fm <- optim(starting.value, nll, method="Brent",
-            lower=-5, upper=5, hessian=TRUE)
-c(Est=fm$par, SE=sqrt(1/fm$hessian)) # estimates and SEs
+starting.values <- c(2, 0)
+fm <- optim(starting.values, nll, hessian=TRUE)
+cbind(Est=fm$par, SE=sqrt(diag(solve(fm$hessian)))) # estimates and SEs
 
 
 
@@ -140,12 +147,11 @@ n.k <- table(cut(s[,1], seq(0, 1, 0.2)),
 
 
 # plot continuous space and discrete space
-png("figs/heteroPlots.png", width=5, height=2.5, units="in", res=400)
+png("../figs/heteroPlots.png", width=5, height=2.5, units="in", res=400)
 op <- par(mfrow=c(1, 2), mai=c(0.1, 0.1, 0.1, 0.1))
 Sx <- seq(0.01, 0.99, 0.01)
 len <- length(Sx)
 S <- cbind(rep(Sx, each=len), rep(Sx, times=len))
-elev.fn2 <- function(x) x[,1]+x[,2]-1
 elev <- elev.fn2(S)
 image(Sx, Sx, matrix(elev, len), col=rgb(0,seq(0.1,1,0.01),0,0.8),
       ann=FALSE, axes=FALSE, asp=1)
