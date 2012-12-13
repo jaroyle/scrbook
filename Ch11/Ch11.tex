@@ -203,33 +203,31 @@ pixel. However, if there are only 2 pixels, then clearly the number of
 points in one pixel allows one to determine how many points will occur in the
 remaining pixel.
 
-The discrete space representation of %the binomial
-point processes is not only helpful for understanding their
-properties, it is also of practical importance when fitting SCR models
-because spatial covariates are almost always represented in as
-rasters. In such cases, we can change the the definition of the prior for
-activity centers from the probability that a point occurs at some
-point in space to the probability that it occurs in some pixel
-of the raster. This discretization will result in very little loss
+The discrete representation of space shown in
+Fig.~\ref{state-space.fig.homo} is not only helpful for understanding
+the properties of a point process, it is also of practical importance
+when fitting SCR models because spatial covariates are almost always
+represented in as rasters. In such cases, the definition of the prior for
+the point locations can be changed from the probability that a point
+occurs at some location in space to the probability that it occurs in
+some pixel of the raster. As we will explain in
+Sec.~\ref{modeling.sec.discrete}, this typically involves changing the
+prior from a uniform distribution to a multinomial or categorical
+distribution. Such a change will result in very little loss
 of information as long as the pixel resolution is fine enough, which
-can be assessed by decreasing the resolution, as
-demonstrated in Chapt.~\ref{chapt.scr0}.
-%  To do this, we can change the prior from the uniform
-%  distribution to the multinomial distribution, or equivalently, the
-%  categorical distribution as demonstrated in
-%  Sec.~\ref{modeling.sec.discrete}.
-  % In the latter case, the activity center is simply defined as an
-  % integer representing pixel ``id''.
-%\end{comment}
+can be assessed by altering the resolution as demonstrated in
+Chapt.~\ref{chapt.scr0}.
 
-So far in this chapter we have sketched out, in general terms, the basic characteristics
+Up to this point in this chapter we have sketched out the basic characteristics
 of homogeneous Poisson and binomial point process models. Now we need
 to speak more specifically about their relevance to SCR models before we move on
-to the inhomogeneous models.
+to the inhomogeneous models. %Much of this has already been in previous
+%chapters, but we feel it is important enough to review here.
 In a SCR model with a homogeneous point process, the intensity
 parameter $\mu$ is interpretted as population density, and $N$ is
-interpretted as population size\footnote{Defined as the number of activity centers in
-$\mathcal{S}$}. These interpretations are true regardless of whether we consider the
+interpretted as population size\footnote{Strictly speaking, $N$ is the
+  number of activity centers in $\mathcal{S}$}. These interpretations
+are true regardless of whether we consider the
 Poisson model or the binomial model, but since $N$ is always unknown, one
 might wonder why we are discussing the binomial model at all. %Indeed,
 %the binomial model was not mentioned by \citet{efford:2004} or
@@ -249,15 +247,15 @@ process, where $\psi$ is the thinning parameter.
 With this in mind,
 the only real difference between the Poisson and binomial models, as
 implemented in SCR contexts, is that in the former, we have
-$N \sim \text{Poisson}(\mu|\mathcal{S})$, and it the latter we have
+$N \sim \text{Poisson}(\mu|\mathcal{S})$, and in the latter we have
 $N \sim \text{Binomial}(M, \psi)$. In other words, we just have a
 different prior on $N$, and when using MCMC, the binomial prior is
 much more convienient becuase it fixes the size of the parameter space
 and makes it easy to extend the model in each of the ways discussed in
 this book. It is also worth remembering that the Poisson
 distribution is the limit of the binomial distribution when $M$ is
-very high and $\psi$ is very low (Chapt.~\ref{chapt.modeling}), so the two models are actually
-equivalent in such cases.
+very high and $\psi$ is very low (Chapt.~\ref{chapt.modeling}), and
+thus the two models are much more similar than may appear.
 
 You might have noticed that the intensity parameter $\mu$ was not shown for the
 binomial prior $N \sim \text{Binomial}(M, \psi)$. Instead, we see the
@@ -319,31 +317,36 @@ The principal difference between homogeneous and inhomogeneous point
 processes is that the intensity parameter $\mu$ is allowed to vary spatially
 in the inhomogeneous model. Thus, rather than $\mu$ being a fixed constant,
 it is now a function defined at each point $\mathbf{s} \in
-\mathcal{S}$. Typically, the function is determined by
+\mathcal{S}$. A vast number of options exist for modeling spatial
+variation in the intensity of a point process
+\citep{cox:1955,stoyan_penttinen:2000,illian_etal:2008}, but here we
+focus on modeling $\mu$ as a function of
 spatially-referenced covariates and a vector of regression
-coefficients $\bm \beta$, thus we denote the function $\mu(\mathbf{s},
-\bm{\beta})$. Since the intensity must be %strictly
-positive, and because the natural logarithm is the canonical link
-function of the Poisson generalized linear model, it is natural to
-consider the following model:
+coefficients $\bm \beta$; a function we will denote $\mu(\mathbf{s},
+\bm{\beta})$. To be clear, $\mu(\mathbf{s}, \bm{\beta})$, is a
+function that returns the expected density of activity centers at
+location $\bf s$, given the covariate values at $\bf s$.  Since the
+intensity must be positive, and because the natural logarithm is the
+canonical link function of the Poisson generalized linear model
+\citep{mccullagh_nelder:1989}, it is natural to consider the following model:
 \begin{equation}
-  \log(\mu(\mathbf{s}, {\bm \beta})) = \beta_0 + \sum_{v=1}^V \beta_v z(\mathbf{s})_v, %\quad  \mathbf{s} \in \cal{S}
+  \log(\mu(\mathbf{s}, {\bm \beta})) = \beta_0 + \sum_{v=1}^V \beta_v z_v(\mathbf{s})%, \quad  \mathbf{s} \in \cal{S}
   \label{state-space.eq.loglin}
 \end{equation}
 which says that there are $V$ covariates and $\beta_v$ is the
-regression coefficient for covariate
-$z(\mathbf{s})_v$. To be clear, $z(\mathbf{s})_v$ is the value of a covariate, such as
-habitat type or elevation, at location $\bf s$, and it assumed to be
-defined at all locations in the state-space. This equation should look
-familiar because it is the standard linear predictor used in log-linear
-GLMs.
+regression coefficient for covariate $z_v(\mathbf{s})$. This
+covariate, $z_v(\mathbf{s})$, could be any variable defined at all points
+in the state-space, such as habitat type or elevation.
+Eq.~\ref{state-space.eq.loglin} should look familiar because it is the
+standard linear predictor used in Poisson regression. As with other
+GLMs, one could consider alternative link functions.
 
 Recall from the previous section that for a homogeneous point process,
 the expected number of points in the state-space was simply the
 intensity parameter multiplied by area: $\mathbb{E}[N] =
 \mu|\mathcal{S}|$. But now that we are regarding the intensity as a
 function, rather than a scalar, this equation is not very useful. So
-what is $\mathbb{E}[N]$ for an inhomogeneous point process.
+what is $\mathbb{E}[N]$ for an inhomogeneous point process?
 %And why do
 %we care? Well, hopefully you remember that the reason we need a
 %the reason we care is that we want a model that
