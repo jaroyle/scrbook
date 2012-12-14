@@ -211,9 +211,9 @@ dev.off()
 # Generate new activity centers on a [0,100] x [0,100] square
 
 # Simulate PP using rejection sampling
-set.seed(325)
-beta0 <- 5 # intercept of intensity function
-beta1 <- 2 # effect of elevation on intensity
+set.seed(32225)
+beta0 <- -2 # intercept of intensity function
+beta1 <- 0.05 # effect of elevation on intensity
 # Next line computes integral, which is expected value of N
 elev.fn3 <- function(x) x[1]+x[2]-200
 mu2 <- function(x, beta0, beta1) exp(beta0 + beta1*elev.fn3(x))
@@ -223,7 +223,7 @@ EN
 (N <- rpois(1, EN)) # Realized N
 s <- matrix(NA, N, 2) # This matrix will hold the coordinates
 elev.min <- elev.fn3(c(0,0))
-elev.max <- elev.fn3(c(1,1))
+elev.max <- elev.fn3(c(100,100))
 Q <- max(c(exp(beta0 + beta1*elev.min) / EN,
            exp(beta0 + beta1*elev.max) / EN))
 counter <- 1
@@ -251,12 +251,12 @@ ntraps <- nrow(X)
 T <- 5
 y <- array(NA, c(N, ntraps, T))
 
-nz <- 50 # augmentation
+nz <- 100 # augmentation
 M <- nz+nrow(y)
 yz <- array(0, c(M, ntraps, T))
 
-sigma <- 10  # half-normal scale parameter
-lam0 <- 0.5   # basal encounter rate
+sigma <- 5  # half-normal scale parameter
+lam0 <- 1   # basal encounter rate
 lam <- matrix(NA, N, ntraps)
 
 set.seed(5588)
@@ -268,8 +268,10 @@ for(i in 1:N) {
     }
 }
 table(y)
+c(N=N, n=sum(apply(y>0, 1, any)))
 yz[1:nrow(y),,] <- y # Fill
 
+plot(s)
 
 
 
@@ -278,12 +280,12 @@ yz[1:nrow(y),,] <- y # Fill
 
 
 library(scrbook)
-set.seed(3434)
 
 source("../../Rpackage/scrbook/R/Ch11.R")
 
-fm1 <- scrIPP(yz, X, M, 6000, xlims=c(0,100), ylims=c(0,100),
-            tune=c(2, 0.08, 0.3, 5) )
+set.seed(3434)
+fm1 <- scrIPP(yz, X, M, 5000, xlims=c(0,100), ylims=c(0,100),
+            tune=c(0.3, 0.1, 0.2, 0.01, 5), beta.init=c(-2, 0.05) )
 
 debugonce(scrIPP)
 
@@ -291,6 +293,7 @@ debugonce(scrIPP)
 plot(mcmc(fm1$out))
 rejectionRate(mcmc(fm1$out))
 
+plot(fm1$last$S)
 
 fm1.s <- summary(window(mcmc(fm1$out), start=1001))
 fm1.r <- cbind(fm1.s$stat[,1:2], fm1.s$quant[,c(1,3,5)])
