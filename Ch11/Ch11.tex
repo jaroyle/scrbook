@@ -365,7 +365,7 @@ area of the pixels approaches zero, such that we move from discrete
 space back to continuous space, the summation must be replaced
 with an integration of the form:
 \begin{equation}
-\mathbb{E}[N] = \int_{\mathbf{s} \in \mathcal{S}} \mu(\mathbf{s}, {\bm \beta}) d\mathbf{s}
+\mathbb{E}[N] = \int_{\mathbf{s} \in \mathcal{S}} \mu(\mathbf{s}, {\bm \beta}) \mathrm{d}\mathbf{s}
 \label{state-space.eq.EN}
 \end{equation}
 % As we have repeatedly said throughout this book, although such
@@ -376,47 +376,8 @@ with an integration of the form:
 % makes us feel great about using calculus, we will tend to favor
 % the summation in practice.
 
-\begin{comment}
-  In the context of spatial capture-recapture models, if one assumes
-  an inhomogeneous Poisson point process for the activity centers,
-  then each of the $\bm \beta$ parameters is identifiable, and the
-  intercept $\beta_0$ is interpretted as population density when all
-  covariates equal zero. However, in the case of an inhomogeneous
-  binomial point process, in which we condition on $N$, the intercept
-  $\beta_0$ is not a unique parameter to be estimated because it is
-  entirely confounded with $N$. In other words, $beta_0$ has already
-  been defined. For example, in our MCMC algorithm we model population
-  size as $N \sim \text{Binomial}(M, \psi)$
-  % Note, however, that we have not included an intercept. The reason
-  % for this is that it would be confounded with $N$ (see
-  % Chapt. \ref{chapt.hscr}).  The reason for this is
-  % that %This should be intuitive since
-  $\beta_0$ represents population density at the location $s$ when
-  % , the expected value of $N$ in some infinitesimally small area
-  % when the other $\beta$'s equal 0. However, we already have a
-  % parameter in the model for expected abundance, namely
-  % $\mathbb{E}[D] = N/A(\mathcal{S}) = \psi M / A(\mathcal{S})$
-  \footnote{Remember, $M$ is the size of the augmented population, and
-    $\psi$ is the probability that a member of $M$ is an actual
-    constituent of the population (Chapt.~\ref{chapt.scr0}).}  and
-  hence it would be redundant to also try to estimate
-  $\beta_0$. Instead, simply define the intercept as $\beta_0 =
-  N/|\mathcal{S}|$. %, which is to say that the intercept is
 
-  In practice, we could remove $\beta0$ from
-  Eq.~\ref{state-space.eq.loglin} altogether, which would still allow
-  us to model a value proportional to the intensity. However, if we
-  wish to make predictions from our fitted model, such as predictions
-  of abundance in unsampled regions, it is necessary to retain
-  $\beta_0$ in the model.
-  % an intercept would be redundant, and without it we are still able
-  % to achieve our goal of describing the distribution of $N$ activity
-  % centers as a function of spatial covariates. One caveat is that if
-  % we wish to make predictions to unsampled regions, it is useful to
-  % include the intercept $\beta_0 = \log(N)$.
-\end{comment}
-
-We have now described an approach to modeling the point process
+We have now described an approach for modeling the point process
 intensity, yet in order to define the likelihood or to develop an MCMC
 algorithm for the inhomogeneous model, we need to specify the prior
 distribution for the activity centers. Recall that under the
@@ -456,18 +417,19 @@ normalzing constant. In this case, the normalizing constant is the integral
 of $\mu(s, \bm{\beta})$ evaluated over the entire state-space.
 The probability density function of the new prior is therefore:
 \begin{equation}
-[\mathbf{s} | \bm{\beta}] = \frac{\mu(s, \bm{\beta})}{\int_{s \in \mathcal{S}} \mu(s, \bm{\beta})\, \mathrm{d}s}
+[\mathbf{s}_i | \bm{\beta}] = \frac{\mu(\mathbf{s}_i, \bm{\beta})}{\int_{\mathbf{s} \in \mathcal{S}} \mu(\mathbf{s}, \bm{\beta})\, \mathrm{d}s}
 \label{state-space.eq.pdf.hetero}
 \end{equation}
 Substituting the uniform prior with this new distribution
 allows us to fit inhomogeneous binomial point process
-models to spatial capture-recapture data. We can also use this
-distribution to obtain the expected number of individuals in any given
-region $B \in \mathcal{S}$. Specifically, the proportion of $N$ expected to occur in
-$B$ is $\pi(B) = \int_B [\mathbf{s} | \bm{\beta}]\, \mathrm{d}x$. These are
-also the conditional-on-$N$ multinomial cell probabilities if the regions are
-disjoint and compose the entire state-space. We provide an example in
-the next section, and in Fig.\ref{state-space.fig.hetero}.
+models to spatial capture-recapture data.
+%We can also use this
+%distribution to obtain the expected number of individuals in any given
+%region $B \in \mathcal{S}$. Specifically, the proportion of $N$ expected to occur in
+%$B$ is $\pi(B) = \int_B [\mathbf{s} | \bm{\beta}]\, \mathrm{d}x$. These are
+%also the conditional-on-$N$ multinomial cell probabilities if the regions are
+%disjoint and compose the entire state-space. We provide an example in
+%the next section, and in Fig.\ref{state-space.fig.hetero}.
 
 As a practical matter, note that the integral in the
 denominator of $[\mathbf{s}, \bm{\beta}]$ is evaluated over space, and since we always regard
@@ -479,7 +441,7 @@ our state-space covariates are in raster format, i.e. they are
 in discrete space, the integral can be replaced with a sum over
 all pixels,
 \begin{equation}
-[\mathbf{s} | \bm{\beta}] = \frac{\mu(s, \bm{\beta})}{\sum_{s \in \mathcal{S}} \mu(\mathbf{s}, \bm{\beta})}%\, \mathrm{d}s}
+[\mathbf{s}_i | \bm{\beta}] = \frac{\mu(\mathbf{s}_i, \bm{\beta})}{\sum_{\mathbf{s} \in \mathcal{S}} \mu(\mathbf{s}, \bm{\beta})}%\, \mathrm{d}s}
 \label{state-space.eq.pdf.hetero.d}
 \end{equation}
 where $s$ is now defined as ``pixel ID'' rather than a point in space.
@@ -495,7 +457,7 @@ interpolator, as demonstrated by \citet{rathbun:1996}. Another option
 is to sample the spatial covariates using probabalistic sampling
 methods, which allow for design-based estimators of their values for
 the entire study area \citep{rathbun_etal:2007}. Either option could
-be implemented as part of the MCMC algorithm, but even though such
+be implemented using maximum likelihood or MCMC; however, even though such
 approaches are technically necessary, we do not demonstrate them here
 because it seems likely that they will be inconsequential in most
 cases where the raster data are of high resolution, such that the loss
@@ -503,13 +465,14 @@ of information is negligible when going from continuous space to
 discrete space. Furthermore, the validity of this assertion, and the
 level of resolution required to adequately approximate continuous
 space can often be assessed by checking the consistency of the
-parameter estimates among varying levels of resolution, as we
+parameter estimates among varying levels of resolution, as was
 demonstrated in Chapt.~\ref{chapt-scr0}.
 
 We now have all the tools needed to fit inhomogeneous point process
 models. Likelihood-based inference for inhomogeneous Poisson point
 process models was described by \citet{borchers_efford:2008} and
-reviewed in Chapt.~\ref{chapt.mle}. Thus, here we focus on the binomial
+reviewed in Chapt.~\ref{chapt.mle}. Another example is demonstrated in
+the next section, but first we focus on the binomial
 model that we favor when conducting Bayesian inference. In the
 previous section we noted that the data augmenation parameter $\psi$
 can be expressed in terms of the intensity parameter $\mu$. The same
@@ -517,11 +480,12 @@ is true for inhomogeneous models. Specifically, rather than
 $\mathbb{E}[N] = \psi M$ as before, we use expected value of $N$ shown
 in Eq.~\ref{state-space.eq.EN} which results in
 \begin{equation}
-\psi = \frac{\int_{\mathbf{s} \in \mathcal{S}} \mu(\mathbf{s}, \bm{\beta})}{M}
+\psi = \frac{\int_{\mathbf{s} \in \mathcal{S}} \mu(\mathbf{s},
+  \bm{\beta}) \, \mathrm{d}\mathrm{s}}{M}
 \label{state-space.eq.psimu}
 \end{equation}
 As before, the data augmentation limit $M$ must be high enough so that
-it is greater than the numberator shown above, i.e. the expected value
+it is greater than the numerator---i.e. the expected value
 of $N$ must be less than $M$.
 
 If we refer to the distribution $[\mathbf{s} | \bm{\beta}]$ as
@@ -564,7 +528,7 @@ activity centers for a real dataset collected on jaguars
 
 \section{Observed Point Processes}
 
-In SCR models, the points (e.g. activity centers) are not directly
+In SCR models, the points (activity centers) are not directly
 observed, but in other contexts they are. Examples include the
 locations of disease outbreaks, the locations of trees in a forest, or
 the locations of radio-tracked animals. In such cases, it is
@@ -578,7 +542,8 @@ the parameters $\bm \beta$ from Eq.~\ref{state-space.eq.loglin}, as we
 will do in the following example. % is
 %straight-forward as demonstrated in the following example.
 This example also illustrates the fundamental process that we will
-later embed in our MCMC algorithm used to fit SCR models with IPP.
+later embed in our MCMC algorithm used to fit SCR models that include
+an inhomogeneous point process.
 
 Suppose we knew the locations of $N$ animal activity
 centers, perhaps as the result of an extensive telemetry study. %To
@@ -605,11 +570,13 @@ below.
 First, we simulate some data under the model $\mu(\mathbf{s},
 \bm{\beta}) = \beta_0 + \beta_1\mathrm{ELEV}(\mathbf{s})$, where
 $\mathrm{ELEV}(\mathbf{s})$ is a spatial covariate, say
-elevation and we prescribe the values $\beta_0=5$ and
-$\beta_1=2$. Simulating such data can be
-accomplished using rejection sampling, which involves
+elevation, and $\beta_0=5$ and
+$\beta_1=2$. Simulating data from an inhomogeneous point process is
+not as simple as simulation data from an homogeneous point process
+because the points are no longer uniformly distributed within the
+state-space. Instead one must resort to methods such as rejection sampling, which involves
 simulating data from a standard distribution and then accepting or
-rejecting each sample using probabilities defined by the distribution
+rejecting each point using probabilities defined by the distribution
 of interest. For more information, readers should consult an
 accessible text such as \citet{robert_casella:2010}. In our example, we
 simulate from a uniform distribution and then accept or reject using
@@ -628,7 +595,7 @@ integration functions in \R.
   \begin{small}
 \begin{verbatim}
 # spatial covariate (with mean 0). Let's call it elevation.
-elev.fn <- function(s) x[1]+x[2]-1
+elev.fn1 <- function(s) x[1]+x[2]-1
 # intensity function
 mu <- function(s, beta) exp(beta*elev.fn(s=x))
 
@@ -663,8 +630,9 @@ while(counter <= N) {
 \includegraphics[width=5in,height=2.5in]{Ch11/figs/heteroPlots}
 \label{state-space.fig.hetero}
 \caption{An example of a spatial covariate, say elevation, and a
-  realization of a inhomogeneous binomial point process with $N$=100
-  and $\mu(s) = exp(\beta \mbox{elev}(s))$ where $\beta=2$.}
+  realization from an inhomogeneous Poisson point process with
+  and $\mu(\mathbf{s}, \bm{\beta}) = exp(\beta_0 + \beta_1
+  \mbox{ELEV}(\mathbf{s}))$ where $\beta_0=5$ and $\beta_1=2$.}
 \end{figure}
 
 The 217 simulated points are shown in
