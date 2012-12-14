@@ -241,6 +241,25 @@ plot(s, xlim=c(0, 100), ylim=c(0, 100))
 
 
 
+
+
+# Maximum likelihood
+elev.fn3v <- function(x) x[,1]+x[,2]-200
+nll <- function(beta) {
+    beta0 <- beta[1]
+    beta1 <- beta[2]
+    EN <- cuhre(2, 1, mu2, beta0=beta0, beta1=beta1,
+                lower=c(0,0), upper=c(100,100))$value
+    -(sum(beta0 + beta1*elev.fn3v(s)) - EN)
+}
+starting.values <- c(-2, 0)
+fm <- optim(starting.values, nll, hessian=TRUE)
+cbind(Est=fm$par, SE=sqrt(diag(solve(fm$hessian)))) # estimates and SEs
+
+
+
+
+
 # Create trap locations
 xsp <- seq(20, 80, by=10)
 len <- length(xsp)
@@ -248,12 +267,12 @@ X <- cbind(rep(xsp, each=len), rep(xsp, times=len))
 
 # Simulate capture histories, and augment the data
 ntraps <- nrow(X)
-T <- 5
-y <- array(NA, c(N, ntraps, T))
+K <- 5
+y <- array(NA, c(N, ntraps, K))
 
 nz <- 100 # augmentation
 M <- nz+nrow(y)
-yz <- array(0, c(M, ntraps, T))
+yz <- array(0, c(M, ntraps, K))
 
 sigma <- 5  # half-normal scale parameter
 lam0 <- 1   # basal encounter rate
@@ -264,7 +283,7 @@ for(i in 1:N) {
     for(j in 1:ntraps) {
         distSq <- (s[i,1]-X[j,1])^2 + (s[i,2] - X[j,2])^2
         lam[i,j] <- exp(-distSq/(2*sigma^2)) * lam0
-        y[i,j,] <- rpois(T, lam[i,j])
+        y[i,j,] <- rpois(K, lam[i,j])
     }
 }
 table(y)
@@ -279,21 +298,100 @@ plot(s)
 
 
 
+
+
 library(scrbook)
 
 source("../../Rpackage/scrbook/R/Ch11.R")
 
 set.seed(3434)
-fm1 <- scrIPP(yz, X, M, 5000, xlims=c(0,100), ylims=c(0,100),
-            tune=c(0.3, 0.1, 0.2, 0.01, 5), beta.init=c(-2, 0.05) )
+fm1 <- scrIPP(yz, X, M, 10000, xlims=c(0,100), ylims=c(0,100),
+            tune=c(0.3, 0.2, 0.3, 0.006, 5), beta.init=c(-2, 0.05) )
 
 debugonce(scrIPP)
 
 
 plot(mcmc(fm1$out))
+summary(window(mcmc(fm1$out), start=2001))
+
+which.max(table(fm1$out[,"N"]))
+HPDinterval(window(mcmc(fm1$out, start=5001)))
+
 rejectionRate(mcmc(fm1$out))
 
+c(N=N, n=sum(apply(y>0, 1, any)), M=M)
+
 plot(fm1$last$S)
+
+
+
+
+
+
+
+
+# Analysis using secr
+library(secr)
+
+
+# Create a "traps" object
+Xs <- data.frame(X)
+colnames(Xs) <- c("x","y")
+secr.traps <- read.traps(data=Xs, detector="count")
+
+summary(secr.traps)
+
+plot(secr.traps)
+plot.default(secr.traps, xlim=c(0,100), asp=1, pch="+")
+
+# Create a "capthist" object
+secr.caps <- matrix(NA, sum(y), 5)
+colnames(secr.caps) <- c("Session", "ID", "Occasion", "X", "Y")
+counter <- 0
+for(i in 1:nrow(y)) {
+    for(j in 1:dim(y)[2]) {
+        for(k in 1:dim(y)[3]) {
+            y.ij <- y[i,j,k]
+            if(y.ij==0)
+                next
+            for(v in 1:y.ij) {
+                counter <- counter+1
+                secr.caps[counter,] <- c(1, i, k, X[j,1], X[j,2])
+            }
+        }
+    }
+}
+ch <- make.capthist(secr.caps, secr.traps, fmt="XY")
+#plot(ch, tol=0.0005) # ouch
+
+# Make mask
+
+msk <- make.mask(secr.traps, buffer=20)# , spacing=.05, nx=v)
+summary(msk)
+#plot(msk)
+
+ssArea <- attr(msk, "area")*nrow(msk)
+
+covariates(msk) <- data.frame(elev=apply(as.matrix(msk), 1,
+                              function(x) elev.fn3(x)))
+
+
+secr1.0 <- secr.fit(ch, model=D~1, mask=msk)
+predict(secr1.0)
+region.N(secr1.0, se.N=TRUE)
+
+secr1.1 <- secr.fit(ch, model=D~elev, mask=msk)
+predict(secr1.1)
+region.N(secr1, se.N=TRUE)
+
+
+
+
+
+
+
+
+
 
 fm1.s <- summary(window(mcmc(fm1$out), start=1001))
 fm1.r <- cbind(fm1.s$stat[,1:2], fm1.s$quant[,c(1,3,5)])
@@ -301,7 +399,6 @@ colnames(fm1.r) <- c("& Mean", "SD", "2.5\\%", "50\\%", "97.5\\%")
 rownames(fm1.r) <- c("$\\sigma=0.1$", "$\\lambda_0=0.5$", "$\\psi=0.66$",
                      "$\\beta=2$", "$N=100$")
 round(fm1.r,2)
-
 
 
 
@@ -322,6 +419,19 @@ cat("
 \\end{table}
 ")
 sink()
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
