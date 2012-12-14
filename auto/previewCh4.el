@@ -23,6 +23,7 @@
      "soul"
      "verbatim"
      "hyperref"
+     "pdftex"
      "natbib"
      "lineno"
      "graphicx"

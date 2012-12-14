@@ -64,6 +64,8 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, tune=rep(0.1, 4))
     R <- Zdims[2]
     T <- Zdims[3]
 
+    elev.fn <- function(x) x[1]+x[2]-1
+
     # initial values
     S <- cbind(runif(M,xlims[1],xlims[2]),runif(M,ylims[1],ylims[2]))
     D <- e2dist(S, X)
@@ -71,8 +73,14 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, tune=rep(0.1, 4))
     lam0 <- runif(1, 4, 6)
     lam <- lam0*exp(-(D*D)/(2*sigma*sigma))
 
-    psi <- runif(1, 0.4, 0.6)
+    beta0 <- rnorm(1, 0)
     beta1 <- rnorm(1, 0)
+
+    mu <- function(x, beta0, beta1) exp(beta0 + beta1*elev.fn(x=x))
+    EN <- cuhre(2, 1, mu, lower=c(xlims[1], ylims[1]),
+                upper=c(xlims[2], ylims[2]), beta0=beta0, beta1=beta1,
+                flags=list(verbose=0))$value
+    psi <- EN / M
 
     w <- rbinom(M, 1, psi)
     w[rowSums(Z)>0] <- 1
@@ -81,7 +89,6 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, tune=rep(0.1, 4))
     out <- matrix(NA, nrow=niters, ncol=5)
     colnames(out) <- c("sigma", "lam0", "psi", "beta1", "N")
 
-    mu <- function(x, beta) exp(beta*elev.fn(x=x))
 
     cat("\ninitial values =", c(sigma, lam0, psi, beta1, sum(w)), "\n\n")
 
@@ -146,11 +153,25 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, tune=rep(0.1, 4))
         }
 
         # update psi
-        psi <- rbeta(1, 1+sum(w), 1+M-sum(w))
+#        psi <- rbeta(1, 1+sum(w), 1+M-sum(w))
+        psi <- EN / M
+
+        # update beta0
+        beta0.cand <- rnorm(1, beta0, tune[3])
+        EN.cand <- cuhre(2, 1, mu, lower=c(xlims[1], ylims[1]),
+                         upper=c(xlims[2], ylims[2]),
+                         beta0 = beta0.cand, beta1=beta1,
+                         flags=list(verbose=0))$value
+        ll.beta1 <- sum(  beta1*elev.fn.v(S) - log(D1) )
+        ll.beta1.cand <- sum( beta1.cand*elev.fn.v(S) - log(D1.cand) )
+        if(runif(1) < exp(ll.beta1.cand - ll.beta1) )  {
+          beta1<-beta1.cand
+          }
+
 
         # update beta1
 #        D1 <- int2d(beta1, delta=.05)
-        sink(file="NUL")
+#        sink(file="NUL")
         D1 <- cuhre(2, 1, mu, lower=c(xlims[1], ylims[1]),
                     upper=c(xlims[2], ylims[2]), beta=beta1,
                     flags=list(verbose=0))$value
