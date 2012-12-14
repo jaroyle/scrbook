@@ -208,10 +208,41 @@ dev.off()
 
 
 
+# Generate new activity centers on a [0,100] x [0,100] square
+
+# Simulate PP using rejection sampling
+set.seed(325)
+beta0 <- 5 # intercept of intensity function
+beta1 <- 2 # effect of elevation on intensity
+# Next line computes integral, which is expected value of N
+elev.fn3 <- function(x) x[1]+x[2]-200
+mu2 <- function(x, beta0, beta1) exp(beta0 + beta1*elev.fn3(x))
+EN <- cuhre(2, 1, mu2, beta0=beta0, beta1=beta1,
+            lower=c(0,0), upper=c(100,100))$value
+EN
+(N <- rpois(1, EN)) # Realized N
+s <- matrix(NA, N, 2) # This matrix will hold the coordinates
+elev.min <- elev.fn3(c(0,0))
+elev.max <- elev.fn3(c(1,1))
+Q <- max(c(exp(beta0 + beta1*elev.min) / EN,
+           exp(beta0 + beta1*elev.max) / EN))
+counter <- 1
+while(counter <= N) {
+  x.c <- runif(1, 0, 100); y.c <- runif(1, 0, 100)
+  s.cand <- c(x.c,y.c)
+  pr <- mu2(s.cand, beta0, beta1) / EN
+  if(runif(1) < pr/Q) {
+    s[counter,] <- s.cand
+    counter <- counter+1
+    }
+  }
+
+plot(s, xlim=c(0, 100), ylim=c(0, 100))
+
 
 
 # Create trap locations
-xsp <- seq(0.2, 0.8, by=0.1)
+xsp <- seq(20, 80, by=10)
 len <- length(xsp)
 X <- cbind(rep(xsp, each=len), rep(xsp, times=len))
 
@@ -224,7 +255,7 @@ nz <- 50 # augmentation
 M <- nz+nrow(y)
 yz <- array(0, c(M, ntraps, T))
 
-sigma <- 0.1  # half-normal scale parameter
+sigma <- 10  # half-normal scale parameter
 lam0 <- 0.5   # basal encounter rate
 lam <- matrix(NA, N, ntraps)
 
@@ -236,6 +267,7 @@ for(i in 1:N) {
         y[i,j,] <- rpois(T, lam[i,j])
     }
 }
+table(y)
 yz[1:nrow(y),,] <- y # Fill
 
 
@@ -247,8 +279,14 @@ yz[1:nrow(y),,] <- y # Fill
 
 library(scrbook)
 set.seed(3434)
-fm1 <- scrIPP(yz, X, M, 6000, xlims=c(0,1), ylims=c(0,1),
-            tune=c(0.003, 0.08, 0.3, 0.07) )
+
+source("../../Rpackage/scrbook/R/Ch11.R")
+
+fm1 <- scrIPP(yz, X, M, 6000, xlims=c(0,100), ylims=c(0,100),
+            tune=c(2, 0.08, 0.3, 5) )
+
+debugonce(scrIPP)
+
 
 plot(mcmc(fm1$out))
 rejectionRate(mcmc(fm1$out))
