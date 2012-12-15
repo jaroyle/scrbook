@@ -27,7 +27,7 @@ for(i in 1:nrow(n.k)) {
 }
 par(op)
 dev.off()
-
+system("open ../figs/homoPlots.png")
 
 
 
@@ -75,13 +75,15 @@ a
 
 
 # spatial covariate (with mean 0)
-elev.fn1 <- function(x) x[1]+x[2]-1
-elev.fn2 <- function(x) x[,1]+x[,2]-1
+elev.fn <- function(x) {
+    x <- matrix(x, ncol=2)        # Force x to be a matrix
+    (x[,1] + x[,2] - 100) / 40.8  # Returns (standardized) "elevation"
+}
 
-mu <- function(x, beta0, beta1) exp(beta0 + beta1*elev.fn1(x=x))
+mu <- function(x, beta0, beta1) exp(beta0 + beta1*elev.fn(x=x))
 
 library(R2Cuba)
-xx <- cuhre(2, 1, mu, lower=c(0,0), upper=c(1,1), beta0=0, beta1=2)
+xx <- cuhre(2, 1, mu, lower=c(0,0), upper=c(100,100), beta0=0, beta1=2)
 
 xx <- cuhre(2, 1, mu, lower=c(0,0), upper=c(1,1), beta0=0, beta1=2,
             flags=list("verbose"=0))
@@ -92,7 +94,7 @@ int2d <- function(beta0=0, beta1=2, delta=0.02) {
   len <- length(z)
   cell.area <- delta*delta
   S <- cbind(rep(z, each=len), rep(z, times=len))
-  sum(exp(beta0 + beta1*elev.fn2(S)) * cell.area)
+  sum(exp(beta0 + beta1*elev.fn(S)) * cell.area)
   }
 
 int2d(2, delta=0.001)
@@ -101,20 +103,22 @@ int2d(2, delta=0.02)
 int2d(2, delta=0.03)
 
 # Simulate PP using rejection sampling
-set.seed(300225)
-beta0 <- 5 # intercept of intensity function
-beta1 <- 2 # effect of elevation on intensity
+set.seed(31025)
+beta0 <- -6 # intercept of intensity function
+beta1 <- 1  # effect of elevation on intensity
 # Next line computes integral, which is expected value of N
-EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1)$value
+EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1,
+            lower=c(0,0), upper=c(100,100))$value
+EN
 N <- rpois(1, EN) # Realized N
 s <- matrix(NA, N, 2) # This matrix will hold the coordinates
-elev.min <- elev.fn1(c(0,0))
-elev.max <- elev.fn1(c(1,1))
+elev.min <- elev.fn(c(0,0))
+elev.max <- elev.fn(c(100, 100))
 Q <- max(c(exp(beta0 + beta1*elev.min) / EN,
            exp(beta0 + beta1*elev.max) / EN))
 counter <- 1
 while(counter <= N) {
-  x.c <- runif(1, 0, 1); y.c <- runif(1, 0, 1)
+  x.c <- runif(1, 0, 100); y.c <- runif(1, 0, 100)
   s.cand <- c(x.c,y.c)
   pr <- mu(s.cand, beta0, beta1) / EN
   if(runif(1) < pr/Q) {
@@ -129,10 +133,11 @@ plot(s)
 nll <- function(beta) {
     beta0 <- beta[1]
     beta1 <- beta[2]
-    EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1)$value
-    -(sum(beta0 + beta1*elev.fn2(s)) - EN)
+    EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1,
+                lower=c(0,0), upper=c(100,100))$value
+    -(sum(beta0 + beta1*elev.fn(s)) - EN)
 }
-starting.values <- c(5, 2)
+starting.values <- c(0, 0)
 fm <- optim(starting.values, nll, hessian=TRUE)
 cbind(Est=fm$par, SE=sqrt(diag(solve(fm$hessian)))) # estimates and SEs
 
@@ -141,42 +146,45 @@ cbind(Est=fm$par, SE=sqrt(diag(solve(fm$hessian)))) # estimates and SEs
 
 
 
-n.k <- table(cut(s[,1], seq(0, 1, 0.2)),
-             cut(s[,2], seq(0, 1, 0.2)))
+n.k <- table(cut(s[,1], seq(0, 100, 20)),
+             cut(s[,2], seq(0, 100, 20)))
 
 
 # plot continuous space and discrete space
 png("../figs/heteroPlots.png", width=5, height=2.5, units="in", res=400)
 op <- par(mfrow=c(1, 2), mai=c(0.1, 0.1, 0.1, 0.1))
-Sx <- seq(0.01, 0.99, 0.01)
+Sx <- seq(1, 99, 1)
 len <- length(Sx)
 S <- cbind(rep(Sx, each=len), rep(Sx, times=len))
-elev <- elev.fn2(S)
-image(Sx, Sx, matrix(elev, len), col=rgb(0,seq(0.1,1,0.01),0,0.8),
-      ann=FALSE, axes=FALSE, asp=1)
-points(s, cex=0.5)
+elev <- elev.fn(S)
+plot(0, type="n", xlim=c(0, 100), ylim=c(0, 100), asp=1, axes=FALSE)
+image(Sx, Sx, matrix(elev, len),
+      col=gray(seq(0.2, 0.8, 0.01)),
+#      col=rgb(0,seq(0.1,1,0.01),0,0.8),
+      add=TRUE) #,
+#      ann=FALSE, axes=FALSE, asp=1)
+points(s, cex=0.4)
 #segments(seq(0, 1, 0.2), 0, seq(0, 1, 0.2), 1, col=gray(0.5))
 #segments(0, seq(0, 1, 0.2), 1, seq(0, 1, 0.2), col=gray(0.5))
-box(col=gray(0.5))
-Sx <- seq(0.1, 0.9, 0.2)
-len <- length(Sx)
-S <- cbind(rep(Sx, each=len), rep(Sx, times=len))
-elev <- elev.fn2(S)
-image(Sx, Sx,
-      matrix(elev, len), xlim=c(0,1), ylim=c(0,1),
-      col=rgb(0,seq(0.1,1,0.01),0,0.8),
-      ann=FALSE, axes=FALSE, asp=1)
-segments(seq(0, 1, 0.2), 0, seq(0, 1, 0.2), 1, col=gray(0.5))
-segments(0, seq(0, 1, 0.2), 1, seq(0, 1, 0.2), col=gray(0.5))
-box(col=gray(0.5))
-y <- 0.1
+box(col=gray(0))
+rect(0, 0, 100, 100, lwd=2)
+plot(0, type="n", xlim=c(0, 100), ylim=c(0, 100), asp=1, axes=FALSE)
+image(Sx, Sx, matrix(elev, len), xlim=c(0,1), ylim=c(0,1),
+      col=gray(seq(0.2, 0.8, 0.01)), add=TRUE)
+#      col=rgb(0,seq(0.1,1,0.01),0,0.8),
+#      ann=FALSE, axes=FALSE, asp=1)
+segments(seq(0, 100, 20), 0, seq(0, 100, 20), 100, col=gray(0))
+segments(0, seq(0, 100, 20), 100, seq(0, 100, 20), col=gray(0))
+box(col=gray(0))
+rect(0, 0, 100, 100, lwd=2)
+y <- 10
 for(i in 1:nrow(n.k)) {
-    text(seq(0.1, 1, by=0.2), y, labels=n.k[,i], cex=0.6)
-    y <- y+0.2
+    text(seq(10, 100, by=20), y, labels=n.k[,i], cex=0.6)
+    y <- y+20
 }
 par(op)
 dev.off()
-
+system("open ../figs/heteroPlots.png")
 
 
 
@@ -208,57 +216,6 @@ dev.off()
 
 
 
-# Generate new activity centers on a [0,100] x [0,100] square
-
-# Simulate PP using rejection sampling
-set.seed(32225)
-beta0 <- -2 # intercept of intensity function
-beta1 <- 0.05 # effect of elevation on intensity
-# Next line computes integral, which is expected value of N
-elev.fn3 <- function(x) x[1]+x[2]-200
-mu2 <- function(x, beta0, beta1) exp(beta0 + beta1*elev.fn3(x))
-EN <- cuhre(2, 1, mu2, beta0=beta0, beta1=beta1,
-            lower=c(0,0), upper=c(100,100))$value
-EN
-(N <- rpois(1, EN)) # Realized N
-s <- matrix(NA, N, 2) # This matrix will hold the coordinates
-elev.min <- elev.fn3(c(0,0))
-elev.max <- elev.fn3(c(100,100))
-Q <- max(c(exp(beta0 + beta1*elev.min) / EN,
-           exp(beta0 + beta1*elev.max) / EN))
-counter <- 1
-while(counter <= N) {
-  x.c <- runif(1, 0, 100); y.c <- runif(1, 0, 100)
-  s.cand <- c(x.c,y.c)
-  pr <- mu2(s.cand, beta0, beta1) / EN
-  if(runif(1) < pr/Q) {
-    s[counter,] <- s.cand
-    counter <- counter+1
-    }
-  }
-
-plot(s, xlim=c(0, 100), ylim=c(0, 100))
-
-
-
-
-
-# Maximum likelihood
-elev.fn3v <- function(x) x[,1]+x[,2]-200
-nll <- function(beta) {
-    beta0 <- beta[1]
-    beta1 <- beta[2]
-    EN <- cuhre(2, 1, mu2, beta0=beta0, beta1=beta1,
-                lower=c(0,0), upper=c(100,100))$value
-    -(sum(beta0 + beta1*elev.fn3v(s)) - EN)
-}
-starting.values <- c(-2, 0)
-fm <- optim(starting.values, nll, hessian=TRUE)
-cbind(Est=fm$par, SE=sqrt(diag(solve(fm$hessian)))) # estimates and SEs
-
-
-
-
 
 # Create trap locations
 xsp <- seq(20, 80, by=10)
@@ -270,7 +227,7 @@ ntraps <- nrow(X)
 K <- 5
 y <- array(NA, c(N, ntraps, K))
 
-nz <- 100 # augmentation
+nz <- 50 # augmentation
 M <- nz+nrow(y)
 yz <- array(0, c(M, ntraps, K))
 
@@ -373,7 +330,7 @@ summary(msk)
 ssArea <- attr(msk, "area")*nrow(msk)
 
 covariates(msk) <- data.frame(elev=apply(as.matrix(msk), 1,
-                              function(x) elev.fn3(x)))
+                              function(x) elev.fn(x)))
 
 
 secr1.0 <- secr.fit(ch, model=D~1, mask=msk)
@@ -384,8 +341,7 @@ secr1.1 <- secr.fit(ch, model=D~elev, mask=msk)
 predict(secr1.1)
 region.N(secr1, se.N=TRUE)
 
-
-
+AIC(secr1.0, secr1.1)
 
 
 

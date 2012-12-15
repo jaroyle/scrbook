@@ -57,7 +57,6 @@ spcov <- function(B=1, pix=0.05) {
 scrIPP <- function(Z, X, M, niters, xlims, ylims, tune=rep(0.1, 5),
                    beta.init=c(5,2))
 {
-
     if(!require(R2Cuba))
         stop("Requires the R2Cuba package")
 
