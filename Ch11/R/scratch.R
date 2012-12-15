@@ -284,8 +284,8 @@ plot(fm1$last$S)
 
 
 png("../figs/fm1p.png", width=7, height=7, units="in", res=400)
-par(mfrow=c(4,2), mai=c(0.3, 0.4, 0.5, 0.2))
-plot(mcmc(fm1$out[,c(1,3,4,5)]))
+par(mfrow=c(4,2), mai=c(0.3, 0.4, 0.5, 0.2), cex.main=1.5)
+plot(mcmc(fm1$out[,c(3,4,5)]))
 dev.off()
 system("open ../figs/fm1p.png")
 
@@ -447,32 +447,32 @@ library(gdistance)
 library(rjags)
 
 
-set.seed(353)
-pix <- 0.05
-dat <- spcov(pix=pix)$R
+set.seed(358030)
+pix <- 5 #0.05
+dat <- spcov(B=100, pix=pix)$R
 npix <- nrow(dat)
 colnames(dat) <- c("x","y","elev")
-cell <- seq(pix/2, 1-pix/2, pix)
-image(cell, cell, t(matrix(dat$elev, 1/pix, 1/pix)), ann=FALSE)
+cell <- seq(pix/2, 100-pix/2, pix)
+image(cell, cell, t(matrix(dat$elev, 100/pix, 100/pix)), ann=FALSE)
 
 head(dat)
 
 # Simulate IPP
 set.seed(30275)
-beta0 <- -3
+beta0 <- -4
 beta1 <- 2
-EN <- sum(exp(beta0 + beta1*dat$elev))
+(EN <- sum(exp(beta0 + beta1*dat$elev)))
 N <- rpois(1, EN)
 dat$cp <- exp(beta0 + beta1*dat$elev) / EN
 s.tmp <- rmultinom(1, N, dat$cp) # a single realization to be ignored later
 
 # Trap locations
-xsp <- seq(0.275, 0.725, by=0.05)
+xsp <- seq(27.5, 72.5, by=5)
 X <- cbind(rep(xsp, each=length(xsp)), rep(xsp, times=length(xsp)))
 str(X)
 
 
-elevMat <- t(matrix(dat$elev, 1/pix, 1/pix))
+elevMat <- t(matrix(dat$elev, 100/pix, 100/pix))
 library(raster)
 elev <- raster:::flip(raster(t(elevMat)), direction="y")
 
@@ -496,11 +496,7 @@ ntraps <- nrow(X)
 T <- 5
 y <- array(NA, c(N, ntraps))
 
-nz <- 50 # augmentation
-M <- nz+nrow(y)
-yz <- array(0, c(M, ntraps))
-
-sigma <- 0.1  # half-normal scale parameter
+sigma <- 10  # half-normal scale parameter
 lam0 <- 0.8   # basal encounter rate
 lam <- matrix(NA, N, ntraps)
 
@@ -519,10 +515,16 @@ for(i in 1:N) {
         y[i,j] <- rpois(1, lam[i,j])
     }
 }
-yz[1:nrow(y),] <- y # Fill
+y <- y[rowSums(y)>0,]
 
 sum(y)
+dim(y)
+table(y)
 
+nz <- 100 # augmentation
+M <- nz+nrow(y)
+yz <- array(0, c(M, ntraps))
+yz[1:nrow(y),] <- y # Fill
 
 
 
@@ -538,7 +540,7 @@ secr.traps <- read.traps(data=Xs, detector="count")
 
 summary(secr.traps)
 
-# Huh?
+
 plot(secr.traps)
 
 plot.default(secr.traps, xlim=c(0,1), asp=1, pch="+")
@@ -563,7 +565,7 @@ ch <- make.capthist(secr.caps, secr.traps, fmt="XY")
 
 # Make mask
 
-msk <- make.mask(secr.traps, buffer=0.275, spacing=.05, nx=v)
+msk <- make.mask(secr.traps, buffer=27.5, spacing=5) #, nx=v)
 summary(msk)
 #plot(msk)
 
@@ -610,18 +612,15 @@ region.N(secr1, se.N=TRUE)
 sink("ippDiscrete.txt")
 cat("
 model{
-sigma ~ dunif(0, 1)
+sigma ~ dunif(0, 50)
 lam0 ~ dunif(0, 5)
-beta0 ~ dnorm(0, 0.1) #log(D) # D=density defined below
-beta1 ~ dnorm(0, 0.1)
-#psi ~ dbeta(1,1)
-
+beta0 ~ dnorm(0, 0.001) #log(D) # D=density defined below
+beta1 ~ dnorm(0, 0.001)
 for(j in 1:nPix) {
   mu[j] <- exp(beta0 + beta1*elevation[j])
   probs[j] <- mu[j]/sum(mu[])
 }
 psi <- sum(mu[])/M
-
 for(i in 1:M) {
   w[i] ~ dbern(psi)
   s[i] ~ dcat(probs[])
@@ -633,11 +632,9 @@ for(i in 1:M) {
     y[i,j] ~ dpois(lambda[i,j])
     }
   }
-
 N <- sum(w[])
-D <- N/1 # unit square
+D <- N/1 # 1ha state-space
 }
-
 ", fill=TRUE)
 sink()
 
@@ -645,30 +642,19 @@ sink()
 
 modfile <- "ippDiscrete.txt"
 
-jags.data <- with(ch9simData, {
-    list(y=yz, #ch.jags,
-         elevation=drop(spcov.jags$elev),
-            nPix=nrow(spcov.jags),
-            M=nrow(yz), #nrow(ch.jags),
-            ntraps=nrow(traps),
-            Sgrid=as.matrix(spcov.jags[,1:2]),
-            grid=traps)
-    })
+jags.data <- list(y=yz, elevation=drop(dat$elev),
+            nPix=nrow(dat),
+            M=nrow(yz), ntraps=nrow(X),
+            Sgrid=as.matrix(dat[,1:2]),
+            grid=X)
 str(jags.data)
 
-jags.data <- list(y=y, elevation=drop(dat$elev),
-            nPix=nrow(spcov.jags),
-            M=nrow(ch.jags), ntraps=nrow(traps),
-            Sgrid=as.matrix(spcov.jags[,1:2]),
-            grid=traps)
-    })
-str(jags.data)
-
-all(matrix(jags.data$elevation, 20, byrow=T) ==
+all(matrix(jags.data$elevation, 20, byrow=TRUE) ==
     matrix(covariates(msk)$elev, 20))
 
 init1 <- function() {
-    list(sigma=runif(1), lam0=runif(1), beta0=rnorm(1, -5), beta1=rnorm(1),
+    list(sigma=runif(1, 5, 10), lam0=runif(1),
+         beta0=rnorm(1, -5), beta1=rnorm(1),
          s=sample.int(jags.data$nPix, jags.data$M, replace=TRUE),
          w=ifelse(rowSums(jags.data$y)>0, 1, 0))
 }
@@ -680,8 +666,8 @@ pars1 <- c("sigma", "lam0", "beta0", "beta1", "N")
 # Compile and adapt
 system.time({
     set.seed(03453)
-    jm <- jags.model(modfile, jags.data, init1, n.chains=2, n.adapt=500)
-    jags1 <- coda.samples(jm, pars1, n.iter=1000)
+    jm <- jags.model(modfile, jags.data, init1, n.chains=2, n.adapt=1000)
+    jags1 <- coda.samples(jm, pars1, n.iter=20000)
 })
 
 plot(jags1, ask=TRUE)

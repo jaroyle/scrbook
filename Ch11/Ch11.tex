@@ -683,23 +683,24 @@ estimate these latent parameters.
 
 \subsection{Continuous space}
 
-One of the nice things about hierarchical models is that they
-%allow us to
-break a complex problem up into a series of simpler conditional
-sub-models. The problem faced in the analysis of SCR data is that the
-underlying point process is not observed, meaning that we need an
-observation model that describes how the observed data are result from
-the . Thus, in SCR, we can simply add the methods described above into a likelihood
-function or an MCMC algorithm to simulate the posterior distributions of $\beta$ conditional on the
-simulated values of $\mathbf{s}$. To demonstrate, we will continue with
-the previous example. Specifically, we will overlay a grid of
-traps on the map shown in Fig.~\ref{state-space.fig.hetero}. We will then
+% One of the nice things about hierarchical models is that they
+% %allow us to
+% break a complex problem up into a series of simpler conditional
+% sub-models. The problem faced in the analysis of SCR data is that the
+% underlying point process is not observed, and so an
+% observation model is needed to describe how the observed data result from
+% the latent activity centers. Thus, in SCR, we can simply add the methods described above into a likelihood
+% function or an MCMC algorithm to simulate the posterior distributions of $\beta$ conditional on the
+% simulated values of $\mathbf{s}$.
+
+In this example, we will use the same set of points simulated in the
+previous section to generate spatial capture-recapture
+data. Specifically, we overlay a grid of 49
+traps on the map shown in Fig.~\ref{state-space.fig.hetero} and
 simulate capture histories conditional upon the activity
 centers. Then, we will attempt to estimate the activity center
 locations as though we did not know where they were, as is the case in
-real applications.
-
-The following \R~code simulates encounter histories under a
+real applications. The following \R~code simulates encounter histories under a
 Poisson observation model (see Chapt. \ref{chapt.poisson-mn}), which could be appropriate in camera
 trapping studies or when using other methods in which animals could
 be detected multiple times at a trap during a single occasion.
@@ -707,106 +708,83 @@ be detected multiple times at a trap during a single occasion.
 \begin{samepage}
   \begin{small}
 \begin{verbatim}
-# Create trap locations
 xsp <- seq(20, 80, by=10)
 len <- length(xsp)
-X <- cbind(rep(xsp, each=len), rep(xsp, times=len))
-
-# Simulate capture histories, and augment the data
+X <- cbind(rep(xsp, each=len),
+           rep(xsp, times=len)) # trap locations
 ntraps <- nrow(X)
-K <- 5
-y <- array(NA, c(N, ntraps, K))
+K <- 5                          # occasions
+y <- array(NA, c(N, ntraps, K)) # capture data
 
-nz <- 80 # augmentation
+nz <- 80 # data augmentation
 M <- nz+nrow(y)
 yz <- array(0, c(M, ntraps, K))
-
-sigma <- 5  # half-normal scale parameter
+sigma <- 5  # scale parameter
 lam0 <- 1   # basal encounter rate
 lam <- matrix(NA, N, ntraps)
-
 set.seed(5588)
 for(i in 1:N) {
     for(j in 1:ntraps) {
+        # The object s was simulated in previous section
         distSq <- (s[i,1]-X[j,1])^2 + (s[i,2] - X[j,2])^2
         lam[i,j] <- exp(-distSq/(2*sigma^2)) * lam0
         y[i,j,] <- rpois(K, lam[i,j])
     }
 }
-table(y)
-c(N=N, n=sum(apply(y>0, 1, any)))
-yz[1:nrow(y),,] <- y # Fill
+yz[1:nrow(y),,] <- y # Fill data augmentation array
 \end{verbatim}
   \end{small}
 \end{samepage}
 
-Now that we have a simulated capture-recapture dataset $y$, and we have
-augmented it to create the new data object $yz$, we are ready to
+Now that we have a simulated capture-recapture dataset \texttt{y} and we have
+augmented it to create the new data object \texttt{yz}, we are ready to
 begin sampling from the posteriors. A commented Gibbs sampler written
 in \R~is available in the accompanying \R~package \scrbook~(see
-?scrIPP).
-\begin{comment} see Ch 7 MCMC for SCR and cite some section of that \end{comment}
-% There are two small parts of the
-% \R~code that distinguish it from previous code we have shown to
-% fit homogeneous point processes. First, we need to update the parameter
-% ${\bf \beta}$ conditional on all other parameters in the model. The code to
-% do so is: %\begin{comment} need cite to Ch 2 or 7 on MCMC for this \end{comment}
-% \begin{small}
-% \begin{verbatim}
-% # Denominator of f(x, beta). Integral of mu(x, beta) over space
-% D1 <- cuhre(2, 1, mu, lower=c(xlims[1], ylims[1]),
-%             upper=c(xlims[2], ylims[2]), beta=beta1)$value
-% # Compute the denominator again using a proposed beta1
-% beta1.cand <- rnorm(1, beta1, tune[3])
-% D1.cand <- cuhre(2, 1, mu, lower=c(xlims[1], ylims[1]),
-%                  upper=c(xlims[2], ylims[2]), beta=beta1.cand)$value
-% # Compute log(f(x))
-% ll.beta1 <- sum(  beta1*elev.fn.v(S) - log(D1) )
-% ll.beta1.cand <- sum( beta1.cand*elev.fn.v(S) - log(D1.cand) )
-% if(runif(1) < exp(ll.beta1.cand - ll.beta1) )  {
-%      beta1<-beta1.cand
-% }
-% \end{verbatim}
-% \end{small}
-% Next, we need to put the new prior on the activity centers:
-% \begin{small}
-% \begin{verbatim}
-% # Compute the prior for s_i and a candidate. denominator is constant
-% prior.S <- beta1*elev(S[i,1], S[i,2]) # - log(D1)
-% prior.S.cand <- beta1*elev(Scand[1] + Scand[2]) # - log(D1)
-% if(runif(1)< exp((ll.S.cand+prior.S.cand) - (ll.S+prior.S))) {
-%     S[i,] <- Scand
-%     lam <- lam.cand
-%     D[i,] <- dtmp
-%     }
-% \end{verbatim}
-% \end{small}
-We can apply this modified sampler to our data using the
-following \R~commands:
-\begin{small}
+\texttt{?scrIPP}). This function is not meant to be an all purpose
+tool for fitting SCR models using MCMC---it is primarily presented so
+that interested readers can better understand the computational
+aspects of the problem and can modify it for their purposes.
+The function can be used as so:
+\begin{samepage}
+  \begin{small}
 \begin{verbatim}
 set.seed(3434)
-fm1 <- scrIPP(yz, X, M, 6000, xlims=c(0,1), ylims=c(0,1),
-            tune=c(0.003, 0.08, 0.3, 0.07) )
+fm1 <- scrIPP(yz, X, M, 10000, xlims=c(0,100), ylims=c(0,100),
+              space.cov=elev.fn,
+              tune=c(0.4, 0.2, 0.3, 0.3, 7))
 plot(mcmc(fm1$out))
-rejectionRate(mcmc(fm1$out))
 \end{verbatim}
-\end{small}
-We obtain posterior distributions that are summarized in
-Table~\ref{state-space.tab.simIPP}.
-%Mixing is good, and as usual,
-%life is very nice when we are working with simulated data.
-
+  \end{small}
+\end{samepage}
+which requests 10000 posterior samples and estimates the effect of the
+spatial covariate, elevation, on density. Note that any spatial
+covariate that returns a real value for any location in the
+state-space can be supplied using the \texttt{space.cov} argument. The resulting
+trace plots of the Markov chains and the posterior distributions are
+shown in Fig.~\ref{state-space.fig.fm1post}. The chains appear to
+converge rapidly but may need to be run longer to reduce Monte Carlo
+error.
 
 \begin{figure}
   \centering
-  \includegraphics[width=\textwidth]{Ch11/figs/fm1p}
+  \includegraphics[width=0.9\textwidth]{Ch11/figs/fm1p}
   \caption{Trace plots and posterior distributions from MCMC analysis
     of SCR model with inhomogeneous point process. Analysis was
     conducted using the \texttt{scrIPP} function in the accompanying
     \R~package.}
   \label{fig:state-space.fig.fm1post}
 \end{figure}
+
+For comparison, we also fit this model using $\texttt{secr}$. See the
+help file \texttt{Ch-IPP} in \scrbook~ for \R~commands necessary to
+prepare the data for \secr. The results are presented in
+Table~\ref{state-space.tab.simIPP}, and we see that the point
+estimates and confidence/credible intervals are quite similar from the
+MCMC and maximum likelihood (ML) analyses. One exception is that the
+confidence intervals for $N$ and the expected value of $N$ are
+somewhat different. This may result from the fact that the MCMC
+analysis assumed a binomial prior for $N$, whereas the ML analysis
+assumed a Poisson prior.
 
 \begin{table}%[b]
 \centering
@@ -820,20 +798,19 @@ for $N$ whereas a Poisson prior was assumed for the \texttt{secr} analysis.}
 Parameter 	& Method 	& Estimate 	& SD/SE 	& Lower 	& Upper \\
 \hline
  $\sigma=5$ 	& MCMC 	&  5.232 	&  0.310 	&  4.681 	&  5.858 \\
-  	& ML 	&  5.237 	&  0.303 	&  4.676 	&  5.866 \\
+  	        & ML 	&  5.237 	&  0.303 	&  4.676 	&  5.866 \\
  $\lambda_0=1$ 	& MCMC 	&  0.802 	&  0.119 	&  0.595 	&  1.049 \\
-  	& ML 	&  0.781 	&  0.115 	&  0.586 	&  1.041 \\
+  	        & ML 	&  0.781 	&  0.115 	&  0.586 	&  1.041 \\
 % $\beta_1=1$ 	& MCMC 	&  0.985 	&  0.209 	&  0.575 	&  1.378 \\
-%  	& ML 	&  1.037 	&  0.274 	&  0.501 	&  1.574 \\
+%  	        & ML 	&  1.037 	&  0.274 	&  0.501 	&  1.574 \\
  $N=41$ 	& MCMC 	& 47.615 	&  8.041 	& 35.000 	& 66.000 \\
-  	& ML 	& 47.778 	&  7.744 	& 37.074 	& 68.830 \\
+  	        & ML 	& 47.778 	&  7.744 	& 37.074 	& 68.830 \\
  $\mathbb{E}[N]=39.9$ 	& MCMC 	& 47.551 	& 10.992 	& 29.837 	& 71.332 \\
-  	& ML 	& 47.778 	& 10.380 	& 31.363 	& 72.784 \\
+  	        & ML 	& 47.778 	& 10.380 	& 31.363 	& 72.784 \\
 \hline
 \end{tabular}
 \label{state-space.tab.simIPP}
 \end{table}
-
 
 Fitting continuous space IPP models is somewhat
 difficult in \bugs~because our prior ``IPP'' is not one of the
@@ -883,43 +860,42 @@ by~\ref{eq.pdf.ipp.d}, which is the probability that an individual's
 activity center is located at pixel $x$. \verb+Sgrid+ is the
 matrix of coordinates for each pixel.
 
-%\begin{panel}[h!]
-%\centering
-%\rule[0.15in]{\textwidth}{.03in}
+\begin{panel}%[h!]
+\centering
+\rule[0.15in]{\textwidth}{.03in}
 \begin{small}
 \begin{verbatim}
 model{
-sigma ~ dunif(0, 1)
+sigma ~ dunif(0, 10)
 lam0 ~ dunif(0, 5)
-beta ~ dnorm(0,0.1)
-psi ~ dbeta(1,1)
-for(x in 1:nPix) {
-  theta[x] <- exp(beta*elevation[j])
-  probs[x] <- theta[j]/sum(theta[])
+beta0 ~ dnorm(0, 0.01) #log(D) # D=density defined below
+beta1 ~ dnorm(0, 0.01)
+for(j in 1:nPix) {
+  mu[j] <- exp(beta0 + beta1*elevation[j])
+  probs[j] <- mu[j]/sum(mu[])
 }
+psi <- sum(mu[])/M
 for(i in 1:M) {
   w[i] ~ dbern(psi)
   s[i] ~ dcat(probs[])
   x0g[i] <- Sgrid[s[i],1]
   y0g[i] <- Sgrid[s[i],2]
   for(j in 1:ntraps) {
-    dist[i,j] <- sqrt(pow(x0g[i]-grid[j,1],2) +
-                      pow(y0g[i]-grid[j,2],2))
-    lambda[i,j] <- lam0*exp(-dist[i,j]*dist[i,j] /
-                            (2*sigma*sigma)) * w[i]
+    dist[i,j] <- sqrt(pow(x0g[i]-grid[j,1],2) + pow(y0g[i]-grid[j,2],2))
+    lambda[i,j] <- lam0*exp(-dist[i,j]*dist[i,j]/(2*sigma*sigma)) * w[i]
     y[i,j] ~ dpois(lambda[i,j])
     }
   }
 N <- sum(w[])
-Density <- N/1 # unit square
+D <- N/1 # 1ha state-space
 }
 \end{verbatim}
 \end{small}
-%\rule[0.15in]{\textwidth}{.03in}
-%\caption{\bugs~code for fitting inhomogeneous point process model in
-%  discrete space.}
-%\label{ch9.panel1}
-%\end{panel}
+\rule[0.15in]{\textwidth}{.03in}
+\caption{\bugs~code for fitting inhomogeneous point process model in
+  discrete space.}
+\label{ch9.panel1}
+\end{panel}
 
 This model can also be fit in \secr, which refers
 to the raster data as a ``habitat mask''. \R~code to
