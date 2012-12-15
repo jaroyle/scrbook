@@ -269,7 +269,8 @@ fm1 <- scrIPP(yz, X, M, 10000, xlims=c(0,100), ylims=c(0,100),
 }) # 328s
 
 plot(mcmc(fm1$out))
-summary(window(mcmc(fm1$out), start=5001))
+summary(mcmc(fm1$out))
+summary(window(mcmc(fm1$out), start=5001))$q
 
 which.max(table(fm1$out[,"N"]))
 HPDinterval(window(mcmc(fm1$out, start=5001)))
@@ -282,6 +283,11 @@ plot(fm1$last$S)
 
 
 
+png("../figs/fm1p.png", width=7, height=7, units="in", res=400)
+par(mfrow=c(4,2), mai=c(0.3, 0.4, 0.5, 0.2))
+plot(mcmc(fm1$out[,c(1,3,4,5)]))
+dev.off()
+system("open ../figs/fm1p.png")
 
 
 
@@ -354,8 +360,30 @@ AIC(secr1.0, secr1.1, secr1.2)
 
 
 
-fm1.s <- summary(window(mcmc(fm1$out), start=1001))
-fm1.r <- cbind(fm1.s$stat[,1:2], fm1.s$quant[,c(1,3,5)])
+fm1.s <- summary(window(mcmc(fm1$out), start=5001))
+fm1.r <- cbind(fm1.s$stat[,1:2], fm1.s$quant[,c(1,5)])[c(1,2,4:6),]
+fm1.r
+
+secr1.1s <- rbind(data.matrix(predict(secr1.1)[c(3,2), 2:5]),
+                  beta1=as.numeric(coef(secr1.1)[2,]),
+                  region.N(secr1.1)[,1:4])[c(1,2,3,5,4),]
+secr1.1s
+
+(scrVsecr <- cbind(par=rep(c("sigma", "lam0", "beta1", "N", "EN"),each=2),
+                   Method=c("MCMC", "ML"),
+                   rbind(fm1.r[1,], secr1.1s[1,],
+                   fm1.r[2,], secr1.1s[2,],
+                   fm1.r[3,], secr1.1s[3,],
+                   fm1.r[4,], secr1.1s[4,],
+                   fm1.r[5,], secr1.1s[5,])))
+
+format(scrVsecr, digits=2, nsmall=3, scientific=FALSE)
+
+write.table(format(scrVsecr, digits=2, nsmall=3, scientific=FALSE),
+            file="scrVsecr1.txt", row.names=FALSE,
+            quote=FALSE, sep=" \t& ", eol=" \\\\\n ")
+
+
 colnames(fm1.r) <- c("& Mean", "SD", "2.5\\%", "50\\%", "97.5\\%")
 rownames(fm1.r) <- c("$\\sigma=0.1$", "$\\lambda_0=0.5$", "$\\psi=0.66$",
                      "$\\beta=2$", "$N=100$")
