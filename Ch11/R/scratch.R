@@ -227,7 +227,7 @@ ntraps <- nrow(X)
 K <- 5
 y <- array(NA, c(N, ntraps, K))
 
-nz <- 50 # augmentation
+nz <- 80 # augmentation
 M <- nz+nrow(y)
 yz <- array(0, c(M, ntraps, K))
 
@@ -262,14 +262,14 @@ library(scrbook)
 source("../../Rpackage/scrbook/R/Ch11.R")
 
 set.seed(3434)
+system.time({
 fm1 <- scrIPP(yz, X, M, 10000, xlims=c(0,100), ylims=c(0,100),
-            tune=c(0.3, 0.2, 0.3, 0.006, 5), beta.init=c(-2, 0.05) )
-
-debugonce(scrIPP)
-
+              space.cov=elev.fn,
+              tune=c(0.4, 0.2, 0.3, 0.3, 7))
+}) # 328s
 
 plot(mcmc(fm1$out))
-summary(window(mcmc(fm1$out), start=2001))
+summary(window(mcmc(fm1$out), start=5001))
 
 which.max(table(fm1$out[,"N"]))
 HPDinterval(window(mcmc(fm1$out, start=5001)))
@@ -323,7 +323,8 @@ ch <- make.capthist(secr.caps, secr.traps, fmt="XY")
 
 # Make mask
 
-msk <- make.mask(secr.traps, buffer=20)# , spacing=.05, nx=v)
+msk <- make.mask(secr.traps, buffer=20, spacing=1) #, nx=v)
+str(msk)
 summary(msk)
 #plot(msk)
 
@@ -333,15 +334,19 @@ covariates(msk) <- data.frame(elev=apply(as.matrix(msk), 1,
                               function(x) elev.fn(x)))
 
 
-secr1.0 <- secr.fit(ch, model=D~1, mask=msk)
+system.time(secr1.0 <- secr.fit(ch, model=D~1, mask=msk)) # 78s
 predict(secr1.0)
 region.N(secr1.0, se.N=TRUE)
 
-secr1.1 <- secr.fit(ch, model=D~elev, mask=msk)
+system.time(secr1.1 <- secr.fit(ch, model=D~elev, mask=msk)) # 328s
 predict(secr1.1)
-region.N(secr1, se.N=TRUE)
+region.N(secr1.1, se.N=TRUE)
 
-AIC(secr1.0, secr1.1)
+system.time(secr1.2 <- secr.fit(ch, model=D~xy, mask=msk)) # 129s
+predict(secr1.2)
+region.N(secr1.2, se.N=TRUE)
+
+AIC(secr1.0, secr1.1, secr1.2)
 
 
 

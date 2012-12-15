@@ -596,29 +596,30 @@ integration functions in \R.
 \begin{samepage}
   \begin{small}
 \begin{verbatim}
-# spatial covariate (with mean 0). Let's call it elevation.
-elev.fn1 <- function(s) x[1]+x[2]-1
+elev.fn <- function(x) {          # spatial covriate
+    x <- matrix(x, ncol=2)        # Force x to be a matrix
+    (x[,1] + x[,2] - 100) / 40.8  # Returns (standardized) "elevation"
+}
 # intensity function
-mu <- function(s, beta) exp(beta*elev.fn(s=x))
-
-# Simulate PP using rejection sampling
-set.seed(300225)
-beta0 <- 5 # intercept of intensity function
-beta1 <- 2 # effect of elevation on intensity
+mu <- function(x, beta0, beta1) exp(beta0 + beta1*elev.fn(x=x))
+set.seed(31025)
+beta0 <- -6 # intercept of intensity function
+beta1 <- 1  # effect of elevation on intensity
 # Next line computes integral, which is expected value of N
-EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1)$value
-N <- rpois(1, EN) # Realized N
+EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1,
+            lower=c(0,0), upper=c(100,100))$value
+N <- rpois(1, EN)     # Realized N
 s <- matrix(NA, N, 2) # This matrix will hold the coordinates
-elev.min <- elev.fn1(c(0,0))
-elev.max <- elev.fn1(c(1,1))
+elev.min <- elev.fn(c(0,0))
+elev.max <- elev.fn(c(100, 100))
 Q <- max(c(exp(beta0 + beta1*elev.min) / EN,
            exp(beta0 + beta1*elev.max) / EN))
 counter <- 1
 while(counter <= N) {
-  x.c <- runif(1, 0, 1); y.c <- runif(1, 0, 1)
-  s.cand <- c(x.c,y.c) # Candidate point
+  x.c <- runif(1, 0, 100); y.c <- runif(1, 0, 100)
+  s.cand <- c(x.c,y.c)
   pr <- mu(s.cand, beta0, beta1) / EN
-  if(runif(1) < pr/Q) { # Keep the candidate if TRUE
+  if(runif(1) < pr/Q) {
     s[counter,] <- s.cand
     counter <- counter+1
     }
@@ -634,13 +635,13 @@ while(counter <= N) {
 \caption{An example of a spatial covariate, say elevation, and a
   realization from an inhomogeneous Poisson point process with
   and $\mu(\mathbf{s}, \bm{\beta}) = \exp(\beta_0 + \beta_1
-  \mbox{ELEV}(\mathbf{s}))$ where $\beta_0=5$ and $\beta_1=2$.}
+  \mbox{ELEV}(\mathbf{s}))$ where $\beta_0=-6$ and $\beta_1=1$.}
 \end{figure}
 
-The 217 simulated points are shown in
+The 41 simulated points are shown in
 Fig~\ref{state-space.fig.hetero}. High elevations
-are represented by light green and low elevations by dark green. The
-density of points in apparently higher in the dark green regions
+are represented by light gray and low elevations are darker. The
+density of points in apparently higher in lighter regions
 suggesting that these simulated animals prefer high
 elevations.  %Perhaps they are mountain goats.
 %The underlying model describing this preference is
@@ -656,25 +657,25 @@ nll <- function(beta) {
     beta0 <- beta[1]
     beta1 <- beta[2]
     EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1)$value
-    -(sum(beta0 + beta1*elev.fn2(s)) - EN)
+    -(sum(beta0 + beta1*elev.fn(s)) - EN)
 }
-starting.values <- c(5, 2)
+starting.values <- c(0, 0)
 fm <- optim(starting.values, nll, hessian=TRUE)
 cbind(Est=fm$par, SE=sqrt(diag(solve(fm$hessian)))) # estimates and SEs
 \end{verbatim}
 \end{small}
 
 Maximizing the likelihood took a small fraction of a second, and we
-obtained estimates of $\hat{\beta}_0=5.08$ and $\hat{\beta}_1=1.92$,
-which are very close to the data generating values of 5 and 2. We could plug
-this estimate into our linear model at each point in the state-space to
+obtained estimates of $\hat{\beta}_0=-5.93$ and $\hat{\beta}_1=0.95$,
+which are very close to the data generating values. We could plug
+these estimate into our linear model at each point in the state-space to
 obtain the MLE for the intensity surface.
 
 This example demonstrates
 that if we had the data we wish we had, i.e. if we knew the
 coordinates of the activity centers, we could easily estimate the
 parameters governing the underlying point process. However, in
-SCR models, the activity centers cannot be directly observed; yet,
+SCR models, the activity centers cannot be directly observed---yet,
 spatial recaptures provide the information needed to
 estimate these latent parameters.
 
@@ -682,9 +683,13 @@ estimate these latent parameters.
 
 \subsection{Continuous space}
 
-One of the nice things about hierarchical models is that they allow us
-to break a problem up into a series of simple conditional
-sub-models. Thus, we can simply add the methods described above into a likelihood
+One of the nice things about hierarchical models is that they
+%allow us to
+break a complex problem up into a series of simpler conditional
+sub-models. The problem faced in the analysis of SCR data is that the
+underlying point process is not observed, meaning that we need an
+observation model that describes how the observed data are result from
+the . Thus, in SCR, we can simply add the methods described above into a likelihood
 function or an MCMC algorithm to simulate the posterior distributions of $\beta$ conditional on the
 simulated values of $\mathbf{s}$. To demonstrate, we will continue with
 the previous example. Specifically, we will overlay a grid of
@@ -699,24 +704,25 @@ Poisson observation model (see Chapt. \ref{chapt.poisson-mn}), which could be ap
 trapping studies or when using other methods in which animals could
 be detected multiple times at a trap during a single occasion.
 
-\begin{small}
+\begin{samepage}
+  \begin{small}
 \begin{verbatim}
 # Create trap locations
-xsp <- seq(-0.8, 0.8, by=0.2)
+xsp <- seq(20, 80, by=10)
 len <- length(xsp)
 X <- cbind(rep(xsp, each=len), rep(xsp, times=len))
 
 # Simulate capture histories, and augment the data
 ntraps <- nrow(X)
-T <- 5
-y <- array(NA, c(N, ntraps, T))
+K <- 5
+y <- array(NA, c(N, ntraps, K))
 
-nz <- 50 # augmentation
+nz <- 80 # augmentation
 M <- nz+nrow(y)
-yz <- array(0, c(M, ntraps, T))
+yz <- array(0, c(M, ntraps, K))
 
-sigma <- 0.1  # half-normal scale parameter
-lam0 <- 0.5   # basal encounter rate
+sigma <- 5  # half-normal scale parameter
+lam0 <- 1   # basal encounter rate
 lam <- matrix(NA, N, ntraps)
 
 set.seed(5588)
@@ -724,12 +730,15 @@ for(i in 1:N) {
     for(j in 1:ntraps) {
         distSq <- (s[i,1]-X[j,1])^2 + (s[i,2] - X[j,2])^2
         lam[i,j] <- exp(-distSq/(2*sigma^2)) * lam0
-        y[i,j,] <- rpois(T, lam[i,j])
+        y[i,j,] <- rpois(K, lam[i,j])
     }
 }
+table(y)
+c(N=N, n=sum(apply(y>0, 1, any)))
 yz[1:nrow(y),,] <- y # Fill
 \end{verbatim}
-\end{small}
+  \end{small}
+\end{samepage}
 
 Now that we have a simulated capture-recapture dataset $y$, and we have
 augmented it to create the new data object $yz$, we are ready to
