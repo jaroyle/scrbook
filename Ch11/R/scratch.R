@@ -75,12 +75,12 @@ a
 
 
 # spatial covariate (with mean 0)
-elev.fn <- function(x) {
-    x <- matrix(x, ncol=2)        # Force x to be a matrix
-    (x[,1] + x[,2] - 100) / 40.8  # Returns (standardized) "elevation"
+elev.fn <- function(s) {
+    s <- matrix(s, ncol=2)        # Force s to be a matrix
+    (s[,1] + s[,2] - 100) / 40.8  # Returns (standardized) "elevation"
 }
 
-mu <- function(x, beta0, beta1) exp(beta0 + beta1*elev.fn(x=x))
+mu <- function(s, beta0, beta1) exp(beta0 + beta1*elev.fn(s=s))
 
 library(R2Cuba)
 xx <- cuhre(2, 1, mu, lower=c(0,0), upper=c(100,100), beta0=0, beta1=2)
@@ -114,13 +114,13 @@ N <- rpois(1, EN) # Realized N
 s <- matrix(NA, N, 2) # This matrix will hold the coordinates
 elev.min <- elev.fn(c(0,0))
 elev.max <- elev.fn(c(100, 100))
-Q <- max(c(exp(beta0 + beta1*elev.min) / EN,
-           exp(beta0 + beta1*elev.max) / EN))
+Q <- max(c(exp(beta0 + beta1*elev.min),
+           exp(beta0 + beta1*elev.max)))
 counter <- 1
 while(counter <= N) {
   x.c <- runif(1, 0, 100); y.c <- runif(1, 0, 100)
   s.cand <- c(x.c,y.c)
-  pr <- mu(s.cand, beta0, beta1) / EN
+  pr <- mu(s.cand, beta0, beta1) #/ EN
   if(runif(1) < pr/Q) {
     s[counter,] <- s.cand
     counter <- counter+1

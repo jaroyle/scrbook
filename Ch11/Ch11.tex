@@ -248,6 +248,7 @@ section where the objective is to model $\mu$ as a function of
 spatially-referenced covariates. First, as an exercise, execute the
 following \R~commands to familiarize yourself with some of the
 concepts we just covered:
+\begin{small}
 \begin{verbatim}
 Area <- 1                  # Area of state-space
 M <- 100                   # Data augmentation size
@@ -256,6 +257,7 @@ psi <- (mu*Area)/M         # Data augmentation parameter (thinning rate)
 N <- rbinom(M, 1, psi)     # Realized value of N under binomial prior
 cbind(runif(N), runif(N))  # Point pattern from thinned binomial model
 \end{verbatim}
+\end{small}
 %This code illustrates the fact that $\psi$ can be expressed as a
 %function of the point process intensity $\mu$. Thus each and every
 %MCMC algorithm used in this book could have been parameterized in
@@ -530,9 +532,44 @@ below.
 First, we simulate some data under the model $\mu(\mathbf{s},
 \bm{\beta}) = \beta_0 + \beta_1\mathrm{ELEV}(\mathbf{s})$, where
 $\mathrm{ELEV}(\mathbf{s})$ is a spatial covariate, say
-elevation, and $\beta_0=5$ and
-$\beta_1=2$. Simulating data from an inhomogeneous point process is
-not as simple as simulation data from a homogeneous point process
+elevation, and $\beta_0=5$ and $\beta_1=2$. It is worth emphasizing
+that a spatial covariate must be defined at any location $\bf s$,
+which is demonstrated by the following \R~code.
+\begin{samepage}
+  \begin{small}
+\begin{verbatim}
+elev.fn <- function(s) {          # spatial covriate
+    s <- matrix(s, ncol=2)        # Force s to be a matrix
+    (s[,1] + s[,2] - 100) / 40.8  # Returns (standardized) "elevation"
+}
+# intensity function
+mu <- function(s, beta0, beta1) exp(beta0 + beta1*elev.fn(s=s))
+beta0 <- -6 # intercept of intensity function
+beta1 <- 1  # effect of elevation on intensity
+# Next line computes integral
+EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1,
+            lower=c(0,0), upper=c(100,100))$value
+\end{verbatim}
+  \end{small}
+\end{samepage}
+The function \texttt{elev.fn} returns the value of elevation at any
+location, which can be either a two-dimensional vector for the
+coordinates of a single point, or it can be matrix with two columns
+for a collection of points. The next lines of the code define the
+intensity function $\mu(\mathbf{s}, \bm{\beta})$ in terms of elevation
+and the regression coefficients. The last line uses the \verb+cuhre+ function in
+the {\tt R2Cuba} package \citep{hahn_etal:2011} to compute the
+expected value of $N$ in a $[0,100]\times[0,100]$ square state-space, which is the
+two-dimensional integral of Eq.~\ref{state-space.eq.pdf.hetero}. This
+integral could also be computed using a fine grid of points as we have done in previous
+chapters, but it is useful to gain familiarity with more efficient
+integration functions in \R.
+
+The \R~code above demonstrates how to obtain the expected value
+of $N$ given a spatial covariate and the coefficients defining the
+intensity function. Now we need to generate a realized value of $N$
+and distribute the $N$ points in proportion to the intensity
+function. This is not as simple as it was to simulate data from a homogeneous point process
 because the points are no longer uniformly distributed within the
 state-space. Instead one must resort to methods such as rejection sampling, which involves
 simulating data from a standard distribution and then accepting or
@@ -546,39 +583,23 @@ $[\mathbf{s}_i | \bm{\beta}]$
 demonstrate the use of
 rejection sampling to simulate an inhomogeneous point process for the
 elevation covariate depicted in
-Fig.~\ref{state-space.fig.hetero}. The code uses the \verb+cuhre+ function in
-the {\tt R2Cuba} package to compute the two-dimensional integral
-\citep{hahn_etal:2011}. An alternative would be to evaluate the
-integral on a fine grid of points as we have done in previous
-chapters, but it is useful to gain familiarity with more efficient
-integration functions in \R.
+Fig.~\ref{state-space.fig.hetero}.
 
 \begin{samepage}
   \begin{small}
 \begin{verbatim}
-elev.fn <- function(x) {          # spatial covriate
-    x <- matrix(x, ncol=2)        # Force x to be a matrix
-    (x[,1] + x[,2] - 100) / 40.8  # Returns (standardized) "elevation"
-}
-# intensity function
-mu <- function(x, beta0, beta1) exp(beta0 + beta1*elev.fn(x=x))
 set.seed(31025)
-beta0 <- -6 # intercept of intensity function
-beta1 <- 1  # effect of elevation on intensity
-# Next line computes integral, which is expected value of N
-EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1,
-            lower=c(0,0), upper=c(100,100))$value
 N <- rpois(1, EN)     # Realized N
 s <- matrix(NA, N, 2) # This matrix will hold the coordinates
 elev.min <- elev.fn(c(0,0))
 elev.max <- elev.fn(c(100, 100))
-Q <- max(c(exp(beta0 + beta1*elev.min) / EN,
-           exp(beta0 + beta1*elev.max) / EN))
+Q <- max(c(exp(beta0 + beta1*elev.min),
+           exp(beta0 + beta1*elev.max)))
 counter <- 1
 while(counter <= N) {
   x.c <- runif(1, 0, 100); y.c <- runif(1, 0, 100)
   s.cand <- c(x.c,y.c)
-  pr <- mu(s.cand, beta0, beta1) / EN
+  pr <- mu(s.cand, beta0, beta1)
   if(runif(1) < pr/Q) {
     s[counter,] <- s.cand
     counter <- counter+1
@@ -613,7 +634,7 @@ function.
 
 \begin{small}
 \begin{verbatim}
-nll <- function(beta) {
+nll <- function(beta) { # negative log-likelihood
     beta0 <- beta[1]
     beta1 <- beta[2]
     EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1)$value
@@ -625,17 +646,21 @@ cbind(Est=fm$par, SE=sqrt(diag(solve(fm$hessian)))) # estimates and SEs
 \end{verbatim}
 \end{small}
 
-Maximizing the likelihood took a small fraction of a second, and we
+Maximizing the likelihood took a fraction of a second, and we
 obtained estimates of $\hat{\beta}_0=-5.93$ and $\hat{\beta}_1=0.95$,
-which are very close to the data generating values. We could plug
-these estimate into our linear model at each point in the state-space to
-obtain the MLE for the intensity surface.
+which are very close to the data generating values. The 95\% confidence
+interval for $\hat{\beta}_1$ is [0.61, 1.3] and since it does not
+include zero, the null hypothesis that $\beta_1=0$ can be rejected. In addition to testing
+hypotheses, these results can be used to predict population size in
+new regions or create predicted density surface maps by plugging the
+parameter estimates into Eqs.~\ref{state-space.eq.loglin} and~\ref{state-space.eq.EN}.
 
 This example demonstrates
 that if we had the data we wish we had, i.e. if we knew the
 coordinates of the activity centers, we could easily estimate the
-parameters governing the underlying point process. However, in
-SCR models, the activity centers cannot be directly observed---yet,
+parameters governing the underlying point process and make inferences
+about spatial variation in abundance. Unfortunately, in
+SCR, the activity centers cannot be directly observed; however,
 spatial recaptures provide the information needed to
 estimate these latent parameters.
 
@@ -668,40 +693,37 @@ be detected multiple times at a trap during a single occasion.
 \begin{samepage}
   \begin{small}
 \begin{verbatim}
-xsp <- seq(20, 80, by=10)
-len <- length(xsp)
-X <- cbind(rep(xsp, each=len),
-           rep(xsp, times=len)) # trap locations
-ntraps <- nrow(X)
-K <- 5                          # occasions
-y <- array(NA, c(N, ntraps, K)) # capture data
-
-nz <- 80 # data augmentation
-M <- nz+nrow(y)
-yz <- array(0, c(M, ntraps, K))
+xsp <- seq(20, 80, by=10); len <- length(xsp)
+X <- cbind(rep(xsp, each=len), rep(xsp, times=len)) # traps
+ntraps <- nrow(X); noccasions <- 5
+y <- array(NA, c(N, ntraps, noccasions)) # capture data
 sigma <- 5  # scale parameter
 lam0 <- 1   # basal encounter rate
 lam <- matrix(NA, N, ntraps)
 set.seed(5588)
 for(i in 1:N) {
     for(j in 1:ntraps) {
-        # The object s was simulated in previous section
+        # The object "s" was simulated in previous section
         distSq <- (s[i,1]-X[j,1])^2 + (s[i,2] - X[j,2])^2
         lam[i,j] <- exp(-distSq/(2*sigma^2)) * lam0
         y[i,j,] <- rpois(K, lam[i,j])
     }
 }
+# data augmentation
+nz <- 80
+M <- nz+nrow(y)
+yz <- array(0, c(M, ntraps, K))
 yz[1:nrow(y),,] <- y # Fill data augmentation array
 \end{verbatim}
   \end{small}
 \end{samepage}
 
 Now that we have a simulated capture-recapture dataset \texttt{y} and we have
-augmented it to create the new data object \texttt{yz}, we are ready to
-begin sampling from the posteriors. A commented Gibbs sampler written
+augmented it to create the new data object \texttt{yz}, we can
+estimate the parameters using MCMC.  A commented Gibbs sampler written
 in \R~is available in the accompanying \R~package \scrbook~(see
 \texttt{?scrIPP}). This function is not meant to be an all purpose
-tool for fitting SCR models using MCMC---it is primarily presented so
+tool for fitting SCR models using MCMC---instead, it is presented so
 that interested readers can better understand the computational
 aspects of the problem and can modify it for their purposes.
 The function can be used as so:
@@ -720,7 +742,8 @@ which requests 10000 posterior samples and estimates the effect of the
 spatial covariate, elevation, on density. Note that any spatial
 covariate that returns a real value for any location in the
 state-space can be supplied using the \texttt{space.cov} argument. The resulting
-trace plots of the Markov chains and the posterior distributions are
+trace plots of the Markov chains and the posterior distributions for
+three parameters are
 shown in Fig.~\ref{state-space.fig.fm1post}. The chains appear to
 converge rapidly but may need to be run longer to reduce Monte Carlo
 error.
