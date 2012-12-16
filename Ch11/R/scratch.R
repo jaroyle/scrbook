@@ -217,37 +217,29 @@ system("open ../figs/heteroPlots.png")
 
 
 
-# Create trap locations
-xsp <- seq(20, 80, by=10)
-len <- length(xsp)
-X <- cbind(rep(xsp, each=len), rep(xsp, times=len))
 
-# Simulate capture histories, and augment the data
-ntraps <- nrow(X)
-K <- 5
-y <- array(NA, c(N, ntraps, K))
 
-nz <- 80 # augmentation
-M <- nz+nrow(y)
-yz <- array(0, c(M, ntraps, K))
-
-sigma <- 5  # half-normal scale parameter
+xsp <- seq(20, 80, by=10); len <- length(xsp)
+X <- cbind(rep(xsp, each=len), rep(xsp, times=len)) # traps
+ntraps <- nrow(X); noccasions <- 5
+y <- array(NA, c(N, ntraps, noccasions)) # capture data
+sigma <- 5  # scale parameter
 lam0 <- 1   # basal encounter rate
 lam <- matrix(NA, N, ntraps)
-
 set.seed(5588)
 for(i in 1:N) {
     for(j in 1:ntraps) {
+        # The object "s" was simulated in previous section
         distSq <- (s[i,1]-X[j,1])^2 + (s[i,2] - X[j,2])^2
         lam[i,j] <- exp(-distSq/(2*sigma^2)) * lam0
-        y[i,j,] <- rpois(K, lam[i,j])
+        y[i,j,] <- rpois(noccasions, lam[i,j])
     }
 }
-table(y)
-c(N=N, n=sum(apply(y>0, 1, any)))
-yz[1:nrow(y),,] <- y # Fill
-
-plot(s)
+# data augmentation
+nz <- 80
+M <- nz+nrow(y)
+yz <- array(0, c(M, ntraps, noccasions))
+yz[1:nrow(y),,] <- y # Fill data augmentation array
 
 
 
@@ -270,7 +262,7 @@ fm1 <- scrIPP(yz, X, M, 10000, xlims=c(0,100), ylims=c(0,100),
 
 plot(mcmc(fm1$out))
 summary(mcmc(fm1$out))
-summary(window(mcmc(fm1$out), start=5001))$q
+summary(window(mcmc(fm1$out), start=5001))#$q
 
 which.max(table(fm1$out[,"N"]))
 HPDinterval(window(mcmc(fm1$out, start=5001)))
@@ -284,7 +276,7 @@ plot(fm1$last$S)
 
 
 png("../figs/fm1p.png", width=7, height=7, units="in", res=400)
-par(mfrow=c(4,2), mai=c(0.3, 0.4, 0.5, 0.2), cex.main=1.5)
+par(mfrow=c(4,2), mai=c(0.3, 0.4, 0.5, 0.2), cex.main=1.8, cex.axis=1.8)
 plot(mcmc(fm1$out[,c(3,4,5)]))
 dev.off()
 system("open ../figs/fm1p.png")

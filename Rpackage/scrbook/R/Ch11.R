@@ -79,7 +79,7 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, space.cov,
     D <- e2dist(S, X)
     lam <- lam0*exp(-(D*D)/(2*sigma*sigma))
 
-    mu <- function(x, beta0, beta1) exp(beta0 + beta1*space.cov(x=x))
+    mu <- function(s, beta0, beta1) exp(beta0 + beta1*space.cov(s=s))
     EN <- cuhre(2, 1, mu, lower=c(xlims[1], ylims[1]),
                 upper=c(xlims[2], ylims[2]),
                 beta0=beta0, beta1=beta1,

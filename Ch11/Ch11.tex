@@ -691,7 +691,7 @@ trapping studies or when using other methods in which animals could
 be detected multiple times at a trap during a single occasion.
 
 \begin{samepage}
-  \begin{small}
+\begin{small}
 \begin{verbatim}
 xsp <- seq(20, 80, by=10); len <- length(xsp)
 X <- cbind(rep(xsp, each=len), rep(xsp, times=len)) # traps
@@ -706,16 +706,15 @@ for(i in 1:N) {
         # The object "s" was simulated in previous section
         distSq <- (s[i,1]-X[j,1])^2 + (s[i,2] - X[j,2])^2
         lam[i,j] <- exp(-distSq/(2*sigma^2)) * lam0
-        y[i,j,] <- rpois(K, lam[i,j])
+        y[i,j,] <- rpois(noccasions, lam[i,j])
     }
 }
 # data augmentation
-nz <- 80
-M <- nz+nrow(y)
+nz <- 80; M <- nz+nrow(y)
 yz <- array(0, c(M, ntraps, K))
 yz[1:nrow(y),,] <- y # Fill data augmentation array
 \end{verbatim}
-  \end{small}
+\end{small}
 \end{samepage}
 
 Now that we have a simulated capture-recapture dataset \texttt{y} and we have
@@ -747,66 +746,90 @@ three parameters are
 shown in Fig.~\ref{state-space.fig.fm1post}. The chains appear to
 converge rapidly but may need to be run longer to reduce Monte Carlo
 error.
-
 \begin{figure}
   \centering
-  \includegraphics[width=0.9\textwidth]{Ch11/figs/fm1p}
+  \includegraphics[width=0.75\textwidth]{Ch11/figs/fm1p}
   \caption{Trace plots and posterior distributions from MCMC analysis
     of SCR model with inhomogeneous point process. Analysis was
     conducted using the \texttt{scrIPP} function in the accompanying
-    \R~package.}
+    \R~package \scrbook.}
   \label{fig:state-space.fig.fm1post}
 \end{figure}
+%For comparison, we also fit this model using $\texttt{secr}$. See the
+%help file \texttt{Ch-IPP} in \scrbook~ for \R~commands necessary to
+%prepare the data for \secr.
 
-For comparison, we also fit this model using $\texttt{secr}$. See the
-help file \texttt{Ch-IPP} in \scrbook~ for \R~commands necessary to
-prepare the data for \secr. The results are presented in
-Table~\ref{state-space.tab.simIPP}, and we see that the point
-estimates and confidence/credible intervals are quite similar from the
-MCMC and maximum likelihood (ML) analyses. One exception is that the
-confidence intervals for $N$ and the expected value of $N$ are
-somewhat different. This may result from the fact that the MCMC
-analysis assumed a binomial prior for $N$, whereas the ML analysis
-assumed a Poisson prior.
+Summaries of the posterior distributions are presented in
+Table~\ref{state-space.tab.simIPP}. The posterior means for $\beta_0$
+and $\beta_1$ are quite similar to MLEs from the analysis in the
+previous section in which we assumed no observation error. However, we
+see that the confidence intervals are wider. With respect to the other
+parameters in the model, we see that all of the data
+generating parameter fall within the 95\% credible intervals. One
+interesting thing to note is that, although the point estimates for
+the expected and realized values of $N$ are quite similar, the
+estimate is more precise for the realized value. This is to be
+expected because the uncertainty associated with the realized value of
+$N$ is entirely determined by the encounter rate parameters. That is,
+if we could perfectly detect all of the individuals in $\cal S$, there
+would be no uncertainty about $N$. In contrast, the variance for
+expected value of $N$ is affected by the variance of all the parameters
+in the model, not just the encounter rate parameters. See
+\citet{efford_fewster:2012} for additional discussion on the
+difference between realized and expected values of abundance.
+%, and we see that the point
+%estimates and confidence/credible intervals are quite similar from the
+%MCMC and maximum likelihood (ML) analyses. One exception is that the
+%confidence intervals for $N$ and the expected value of $N$ are
+%somewhat different. This may result from the fact that the MCMC
+%analysis assumed a binomial prior for $N$, whereas the ML analysis
+%assumed a Poisson prior.
 
 \begin{table}%[b]
 \centering
-\caption{Comparison of parameter estimates from SCR model with
-  inhomogeneous point process. Estimates are posterior means from MCMC
-analysis and maximum likelihood estimates from analysis using
-\texttt{secr}. Note that the MCMC analysis assumed a binomial prior
-for $N$ whereas a Poisson prior was assumed for the \texttt{secr} analysis.}
-\begin{tabular}{lrrrrr}
+\caption{Summary of posterior distributions from SCR model with
+  inhomogeneous point process. }
+\begin{tabular}{lrrrr}
 \hline
-Parameter 	& Method 	& Estimate 	& SD/SE 	& Lower 	& Upper \\
+Parameter 	 	& Mean  	& SD    	& 2.5\% 	& 97.5\% \\
 \hline
- $\sigma=5$ 	& MCMC 	&  5.232 	&  0.310 	&  4.681 	&  5.858 \\
-  	        & ML 	&  5.237 	&  0.303 	&  4.676 	&  5.866 \\
- $\lambda_0=1$ 	& MCMC 	&  0.802 	&  0.119 	&  0.595 	&  1.049 \\
-  	        & ML 	&  0.781 	&  0.115 	&  0.586 	&  1.041 \\
-% $\beta_1=1$ 	& MCMC 	&  0.985 	&  0.209 	&  0.575 	&  1.378 \\
-%  	        & ML 	&  1.037 	&  0.274 	&  0.501 	&  1.574 \\
- $N=41$ 	& MCMC 	& 47.615 	&  8.041 	& 35.000 	& 66.000 \\
-  	        & ML 	& 47.778 	&  7.744 	& 37.074 	& 68.830 \\
- $\mathbb{E}[N]=39.9$ 	& MCMC 	& 47.551 	& 10.992 	& 29.837 	& 71.332 \\
-  	        & ML 	& 47.778 	& 10.380 	& 31.363 	& 72.784 \\
+ $\sigma=5$ 	 	&  5.232 	&  0.310 	&  4.681 	&  5.858 \\
+ $\lambda_0=1$ 	 	&  0.802 	&  0.119 	&  0.595 	&  1.049 \\
+ $\beta_0=-6$ 	 	& -5.856        & 0.2542        & -6.376        & -5.393 \\
+ $\beta_1=1$ 	 	&  0.985 	&  0.209 	&  0.575 	&  1.378 \\
+ $N=41$ 	 	& 47.615 	&  8.041 	& 35.000 	& 66.000 \\
+ $\mathbb{E}[N]=39.9$ 	& 47.551 	& 10.992 	& 29.837 	& 71.332 \\
 \hline
+% \hline
+% Parameter 	& Method 	& Estimate 	& SD/SE 	& Lower 	& Upper \\
+% \hline
+%  $\sigma=5$ 	& MCMC 	&  5.232 	&  0.310 	&  4.681 	&  5.858 \\
+%   	        & ML 	&  5.237 	&  0.303 	&  4.676 	&  5.866 \\
+%  $\lambda_0=1$ 	& MCMC 	&  0.802 	&  0.119 	&  0.595 	&  1.049 \\
+%   	        & ML 	&  0.781 	&  0.115 	&  0.586 	&  1.041 \\
+% % $\beta_1=1$ 	& MCMC 	&  0.985 	&  0.209 	&  0.575 	&  1.378 \\
+% %  	        & ML 	&  1.037 	&  0.274 	&  0.501 	&  1.574 \\
+%  $N=41$ 	& MCMC 	& 47.615 	&  8.041 	& 35.000 	& 66.000 \\
+%   	        & ML 	& 47.778 	&  7.744 	& 37.074 	& 68.830 \\
+%  $\mathbb{E}[N]=39.9$ 	& MCMC 	& 47.551 	& 10.992 	& 29.837 	& 71.332 \\
+%   	        & ML 	& 47.778 	& 10.380 	& 31.363 	& 72.784 \\
+% \hline
 \end{tabular}
 \label{state-space.tab.simIPP}
 \end{table}
 
-Fitting continuous space IPP models is somewhat
-difficult in \bugs~because our prior ``IPP'' is not one of the
+Fitting continuous space inhomogenous point process models is somewhat
+difficult in \bugs~because the ``IPP'' prior $[\mathbf{s}_i | \bm
+\beta]$ is not one of the
 available distributions that come with the software. It is
 possible to add new distributions in \bugs, but it is somewhat
 cumbersome.  \secr~allows
-users to fit continuous space IPPs using polynomials of the x- and y-
+users to fit continuous space IPPs using linear or polynomial functions of the x- and y-
 coordinates, but it does not accept truly continuous covariates that
 are functions of space. However, these
 are not really important limitations because discrete
-space versions of the IPP model are straight-forward, and virtually all spatial
+space versions of the model are straight-forward, and virtually all spatial
 covariates are, or can be, defined as such.
-
 
 \subsection{Discrete space}
 \label{modeling.sec.discrete}
