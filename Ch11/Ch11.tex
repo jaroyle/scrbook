@@ -478,9 +478,9 @@ In the next sections we walk through a few examples, building up from
 the simplest case where we actually observe the activity centers as
 though they were data. In the second example, we fit our new model to simulated
 data in which density is a function of a single continuous
-covariate. \hl{XXXX NOT DONE YET: To build upon the developments in the previous chapter, we
+covariate. To build upon the developments in the previous chapter, we
 further consider the plausible case where a state-space covariate is also a
-covariate of ecological distance. XXXX} A small simulation study indicates
+covariate of ecological distance. A small simulation study indicates
 that both effects can be estimated. A fourth example shows an analysis in discrete space using
 both \secr~\citep{efford:2011} and \jags~\citep{plummer:2003}. In the
 fifth and final example, we model the intensity of
@@ -902,16 +902,32 @@ This model can also be fit in \secr, which refers
 to the raster data as a ``habitat mask''. \R~code to
 fit the models using \secr~and \jags~is available in \scrbook---see
 \verb#help(ch9secrYjags)#. Results of the
-comparison are shown in Table \ref{ch9:tab:secrYjags} and are
-very similar as expected.
-\begin{comment}
-\hl{ANDY, is there any point in discussing
-  the slight differences?}
-  YES: If we can explain it. Could it be MC error alone?
-Otherwise I guess attributing it to differences between MLE and BAyes is ok. That seems like
-a reasonable thing.
-\end{comment}
-\begin{table}[h!]
+comparison are shown in Table \ref{state-space.tab.jagsVsecr} and are
+very similar as expected. The differences that do exist can be
+explained by a variety of reasons. For one, there exists some Monte
+Carlo error in the Bayesian posterior summaries. There is also the
+fact that posterior summaries can be computed in numerous ways---for
+example, we could have presented posterior modes or medians instead of
+means---or, we could have shown highest posterior density credible
+intervals instead of simple percentiles. The posteriors would also
+differ if we chose more informative priors than the uniform
+distributions used here. We see no reason why these
+issues should be seen as limitations of the Bayesian analysis, rather
+we would argue that the posterior distribution, which describes the
+probability that the parameter equals any particular value, is a
+better descriptor undertainty than any particular point estimator or
+confidence interval. Futhermore, most of these differences are minor,
+and hardly worth mention. The only exception is that the estimates of
+the expected and realized values of $N$ are closer to the data
+generating values in the Bayesian analysis, and the Bayesian credible
+intervals are narrower than the frequentist confidence intervals. This
+is likely a result of the fact that the Bayesian analysis assumed
+that $N$ was binomial whereas the frequentist analysis
+assumed a Poisson prior for $N$, and the variance of the binomial will
+always be less than or equal to the variance of Poisson distribution
+for a shared expectation.
+
+\begin{table}%[h!]
 \centering
 \caption{Comparison of \secr~and \jags~results. Point estimates from
   the Bayesian analysis are posterior means. Intervals are lower and
@@ -928,19 +944,9 @@ Par 	& Truth 	& Software 	& Mean 	& SD 	& 2.5\% & 97.5\% \\
  $\beta_1$ 	&  2.00 	& \texttt{secr} 	&  2.71 	&  0.36 	&  2.01 	&  3.42 \\
  $N$ 	        & 58.00 	& \textbf{JAGS} 	& 58.39 	&  5.92 	& 48.00 	& 71.00 \\
  $N$ 	        & 58.00 	& \texttt{secr} 	& 62.71 	&  6.97 	& 52.49 	& 80.69 \\
- $\mathbb{E}[N]$ 	& 58.41 	& \textbf{JAGS} 	&    NA 	&    NA 	&    NA 	&    NA \\
- $\mathbb{E}[N]$ 	& 58.41 	& \texttt{secr} 	& 62.71 	& 10.55 	& 45.20 	& 87.01 \\
+ $\mathbb{E}[N]$ 	& 58.41 & \textbf{JAGS} 	&    NA 	&    NA 	&    NA 	&    NA \\
+ $\mathbb{E}[N]$ 	& 58.41 & \texttt{secr} 	& 62.71 	& 10.55 	& 45.20 	& 87.01 \\
 \hline
-%  secr & $N=50$ & 49.2803 & 5.7535 & 41.0087 & 64.3879 \\
-%       & $\beta=2$ &  2.1772 & 0.5628 &  1.0741 &  3.2804 \\
-%       & $\lambda_0=0.8$ &  0.9203 & 0.0764 &  0.7824 &  1.0825 \\
-%       & $\sigma=0.1$ &  0.0990 & 0.0038 &  0.0918 &  0.1068 \\
-% \hline
-%  JAGS & $N=50$ & 48.2072 & 5.4053 & 39.0000 & 60.0000 \\
-%       & $\beta=2$ &  2.1026 & 0.5323 &  1.0889 &  3.1506 \\
-%       & $\lambda_0=0.8$ &  0.9328 & 0.0766 &  0.7898 &  1.0921 \\
-%       & $\sigma=0.1$ &  0.1004 & 0.0041 &  0.0929 &  0.1089 \\
-% \hline
 \end{tabular}
 \label{state-space.tab.jagsVsecr}
 \end{table}
@@ -980,8 +986,10 @@ be infinitely large. Thus, one may want to enforce the constraint that
 $\theta$ is strictly $\geq 0$. See Chapter~\ref{chapt.ecoldist} for
 more details.
 
-A question that arises is: Is possible to estimate both $\beta$
-and $\theta$ using standard SCR data? Currently, it is not possible to
+A question that arises is: Is possible to estimate $\bm \beta$
+and $\theta$ using standard SCR data? In other words, can we model
+spatial variation in density and connectivity at the same time,
+using standard SCR data? Currently, it is not possible to
 model least-cost distance using \jags~or \secr, so we wrote our own
 function, \verb+scrDED+, to fit the model using maximum likelihood. An
 example analysis is provided on the help page for the function in our
@@ -989,18 +997,18 @@ example analysis is provided on the help page for the function in our
 the capture history data, the trap locations, and the raster data
 formatted using the {\tt raster} package
 \citep{hijmans_vanetten:2012}. The linear model for the
-intensity parameter $\mu(s, \beta)$ and the least-cost distance
-function $lcd(\theta)$ are specified using \R's formula interface. A
+intensity parameter $\mu(\mathbf{s}, \beta)$ and the least-cost distance
+function $\text{lcd}(\theta)$ are specified using \R's formula interface. A
 simple function call is
 \begin{verbatim}
 fm <- scrDED(y, traplocs=X, den.formula=~elev, dist.formula=~elev,
              rasters=elev.raster)
 \end{verbatim}
-To assess the possibility of estimating both $\beta$ and $\theta$, we
+To assess the possibility of estimating both $\bm \beta$ and $\theta$, we
 conducted a small simulation study, generating 500 datasets from the
 model with both parameters set to 1, which corresponds to the
-conditions described above. Rather incredibly, we see that it is
-possible to estimate both parameters with high accuracy
+conditions described above. The results indicate that it is
+possible to estimate both parameters
 (Fig~\ref{ch9.fig.sim}).
 
 \begin{figure}[ht]
@@ -1012,6 +1020,7 @@ by the same covariate, elevation. The vertical lines indicate the
 data-generating value.}
 \label{ch9.fig.sim}
 \end{figure}
+
 
 
 
@@ -1065,8 +1074,8 @@ hypothesis is that poaching pressure should decrease and jaguar
 density should increase with the level of
 protection. Thus, $\beta$ in this example is a ``slope''
 parameter describing the degree to which protection status affects
-jaguar density. We also hypothesized that males and females could have
-different home range sizes and that the sex ratio may not be
+jaguar density. We also hypothesized that males would have larger home
+ranges than females \citep{conde_etal:2010,sollmann_etal:2011} and that the sex ratio may not be
 1:1. Furthermore, we restricted the state-space to exclude the large
 soybean monocultures surrounding the study area, and we only
 considered

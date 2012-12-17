@@ -566,13 +566,13 @@ cat("
 model{
 sigma ~ dunif(0, 20)
 lam0 ~ dunif(0, 10)
-beta0 ~ dunif(-20, 20) #dnorm(0, 0.01)
-beta1 ~ dunif(-20, 20) #dnorm(0, 0.01)
+beta0 ~ dunif(-20, 20)
+beta1 ~ dunif(-20, 20)
 for(j in 1:nPix) {
   mu[j] <- exp(beta0 + beta1*CANHT[j])*pixArea
-  EN <- sum(mu[])
   probs[j] <- mu[j]/EN
 }
+EN <- sum(mu[])
 psi <- EN/M
 for(i in 1:M) {
   w[i] ~ dbern(psi)
@@ -615,12 +615,12 @@ str(init1())
 
 pars1 <- c("sigma", "lam0", "beta0", "beta1", "N", "EN")
 
-# Obtain posterior samples. This takes a few minutes
+# Obtain posterior samples.
 # Compile and adapt
 system.time({
-    set.seed(03453)
+    set.seed(453)
     jm <- jags.model(modfile, jags.data, init1, n.chains=2, n.adapt=1000)
-    jags1 <- coda.samples(jm, pars1, n.iter=5000)
+    jags1 <- coda.samples(jm, pars1, n.iter=100000)
 }) # 1.6hr
 
 plot(jags1, ask=TRUE)
