@@ -448,20 +448,22 @@ library(rjags)
 
 
 set.seed(358030)
-pix <- 5 #0.05
-dat <- spcov(B=100, pix=pix)$R
+pix <- 5
+pixArea <- pix*pix
+B <- 100  # Length of square side
+dat <- spcov(B=B, pix=pix)$R
 npix <- nrow(dat)
 colnames(dat) <- c("x","y","elev")
-cell <- seq(pix/2, 100-pix/2, pix)
-image(cell, cell, t(matrix(dat$elev, 100/pix, 100/pix)), ann=FALSE)
+cell <- seq(pix/2, B-pix/2, pix)
+image(cell, cell, t(matrix(dat$elev, B/pix, B/pix)), ann=FALSE)
 
 head(dat)
 
 # Simulate IPP
 set.seed(30275)
-beta0 <- -4
-beta1 <- 2
-(EN <- sum(exp(beta0 + beta1*dat$elev)))
+beta0 <- -6
+beta1 <- 1
+(EN <- sum(exp(beta0 + beta1*dat$elev)*pixArea))
 N <- rpois(1, EN)
 dat$cp <- exp(beta0 + beta1*dat$elev) / EN
 s.tmp <- rmultinom(1, N, dat$cp) # a single realization to be ignored later
@@ -612,12 +614,12 @@ region.N(secr1, se.N=TRUE)
 sink("ippDiscrete.txt")
 cat("
 model{
-sigma ~ dunif(0, 50)
+sigma ~ dunif(0, 20)
 lam0 ~ dunif(0, 5)
-beta0 ~ dnorm(0, 0.001) #log(D) # D=density defined below
-beta1 ~ dnorm(0, 0.001)
+beta0 ~ dnorm(0, 0.01)
+beta1 ~ dnorm(0, 0.01)
 for(j in 1:nPix) {
-  mu[j] <- exp(beta0 + beta1*elevation[j])
+  mu[j] <- exp(beta0 + beta1*elevation[j])*pixArea
   probs[j] <- mu[j]/sum(mu[])
 }
 psi <- sum(mu[])/M
@@ -643,7 +645,7 @@ sink()
 modfile <- "ippDiscrete.txt"
 
 jags.data <- list(y=yz, elevation=drop(dat$elev),
-            nPix=nrow(dat),
+            nPix=nrow(dat), pixArea=pixArea,
             M=nrow(yz), ntraps=nrow(X),
             Sgrid=as.matrix(dat[,1:2]),
             grid=X)
@@ -668,17 +670,13 @@ system.time({
     set.seed(03453)
     jm <- jags.model(modfile, jags.data, init1, n.chains=2, n.adapt=1000)
     jags1 <- coda.samples(jm, pars1, n.iter=20000)
-})
+}) # 1.6hr
 
 plot(jags1, ask=TRUE)
 summary(jags1)
 
-summary(window(jags1, start=3501))
-plot(window(jags1, start=3501), ask=TRUE)
-
-
-
-unlink(modfile)
+summary(window(jags1, start=10001))
+plot(window(jags1, start=10001), ask=TRUE)
 
 
 
