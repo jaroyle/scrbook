@@ -96,10 +96,10 @@ err3new[j]<- pow( pow(traptotalsnew[j],.5) - pow(expectedtrap[j],.5),2)
 }
 X3obs<- sum(err3[])
 X3new<- sum(err3new[])
-X1obs<- sum(err1[])
-X1new<- sum(err1new[])
-Xobs<-sum(err[,])
-Xnew<-sum(errnew[,])
+X2obs<- sum(err1[])
+X2new<- sum(err1new[])
+X1obs<-sum(err[,])
+X1new<-sum(errnew[,])
 
 N<-sum(w[1:M])
 D<-N/area
@@ -157,10 +157,10 @@ err3new[j]<- pow( pow(traptotalsnew[j],.5) - pow(expectedtrap[j],.5),2)
 }
 X3obs<- sum(err3[])
 X3new<- sum(err3new[])
-X1obs<- sum(err1[])
-X1new<- sum(err1new[])
-Xobs<-sum(err[,])
-Xnew<-sum(errnew[,])
+X2obs<- sum(err1[])
+X2new<- sum(err1new[])
+X1obs<-sum(err[,])
+X1new<-sum(errnew[,])
 
 N<-sum(w[1:M])
 D<-N/area
@@ -247,10 +247,10 @@ err3new[j]<- pow( pow(traptotalsnew[j],.5) - pow(expectedtrap[j],.5),2)
 }
 X3obs<- sum(err3[])
 X3new<- sum(err3new[])
-X1obs<- sum(err1[])
-X1new<- sum(err1new[])
-Xobs<-sum(err[,])
-Xnew<-sum(errnew[,])
+X2obs<- sum(err1[])
+X2new<- sum(err1new[])
+X1obs<-sum(err[,])
+X1new<-sum(errnew[,])
 
 N<-sum(w[1:M])
 D<-N/area
@@ -310,10 +310,10 @@ err3new[j]<- pow( pow(traptotalsnew[j],.5) - pow(expectedtrap[j],.5),2)
 }
 X3obs<- sum(err3[])
 X3new<- sum(err3new[])
-X1obs<- sum(err1[])
-X1new<- sum(err1new[])
-Xobs<-sum(err[,])
-Xnew<-sum(errnew[,])
+X2obs<- sum(err1[])
+X2new<- sum(err1new[])
+X1obs<-sum(err[,])
+X1new<-sum(errnew[,])
 
 N<-sum(w[1:M])
 D<-N/area
@@ -330,7 +330,7 @@ data <- list ("y","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex")
 inits <- function(){   list (sigma=runif(1,.4,1),alpha0=rnorm(1,-2,.2),w=wst,alpha.sex=0,
 beta.sex=0,mod=c(1,1)) }
 parameters <- c("mod","beta.sex","alpha.sex","psi","psi.sex","sigma","alpha0",
-"N","D","Xobs","Xnew","X1obs","X1new","X3obs","X3new") ###,"Xobs","Xnew","s","w")
+"N","D","X1obs","X1new","X2obs","X2new","X3obs","X3new") ###,"Xobs","Xnew","s","w")
 out <- jags(data, inits, parameters, "modelfile5.txt", n.thin=1,n.chains=3, n.burnin=nb,
 n.iter=ni,working.dir=getwd())
 }
@@ -342,7 +342,8 @@ mod<-c(0,0)
 data <- list ("y","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex","mod")
 inits <- function(){   list (sigma=runif(1,.4,1),alpha0=rnorm(1,-2,.2),w=wst,alpha.sex=0,
 beta.sex=0) }
-parameters <- c("beta.sex","alpha.sex","psi","psi.sex","sigma","alpha0","N","D","beta","Xobs","Xnew","X1obs","X1new","X3obs","X3new") ###,"Xobs","Xnew","s","w")
+parameters <- c("beta.sex","alpha.sex","psi","psi.sex","sigma","alpha0","N","D","beta",
+                "X1obs","X1new","X2obs","X2new","X3obs","X3new") ###,"Xobs","Xnew","s","w")
 out <- jags(data, inits, parameters, "modelfile0.txt", n.thin=1,n.chains=3, n.burnin=nb,n.iter=ni,working.dir=getwd())
 }
 
@@ -350,7 +351,7 @@ if(model==2){
 mod<-c(1,0)
 data <- list ("y","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex","mod")
 inits <- function(){   list (sigma=runif(1,.4,1),alpha0=rnorm(1,-2,.2),w=wst,alpha.sex=0,beta.sex=0) }
-parameters <- c("beta.sex","alpha.sex","psi","psi.sex","sigma","alpha0","N","D","beta","Xobs","Xnew","X1obs","X1new","X3obs","X3new") ###,"Xobs","Xnew","s","w")
+parameters <- c("beta.sex","alpha.sex","psi","psi.sex","sigma","alpha0","N","D","beta","X1obs","X1new","X2obs","X2new","X3obs","X3new") ###,"Xobs","Xnew","s","w")
 out <- jags(data, inits, parameters, "modelfile0.txt", n.thin=1,n.chains=3, n.burnin=nb,n.iter=ni,working.dir=getwd())
 }
 
@@ -358,7 +359,7 @@ if(model==3){
 mod<-c(0,1)
 data <- list ("y","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex","mod")
 inits <- function(){   list (sigma=runif(1,.4,1),alpha0=rnorm(1,-2,.2),w=wst,alpha.sex=0,beta.sex=0) }
-parameters <- c("beta.sex","alpha.sex","psi","psi.sex","sigma","alpha0","N","D","beta","Xobs","Xnew","X1obs","X1new","X3obs","X3new") ###,"Xobs","Xnew","s","w")
+parameters <- c("beta.sex","alpha.sex","psi","psi.sex","sigma","alpha0","N","D","beta","X1obs","X1new","X2obs","X2new","X3obs","X3new") ###,"Xobs","Xnew","s","w")
 out <- jags(data, inits, parameters, "modelfile0.txt", n.thin=1,n.chains=3, n.burnin=nb,n.iter=ni,working.dir=getwd())
 }
 
@@ -366,7 +367,7 @@ if(model==4){
 mod<-c(1,1)
 data <- list ("y","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area","wsex","mod")
 inits <- function(){   list (sigma=runif(1,.4,1),alpha0=rnorm(1,-2,.2),w=wst,alpha.sex=0,beta.sex=0) }
-parameters <- c("beta.sex","alpha.sex","psi","psi.sex","sigma","alpha0","N","D","beta","Xobs","Xnew","X1obs","X1new","X3obs","X3new") ###,"Xobs","Xnew","s","w")
+parameters <- c("beta.sex","alpha.sex","psi","psi.sex","sigma","alpha0","N","D","beta","X1obs","X1new","X2obs","X2new","X3obs","X3new") ###,"Xobs","Xnew","s","w")
 out <- jags(data, inits, parameters, "modelfile0.txt", n.thin=1,n.chains=3, n.burnin=nb,n.iter=ni,working.dir=getwd())
 }
 

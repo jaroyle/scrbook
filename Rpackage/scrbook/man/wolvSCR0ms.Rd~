@@ -8,7 +8,7 @@ fits multiple models to wolverine data
 fits sex-specific models to wolverine data.....
 }
 \usage{
-wolvSCR0ms(y3d, traps, wsex, nb = 1000, ni = 2000, delta = 2, M = 200, model = 1,parm="a")
+wolvSCR0ms(y3d, traps, wsex, nb = 1000, ni = 2000, buffer = 2, M = 200, model = 1,parm="a")
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -27,7 +27,7 @@ wolvSCR0ms(y3d, traps, wsex, nb = 1000, ni = 2000, delta = 2, M = 200, model = 1
   \item{ni}{
 %%     ~~Describe \code{ni} here~~
 }
-  \item{delta}{
+  \item{buffer}{
 %%     ~~Describe \code{delta} here~~
 }
   \item{M}{
@@ -71,10 +71,10 @@ traps<-wolverine$wtraps
 y3d <-SCR23darray(wolverine$wcaps,wolverine$wtraps)
 wsex<-wolverine$wsex
 
-toad1<-wolvSCR0ms(y3d,traps,wsex=wsex,nb=1000,ni=2000,delta=2,M=200,model=1,parm="a")
-toad2<-wolvSCR0ms(y3d,traps,wsex=wsex,nb=1000,ni=2000,delta=2,M=200,model=2,parm="a")
-toad3<-wolvSCR0ms(y3d,traps,wsex=wsex,nb=1000,ni=2000,delta=2,M=200,model=3,parm="a")
-toad4<-wolvSCR0ms(y3d,traps,wsex=wsex,nb=1000,ni=2000,delta=2,M=200,model=4,parm="a")
+toad1<-wolvSCR0ms(y3d,traps,wsex=wsex,nb=1000,ni=2000,buffer=2,M=200,model=1,parm="a")
+toad2<-wolvSCR0ms(y3d,traps,wsex=wsex,nb=1000,ni=2000,buffer=2,M=200,model=2,parm="a")
+toad3<-wolvSCR0ms(y3d,traps,wsex=wsex,nb=1000,ni=2000,buffer=2,M=200,model=3,parm="a")
+toad4<-wolvSCR0ms(y3d,traps,wsex=wsex,nb=1000,ni=2000,buffer=2,M=200,model=4,parm="a")
 
 }
 
