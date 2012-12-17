@@ -75,12 +75,12 @@ a
 
 
 # spatial covariate (with mean 0)
-elev.fn <- function(x) {
-    x <- matrix(x, ncol=2)        # Force x to be a matrix
-    (x[,1] + x[,2] - 100) / 40.8  # Returns (standardized) "elevation"
+elev.fn <- function(s) {
+    s <- matrix(s, ncol=2)        # Force s to be a matrix
+    (s[,1] + s[,2] - 100) / 40.8  # Returns (standardized) "elevation"
 }
 
-mu <- function(x, beta0, beta1) exp(beta0 + beta1*elev.fn(x=x))
+mu <- function(s, beta0, beta1) exp(beta0 + beta1*elev.fn(s=s))
 
 library(R2Cuba)
 xx <- cuhre(2, 1, mu, lower=c(0,0), upper=c(100,100), beta0=0, beta1=2)
@@ -114,13 +114,13 @@ N <- rpois(1, EN) # Realized N
 s <- matrix(NA, N, 2) # This matrix will hold the coordinates
 elev.min <- elev.fn(c(0,0))
 elev.max <- elev.fn(c(100, 100))
-Q <- max(c(exp(beta0 + beta1*elev.min) / EN,
-           exp(beta0 + beta1*elev.max) / EN))
+Q <- max(c(exp(beta0 + beta1*elev.min),
+           exp(beta0 + beta1*elev.max)))
 counter <- 1
 while(counter <= N) {
   x.c <- runif(1, 0, 100); y.c <- runif(1, 0, 100)
   s.cand <- c(x.c,y.c)
-  pr <- mu(s.cand, beta0, beta1) / EN
+  pr <- mu(s.cand, beta0, beta1) #/ EN
   if(runif(1) < pr/Q) {
     s[counter,] <- s.cand
     counter <- counter+1
@@ -217,37 +217,29 @@ system("open ../figs/heteroPlots.png")
 
 
 
-# Create trap locations
-xsp <- seq(20, 80, by=10)
-len <- length(xsp)
-X <- cbind(rep(xsp, each=len), rep(xsp, times=len))
 
-# Simulate capture histories, and augment the data
-ntraps <- nrow(X)
-K <- 5
-y <- array(NA, c(N, ntraps, K))
 
-nz <- 80 # augmentation
-M <- nz+nrow(y)
-yz <- array(0, c(M, ntraps, K))
-
-sigma <- 5  # half-normal scale parameter
+xsp <- seq(20, 80, by=10); len <- length(xsp)
+X <- cbind(rep(xsp, each=len), rep(xsp, times=len)) # traps
+ntraps <- nrow(X); noccasions <- 5
+y <- array(NA, c(N, ntraps, noccasions)) # capture data
+sigma <- 5  # scale parameter
 lam0 <- 1   # basal encounter rate
 lam <- matrix(NA, N, ntraps)
-
 set.seed(5588)
 for(i in 1:N) {
     for(j in 1:ntraps) {
+        # The object "s" was simulated in previous section
         distSq <- (s[i,1]-X[j,1])^2 + (s[i,2] - X[j,2])^2
         lam[i,j] <- exp(-distSq/(2*sigma^2)) * lam0
-        y[i,j,] <- rpois(K, lam[i,j])
+        y[i,j,] <- rpois(noccasions, lam[i,j])
     }
 }
-table(y)
-c(N=N, n=sum(apply(y>0, 1, any)))
-yz[1:nrow(y),,] <- y # Fill
-
-plot(s)
+# data augmentation
+nz <- 80
+M <- nz+nrow(y)
+yz <- array(0, c(M, ntraps, noccasions))
+yz[1:nrow(y),,] <- y # Fill data augmentation array
 
 
 
@@ -270,7 +262,7 @@ fm1 <- scrIPP(yz, X, M, 10000, xlims=c(0,100), ylims=c(0,100),
 
 plot(mcmc(fm1$out))
 summary(mcmc(fm1$out))
-summary(window(mcmc(fm1$out), start=5001))$q
+summary(window(mcmc(fm1$out), start=5001))#$q
 
 which.max(table(fm1$out[,"N"]))
 HPDinterval(window(mcmc(fm1$out, start=5001)))
@@ -284,7 +276,7 @@ plot(fm1$last$S)
 
 
 png("../figs/fm1p.png", width=7, height=7, units="in", res=400)
-par(mfrow=c(4,2), mai=c(0.3, 0.4, 0.5, 0.2), cex.main=1.5)
+par(mfrow=c(4,2), mai=c(0.3, 0.4, 0.5, 0.2), cex.main=1.8, cex.axis=1.8)
 plot(mcmc(fm1$out[,c(3,4,5)]))
 dev.off()
 system("open ../figs/fm1p.png")
