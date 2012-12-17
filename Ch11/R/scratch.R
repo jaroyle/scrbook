@@ -445,19 +445,21 @@ pixArea <- pix*pix
 B <- 100  # Length of square side
 dat <- spcov(B=B, pix=pix)$R
 npix <- nrow(dat)
-colnames(dat) <- c("x","y","elev")
+colnames(dat) <- c("x","y","CANHT")
 cell <- seq(pix/2, B-pix/2, pix)
-image(cell, cell, t(matrix(dat$elev, B/pix, B/pix)), ann=FALSE)
+image(cell, cell, t(matrix(dat$CANHT, B/pix, B/pix)), ann=FALSE)
 
 head(dat)
 
 # Simulate IPP
-set.seed(30275)
+set.seed(300256)
 beta0 <- -6
 beta1 <- 1
-(EN <- sum(exp(beta0 + beta1*dat$elev)*pixArea))
-N <- rpois(1, EN)
-dat$cp <- exp(beta0 + beta1*dat$elev) / EN
+(EN <- sum(exp(beta0 + beta1*dat$CANHT)*pixArea))
+# N <- rpois(1, EN) # 45
+M <- 100
+(N <- rbinom(1, M, EN/M))
+dat$cp <- exp(beta0 + beta1*dat$CANHT) / EN
 s.tmp <- rmultinom(1, N, dat$cp) # a single realization to be ignored later
 
 # Trap locations
@@ -466,14 +468,14 @@ X <- cbind(rep(xsp, each=length(xsp)), rep(xsp, times=length(xsp)))
 str(X)
 
 
-elevMat <- t(matrix(dat$elev, 100/pix, 100/pix))
+canhtMat <- t(matrix(dat$CANHT, 100/pix, 100/pix))
 library(raster)
-elev <- raster:::flip(raster(t(elevMat)), direction="y")
+elev <- raster:::flip(raster(t(canhtMat)), direction="y")
 
 windows(width=3, height=6)
 op <- par(mfrow=c(2,1), mai=rep(0.2,4))
 #png("figs/discrete.png", width=7, height=7, units="in", res=400)
-image(cell, cell, elevMat, ann=FALSE)
+image(cell, cell, canhtMat, ann=FALSE)
 points(dat[s.tmp>0,c("x","y")], cex=s.tmp[s.tmp>0])
 points(X, pch="+")
 box()
@@ -487,11 +489,10 @@ par(op)
 # Simulate capture histories, and augment the data
 npix <- nrow(dat)
 ntraps <- nrow(X)
-T <- 5
 y <- array(NA, c(N, ntraps))
 
 sigma <- 10  # half-normal scale parameter
-lam0 <- 0.8   # basal encounter rate
+lam0 <- 1.5   # basal encounter rate
 lam <- matrix(NA, N, ntraps)
 
 s <- matrix(NA, N, 3)
@@ -515,7 +516,7 @@ sum(y)
 dim(y)
 table(y)
 
-nz <- 100 # augmentation
+nz <- M - nrow(y) # augmentation
 M <- nz+nrow(y)
 yz <- array(0, c(M, ntraps))
 yz[1:nrow(y),] <- y # Fill
@@ -537,7 +538,7 @@ summary(secr.traps)
 
 plot(secr.traps)
 
-plot.default(secr.traps, xlim=c(0,1), asp=1, pch="+")
+plot.default(secr.traps, xlim=c(0, B), asp=1, pch="+")
 
 # Create a "capthist" object
 secr.caps <- matrix(NA, sum(y), 5)
@@ -607,9 +608,9 @@ sink("ippDiscrete.txt")
 cat("
 model{
 sigma ~ dunif(0, 20)
-lam0 ~ dunif(0, 5)
-beta0 ~ dnorm(0, 0.01)
-beta1 ~ dnorm(0, 0.01)
+lam0 ~ dunif(0, 10)
+beta0 ~ dunif(-20, 20) #dnorm(0, 0.01)
+beta1 ~ dunif(-20, 20) #dnorm(0, 0.01)
 for(j in 1:nPix) {
   mu[j] <- exp(beta0 + beta1*elevation[j])*pixArea
   probs[j] <- mu[j]/sum(mu[])
@@ -661,143 +662,19 @@ pars1 <- c("sigma", "lam0", "beta0", "beta1", "N")
 system.time({
     set.seed(03453)
     jm <- jags.model(modfile, jags.data, init1, n.chains=2, n.adapt=1000)
-    jags1 <- coda.samples(jm, pars1, n.iter=20000)
+    jags1 <- coda.samples(jm, pars1, n.iter=10000)
 }) # 1.6hr
 
 plot(jags1, ask=TRUE)
 summary(jags1)
 
-summary(window(jags1, start=10001))
-plot(window(jags1, start=10001), ask=TRUE)
+summary(window(jags1, start=6001))
+plot(window(jags1, start=6001), ask=TRUE)
 
 
 
 
 save.image("scratch.RData")
-
-
-
-
-# Fit model with psi a function of intensity function
-
-
-init2 <- function() {
-    list(sigma=runif(1), lam0=runif(1), beta0=-3, beta1=rnorm(1),
-         s=sample.int(jags.data$nPix, jags.data$M, replace=TRUE),
-         w=rep(1, jags.data$M))
-}
-str(init2())
-
-pars2 <- c("sigma", "lam0", "beta0", "beta1", "N")
-
-
-
-jm2 <- jags.model("ippDiscrete2.txt", jags.data2, init2,
-                  n.chains=2, n.adapt=500)
-jc1 <- coda.samples(jm2, pars2, n.iter=1000)
-
-plot(jc1, ask=TRUE)
-summary(jc1)
-
-
-
-
-
-
-
-
-
-# Simulate with psi a function of beta0 and beta1 and N~Bin(M,psi)
-
-set.seed(30275)
-M <- 100
-beta0 <- -3
-beta1 <- 2
-lam <- exp(beta0 + beta1*dat$elev)
-N <- rbinom(1, M, sum(lam)/M)
-N
-dat$cp <- lam / sum(lam)
-s.tmp <- rmultinom(1, N, dat$cp) # a single realization to be ignored later
-
-
-plot(0:M, dbinom(0:M, M, sum(lam)/M))
-points(0:M+0.5, dpois(0:M, sum(lam)), col="blue")
-
-
-# Simulate capture histories, and augment the data
-npix <- nrow(dat)
-ntraps <- nrow(X)
-T <- 5
-y <- array(NA, c(N, ntraps))
-
-nz <- 50 # augmentation
-M <- nz+nrow(y)
-yz <- array(0, c(M, ntraps))
-
-sigma <- 0.1  # half-normal scale parameter
-lam0 <- 0.8   # basal encounter rate
-lam <- matrix(NA, N, ntraps)
-
-s <- matrix(NA, N, 3)
-colnames(s) <- c("pixID", "x", "y")
-
-set.seed(557828)
-for(i in 1:N) {
-    s.i <- sample(1:npix, 1, prob=dat$cp)
-    sx <- dat[s.i, "x"]
-    sy <- dat[s.i, "y"]
-    s[i,] <- c(s.i, sx, sy)
-    for(j in 1:ntraps) {
-        distSq <- (sx-X[j,1])^2 + (sy - X[j,2])^2
-        lam[i,j] <- exp(-distSq/(2*sigma^2)) * lam0
-        y[i,j] <- rpois(1, lam[i,j])
-    }
-}
-yz[1:nrow(y),] <- y # Fill
-
-sum(y)
-
-
-
-
-
-
-jags.data2 <- jags.data
-yz <- rbind(y, matrix(0, jags.data$M-nrow(y), ncol(y)))
-jags.data2$y <- yz
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -818,12 +695,13 @@ gelman.diag(window(jags1, start=5001))
 
 jags.est <- summary(window(jags1, start=5001))
 jags.r <- cbind(jags.est$stat[,1:2], jags.est$quant[,c(1,5)])
+jags.r
 
 secr.est <- predict(secr1)
 secr.r <- cbind(secr.est[2:3,2:5])
 secr.r <- rbind(beta=as.numeric(coef(secr1)[2,]), secr.r)
 secr.r <- rbind(region.N(secr1)[2,1:4], secr.r)
-
+secr.r
 
 comp.out <- data.frame(rbind(as.matrix(secr.r), jags.r))
 comp.out <- cbind(Software=c(rep("secr",4), rep("JAGS",4)),
