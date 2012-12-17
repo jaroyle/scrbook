@@ -1,6 +1,5 @@
-#test
 
-# Homogeneous BPP
+# PART I. Misc code shown in chapter
 
 
 set.seed(4234)
@@ -33,14 +32,6 @@ system("open ../figs/homoPlots.png")
 
 
 
-
-
-
-
-
-
-
-
 Area <- 1                  # Area of state-space
 M <- 100                   # Data augmentation size
 mu <- 10                   # Intensity (points per area)
@@ -51,7 +42,6 @@ cbind(runif(N), runif(N))  # Coordinates of activity centers
 
 
 
-a
 
 
 
@@ -60,21 +50,11 @@ a
 
 
 
-
-
-# Heterogeneous BPP
-
+# PART II. Fitting IPP models when points are observed
 
 
 
-
-# Create a spatial covariate
-
-
-
-
-
-# spatial covariate (with mean 0)
+# Spatial covariate (with mean 0)
 elev.fn <- function(s) {
     s <- matrix(s, ncol=2)        # Force s to be a matrix
     (s[,1] + s[,2] - 100) / 40.8  # Returns (standardized) "elevation"
@@ -212,11 +192,7 @@ system("open ../figs/heteroPlots.png")
 
 
 
-# Analysis using custom MCMC
-
-
-
-
+# PART III. Analysis using custom MCMC
 
 
 xsp <- seq(20, 80, by=10); len <- length(xsp)
@@ -245,13 +221,9 @@ yz[1:nrow(y),,] <- y # Fill data augmentation array
 
 
 
-
-
-
-
 library(scrbook)
 
-source("../../Rpackage/scrbook/R/Ch11.R")
+#source("../../Rpackage/scrbook/R/Ch11.R")
 
 set.seed(3434)
 system.time({
@@ -413,23 +385,7 @@ sink()
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Discrete space
+# PART IV. Discrete space
 
 
 library(scrbook)
@@ -441,23 +397,24 @@ library(rjags)
 
 set.seed(358030)
 pix <- 5
-pixArea <- pix*pix
+pixArea <- (pix*pix) / 10000
 B <- 100  # Length of square side
 dat <- spcov(B=B, pix=pix)$R
 npix <- nrow(dat)
 colnames(dat) <- c("x","y","CANHT")
 cell <- seq(pix/2, B-pix/2, pix)
+
 image(cell, cell, t(matrix(dat$CANHT, B/pix, B/pix)), ann=FALSE)
 
 head(dat)
 
 # Simulate IPP
-set.seed(300256)
-beta0 <- -6
-beta1 <- 1
+set.seed(32506)
+beta0 <- 2
+beta1 <- 2
 (EN <- sum(exp(beta0 + beta1*dat$CANHT)*pixArea))
 # N <- rpois(1, EN) # 45
-M <- 100
+M <- 150
 (N <- rbinom(1, M, EN/M))
 dat$cp <- exp(beta0 + beta1*dat$CANHT) / EN
 s.tmp <- rmultinom(1, N, dat$cp) # a single realization to be ignored later
@@ -472,15 +429,15 @@ canhtMat <- t(matrix(dat$CANHT, 100/pix, 100/pix))
 library(raster)
 elev <- raster:::flip(raster(t(canhtMat)), direction="y")
 
-windows(width=3, height=6)
-op <- par(mfrow=c(2,1), mai=rep(0.2,4))
+windows(width=6, height=6)
+#op <- par(mfrow=c(2,1), mai=rep(0.2,4))
 #png("figs/discrete.png", width=7, height=7, units="in", res=400)
 image(cell, cell, canhtMat, ann=FALSE)
 points(dat[s.tmp>0,c("x","y")], cex=s.tmp[s.tmp>0])
 points(X, pch="+")
 box()
 #dev.off()
-plot(elev)
+#plot(elev)
 par(op)
 
 
@@ -566,7 +523,7 @@ summary(msk)
 
 ssArea <- attr(msk, "area")*nrow(msk)
 
-covariates(msk) <- data.frame(elev=dat$elev[order(dat$y, dat$x)])
+covariates(msk) <- data.frame(canht=dat$CANHT[order(dat$y, dat$x)])
 
 
 
@@ -585,17 +542,17 @@ library(scrbook)
 library(secr)
 library(rjags)
 
-data(ch9simData)
+#data(ch9simData)
 
-ch <- ch9simData$ch.secr
-msk <- ch9simData$spcov.secr
+#ch <- ch9simData$ch.secr
+#msk <- ch9simData$spcov.secr
 
 
 # SECR analysis
 
-secr1 <- secr.fit(ch, model=D~elev, mask=msk)
+secr2 <- secr.fit(ch, model=D~canht, mask=msk)
 
-region.N(secr1, se.N=TRUE)
+region.N(secr2, se.N=TRUE)
 
 
 
@@ -612,10 +569,11 @@ lam0 ~ dunif(0, 10)
 beta0 ~ dunif(-20, 20) #dnorm(0, 0.01)
 beta1 ~ dunif(-20, 20) #dnorm(0, 0.01)
 for(j in 1:nPix) {
-  mu[j] <- exp(beta0 + beta1*elevation[j])*pixArea
-  probs[j] <- mu[j]/sum(mu[])
+  mu[j] <- exp(beta0 + beta1*CANHT[j])*pixArea
+  EN <- sum(mu[])
+  probs[j] <- mu[j]/EN
 }
-psi <- sum(mu[])/M
+psi <- EN/M
 for(i in 1:M) {
   w[i] ~ dbern(psi)
   s[i] ~ dcat(probs[])
@@ -637,15 +595,15 @@ sink()
 
 modfile <- "ippDiscrete.txt"
 
-jags.data <- list(y=yz, elevation=drop(dat$elev),
+jags.data <- list(y=yz, CANHT=drop(dat$CANHT),
             nPix=nrow(dat), pixArea=pixArea,
             M=nrow(yz), ntraps=nrow(X),
             Sgrid=as.matrix(dat[,1:2]),
             grid=X)
 str(jags.data)
 
-all(matrix(jags.data$elevation, 20, byrow=TRUE) ==
-    matrix(covariates(msk)$elev, 20))
+all(matrix(jags.data$CANHT, 20, byrow=TRUE) ==
+    matrix(covariates(msk)$canht, 20))
 
 init1 <- function() {
     list(sigma=runif(1, 5, 10), lam0=runif(1),
@@ -655,14 +613,14 @@ init1 <- function() {
 }
 str(init1())
 
-pars1 <- c("sigma", "lam0", "beta0", "beta1", "N")
+pars1 <- c("sigma", "lam0", "beta0", "beta1", "N", "EN")
 
 # Obtain posterior samples. This takes a few minutes
 # Compile and adapt
 system.time({
     set.seed(03453)
     jm <- jags.model(modfile, jags.data, init1, n.chains=2, n.adapt=1000)
-    jags1 <- coda.samples(jm, pars1, n.iter=10000)
+    jags1 <- coda.samples(jm, pars1, n.iter=5000)
 }) # 1.6hr
 
 plot(jags1, ask=TRUE)
@@ -697,11 +655,31 @@ jags.est <- summary(window(jags1, start=5001))
 jags.r <- cbind(jags.est$stat[,1:2], jags.est$quant[,c(1,5)])
 jags.r
 
-secr.est <- predict(secr1)
+secr.est <- predict(secr2)
 secr.r <- cbind(secr.est[2:3,2:5])
-secr.r <- rbind(beta=as.numeric(coef(secr1)[2,]), secr.r)
-secr.r <- rbind(region.N(secr1)[2,1:4], secr.r)
+secr.r <- rbind(beta=as.numeric(coef(secr2)[2,]), secr.r)
+secr.r <- data.matrix(rbind(region.N(secr2)[,1:4], secr.r))
 secr.r
+
+jagsVsecr <-
+data.frame(Par=rep(c("$\\lambda_0$", "$\\sigma$", "$\\beta_1$", "$N$",
+                   "$\\mathbb{E}[N]$"), each=2),
+           Truth=rep(c(1.5, 10, 2, 58, 58.41), each=2),
+           Software = rep(c("\\textbf{JAGS}", "\\texttt{secr}"), 5),
+           rbind(jags.r[4,], secr.r[4,],
+                 jags.r[5,], secr.r[5,],
+                 jags.r[3,], secr.r[3,],
+                 jags.r[1,], secr.r[2,],
+                 #jags.r[6,],
+                 NA, secr.r[1,]))
+
+
+format(jagsVsecr, digits=2, nsmall=2, scientific=FALSE)
+
+write.table(format(jagsVsecr, digits=2, nsmall=2, scientific=FALSE),
+            file="jagsVsecr2.txt", row.names=FALSE,
+            quote=FALSE, sep=" \t& ", eol=" \\\\\n ")
+
 
 comp.out <- data.frame(rbind(as.matrix(secr.r), jags.r))
 comp.out <- cbind(Software=c(rep("secr",4), rep("JAGS",4)),
