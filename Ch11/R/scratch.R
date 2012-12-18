@@ -395,11 +395,11 @@ library(gdistance)
 library(rjags)
 
 
-set.seed(358030)
+set.seed(38130)
 pix <- 5
 pixArea <- (pix*pix) / 10000
 B <- 100  # Length of square side
-dat <- spcov(B=B, pix=pix)$R
+dat <- spcov(B=B, pix=pix, cor=100)$R
 npix <- nrow(dat)
 colnames(dat) <- c("x","y","CANHT")
 cell <- seq(pix/2, B-pix/2, pix)
@@ -409,8 +409,8 @@ image(cell, cell, t(matrix(dat$CANHT, B/pix, B/pix)), ann=FALSE)
 head(dat)
 
 # Simulate IPP
-set.seed(32506)
-beta0 <- 2
+set.seed(32516)
+beta0 <- 3
 beta1 <- 2
 (EN <- sum(exp(beta0 + beta1*dat$CANHT)*pixArea))
 # N <- rpois(1, EN) # 45
@@ -426,18 +426,13 @@ str(X)
 
 
 canhtMat <- t(matrix(dat$CANHT, 100/pix, 100/pix))
-library(raster)
-elev <- raster:::flip(raster(t(canhtMat)), direction="y")
+canht <- raster:::flip(raster(t(canhtMat)), direction="y")
 
 windows(width=6, height=6)
-#op <- par(mfrow=c(2,1), mai=rep(0.2,4))
-#png("figs/discrete.png", width=7, height=7, units="in", res=400)
 image(cell, cell, canhtMat, ann=FALSE)
 points(dat[s.tmp>0,c("x","y")], cex=s.tmp[s.tmp>0])
 points(X, pch="+")
 box()
-#dev.off()
-#plot(elev)
 par(op)
 
 
@@ -448,8 +443,8 @@ npix <- nrow(dat)
 ntraps <- nrow(X)
 y <- array(NA, c(N, ntraps))
 
-sigma <- 10  # half-normal scale parameter
-lam0 <- 1.5   # basal encounter rate
+sigma <- 5  # half-normal scale parameter
+lam0 <- 1   # basal encounter rate
 lam <- matrix(NA, N, ntraps)
 
 s <- matrix(NA, N, 3)
@@ -561,13 +556,13 @@ region.N(secr2, se.N=TRUE)
 # JAGS analysis
 
 # JAGS model
-sink("ippDiscrete.txt")
+sink("ippDiscrete.jag")
 cat("
 model{
 sigma ~ dunif(0, 20)
-lam0 ~ dunif(0, 10)
-beta0 ~ dunif(-20, 20)
-beta1 ~ dunif(-20, 20)
+lam0 ~ dunif(0, 5)
+beta0 ~ dunif(-10, 10)
+beta1 ~ dunif(-10, 10)
 for(j in 1:nPix) {
   mu[j] <- exp(beta0 + beta1*CANHT[j])*pixArea
   probs[j] <- mu[j]/EN
@@ -580,7 +575,7 @@ for(i in 1:M) {
   x0g[i] <- Sgrid[s[i],1]
   y0g[i] <- Sgrid[s[i],2]
   for(j in 1:ntraps) {
-    dist[i,j] <- sqrt(pow(x0g[i]-grid[j,1],2) + pow(y0g[i]-grid[j,2],2))
+    dist[i,j] <- sqrt(pow(x0g[i]-traps[j,1],2) + pow(y0g[i]-traps[j,2],2))
     lambda[i,j] <- lam0*exp(-dist[i,j]*dist[i,j]/(2*sigma*sigma)) * w[i]
     y[i,j] ~ dpois(lambda[i,j])
     }
@@ -593,23 +588,23 @@ sink()
 
 
 
-modfile <- "ippDiscrete.txt"
+modfile <- "ippDiscrete.jag"
 
 jags.data <- list(y=yz, CANHT=drop(dat$CANHT),
-            nPix=nrow(dat), pixArea=pixArea,
-            M=nrow(yz), ntraps=nrow(X),
-            Sgrid=as.matrix(dat[,1:2]),
-            grid=X)
+                  nPix=nrow(dat), pixArea=pixArea,
+                  M=nrow(yz), ntraps=nrow(X),
+                  Sgrid=as.matrix(dat[,1:2]),
+                  traps=X)
 str(jags.data)
 
 all(matrix(jags.data$CANHT, 20, byrow=TRUE) ==
     matrix(covariates(msk)$canht, 20))
 
 init1 <- function() {
-    list(sigma=runif(1, 5, 10), lam0=runif(1),
-         beta0=rnorm(1, -5), beta1=rnorm(1),
-         s=sample.int(jags.data$nPix, jags.data$M, replace=TRUE),
-         w=ifelse(rowSums(jags.data$y)>0, 1, 0))
+    list(sigma=runif(1, 2, 8), lam0=runif(1),
+         beta0=rnorm(1, 0), beta1=rnorm(1, 2),
+         w=ifelse(rowSums(jags.data$y>0), 1, 0), # rep(1, M),
+         s=c(s[,"pixID"], sample(1:400, M-nrow(s))))
 }
 str(init1())
 
@@ -620,16 +615,20 @@ pars1 <- c("sigma", "lam0", "beta0", "beta1", "N", "EN")
 system.time({
     set.seed(453)
     jm <- jags.model(modfile, jags.data, init1, n.chains=2, n.adapt=1000)
-    jags1 <- coda.samples(jm, pars1, n.iter=100000)
+    jags1 <- coda.samples(jm, pars1, n.iter=5000)
 }) # 1.6hr
 
 plot(jags1, ask=TRUE)
 summary(jags1)
 
 summary(window(jags1, start=6001))
-plot(window(jags1, start=6001), ask=TRUE)
+plot(window(jags1, start=90001), ask=TRUE)
 
 
+library(R2WinBUGS)
+bugs1 <- bugs(jags.data, init1, pars1, modfile, n.chains=2, n.iter=2000,
+              n.burnin=1000, n.thin=1, DIC=FALSE,
+              bugs.directory="C:/Winbugs/WinBUGS14/")
 
 
 save.image("scratch.RData")
@@ -651,7 +650,7 @@ summary(window(jags1, start=5001))
 gelman.diag(window(jags1, start=5001))
 
 
-jags.est <- summary(window(jags1, start=5001))
+jags.est <- summary(window(jags1, start=1001))
 jags.r <- cbind(jags.est$stat[,1:2], jags.est$quant[,c(1,5)])
 jags.r
 
@@ -664,14 +663,13 @@ secr.r
 jagsVsecr <-
 data.frame(Par=rep(c("$\\lambda_0$", "$\\sigma$", "$\\beta_1$", "$N$",
                    "$\\mathbb{E}[N]$"), each=2),
-           Truth=rep(c(1.5, 10, 2, 58, 58.41), each=2),
+           Truth=rep(c(1, 5, 2, 53, 49.0), each=2),
            Software = rep(c("\\textbf{JAGS}", "\\texttt{secr}"), 5),
-           rbind(jags.r[4,], secr.r[4,],
-                 jags.r[5,], secr.r[5,],
-                 jags.r[3,], secr.r[3,],
-                 jags.r[1,], secr.r[2,],
-                 #jags.r[6,],
-                 NA, secr.r[1,]))
+           rbind(jags.r[5,], secr.r[4,],
+                 jags.r[6,], secr.r[5,],
+                 jags.r[4,], secr.r[3,],
+                 jags.r[2,], secr.r[2,],
+                 jags.r[1,], secr.r[1,]))
 
 
 format(jagsVsecr, digits=2, nsmall=2, scientific=FALSE)
