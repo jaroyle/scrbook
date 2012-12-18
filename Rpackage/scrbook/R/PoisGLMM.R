@@ -3,7 +3,7 @@ function(y=y,site=site,mu0=mu0,sig0=sig0,a0=a0,b0=b0, mu_beta=mu_beta, sig_beta=
 delta_alpha=delta_alpha, delta_beta=delta_beta, niter=niter){
 
 lev<-length(unique(site))     #number of sites
-alpha<-runif(lev,-5,5)#initial values alpha
+alpha<-rnorm(lev,0,10)#initial values alpha
 beta<-runif(1,0,5)#initial value beta
 mu_alpha<-mean(alpha)
 var_alpha<-var(alpha)
@@ -50,13 +50,16 @@ beta<-beta.cand
 
 ###########update mu_alpha using Gibbs sampling
 abar<-mean(alpha)
+
 mun<- (var_alpha/(var_alpha+lev*var0))*mu0 + (lev*var0/(var_alpha+lev* var0))*abar 
+
 varn <- (var_alpha*var0)/ (var_alpha+lev*var0)
 mu_alpha<-rnorm(1,mun, sqrt(varn))
 
 #update var_alpha using Gibbs sampling
 an<-lev/2 + a0
-bn<- 0.5 * (sum((alpha-mu_alpha)^2)) +b0
+bn<- 0.5 * (  sum(   (alpha-mu_alpha)^2  )   ) +b0
+
 var_alpha<-1/rgamma(1,shape=an, rate=bn)
 
 out[iter,]<-c(mu_alpha, sqrt(var_alpha), beta)

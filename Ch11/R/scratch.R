@@ -12,7 +12,7 @@ n.k <- table(cut(s[,1], seq(0, 1, 0.2)),
 
 
 # plot continuous space and discrete space
-png("figs/homoPlots.png", width=5, height=2.5, units="in", res=400)
+png("../figs/homoPlots.png", width=5, height=2.5, units="in", res=400)
 op <- par(mfrow=c(1, 2), mai=c(0.1, 0.1, 0.1, 0.1))
 plot(s, frame=T, ann=FALSE, axes=FALSE, asp=1, cex=0.5)
 #segments(seq(0, 1, 0.2), 0, seq(0, 1, 0.2), 1, col=gray(0.5))
@@ -27,6 +27,7 @@ for(i in 1:nrow(n.k)) {
 }
 par(op)
 dev.off()
+system("open ../figs/homoPlots.png")
 
 
 
@@ -36,6 +37,21 @@ dev.off()
 
 
 
+
+
+
+
+Area <- 1                  # Area of state-space
+M <- 100                   # Data augmentation size
+mu <- 10                   # Intensity (points per area)
+psi <- (mu*Area)/M         # Data augmentation parameter (thinning rate)
+N <- rbinom(1, M, psi)     # Realized value of N under binomial prior
+cbind(runif(N), runif(N))  # Coordinates of activity centers
+
+
+
+
+a
 
 
 
@@ -59,103 +75,116 @@ dev.off()
 
 
 # spatial covariate (with mean 0)
-#elev.fn <- function(x) x[,1]+x[,2]-1
-elev.fn <- function(x) x[1]+x[2]-1
+elev.fn <- function(s) {
+    s <- matrix(s, ncol=2)        # Force s to be a matrix
+    (s[,1] + s[,2] - 100) / 40.8  # Returns (standardized) "elevation"
+}
 
-mu <- function(x, beta) exp(beta*elev.fn(x=x))
+mu <- function(s, beta0, beta1) exp(beta0 + beta1*elev.fn(s=s))
 
 library(R2Cuba)
-xx <- cuhre(2, 1, mu, lower=c(0,0), upper=c(1,1), beta=2)
+xx <- cuhre(2, 1, mu, lower=c(0,0), upper=c(100,100), beta0=0, beta1=2)
 
-xx <- cuhre(2, 1, mu, lower=c(0,0), upper=c(1,1), beta=2,
+xx <- cuhre(2, 1, mu, lower=c(0,0), upper=c(1,1), beta0=0, beta1=2,
             flags=list("verbose"=0))
 
-
 # 2-dimensional integration over unit square
-int2d <- function(beta, delta=0.02) {
+int2d <- function(beta0=0, beta1=2, delta=0.02) {
   z <- seq(delta/2, 1-delta/2, delta)
   len <- length(z)
   cell.area <- delta*delta
   S <- cbind(rep(z, each=len), rep(z, times=len))
-#  sum(exp(beta*elev.fn(S)) * cell.area)
-  sum(exp(beta*(S[,1]+S[,2]-1)) * cell.area)
+  sum(exp(beta0 + beta1*elev.fn(S)) * cell.area)
   }
 
+int2d(2, delta=0.001)
+int2d(2, delta=0.01)
+int2d(2, delta=0.02)
+int2d(2, delta=0.03)
+
 # Simulate PP using rejection sampling
-set.seed(300225)
-N <- 100
-count <- 1
-s <- matrix(NA, N, 2)
-beta <- 2 # parameter of interest
-int.mu <- cuhre(2, 1, mu, beta=beta)$value
-elev.min <- elev.fn(c(0,0)) #elev.fn(cbind(0,0))
-elev.max <- elev.fn(c(1,1)) #elev.fn(cbind(1,1))
-Q <- max(c(exp(beta*elev.min) / int.mu,   #2d(beta),
-           exp(beta*elev.max) / int.mu))   #2d(beta)))
-while(count <= 100) {
-  x.c <- runif(1, 0, 1); y.c <- runif(1, 0, 1)
+set.seed(31025)
+beta0 <- -6 # intercept of intensity function
+beta1 <- 1  # effect of elevation on intensity
+# Next line computes integral, which is expected value of N
+EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1,
+            lower=c(0,0), upper=c(100,100))$value
+EN
+N <- rpois(1, EN) # Realized N
+s <- matrix(NA, N, 2) # This matrix will hold the coordinates
+elev.min <- elev.fn(c(0,0))
+elev.max <- elev.fn(c(100, 100))
+Q <- max(c(exp(beta0 + beta1*elev.min),
+           exp(beta0 + beta1*elev.max)))
+counter <- 1
+while(counter <= N) {
+  x.c <- runif(1, 0, 100); y.c <- runif(1, 0, 100)
   s.cand <- c(x.c,y.c)
-#  int.mu <- cuhre(2, 1, mu, beta=beta)$value
-  pr <- exp(beta*elev.fn(s.cand)) / int.mu #2d(beta)
+  pr <- mu(s.cand, beta0, beta1) #/ EN
   if(runif(1) < pr/Q) {
-    s[count,] <- s.cand
-    count <- count+1
+    s[counter,] <- s.cand
+    counter <- counter+1
     }
   }
 
+plot(s)
 
 # Maximum likelihood
 nll <- function(beta) {
-    int.mu <- cuhre(2, 1, mu, beta=beta)$value
-    -sum(beta*elev.fn(s) - log(int.mu))
+    beta0 <- beta[1]
+    beta1 <- beta[2]
+    EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1,
+                lower=c(0,0), upper=c(100,100))$value
+    -(sum(beta0 + beta1*elev.fn(s)) - EN)
 }
-starting.value <- 0
-fm <- optim(starting.value, nll, method="Brent",
-            lower=-5, upper=5, hessian=TRUE)
-c(Est=fm$par, SE=sqrt(1/fm$hessian)) # estimates and SEs
+starting.values <- c(0, 0)
+fm <- optim(starting.values, nll, hessian=TRUE)
+cbind(Est=fm$par, SE=sqrt(diag(solve(fm$hessian)))) # estimates and SEs
 
 
 
 
 
 
-n.k <- table(cut(s[,1], seq(0, 1, 0.2)),
-             cut(s[,2], seq(0, 1, 0.2)))
+n.k <- table(cut(s[,1], seq(0, 100, 20)),
+             cut(s[,2], seq(0, 100, 20)))
 
 
 # plot continuous space and discrete space
-png("figs/heteroPlots.png", width=5, height=2.5, units="in", res=400)
+png("../figs/heteroPlots.png", width=5, height=2.5, units="in", res=400)
 op <- par(mfrow=c(1, 2), mai=c(0.1, 0.1, 0.1, 0.1))
-Sx <- seq(0.01, 0.99, 0.01)
+Sx <- seq(1, 99, 1)
 len <- length(Sx)
 S <- cbind(rep(Sx, each=len), rep(Sx, times=len))
-elev.fn2 <- function(x) x[,1]+x[,2]-1
-elev <- elev.fn2(S)
-image(Sx, Sx, matrix(elev, len), col=rgb(0,seq(0.1,1,0.01),0,0.8),
-      ann=FALSE, axes=FALSE, asp=1)
-points(s, cex=0.5)
+elev <- elev.fn(S)
+plot(0, type="n", xlim=c(0, 100), ylim=c(0, 100), asp=1, axes=FALSE)
+image(Sx, Sx, matrix(elev, len),
+      col=gray(seq(0.2, 0.8, 0.01)),
+#      col=rgb(0,seq(0.1,1,0.01),0,0.8),
+      add=TRUE) #,
+#      ann=FALSE, axes=FALSE, asp=1)
+points(s, cex=0.4)
 #segments(seq(0, 1, 0.2), 0, seq(0, 1, 0.2), 1, col=gray(0.5))
 #segments(0, seq(0, 1, 0.2), 1, seq(0, 1, 0.2), col=gray(0.5))
-box(col=gray(0.5))
-Sx <- seq(0.1, 0.9, 0.2)
-len <- length(Sx)
-S <- cbind(rep(Sx, each=len), rep(Sx, times=len))
-elev <- elev.fn2(S)
-image(Sx, Sx,
-      matrix(elev, len), xlim=c(0,1), ylim=c(0,1),
-      col=rgb(0,seq(0.1,1,0.01),0,0.8),
-      ann=FALSE, axes=FALSE, asp=1)
-segments(seq(0, 1, 0.2), 0, seq(0, 1, 0.2), 1, col=gray(0.5))
-segments(0, seq(0, 1, 0.2), 1, seq(0, 1, 0.2), col=gray(0.5))
-box(col=gray(0.5))
-y <- 0.1
+box(col=gray(0))
+rect(0, 0, 100, 100, lwd=2)
+plot(0, type="n", xlim=c(0, 100), ylim=c(0, 100), asp=1, axes=FALSE)
+image(Sx, Sx, matrix(elev, len), xlim=c(0,1), ylim=c(0,1),
+      col=gray(seq(0.2, 0.8, 0.01)), add=TRUE)
+#      col=rgb(0,seq(0.1,1,0.01),0,0.8),
+#      ann=FALSE, axes=FALSE, asp=1)
+segments(seq(0, 100, 20), 0, seq(0, 100, 20), 100, col=gray(0))
+segments(0, seq(0, 100, 20), 100, seq(0, 100, 20), col=gray(0))
+box(col=gray(0))
+rect(0, 0, 100, 100, lwd=2)
+y <- 10
 for(i in 1:nrow(n.k)) {
-    text(seq(0.1, 1, by=0.2), y, labels=n.k[,i], cex=0.6)
-    y <- y+0.2
+    text(seq(10, 100, by=20), y, labels=n.k[,i], cex=0.6)
+    y <- y+20
 }
 par(op)
 dev.off()
-
+system("open ../figs/heteroPlots.png")
 
 
 
@@ -189,33 +218,29 @@ dev.off()
 
 
 
-# Create trap locations
-xsp <- seq(0.2, 0.8, by=0.1)
-len <- length(xsp)
-X <- cbind(rep(xsp, each=len), rep(xsp, times=len))
 
-# Simulate capture histories, and augment the data
-ntraps <- nrow(X)
-T <- 5
-y <- array(NA, c(N, ntraps, T))
-
-nz <- 50 # augmentation
-M <- nz+nrow(y)
-yz <- array(0, c(M, ntraps, T))
-
-sigma <- 0.1  # half-normal scale parameter
-lam0 <- 0.5   # basal encounter rate
+xsp <- seq(20, 80, by=10); len <- length(xsp)
+X <- cbind(rep(xsp, each=len), rep(xsp, times=len)) # traps
+ntraps <- nrow(X); noccasions <- 5
+y <- array(NA, c(N, ntraps, noccasions)) # capture data
+sigma <- 5  # scale parameter
+lam0 <- 1   # basal encounter rate
 lam <- matrix(NA, N, ntraps)
-
 set.seed(5588)
 for(i in 1:N) {
     for(j in 1:ntraps) {
+        # The object "s" was simulated in previous section
         distSq <- (s[i,1]-X[j,1])^2 + (s[i,2] - X[j,2])^2
         lam[i,j] <- exp(-distSq/(2*sigma^2)) * lam0
-        y[i,j,] <- rpois(T, lam[i,j])
+        y[i,j,] <- rpois(noccasions, lam[i,j])
     }
 }
-yz[1:nrow(y),,] <- y # Fill
+# data augmentation
+nz <- 80
+M <- nz+nrow(y)
+yz <- array(0, c(M, ntraps, noccasions))
+yz[1:nrow(y),,] <- y # Fill data augmentation array
+
 
 
 
@@ -225,21 +250,136 @@ yz[1:nrow(y),,] <- y # Fill
 
 
 library(scrbook)
+
+source("../../Rpackage/scrbook/R/Ch11.R")
+
 set.seed(3434)
-fm1 <- scrIPP(yz, X, M, 6000, xlims=c(0,1), ylims=c(0,1),
-            tune=c(0.003, 0.08, 0.3, 0.07) )
+system.time({
+fm1 <- scrIPP(yz, X, M, 10000, xlims=c(0,100), ylims=c(0,100),
+              space.cov=elev.fn,
+              tune=c(0.4, 0.2, 0.3, 0.3, 7))
+}) # 328s
 
 plot(mcmc(fm1$out))
+summary(mcmc(fm1$out))
+summary(window(mcmc(fm1$out), start=5001))#$q
+
+which.max(table(fm1$out[,"N"]))
+HPDinterval(window(mcmc(fm1$out, start=5001)))
+
 rejectionRate(mcmc(fm1$out))
 
+c(N=N, n=sum(apply(y>0, 1, any)), M=M)
 
-fm1.s <- summary(window(mcmc(fm1$out), start=1001))
-fm1.r <- cbind(fm1.s$stat[,1:2], fm1.s$quant[,c(1,3,5)])
+plot(fm1$last$S)
+
+
+
+png("../figs/fm1p.png", width=7, height=7, units="in", res=400)
+par(mfrow=c(4,2), mai=c(0.3, 0.4, 0.5, 0.2), cex.main=1.8, cex.axis=1.8)
+plot(mcmc(fm1$out[,c(3,4,5)]))
+dev.off()
+system("open ../figs/fm1p.png")
+
+
+
+
+
+# Analysis using secr
+library(secr)
+
+
+# Create a "traps" object
+Xs <- data.frame(X)
+colnames(Xs) <- c("x","y")
+secr.traps <- read.traps(data=Xs, detector="count")
+
+summary(secr.traps)
+
+plot(secr.traps)
+plot.default(secr.traps, xlim=c(0,100), asp=1, pch="+")
+
+# Create a "capthist" object
+secr.caps <- matrix(NA, sum(y), 5)
+colnames(secr.caps) <- c("Session", "ID", "Occasion", "X", "Y")
+counter <- 0
+for(i in 1:nrow(y)) {
+    for(j in 1:dim(y)[2]) {
+        for(k in 1:dim(y)[3]) {
+            y.ij <- y[i,j,k]
+            if(y.ij==0)
+                next
+            for(v in 1:y.ij) {
+                counter <- counter+1
+                secr.caps[counter,] <- c(1, i, k, X[j,1], X[j,2])
+            }
+        }
+    }
+}
+ch <- make.capthist(secr.caps, secr.traps, fmt="XY")
+#plot(ch, tol=0.0005) # ouch
+
+# Make mask
+
+msk <- make.mask(secr.traps, buffer=20, spacing=1) #, nx=v)
+str(msk)
+summary(msk)
+#plot(msk)
+
+ssArea <- attr(msk, "area")*nrow(msk)
+
+covariates(msk) <- data.frame(elev=apply(as.matrix(msk), 1,
+                              function(x) elev.fn(x)))
+
+
+system.time(secr1.0 <- secr.fit(ch, model=D~1, mask=msk)) # 78s
+predict(secr1.0)
+region.N(secr1.0, se.N=TRUE)
+
+system.time(secr1.1 <- secr.fit(ch, model=D~elev, mask=msk)) # 328s
+predict(secr1.1)
+region.N(secr1.1, se.N=TRUE)
+
+system.time(secr1.2 <- secr.fit(ch, model=D~xy, mask=msk)) # 129s
+predict(secr1.2)
+region.N(secr1.2, se.N=TRUE)
+
+AIC(secr1.0, secr1.1, secr1.2)
+
+
+
+
+
+
+
+fm1.s <- summary(window(mcmc(fm1$out), start=5001))
+fm1.r <- cbind(fm1.s$stat[,1:2], fm1.s$quant[,c(1,5)])[c(1,2,4:6),]
+fm1.r
+
+secr1.1s <- rbind(data.matrix(predict(secr1.1)[c(3,2), 2:5]),
+                  beta1=as.numeric(coef(secr1.1)[2,]),
+                  region.N(secr1.1)[,1:4])[c(1,2,3,5,4),]
+secr1.1s
+
+(scrVsecr <- cbind(par=rep(c("sigma", "lam0", "beta1", "N", "EN"),each=2),
+                   Method=c("MCMC", "ML"),
+                   rbind(fm1.r[1,], secr1.1s[1,],
+                   fm1.r[2,], secr1.1s[2,],
+                   fm1.r[3,], secr1.1s[3,],
+                   fm1.r[4,], secr1.1s[4,],
+                   fm1.r[5,], secr1.1s[5,])))
+
+format(scrVsecr, digits=2, nsmall=3, scientific=FALSE)
+
+write.table(format(scrVsecr, digits=2, nsmall=3, scientific=FALSE),
+            file="scrVsecr1.txt", row.names=FALSE,
+            quote=FALSE, sep=" \t& ", eol=" \\\\\n ")
+
+
 colnames(fm1.r) <- c("& Mean", "SD", "2.5\\%", "50\\%", "97.5\\%")
 rownames(fm1.r) <- c("$\\sigma=0.1$", "$\\lambda_0=0.5$", "$\\psi=0.66$",
                      "$\\beta=2$", "$N=100$")
 round(fm1.r,2)
-
 
 
 
@@ -276,6 +416,19 @@ sink()
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Discrete space
 
 
@@ -286,30 +439,32 @@ library(gdistance)
 library(rjags)
 
 
-set.seed(353)
-pix <- 0.05
-dat <- spcov(pix=pix)$R
+set.seed(358030)
+pix <- 5 #0.05
+dat <- spcov(B=100, pix=pix)$R
 npix <- nrow(dat)
 colnames(dat) <- c("x","y","elev")
-cell <- seq(pix/2, 1-pix/2, pix)
-image(cell, cell, t(matrix(dat$elev, 1/pix, 1/pix)), ann=FALSE)
+cell <- seq(pix/2, 100-pix/2, pix)
+image(cell, cell, t(matrix(dat$elev, 100/pix, 100/pix)), ann=FALSE)
 
 head(dat)
 
 # Simulate IPP
 set.seed(30275)
-N <- 50
+beta0 <- -4
 beta1 <- 2
-dat$cp <- exp(beta1*dat$elev) / sum(exp(beta1*dat$elev))
+(EN <- sum(exp(beta0 + beta1*dat$elev)))
+N <- rpois(1, EN)
+dat$cp <- exp(beta0 + beta1*dat$elev) / EN
 s.tmp <- rmultinom(1, N, dat$cp) # a single realization to be ignored later
 
 # Trap locations
-xsp <- seq(0.275, 0.725, by=0.05)
+xsp <- seq(27.5, 72.5, by=5)
 X <- cbind(rep(xsp, each=length(xsp)), rep(xsp, times=length(xsp)))
 str(X)
 
 
-elevMat <- t(matrix(dat$elev, 1/pix, 1/pix))
+elevMat <- t(matrix(dat$elev, 100/pix, 100/pix))
 library(raster)
 elev <- raster:::flip(raster(t(elevMat)), direction="y")
 
@@ -333,11 +488,7 @@ ntraps <- nrow(X)
 T <- 5
 y <- array(NA, c(N, ntraps))
 
-nz <- 50 # augmentation
-M <- nz+nrow(y)
-yz <- array(0, c(M, ntraps))
-
-sigma <- 0.1  # half-normal scale parameter
+sigma <- 10  # half-normal scale parameter
 lam0 <- 0.8   # basal encounter rate
 lam <- matrix(NA, N, ntraps)
 
@@ -356,10 +507,16 @@ for(i in 1:N) {
         y[i,j] <- rpois(1, lam[i,j])
     }
 }
-yz[1:nrow(y),] <- y # Fill
+y <- y[rowSums(y)>0,]
 
 sum(y)
+dim(y)
+table(y)
 
+nz <- 100 # augmentation
+M <- nz+nrow(y)
+yz <- array(0, c(M, ntraps))
+yz[1:nrow(y),] <- y # Fill
 
 
 
@@ -375,7 +532,7 @@ secr.traps <- read.traps(data=Xs, detector="count")
 
 summary(secr.traps)
 
-# Huh?
+
 plot(secr.traps)
 
 plot.default(secr.traps, xlim=c(0,1), asp=1, pch="+")
@@ -400,7 +557,7 @@ ch <- make.capthist(secr.caps, secr.traps, fmt="XY")
 
 # Make mask
 
-msk <- make.mask(secr.traps, buffer=0.275, spacing=.05, nx=v)
+msk <- make.mask(secr.traps, buffer=27.5, spacing=5) #, nx=v)
 summary(msk)
 #plot(msk)
 
@@ -447,17 +604,15 @@ region.N(secr1, se.N=TRUE)
 sink("ippDiscrete.txt")
 cat("
 model{
-sigma ~ dunif(0, 1)
+sigma ~ dunif(0, 50)
 lam0 ~ dunif(0, 5)
-beta0 <- log(D) # D=density defined below
-beta1 ~ dnorm(0,0.1)
-psi ~ dbeta(1,1)
-
+beta0 ~ dnorm(0, 0.001) #log(D) # D=density defined below
+beta1 ~ dnorm(0, 0.001)
 for(j in 1:nPix) {
   mu[j] <- exp(beta0 + beta1*elevation[j])
   probs[j] <- mu[j]/sum(mu[])
 }
-
+psi <- sum(mu[])/M
 for(i in 1:M) {
   w[i] ~ dbern(psi)
   s[i] ~ dcat(probs[])
@@ -469,11 +624,9 @@ for(i in 1:M) {
     y[i,j] ~ dpois(lambda[i,j])
     }
   }
-
 N <- sum(w[])
-D <- N/1 # unit square
+D <- N/1 # 1ha state-space
 }
-
 ", fill=TRUE)
 sink()
 
@@ -481,22 +634,21 @@ sink()
 
 modfile <- "ippDiscrete.txt"
 
-jags.data <- with(ch9simData, {
-    list(y=ch.jags, elevation=drop(spcov.jags$elev),
-            nPix=nrow(spcov.jags),
-            M=nrow(ch.jags), ntraps=nrow(traps),
-            Sgrid=as.matrix(spcov.jags[,1:2]),
-            grid=traps)
-    })
+jags.data <- list(y=yz, elevation=drop(dat$elev),
+            nPix=nrow(dat),
+            M=nrow(yz), ntraps=nrow(X),
+            Sgrid=as.matrix(dat[,1:2]),
+            grid=X)
 str(jags.data)
 
-all(matrix(jags.data$elevation, 20, byrow=T) ==
+all(matrix(jags.data$elevation, 20, byrow=TRUE) ==
     matrix(covariates(msk)$elev, 20))
 
 init1 <- function() {
-    list(sigma=runif(1), lam0=runif(1), beta=rnorm(1),
+    list(sigma=runif(1, 5, 10), lam0=runif(1),
+         beta0=rnorm(1, -5), beta1=rnorm(1),
          s=sample.int(jags.data$nPix, jags.data$M, replace=TRUE),
-         w=rep(1, jags.data$M), psi=1)
+         w=ifelse(rowSums(jags.data$y)>0, 1, 0))
 }
 str(init1())
 
@@ -505,9 +657,9 @@ pars1 <- c("sigma", "lam0", "beta0", "beta1", "N")
 # Obtain posterior samples. This takes a few minutes
 # Compile and adapt
 system.time({
-set.seed(03453)
-jm <- jags.model(modfile, jags.data, init1, n.chains=2, n.adapt=1000)
-jags1 <- coda.samples(jm, pars1, n.iter=10000)
+    set.seed(03453)
+    jm <- jags.model(modfile, jags.data, init1, n.chains=2, n.adapt=1000)
+    jags1 <- coda.samples(jm, pars1, n.iter=20000)
 })
 
 plot(jags1, ask=TRUE)
