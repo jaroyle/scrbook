@@ -1,5 +1,4 @@
-\chapter{%State-space Covariates
-%Modeling Spatial Variation in Density Using State-Space Covariates
+\chapter{
 Modeling Spatial Variation in Density
 }
 \markboth{Spatial Variation in Density}{}
@@ -340,12 +339,12 @@ individuals in a pixel by multiplying the expected value of density
 for that pixle by the area of the pixel. If we do this for each pixel in the state-space, then
 summing up these values gives us what we are after, the expected value
 of $N$. Specifically,
-$\mathbb{E}[N] = \sum_{\mathcal{S} \in \mathcal{S}} \mathbb{E}[n(\mathbf{s})]$.
+$\mathbb{E}[N] = \sum_{\mathbf{s} \in \mathcal{S}} \mathbb{E}[n(\mathbf{s})]$.
 As the area of the pixels approaches zero, such that we move from discrete
 space back to continuous space, the summation must be replaced
 with an integration of the form:
 \begin{equation}
-\mathbb{E}[N] = \int_{\mathbf{s} \in \mathcal{S}} \mu(\mathbf{s}, {\bm \beta}) \mathrm{d}\mathbf{s}
+\mathbb{E}[N] = \int_{\mathcal{S}} \mu(\mathbf{s}, {\bm \beta}) \mathrm{d}\mathbf{s}
 \label{state-space.eq.EN}
 \end{equation}
 This is an important equation because, once the $\bm \beta$ parameters
@@ -378,7 +377,7 @@ normalzing constant. In this case, the normalizing constant is the integral
 of $\mu(s, \bm{\beta})$ evaluated over the entire state-space.
 The probability density function of the new prior is therefore:
 \begin{equation}
-[\mathbf{s}_i | \bm{\beta}] = \frac{\mu(\mathbf{s}_i, \bm{\beta})}{\int_{\mathbf{s} \in \mathcal{S}} \mu(\mathbf{s}, \bm{\beta})\, \mathrm{d}\mathbf{s}}
+[\mathbf{s}_i | \bm{\beta}] = \frac{\mu(\mathbf{s}_i, \bm{\beta})}{\int_{\mathcal{S}} \mu(\mathbf{s}, \bm{\beta})\, \mathrm{d}\mathbf{s}}
 \label{state-space.eq.pdf.hetero}
 \end{equation}
 Substituting the uniform prior with this new distribution
@@ -401,9 +400,9 @@ Chapter~\ref{chapt.poisson-mn}, which include
 Monte Carlo integration and Gaussian quadrature. Alternatively, if
 our state-space covariates are in raster format, i. e. they are
 in discrete space, the integral can be replaced with a sum over
-all pixels,
+all the pixels in the raster,
 \begin{equation}
-[\mathbf{s}_i | \bm{\beta}] = \frac{\mu(\mathbf{s}_i, \bm{\beta})}{\sum_{\mathbf{s} \in \mathcal{S}} \mu(\mathbf{s}, \bm{\beta})}%\, \mathrm{d}s}
+[\mathbf{s}_i | \bm{\beta}] = \frac{\mu(\mathbf{s}_i, \bm{\beta})}{\sum_{\mathbf{s} \in \mathcal{S}} \mu(\mathbf{s}, \bm{\beta})}
 \label{state-space.eq.pdf.hetero.d}
 \end{equation}
 where $\bf s$ is now defined as ``pixel ID'' rather than a point in space.
@@ -442,7 +441,7 @@ is true for inhomogeneous models. Specifically, rather than
 $\mathbb{E}[N] = \psi M$ as before, we use expected value of $N$ shown
 in Eq.~\ref{state-space.eq.EN} which results in
 \begin{equation}
-\psi = \frac{\int_{\mathbf{s} \in \mathcal{S}} \mu(\mathbf{s},
+\psi = \frac{\int_{\mathcal{S}} \mu(\mathbf{s},
   \bm{\beta}) \, \mathrm{d}\mathbf{s}}{M}
 \label{state-space.eq.psimu}
 \end{equation}
@@ -479,9 +478,9 @@ In the next sections we walk through a few examples, building up from
 the simplest case where we actually observe the activity centers as
 though they were data. In the second example, we fit our new model to simulated
 data in which density is a function of a single continuous
-covariate. \hl{XXXX NOT DONE YET: To build upon the developments in the previous chapter, we
+covariate. To build upon the developments in the previous chapter, we
 further consider the plausible case where a state-space covariate is also a
-covariate of ecological distance. XXXX} A small simulation study indicates
+covariate of ecological distance. A small simulation study indicates
 that both effects can be estimated. A fourth example shows an analysis in discrete space using
 both \secr~\citep{efford:2011} and \jags~\citep{plummer:2003}. In the
 fifth and final example, we model the intensity of
@@ -520,8 +519,7 @@ Eq.~\ref{state-space.eq.pdf.hetero} \citep[pg. 104]{diggle:2003}. The
 log-likelihood is thus:
 \[
 \ell({\bm \beta} | \{{\bf s}_i\}) = \sum_{i=1}^N
-\log(\mu(\mathbf{s}_i, \bm{\beta})) - \int_{\mathbf{s} \in
-  \mathcal{S}} \mu(\mathbf{s}, \bm{\beta}) \, \mathrm{d} \mathbf{s} .
+\log(\mu(\mathbf{s}_i, \bm{\beta})) - \int_{\mathcal{S}} \mu(\mathbf{s}, \bm{\beta}) \, \mathrm{d} \mathbf{s} .
 \]
 Having defined the likelihood we could choose a prior distribution for
 $\bm \beta$ and obtain the posterior distribution %of $\bm \beta$
@@ -593,14 +591,14 @@ N <- rpois(1, EN)     # Realized N
 s <- matrix(NA, N, 2) # This matrix will hold the coordinates
 elev.min <- elev.fn(c(0,0))
 elev.max <- elev.fn(c(100, 100))
-Q <- max(c(exp(beta0 + beta1*elev.min),
+Q <- max(c(exp(beta0 + beta1*elev.min),  # max of intensity function
            exp(beta0 + beta1*elev.max)))
 counter <- 1
-while(counter <= N) {
+while(counter <= N) { # begin rejection sampling
   x.c <- runif(1, 0, 100); y.c <- runif(1, 0, 100)
-  s.cand <- c(x.c,y.c)
+  s.cand <- c(x.c,y.c) # proposed activity center
   pr <- mu(s.cand, beta0, beta1)
-  if(runif(1) < pr/Q) {
+  if(runif(1) < pr/Q) { # Typically rejected if pr is low
     s[counter,] <- s.cand
     counter <- counter+1
     }
@@ -650,7 +648,8 @@ Maximizing the likelihood took a fraction of a second, and we
 obtained estimates of $\hat{\beta}_0=-5.93$ and $\hat{\beta}_1=0.95$,
 which are very close to the data generating values. The 95\% confidence
 interval for $\hat{\beta}_1$ is [0.61, 1.3] and since it does not
-include zero, the null hypothesis that $\beta_1=0$ can be rejected. In addition to testing
+include zero, the null hypothesis that $\beta_1=0$, i.e. that there is
+no effect of elevation on density, can be rejected. In addition to testing
 hypotheses, these results can be used to predict population size in
 new regions or create predicted density surface maps by plugging the
 parameter estimates into Eqs.~\ref{state-space.eq.loglin} and~\ref{state-space.eq.EN}.
@@ -659,7 +658,7 @@ This example demonstrates
 that if we had the data we wish we had, i.e. if we knew the
 coordinates of the activity centers, we could easily estimate the
 parameters governing the underlying point process and make inferences
-about spatial variation in abundance. Unfortunately, in
+about spatial variation in density and abundance. Unfortunately, in
 SCR, the activity centers cannot be directly observed; however,
 spatial recaptures provide the information needed to
 estimate these latent parameters.
@@ -738,7 +737,9 @@ plot(mcmc(fm1$out))
   \end{small}
 \end{samepage}
 which requests 10000 posterior samples and estimates the effect of the
-spatial covariate, elevation, on density. Note that any spatial
+spatial covariate, elevation, on density. Currently, the function
+places uniform priors on the parameters $\sigma$, $\lambda_0$,
+$\beta_0$ and $\beta_1$, although this could easily be modified. Note that any spatial
 covariate that returns a real value for any location in the
 state-space can be supplied using the \texttt{space.cov} argument. The resulting
 trace plots of the Markov chains and the posterior distributions for
@@ -746,9 +747,10 @@ three parameters are
 shown in Fig.~\ref{state-space.fig.fm1post}. The chains appear to
 converge rapidly but may need to be run longer to reduce Monte Carlo
 error.
+
 \begin{figure}
   \centering
-  \includegraphics[width=0.75\textwidth]{Ch11/figs/fm1p}
+  \includegraphics[width=0.8\textwidth]{Ch11/figs/fm1p}
   \caption{Trace plots and posterior distributions from MCMC analysis
     of SCR model with inhomogeneous point process. Analysis was
     conducted using the \texttt{scrIPP} function in the accompanying
@@ -758,6 +760,25 @@ error.
 %For comparison, we also fit this model using $\texttt{secr}$. See the
 %help file \texttt{Ch-IPP} in \scrbook~ for \R~commands necessary to
 %prepare the data for \secr.
+
+\begin{table}%[b]
+\centering
+\caption{Summary of posterior distributions from SCR model with
+  inhomogeneous point process. }
+\begin{tabular}{lrrrr}
+\hline
+Parameter 	 	& Mean  	& SD    	& 2.5\% 	& 97.5\% \\
+\hline
+ $\sigma=5$ 	 	&  5.232 	&  0.310 	&  4.681 	&  5.858 \\
+ $\lambda_0=1$ 	 	&  0.802 	&  0.119 	&  0.595 	&  1.049 \\
+ $\beta_0=-6$ 	 	& -5.856        & 0.2542        & -6.376        & -5.393 \\
+ $\beta_1=1$ 	 	&  0.985 	&  0.209 	&  0.575 	&  1.378 \\
+ $N=41$ 	 	& 47.615 	&  8.041 	& 35.000 	& 66.000 \\
+ $\mathbb{E}[N]=39.9$ 	& 47.551 	& 10.992 	& 29.837 	& 71.332 \\
+\hline
+\end{tabular}
+\label{state-space.tab.simIPP}
+\end{table}
 
 Summaries of the posterior distributions are presented in
 Table~\ref{state-space.tab.simIPP}. The posterior means for $\beta_0$
@@ -785,46 +806,14 @@ difference between realized and expected values of abundance.
 %analysis assumed a binomial prior for $N$, whereas the ML analysis
 %assumed a Poisson prior.
 
-\begin{table}%[b]
-\centering
-\caption{Summary of posterior distributions from SCR model with
-  inhomogeneous point process. }
-\begin{tabular}{lrrrr}
-\hline
-Parameter 	 	& Mean  	& SD    	& 2.5\% 	& 97.5\% \\
-\hline
- $\sigma=5$ 	 	&  5.232 	&  0.310 	&  4.681 	&  5.858 \\
- $\lambda_0=1$ 	 	&  0.802 	&  0.119 	&  0.595 	&  1.049 \\
- $\beta_0=-6$ 	 	& -5.856        & 0.2542        & -6.376        & -5.393 \\
- $\beta_1=1$ 	 	&  0.985 	&  0.209 	&  0.575 	&  1.378 \\
- $N=41$ 	 	& 47.615 	&  8.041 	& 35.000 	& 66.000 \\
- $\mathbb{E}[N]=39.9$ 	& 47.551 	& 10.992 	& 29.837 	& 71.332 \\
-\hline
-% \hline
-% Parameter 	& Method 	& Estimate 	& SD/SE 	& Lower 	& Upper \\
-% \hline
-%  $\sigma=5$ 	& MCMC 	&  5.232 	&  0.310 	&  4.681 	&  5.858 \\
-%   	        & ML 	&  5.237 	&  0.303 	&  4.676 	&  5.866 \\
-%  $\lambda_0=1$ 	& MCMC 	&  0.802 	&  0.119 	&  0.595 	&  1.049 \\
-%   	        & ML 	&  0.781 	&  0.115 	&  0.586 	&  1.041 \\
-% % $\beta_1=1$ 	& MCMC 	&  0.985 	&  0.209 	&  0.575 	&  1.378 \\
-% %  	        & ML 	&  1.037 	&  0.274 	&  0.501 	&  1.574 \\
-%  $N=41$ 	& MCMC 	& 47.615 	&  8.041 	& 35.000 	& 66.000 \\
-%   	        & ML 	& 47.778 	&  7.744 	& 37.074 	& 68.830 \\
-%  $\mathbb{E}[N]=39.9$ 	& MCMC 	& 47.551 	& 10.992 	& 29.837 	& 71.332 \\
-%   	        & ML 	& 47.778 	& 10.380 	& 31.363 	& 72.784 \\
-% \hline
-\end{tabular}
-\label{state-space.tab.simIPP}
-\end{table}
 
 Fitting continuous space inhomogenous point process models is somewhat
 difficult in \bugs~because the ``IPP'' prior $[\mathbf{s}_i | \bm
-\beta]$ is not one of the
-available distributions that come with the software. It is
+\beta]$---unlike the uniform prior---is not one of the
+available distributions that comes with the software. It is
 possible to add new distributions in \bugs, but it is somewhat
 cumbersome.  \secr~allows
-users to fit continuous space IPPs using linear or polynomial functions of the x- and y-
+users to fit continuous space models using linear or polynomial functions of the x- and y-
 coordinates, but it does not accept truly continuous covariates that
 are functions of space. However, these
 are not really important limitations because discrete
@@ -834,36 +823,40 @@ covariates are, or can be, defined as such.
 \subsection{Discrete space}
 \label{modeling.sec.discrete}
 
-To fit IPPs using covariates in discrete space, \emph{i.e.} in raster
-format, we follow the same steps
+To fit inhomogeneous point process models using covariates in discrete
+space, i.e. in raster format, we follow the same steps
 as outlined in Chapter~\ref{chapt.poisson-mn}---we define ${\bf s}_i$ as
-pixel ID, and we use the categorical distribution as a prior. A good
+pixel ID, and we use the categorical distribution as a prior. This
+effectively changes the problem from estimating the coordinates of an
+activity center, to estimating the pixel in which an activity center is
+located. As pixel size approaches zero, these two become equivalent. A good
 example is found in \citep{mollet_etal:2012}. Here we present
 an analysis of the simulated data shown in the %right panel of
 Fig.~\ref{state-space.fig.hetero}. The spatial covariate, let's call it
-elevation again, was simulated
+forest canopy height (CANHT), was simulated
 using using the code shown on the help page
-\verb+ch9simData+ in \scrbook. The points are the number of
+\verb+ch11+ in \scrbook. The points are the number of
 activity centers in each pixel, generated from a single realization of
 the inhomogeneous point process model with intensity
-$\mu(x) = 2 \times \mbox{elev}(s)$.
+$\mu(x, \bm{\beta}) = \exp(\beta_0 + \beta_1 \text{CANHT}(s))\times\text{pixelArea}$,
+where $\beta_0 = -6$ and $\beta_1 = 1$.
 \begin{figure}[ht]
 \centering
-\includegraphics[width=3in,height=3in]{Ch11/figs/discrete}
+\includegraphics[width=0.6\textwidth]{Ch11/figs/discrete}
 \label{ch9.fig.discrete}
 \caption{Simulated activity centers in discrete space. The spatial
-  covariate, elevation, is highest in the lighter areas. Density of
+  covariate, canopy height, is highest in the lighter areas. Density of
   activity centers (circles) increases with elevation. A single
   activity center is shown as a small circle, and larger circles
   represent two activity centers in a pixel. Trap locations
   are shown as crosses.}
 \end{figure}
 
-The \bugs~code to fit an IPP model to these data is shown in
-panel~\ref{ch9.panel1}.The vector \verb+probs[]+ is the prior
+The \bugs~description of the model is shown in
+panel~\ref{ch9.panel1}. The vector \verb+probs[]+ is the prior
 probability defined
-by~\ref{eq.pdf.ipp.d}, which is the probability that an individual's
-activity center is located at pixel $x$. \verb+Sgrid+ is the
+by Eq.~\ref{state-space.eq.pdf.hetero.d}, which is the probability that an individual's
+activity center is located at pixel $\bf s$. \verb+Sgrid+ is the
 matrix of coordinates for each pixel.
 
 \begin{panel}%[h!]
@@ -872,28 +865,28 @@ matrix of coordinates for each pixel.
 \begin{small}
 \begin{verbatim}
 model{
-sigma ~ dunif(0, 10)
+sigma ~ dunif(0, 20)
 lam0 ~ dunif(0, 5)
-beta0 ~ dnorm(0, 0.01) #log(D) # D=density defined below
-beta1 ~ dnorm(0, 0.01)
+beta0 ~ dunif(-10, 10)
+beta1 ~ dunif(-10, 10)
 for(j in 1:nPix) {
-  mu[j] <- exp(beta0 + beta1*elevation[j])
-  probs[j] <- mu[j]/sum(mu[])
+  mu[j] <- exp(beta0 + beta1*CANHT[j])*pixArea
+  probs[j] <- mu[j]/EN
 }
-psi <- sum(mu[])/M
+EN <- sum(mu[]) # Expected value of N, E[N]
+psi <- EN/M
 for(i in 1:M) {
   w[i] ~ dbern(psi)
   s[i] ~ dcat(probs[])
   x0g[i] <- Sgrid[s[i],1]
   y0g[i] <- Sgrid[s[i],2]
   for(j in 1:ntraps) {
-    dist[i,j] <- sqrt(pow(x0g[i]-grid[j,1],2) + pow(y0g[i]-grid[j,2],2))
+    dist[i,j] <- sqrt(pow(x0g[i]-traps[j,1],2) + pow(y0g[i]-traps[j,2],2))
     lambda[i,j] <- lam0*exp(-dist[i,j]*dist[i,j]/(2*sigma*sigma)) * w[i]
     y[i,j] ~ dpois(lambda[i,j])
     }
   }
-N <- sum(w[])
-D <- N/1 # 1ha state-space
+N <- sum(w[]) # Realized value of N
 }
 \end{verbatim}
 \end{small}
@@ -904,55 +897,73 @@ D <- N/1 # 1ha state-space
 \end{panel}
 
 This model can also be fit in \secr, which refers
-to the raster data as a ``habitat mask''. \R~code to
-fit the models using \secr~and \jags~is available in \scrbook---see
+to the raster data as a ``habitat mask''. \R~code to format the data
+and fit the models using \secr~and \jags~is available in \scrbook---see
 \verb#help(ch9secrYjags)#. Results of the
-comparison are shown in Table \ref{ch9:tab:secrYjags} and are
-very similar as expected.
-\begin{comment}
-\hl{ANDY, is there any point in discussing
-  the slight differences?}
-  YES: If we can explain it. Could it be MC error alone?
-Otherwise I guess attributing it to differences between MLE and BAyes is ok. That seems like
-a reasonable thing.
-\end{comment}
-\begin{table}[h!]
+comparison are shown in Table \ref{state-space.tab.jagsVsecr} and are
+very similar as expected. The differences that do exist can be
+explained by a variety of reasons. For one, there exists some Monte
+Carlo error in the Bayesian posterior summaries. There is also the
+fact that posterior summaries can be computed in numerous ways---for
+example, we could have presented posterior modes or medians instead of
+means---or, we could have shown highest posterior density credible
+intervals instead of simple percentiles. The posteriors would also
+differ if we chose more informative priors than the uniform
+distributions used here. We see no reason why these
+issues should be seen as limitations of the Bayesian analysis, rather
+we would argue that the posterior distribution, which describes the
+probability that the parameter equals any particular value, is a
+better descriptor undertainty than any particular point estimator or
+confidence interval. Futhermore, most of these differences are minor,
+and hardly worth mention. The only exception is that the estimates of
+the expected and realized values of $N$ are closer to the data
+generating values in the Bayesian analysis, and the Bayesian credible
+intervals are narrower than the frequentist confidence intervals. This
+is likely a result of the fact that the Bayesian analysis assumed
+that $N$ was binomial whereas the frequentist analysis
+assumed a Poisson prior for $N$, and the variance of the binomial will
+always be less than or equal to the variance of Poisson distribution
+for a shared expectation.
+
+\begin{table}%[h!]
 \centering
 \caption{Comparison of \secr~and \jags~results. Point estimates from
   the Bayesian analysis are posterior means. Intervals are lower and
   upper 95\% CIs.}
-\begin{tabular}{llrrrr}
+\begin{tabular}{lrlrrrr}
 \hline
-Software & Parameter & Estimate & SD & lower & upper \\
+Par 	& Truth 	& Software 	& Mean 	& SD 	& 2.5\% & 97.5\% \\
 \hline
- secr & $N=50$ & 49.2803 & 5.7535 & 41.0087 & 64.3879 \\
-      & $\beta=2$ &  2.1772 & 0.5628 &  1.0741 &  3.2804 \\
-      & $\lambda_0=0.8$ &  0.9203 & 0.0764 &  0.7824 &  1.0825 \\
-      & $\sigma=0.1$ &  0.0990 & 0.0038 &  0.0918 &  0.1068 \\
-\hline
- JAGS & $N=50$ & 48.2072 & 5.4053 & 39.0000 & 60.0000 \\
-      & $\beta=2$ &  2.1026 & 0.5323 &  1.0889 &  3.1506 \\
-      & $\lambda_0=0.8$ &  0.9328 & 0.0766 &  0.7898 &  1.0921 \\
-      & $\sigma=0.1$ &  0.1004 & 0.0041 &  0.0929 &  0.1089 \\
+$\lambda_0$ 	&  1.00 	& \textbf{JAGS} 	&  1.09 	& 0.11 	&  0.88 	&  1.33 \\
+ $\lambda_0$ 	&  1.00 	& \texttt{secr} 	&  1.25 	& 0.13 	&  1.02 	&  1.54 \\
+ $\sigma$ 	&  5.00 	& \textbf{JAGS} 	&  5.15 	& 0.23 	&  4.73 	&  5.63 \\
+ $\sigma$ 	&  5.00 	& \texttt{secr} 	&  4.73 	& 0.20 	&  4.35 	&  5.15 \\
+ $\beta_1$ 	&  2.00 	& \textbf{JAGS} 	&  3.59 	& 0.31 	&  2.96 	&  4.17 \\
+ $\beta_1$ 	&  2.00 	& \texttt{secr} 	&  2.65 	& 0.31 	&  2.04 	&  3.26 \\
+ $N$ 	& 53.00 	& \textbf{JAGS} 	& 39.14 	& 2.14 	& 36.00 	& 44.00 \\
+ $N$ 	& 53.00 	& \texttt{secr} 	& 45.52 	& 4.34 	& 40.06 	& 58.31 \\
+ $\mathbb{E}[N]$ 	& 49.00 	& \textbf{JAGS} 	& 38.83 	& 5.70 	& 28.49 	& 50.79 \\
+ $\mathbb{E}[N]$ 	& 49.00 	& \texttt{secr} 	& 45.52 	& 8.02 	& 32.31 	& 64.13 \\
 \hline
 \end{tabular}
-\label{ch9:tab:secrYjags}
+\label{state-space.tab.jagsVsecr}
 \end{table}
 
 
-\section{Ecological distance and state-space covariates}
+\section{Ecological Distance and Density Covariates}
 
-Habitat characteristics that affect population
-density could also affect home range size and movement behavior. For
-example, a
-species that occurs in high density in a forest may be reluctant to
+Habitat characteristics that affect spatial variation in density can also affect
+home range size and movement behavior. For example, a
+species that occurs at high density in a forest may be reluctant to
 venture from a forest patch into an adjacent field. Thus, even if a
 trap placed in a field is located very close to an animal's activity
-center, the probability of capture may be very low. In this case
-forest cover is a covariate of both density and encounter probability,
+center, the probability of capture may be very
+low. In this case,  we could say that forest cover is a covariate of
+both density and encounter probability,
 and we could model it as such by combining the methods described in
-this chapter and in Chapter~\ref{chapt.ecoldist}. To demonstrate, we
-continue with our analysis of the data shown in
+this chapter with those described in Chapter~\ref{chapt.ecoldist}.
+
+To demonstrate, we continue with our analysis of the data shown in
 Fig~\ref{state-space.fig.hetero}. Once again, we suppose that density
 increases with elevation, but this time, we also make the
 assumption that home range size decreases as density increases. This
@@ -973,8 +984,10 @@ be infinitely large. Thus, one may want to enforce the constraint that
 $\theta$ is strictly $\geq 0$. See Chapter~\ref{chapt.ecoldist} for
 more details.
 
-One may wonder if it is possible to estimate both $\beta$
-and $\theta$ using standard SCR data. Currently, it is not possible to
+A question that arises is: Is possible to estimate $\bm \beta$
+and $\theta$ using standard SCR data? In other words, can we model
+spatial variation in density and connectivity at the same time,
+using standard SCR data? Currently, it is not possible to
 model least-cost distance using \jags~or \secr, so we wrote our own
 function, \verb+scrDED+, to fit the model using maximum likelihood. An
 example analysis is provided on the help page for the function in our
@@ -982,18 +995,18 @@ example analysis is provided on the help page for the function in our
 the capture history data, the trap locations, and the raster data
 formatted using the {\tt raster} package
 \citep{hijmans_vanetten:2012}. The linear model for the
-intensity parameter $\mu(s, \beta)$ and the least-cost distance
-function $lcd(\theta)$ are specified using \R's formula interface. A
+intensity parameter $\mu(\mathbf{s}, \beta)$ and the least-cost distance
+function $\text{lcd}(\theta)$ are specified using \R's formula interface. A
 simple function call is
 \begin{verbatim}
 fm <- scrDED(y, traplocs=X, den.formula=~elev, dist.formula=~elev,
              rasters=elev.raster)
 \end{verbatim}
-To assess the possibility of estimating both $\beta$ and $\theta$, we
+To assess the possibility of estimating both $\bm \beta$ and $\theta$, we
 conducted a small simulation study, generating 500 datasets from the
 model with both parameters set to 1, which corresponds to the
-conditions described above. Rather incredibly, we see that it is
-possible to estimate both parameters with high accuracy
+conditions described above. The results indicate that it is
+possible to estimate both parameters
 (Fig~\ref{ch9.fig.sim}).
 
 \begin{figure}[ht]
@@ -1008,7 +1021,8 @@ data-generating value.}
 
 
 
-\section{The jaguar data}
+
+\section{The Jaguar Data}
 
 Estimating density of large felines has been a priority for many
 conservation organizations, but no robust methodologies existed before
@@ -1058,8 +1072,8 @@ hypothesis is that poaching pressure should decrease and jaguar
 density should increase with the level of
 protection. Thus, $\beta$ in this example is a ``slope''
 parameter describing the degree to which protection status affects
-jaguar density. We also hypothesized that males and females could have
-different home range sizes and that the sex ratio may not be
+jaguar density. We also hypothesized that males would have larger home
+ranges than females \citep{conde_etal:2010,sollmann_etal:2011} and that the sex ratio may not be
 1:1. Furthermore, we restricted the state-space to exclude the large
 soybean monocultures surrounding the study area, and we only
 considered
