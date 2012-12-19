@@ -395,7 +395,7 @@ library(gdistance)
 library(rjags)
 
 
-set.seed(38130)
+set.seed(3813)
 pix <- 5
 pixArea <- (pix*pix) / 10000
 B <- 100  # Length of square side
@@ -443,7 +443,7 @@ npix <- nrow(dat)
 ntraps <- nrow(X)
 y <- array(NA, c(N, ntraps))
 
-sigma <- 5  # half-normal scale parameter
+sigma <- 10  # half-normal scale parameter
 lam0 <- 1   # basal encounter rate
 lam <- matrix(NA, N, ntraps)
 
@@ -532,10 +532,6 @@ ch9simData <- list(ch.secr=ch, ch.jags=yz, spcov.jags=dat, spcov.secr=msk,
 
 
 
-
-library(scrbook)
-library(secr)
-library(rjags)
 
 #data(ch9simData)
 
@@ -637,6 +633,34 @@ save.image("scratch.RData")
 
 
 
+library(parallel)
+cl <- makeCluster(3)
+clusterExport(cl, c("jags.data", "init1", "pars1", "modfile", "M", "s"))
+
+fm <- clusterEvalQ(cl, {
+    library(rjags)
+    jm <- jags.model(modfile, jags.data, init1, n.chains=1, n.adapt=500)
+    jags1 <- coda.samples(jm, pars1, n.iter=2000)
+    jags1
+})
+
+str(fml <- mcmc.list(sapply(fm, mcmc)))
+plot(fml, ask=TRUE)
+
+
+fm2 <- clusterEvalQ(cl, {
+    jags2 <- coda.samples(jm, pars1, n.iter=10000)
+    jags2
+})
+
+str(fml2 <- mcmc.list(sapply(fm2, mcmc)))
+plot(fml2, ask=TRUE)
+
+
+stopCluster(cl)
+
+
+
 
 # compare results
 
@@ -650,7 +674,7 @@ summary(window(jags1, start=5001))
 gelman.diag(window(jags1, start=5001))
 
 
-jags.est <- summary(window(jags1, start=1001))
+jags.est <- summary(window(fml, start=1001))
 jags.r <- cbind(jags.est$stat[,1:2], jags.est$quant[,c(1,5)])
 jags.r
 
@@ -663,7 +687,7 @@ secr.r
 jagsVsecr <-
 data.frame(Par=rep(c("$\\lambda_0$", "$\\sigma$", "$\\beta_1$", "$N$",
                    "$\\mathbb{E}[N]$"), each=2),
-           Truth=rep(c(1, 5, 2, 53, 49.0), each=2),
+           Truth=rep(c(1, 10, 2, 53, 49.0), each=2),
            Software = rep(c("\\textbf{JAGS}", "\\texttt{secr}"), 5),
            rbind(jags.r[5,], secr.r[4,],
                  jags.r[6,], secr.r[5,],
