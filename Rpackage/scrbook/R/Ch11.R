@@ -22,19 +22,19 @@
 
 # Create spatial covariate
 
-spcov <- function(B=1, pix=0.05) {
+spcov <- function(B=1, pix=0.05, cor=2) {
     cell <- seq(0+pix/2, B-pix/2, pix)
     v <- length(cell)
     R <- data.frame(x=rep(cell, each=v),
                     y=rep(cell, times=v))
     D<-e2dist(R,R)
-    V<-exp(-D/2)
+    V<-exp(-D/cor)
     Vi<-solve(V)
     cov1<-t(chol(V))%*%rnorm(nrow(R))
     R$cov1<-cov1-mean(cov1)
     cov1.fn<-function(newpt,cov1,cov1.coords=cbind(R$x,R$y),Vi){
         newpt<-matrix(newpt,ncol=2)
-        k<- exp(-e2dist(newpt,cov1.coords)/2)
+        k<- exp(-e2dist(newpt,cov1.coords)/cor)
         pred<-k%*%Vi%*%cov1
         as.numeric(pred)
     }
