@@ -429,12 +429,15 @@ canhtMat <- t(matrix(dat$CANHT, 100/pix, 100/pix))
 canht <- raster:::flip(raster(t(canhtMat)), direction="y")
 
 windows(width=6, height=6)
+
+png("../figs/discrete.png", width=6, height=6, units="in", res=400)
+par(mai=c(0.4, 0.4, 0.2, 0.2))
 image(cell, cell, canhtMat, ann=FALSE)
 points(dat[s.tmp>0,c("x","y")], cex=s.tmp[s.tmp>0])
 points(X, pch="+")
 box()
-par(op)
-
+dev.off()
+system("open ../figs/discrete.png")
 
 
 
@@ -757,16 +760,6 @@ sink()
 
 
 # Consider both SS covs and ED covs
-
-
-
-
-
-
-
-
-
-
 
 
 
