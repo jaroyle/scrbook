@@ -395,11 +395,11 @@ library(gdistance)
 library(rjags)
 
 
-set.seed(3813)
+set.seed(9373)
 pix <- 5
 pixArea <- (pix*pix) / 10000
 B <- 100  # Length of square side
-dat <- spcov(B=B, pix=pix, cor=100)$R
+dat <- spcov(B=B, pix=pix, cor=10)$R
 npix <- nrow(dat)
 colnames(dat) <- c("x","y","CANHT")
 cell <- seq(pix/2, B-pix/2, pix)
@@ -409,12 +409,12 @@ image(cell, cell, t(matrix(dat$CANHT, B/pix, B/pix)), ann=FALSE)
 head(dat)
 
 # Simulate IPP
-set.seed(32516)
+set.seed(3216)
 beta0 <- 3
-beta1 <- 2
+beta1 <- 1
 (EN <- sum(exp(beta0 + beta1*dat$CANHT)*pixArea))
 # N <- rpois(1, EN) # 45
-M <- 150
+M <- 100
 (N <- rbinom(1, M, EN/M))
 dat$cp <- exp(beta0 + beta1*dat$CANHT) / EN
 s.tmp <- rmultinom(1, N, dat$cp) # a single realization to be ignored later
@@ -543,8 +543,11 @@ ch9simData <- list(ch.secr=ch, ch.jags=yz, spcov.jags=dat, spcov.secr=msk,
 
 secr2 <- secr.fit(ch, model=D~canht, mask=msk)
 
-region.N(secr2, se.N=TRUE)
+coef(secr2)
+beta0; beta1
 
+region.N(secr2, se.N=TRUE)
+N
 
 
 
@@ -598,8 +601,9 @@ all(matrix(jags.data$CANHT, 20, byrow=TRUE) ==
 
 init1 <- function() {
     list(sigma=runif(1, 2, 8), lam0=runif(1),
-         beta0=rnorm(1, 0), beta1=rnorm(1, 2),
-         w=ifelse(rowSums(jags.data$y>0), 1, 0), # rep(1, M),
+         beta0=rnorm(1, 3, .2), beta1=rnorm(1, 1, 0.3),
+#         w=ifelse(rowSums(jags.data$y>0), 1, 0),
+         w=rep(1, M),
          s=c(s[,"pixID"], sample(1:400, M-nrow(s))))
 }
 str(init1())
@@ -611,8 +615,11 @@ pars1 <- c("sigma", "lam0", "beta0", "beta1", "N", "EN")
 system.time({
     set.seed(453)
     jm <- jags.model(modfile, jags.data, init1, n.chains=2, n.adapt=1000)
-    jags1 <- coda.samples(jm, pars1, n.iter=5000)
+    jags1 <- coda.samples(jm, pars1, n.iter=10000)
 }) # 1.6hr
+
+jags2 <- coda.samples(jm, pars1, n.iter=10000)
+
 
 plot(jags1, ask=TRUE)
 summary(jags1)
@@ -674,7 +681,8 @@ summary(window(jags1, start=5001))
 gelman.diag(window(jags1, start=5001))
 
 
-jags.est <- summary(window(fml, start=1001))
+#jags.est <- summary(window(fml, start=1001))
+jags.est <- summary(jags2)
 jags.r <- cbind(jags.est$stat[,1:2], jags.est$quant[,c(1,5)])
 jags.r
 
@@ -687,7 +695,7 @@ secr.r
 jagsVsecr <-
 data.frame(Par=rep(c("$\\lambda_0$", "$\\sigma$", "$\\beta_1$", "$N$",
                    "$\\mathbb{E}[N]$"), each=2),
-           Truth=rep(c(1, 10, 2, 53, 49.0), each=2),
+           Truth=rep(c(1, 10, 1, 30, 32.3), each=2),
            Software = rep(c("\\textbf{JAGS}", "\\texttt{secr}"), 5),
            rbind(jags.r[5,], secr.r[4,],
                  jags.r[6,], secr.r[5,],
