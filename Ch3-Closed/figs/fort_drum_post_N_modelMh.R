@@ -7,6 +7,15 @@ cex=1.5)
 
 dev.off()
 
+png("bear-modelMh-post-v2.png",width=3.5,height=3.5, units="in", res=400)
+
+Nv<-rep(as.numeric(names(N)),N)
+ plot(density(Nv),main=" ")
+
+dev.off()
+
+
+ 
 sp<- smooth.spline(xg[1:80],N[1:80],cv=TRUE)
     
  sp$x[sp$y==max(sp$y)]
