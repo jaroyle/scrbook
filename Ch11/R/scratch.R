@@ -428,7 +428,7 @@ str(X)
 canhtMat <- t(matrix(dat$CANHT, 100/pix, 100/pix))
 canht <- raster:::flip(raster(t(canhtMat)), direction="y")
 
-windows(width=6, height=6)
+
 
 png("../figs/discrete.png", width=6, height=6, units="in", res=400)
 par(mai=c(0.4, 0.4, 0.2, 0.2))
