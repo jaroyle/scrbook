@@ -65,7 +65,7 @@ wolvSCR0ms2(y3d, traps, wsex, nb = 1000, ni = 2000, buffer = 2, M = 200)
 ##--	or do  help(data=index)  for the standard data sets.
 
 
-toad<-wolvSCR0ms2(y3d,traps,nb=500,ni=1000,buffer=2,M=121)
+toad<-wolvSCR0ms2(nb=500,ni=1000,buffer=2,M=121,engine="winbugs")
 
 mprobs<- table(toad$sims.list$mod)
 mprobs<-mprobs/sum(mprobs)

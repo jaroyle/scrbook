@@ -1,6 +1,15 @@
 wolvSCR0ms2 <-
-function(y3d,traps,nb=1000,ni=2000,buffer=2,M=200){
+function(nb=1000,ni=2000,buffer=2,M=200){
 library("R2WinBUGS")
+library("R2jags")
+library("scrbook")
+
+data(wolverine)
+traps<-wolverine$wtraps
+y3d <-SCR23darray(wolverine$wcaps,wolverine$wtraps)
+wsex<-wolverine$wsex
+
+
 
 # trapping grid scaled appropriately
 traplocs<-as.matrix(traps[,2:3])
@@ -91,17 +100,32 @@ sink()
 
 
 sst<-traplocs[sample(1:nrow(traplocs),M,replace=TRUE),]
+for(i in 1:nind){
+sst[i,]<- matrix(traplocs[y[i,]>0,],ncol=2,byrow=FALSE)[1,]
+
+}
+
 wst<-c(rep(1,nind),rep(0,M-nind))
 mod<-1
 data <- list ("y","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area")
-inits <- function(){   list (psi=.5,alpha0=rnorm(3,-2,.5),sigma=runif(3,1,2),w=wst,s=sst,mod=1) }
+
+if(engine=="jags")  {
+inits <- function(){   list (psi=.5,alpha0=rnorm(3,-2,.5),beta=runif(3,.2,.8),w=wst,s=sst,mod=1) }
 parameters <- c("mod","psi","sigma","beta","alpha0","N","D")
-out <-  bugs(data, inits, parameters, "modelfile5.txt", n.thin=1,n.chains=3, n.burnin=nb,
+out <-  jags(data, inits, parameters, "mf5.txt", n.thin=1,n.chains=3, n.burnin=nb,
 n.iter=ni,working.dir=getwd())
+}
 
-
+if(engine=="bugs"){
+inits <- function(){   list (psi=.5,alpha0=rnorm(3,-2,.5),beta=runif(3,.2,.8),w=wst,s=sst,mod=2) }
+parameters <- c("mod","psi","sigma","beta","alpha0","N","D")
+out <-  bugs(data, inits, parameters, "mf5.txt", n.thin=1,n.chains=3, n.burnin=nb,
+n.iter=ni,working.dir=getwd(),DIC=FALSE)
+}
 
 
 out
+
+
 
 }
