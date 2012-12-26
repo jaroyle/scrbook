@@ -8,7 +8,7 @@ model selection of encounter models%%  ~~function to do ... ~~
 uses the Kuo Mallick idea applied to 3 models%%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-wolvSCR0ms2(y3d, traps, wsex, nb = 1000, ni = 2000, buffer = 2, M = 200)
+wolvSCR0ms2(nb = 1000, ni = 2000, buffer = 2, M = 200,engine="winbugs")
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

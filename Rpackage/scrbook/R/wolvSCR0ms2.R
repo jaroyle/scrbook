@@ -1,5 +1,5 @@
 wolvSCR0ms2 <-
-function(nb=1000,ni=2000,buffer=2,M=200){
+function(nb=1000,ni=2000,buffer=2,M=200,engine="winbugs"){
 library("R2WinBUGS")
 library("R2jags")
 library("scrbook")
@@ -110,16 +110,16 @@ mod<-1
 data <- list ("y","traplocs","M","ntraps","K","Xl","Xu","Yl","Yu","area")
 
 if(engine=="jags")  {
-inits <- function(){   list (psi=.5,alpha0=rnorm(3,-2,.5),beta=runif(3,.2,.8),w=wst,s=sst,mod=1) }
+inits <- function(){   list (psi=.5,alpha0=rnorm(3,-2,.5),sigma=runif(3,.2,.8),w=wst,s=sst,mod=1) }
 parameters <- c("mod","psi","sigma","beta","alpha0","N","D")
-out <-  jags(data, inits, parameters, "mf5.txt", n.thin=1,n.chains=3, n.burnin=nb,
+out <-  jags(data, inits, parameters, "modelfile5.txt", n.thin=1,n.chains=3, n.burnin=nb,
 n.iter=ni,working.dir=getwd())
 }
 
-if(engine=="bugs"){
-inits <- function(){   list (psi=.5,alpha0=rnorm(3,-2,.5),beta=runif(3,.2,.8),w=wst,s=sst,mod=2) }
+if(engine=="winbugs"){
+inits <- function(){   list (psi=.5,alpha0=rnorm(3,-2,.5),sigma=runif(3,.2,.8),w=wst,s=sst,mod=2) }
 parameters <- c("mod","psi","sigma","beta","alpha0","N","D")
-out <-  bugs(data, inits, parameters, "mf5.txt", n.thin=1,n.chains=3, n.burnin=nb,
+out <-  bugs(data, inits, parameters, "modelfile5.txt", n.thin=1,n.chains=3, n.burnin=nb,
 n.iter=ni,working.dir=getwd(),DIC=FALSE)
 }
 
