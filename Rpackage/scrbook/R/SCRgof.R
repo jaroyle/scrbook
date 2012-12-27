@@ -42,7 +42,7 @@ Dn<- table(cut(Sxout[i,][z[i,]==1],breaks=xg),cut(Syout[i,][z[i,]==1],breaks=yg)
 Dnv<-Dn[1:length(Dn)]
 
 E<-mean(Dnv)
-stat[i]<-(length(Dnv)-1)*(var(Dnv)/mean(Dnv))
+stat[i]<-  (var(Dnv)/mean(Dnv))
 stat2[i]<-   sum(   (sqrt(Dnv) - sqrt(E))^2 )
 
 Sxsim<-runif(sum(z[i,]),Xl,Xu)
@@ -50,7 +50,7 @@ Sysim<-runif(sum(z[i,]),Yl,Yu)
 
 Dnsim<- table(cut(Sxsim,breaks=xg),cut(Sysim,breaks=yg))
 Dnsimv<-Dnsim[1:length(Dnsim)]
-statsim[i]<- (length(Dnsimv)-1)*(var(Dnsimv)/mean(Dnsimv))
+statsim[i]<- (var(Dnsimv)/mean(Dnsimv))
 statsim2[i]<-  sum(   (sqrt(Dnsimv) - sqrt(E))^2)
 
 
