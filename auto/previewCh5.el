@@ -7,22 +7,33 @@
      "chapt.glms"
      "chapt.closed"
      "chapt.scr0"
-     "chapt.poisson"
      "chapt.mcmc"
      "chapt.gof"
      "chapt.covariates"
      "chapt.ipp"
      "chapt.open")
+    (TeX-add-symbols
+     "mytilde"
+     "R"
+     "bugs"
+     "winbugs"
+     "jags"
+     "secr"
+     "scrbook")
     (TeX-run-style-hooks
+     "fancyvrb"
+     "verbatim"
      "hyperref"
+     "pdftex"
      "natbib"
      "lineno"
      "graphicx"
      "amsfonts"
      "amsmath"
      "float"
+     "bm"
      "latex2e"
      "bk10"
      "book"
-     "Ch5/Ch5")))
+     "Ch5-PoisMn/Chapt-PoisMn")))
 
