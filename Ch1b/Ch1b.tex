@@ -401,9 +401,9 @@ binomial distribution is the natural choice for describing the number
 of individuals that we would expect to detect ($n$) in this
 situation, and using our notation, we can write the model as: $n \sim
 \text{Binomial}(10, 0.5)$. Note that if $p \equiv 1$ and we visit the
-site on $J$ occasions, the observations $\{n_1, \ldots, n_J\}$
+site on $K$ occasions, the observations $\{n_1, \ldots, n_K\}$
 would not be random outcomes---we would always observe
-$n_j=10$. That is, the observed data would exactly equal the expected
+$n_k=10$. That is, the observed data would exactly equal the expected
 value and the variance would be zero.
 \begin{comment}
   The \texttt{stats} package that comes with \R~has random number
@@ -413,7 +413,7 @@ value and the variance would be zero.
 \end{comment}
 However, when $p<1$, we can expect that we will observe %different
 a different number of warblers on each replicate visit. To see this,
-we can simulate data under this simple model with $J=3$ survey occasions
+we can simulate data under this simple model with $K=3$ survey occasions
 \begin{verbatim}
 > n <- rbinom(3, size=10, prob=0.5) # Generate 3 binomial outcomes
 > n                                 # Display the 3 values
@@ -421,9 +421,9 @@ we can simulate data under this simple model with $J=3$ survey occasions
 \end{verbatim}
 The vector of counts will typically differ each time you issue this
 command; however, we know the probability of observing any value of
-$n_j$ because it is defined by the binomial pmf. As we demonstrated
+$n_k$ because it is defined by the binomial pmf. As we demonstrated
 earlier, in \R~this probability can be found using the \verb+dbinom+
-function. For example, the probability of observing $n_j=5$ is given by:
+function. For example, the probability of observing $n_k=5$ is given by:
 \begin{comment}
   Without knowing a thing about probability distributions, most people
   would recognize that the expected value of $x_j$ is $10 \times 0.5 =
@@ -511,14 +511,14 @@ discussed in Chapt.~\ref{chapt.closed}.
 Above, we showed three alternatives to \verb+dbinom+ for evaluating the
 binmial pmf. These three commands differed only in how they computed
 the binomial coefficient, which we needed because of the numerous ways
-in which we could observe $n=5$ under our model. To conceptualize
-this, let $h_i$ be a binary variable indicating if individual $i$
+in which we could observe $n=5$ given $N=10$. To conceptualize
+this, let $y_i$ be a binary variable indicating if individual $i$
 was detected or not. Hence, given that 5 individuals were detected,
 the vector of individual detections could be something like
-$\mathbf{h}=(0,0,1,1,1,1,1,0,0,0)$, which would indicate
+$\mathbf{y}=(0,0,1,1,1,1,1,0,0,0)$, which would indicate
 that we detected individuals 3-7 but not 1-2 or 8-10. For $N=10$ and
 $n=5$, the binomial coefficient tells us that there
-are 252 possiblities of $\mathbf{h}$. However, when $N \equiv 1$, this term
+are 252 possiblities of $\mathbf{y}$. However, when $N \equiv 1$, this term
 drops from the pmf and the result is the pmf for the Bernoulli
 distribution. That is, the Bernoulli distribution is simply the
 binomial distribution when $N \equiv 1$. Alternatively, we could say that the binomial
@@ -528,28 +528,28 @@ distribution is the outcome of $N$ i.i.d. Bernoulli trials.
 The utility of the Bernoulli distribution is evident when we imagine
 that not all of the chestnut-sided warblers have the same detection
 probability. Thus, if some individuals can be detected with
-probability 0.3 and others have a 0.7 detection probabilty, we can no
-%{\bf XXXXX here little n is used. this is why I don't like the
-%  upper-case lower-case conventions because n is a different variable
-%  from N XXXXX}
-longer safely write $n \sim \text{Binomial}(N, p)$ since $p$ is no
+probability 0.3 and others have a 0.7 detection probabilty, then the
+model $n \sim \text{Binomial}(N, p)$ is no longer an accurate
+description of system since $p$ is no
 longer a scalar, i.e. a single value.
 
 %% FIXME: Need to clean up notation of $J$ visits
 
-To properly account for variation in $p$, we could redefine our notation
-describing how the counts of chestnut-sided warblers are
-generated. Our model now is
+To properly account for variation in $p$, we could redefine our model
+for the %our notation
+%describing how the
+counts of chestnut-sided warblers as
+%are generated. Our model now is
 \begin{gather}
-h_{ij} \sim \text{Bernoulli}(p_i) \;\; \text{for} \; i=1,2,\dots,N \\
-n_j = \sum_i h_{ij}
+y_{ik} \sim \text{Bernoulli}(p_i) \nonumber \\% \;\; \text{for} \; i=1,2,\dots,N \\
+n_k = \sum_{i=1}^N y_{ik}
 \label{modeling.eq.Bern}
 \end{gather}
 This simply states that individual $i$ is detected with probability
 $p_i$, and the observed count is the sum of the $N$ Bernoulli random
-variables.
+outcomes.
 
-Note that the individual-specific data $h_{ij}$ can only be
+Note that the individual-specific data $y_{ik}$ can only be
 observed when we can keep track of each individual, such as when they
 are marked or otherwise distinguishable.
 %Indeed, this is one of the important
@@ -563,62 +563,53 @@ distribution, as simple as it is, is of paramount importance in
 capture-recapture models, including spatial capture-recapture models
 in which there is virtually always variation in capture probability
 among individuals. Indeed, it could be said the Bernoulli model is the
-canonical model in capture-recapture studies---most of the
-different flavors of capture-recapture models vary in how $p_i$ is
-specified and how $N$ is estimated.
+canonical model in capture-recapture studies, and most of the
+different flavors of capture-recapture models differ primarily in how $p_i$ is
+specified. % and how $N$ is estimated.
 
 The Bernoulli pmf is simply $p^n(1-p)^{1-n}$ and hence we do not need canned
 functions to facilitate its evaluation. Of course, if you wanted to, you
 could always use \verb+dbinom+ with the \verb+size+ argument set to
-1.
+1, e.g. \verb+dbinom(1, 1, 0.3)+ returns the Bernoulli probability of
+observing $n=1$ given $p=0.3$.
 
-\subsection{The Multinomial Distribution}
+\subsection{The Multinomial and Categorical Distributions}
 \label{modeling.sec.multinom}
 
-%{\bf  XXXX needs a generic introductory sentence or 3 that says the
-%  multinomial is the multivariate extension of the binomial. As it
-%  stands you jump right into a specific context (great example)
-%  involving capture-recapture without explaining in general what is a
-%  multinomial XXXXXX}
-
-%The multinomial distribution is the multivariate extension of the
-%binomial. Great. Huh? Remember that
 The binomial distribution is used
-when there are two possible categories, such as success or failure. %,
-%and the aim is to model the number of successes out of the total number of
-%trials.
+when there are two possible categories, such as success or failure.
 The multinomial distribution is a multivariate extension of
-the binomial used when there are $K>2$ categories.
+the binomial used when there are $G>2$ categories.
 The multinomial distribution can be thought of as a model for placing
-$N$ items in the $K$ categories (also called bins or cells). Each bin has
-its own probability $\pi_k$ and these probabilities must sum to one.
+$N$ items in the $G$ categories, which are also called bins or cells. Each bin has
+its own probability $\pi_g$ and these probabilities must sum to one.
 In ecology, $N$ is often population size or the number of individuals
-detected, but the definition of the $K$ bins varies among
+detected, but the definition of the $G$ bins varies among
 applications. For example, in distance sampling, when the distance
 data are aggregated into discrete intervals,
 the bins are the distance intervals, and the cell probabilities are
-functions of detection probability in each interval.
+functions of detection probability in each interval \citep{royle_etal:2004}.
 
 The multinomial distribution is widely used to model data from traditional,
 non-spatial capture-recapture studies.
-Earlier we let $h_{ij}$ denote a binary random variable indicating if
-warbler $i$ was detected on survey $j$. The vector of observations for an
-individual, $\mathbf{h}_i$, is often referred to as the individual's
+Earlier we let $y_{ik}$ denote a binary random variable indicating if
+warbler $i$ was detected on survey $k$. The vector of observations for an
+individual, $\mathbf{y}_i$, is often referred to as the individual's
 ``encounter history''. The number of possible encounter
 histories depends on the number of survey occasssions. Specifically,
-there are $2^J$
+there are $2^K$
 possible encounter histories\footnote{When $N$ is unknown, we can
   never observer the encounter history of an individual that is not
   detected, and thus the number of ``observable'' encounter histories
-  is $2^{J-1}$}.
+  is $2^{K-1}$}.
 If we tabulate the number of individuals with each encounter history,
 the frequencies can be modeled using the multinomial
 distribution. %, as we will soon explain.
 
 Going back to our
 chestnut-sided warbler example, suppose the 10 individuals are marked
-and we make $J=2$ visits to the site such that there are $2^J = 4$ possible encounter
-histories $\mathbf{h} \in c(11, 10, 01, 00)$, where ``10'' is the
+and we make $K=2$ visits to the site such that there are $2^K = 4$ possible encounter
+histories: $(11, 10, 01, 00)$, where ``10'' is the
 encounter history for an indivdual detected on the first visit but not
 the second. If $p=1$, then the
 encounter history for each of the 10 individuals would be ``11''. That
@@ -628,7 +619,7 @@ cooresponding cell probabilities would be $\bm{\pi} = (1, 0, 0,
 0)$. What about the situation where $p<1$, e.g. $p=0.3$? In this case, the
 probability of observing the capture history ``11'' (detected on both
 occasions) is $p \times p = 0.3 \times 0.3 = 0.09$. The probability of
-observing $10$ is $p \times (1-p) = 0.21$. Following this logic, the vector
+observing ``10'' is $p \times (1-p) = 0.21$. Following this logic, the vector
 of cell probabilies is $\bm{\pi} = (0.09, 0.21, 0.21, 0.49)$. We can
 simulate data under this model as follows:
 \begin{verbatim}
@@ -653,18 +644,26 @@ capture-recapture studies. However, $N$ is not defined as population
 size. Rather, we use the multinomial distribution when an individual
 can only be captured in a single trap during an occasion. Thus
 $N=1$ and the cell probabilities are the probabilities of
-being captured in each trap.
-It is worth noting that, just as the Bernoulli distribution is a specific case of the binomial
-distribution when $N \equiv 1$, the categorical distribution is a very
-similar to a multinomial distribution with size parameter
+being captured in each trap. A thorough discussion of this point can
+be found in Chapt.~\ref{chapt.poisson-mn}. Another application of the
+multinomial distribution in SCR models is discussed in
+Chapt.~\ref{chapt.state-space} where we discuss how to model the
+probability that an individual's activity center is located in one of
+the cells of a raster defining the spatial region of interest.
+
+It is worth noting that, just as the Bernoulli distribution is a
+special case of the binomial distribution when $N \equiv 1$, the
+categorical distribution is essentially equivalent to
+%special case of
+the multinomial distribution with size parameter
 $N\equiv1$. The only difference is that, rather than returning a
 vector with a single element equal to 1, it returns the element number
-where the 1 occurs. For example, if $h=(0,0,1,0)$ is an outcome of a
+where the 1 occurs. For example, if $\mathbf{y}=(0,0,1,0)$ is an outcome of a
 multinomial distribution with $N=1$, then the categorical outcome
-would be 3 because the third cell is 1. Thus, in spatial
+would be 3 because the 1 is located in third position in the vector. Thus, in spatial
 capture-recapture models, we might use either the multinomial
 distribution with $N=1$, or we can just as well use the categorical
-distribution. They are equivalent.
+distribution. %They are equivalent.
 
 
 \subsection{The Poisson Distribution}
