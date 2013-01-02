@@ -147,6 +147,30 @@ plot(runif(100), runif(100))
 
 # Maximum likelihood
 
+
+nSites1 <- 10
+nSites2 <- 100
+replicates <- 5000 # Substitute for infinity
+
+lambda <- 4 # warblers/site
+lambda.hat1 <- rep(NA, replicates)
+lambda.hat2 <- rep(NA, replicates)
+
+for(i in 1:replicates) {
+    counts1 <- rpois(nSites1, lambda)
+    counts2 <- rpois(nSites2, lambda)
+    lambda.hat1[i] <- mean(counts1)
+    lambda.hat2[i] <- mean(counts2)
+}
+
+plot(density(lambda.hat1), lty=1, ylim=c(0, 2))
+lines(density(lambda.hat2), lty=2)
+
+
+
+
+
+
 set.seed(3440)
 lambda <- 3
 y1 <- rpois(100, lambda)

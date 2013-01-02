@@ -794,10 +794,13 @@ As with the uniform distribution, most of the other common continuous
 distributions such as the normal, beta, and gamma distributions are
 primarily used as priors in spatial capture-recapture models. For that
 reason, we will avoid lengthy descriptions of these distributions and
-instead describe their utility as prior distributions. More
-information is provided in Table~\ref{modeling.tab.pdfs}, which lists
-their pdfs, expected values, and variances. A more thorough treatment of
-these distributions can be found in \citet{link_barker:2010}.
+instead describe how they are typically used %as prior distributions
+when conducting
+Bayesian inference. Although we will keep it very brief, note that
+Table~\ref{modeling.tab.pdfs} includes
+the pdfs, expected values, and variances of these distributions.
+%A more thorough treatment of
+%these distributions can be found in \citet{link_barker:2010}.
 %This might seem odd given that
 %standard statistics courses taken by ecologists focus heavily on the normal
 %distribution. However, in capture-recapture studies, we rarely observe
@@ -813,7 +816,11 @@ The normal distribution, also called the Gaussian distribution, %has
 %two parameters, $\mu = \mathbb{E}(X)$ and $\sigma^2 = \text{Var}(X)$,
 %and
 is the canonical prior for any continous random variable with
-infinite support.
+infinite support. Few parameters of SCR models actually have unbounded
+support; however, when a parameter is defined as a linear function
+(usually on a link scale), then the regression coefficients of the
+linear model are often given normal priors. An example, including a
+cautionary note, is provided in Sec.~\ref{glms.subsec.choice}.
 %is attractive
 % it allows us to estimate both the mean and variance of a
 %random variable, and to develop explicit models for each. This is really
@@ -830,63 +837,103 @@ infinite support.
 %distribution is still very useful as a model for some of the
 %parameters...
 %\subsection{The Beta Distribution}
-Many of the parameters of interest in capture-recapture models do not
-have infinite support, but instead are probabilities---think of
-capture probability or survival
-probability. %If we think of these parameters as random variables,
+Several of the parameters in capture-recapture models are
+probabilities, and the first distribution that comes to the mind of a
+Bayesian is the beta distribution. % to
+%describe prior knowledge about.  and the beta distribution is a
+%suitable prior for these parameters that may be given a beta
+%prior. %distribution an appealing prior. %---think of
+%capture probability or survival
+%probability. %If we think of these parameters as random variables,
 %as Bayesians do, then we will often describe these distributions using
 %the beta distribution.
 The beta distribution is particularly useful as
-a prior for such parameters because it allows us to express either a
+a prior for such parameters because it can be used to express either a
 lack of knowledge or very precise knowledge about a
 parameter. Specifically, a $\text{Beta}(1,1)$ distribution is
 equivalent to a $\text{Unif}(0, 1)$ distribution. However, unlike the
 the uniform distribution, the beta distribution can be used as an
 informative prior; for example if published estimates of detection
-probability exist. Other parameters in SCR models are continuous but
-positive-valued, and can be modeled using the gamma distribution.
-
-
-
+probability exist. To gain some familiarity with the beta
+distribution, execute the following \R~ commands:
+\begin{verbatim}
+curve(dbeta(x, 1, 1), col="black", ylim=c(0,5))
+curve(dbeta(x, 10, 10), col="blue", add=TRUE)
+curve(dbeta(x, 10, 20), col="darkgreen", add=TRUE)
+\end{verbatim}
+Other parameters in SCR models are continuous but
+positive-valued and can be modeled using the gamma distribution. As
+with the beta distribution, the gamma distribution is typically
+favored over the uniform distribution when one is interested in using
+an informative prior.
 
 
 
 \section{Statistical Inference and Parameter Estimation}
 
-If we knew the parameters of a model with absolute certainty, then
-we can use pdfs and pmf to make direct
+If the parameters of a statistical model were known with absolute
+certainty, then it would be possible to
+%could ignore statistial inference a
+use pdfs and pmfs to make direct
 probability statements about unknowns such as future outcomes. However, we
 almost never know the actual values of parameters, and instead we have
 to estimate them. Our inferences must then acknowledge the uncertainty
 associated with our imperfect knowledge of the parameters. Doing so is
-most often done using one of two approaches to inference:
+most often accomplished using one of two approaches:
 classical (frequentist) inference or Bayesian
-inference. Both types of statistical inference make heavy use of
-probability distributions. In the next chapter, we will review some of
+inference, which
+%Both types of statistical inference make heavy use of
+%probability distributions.
+These two modes of inference
+regard the uncertainty about parameters in
+entirely different ways. In the next chapter, we will review some of
 the important concepts in Bayesian inference, so here, we will
-focus on the frequentist methods.
+focus on the frequentist perspective.
 
-In classical inference, if our data are distributed according to some
-distribution with unknown parameter $\lambda$, then the only
-uncertainty that we are concerned with is that attributable
+%In classical inference, if
+Suppose that we count oak trees at a
+$J$ sites, and the resulting data $\{y_1, \ldots, y_J\}$ can be
+assumed to be iid outcomes from some %  we want to know the average number of oaks
+%per site. We might assume that the counts are distributed according to some
+distribution such as the Poisson with unknown parameter $\lambda$. We
+want to estimate this parameter. %,
+%which is the parameter we need to estimate.
+In classical inference, the only uncertainty about $\lambda$ %that we are concerned with
+is that attributable
 sampling. For instance, we can imagine repeatedly sampling the
-population and each time obtaining a different estimate of
+population (sites in this example) and obtaining sample-specific estimates of
 $\lambda$. Typically, we entertain the idea that there are an infinite
-number of possible samples and the collection of estimates is denoted
-\{$\hat{\lambda}_1, \hat{\lambda}_2, \hdots, \hat{\lambda}_\infty\}$. If
+number of possible samples and so we could obtain an infinite
+number of estimates: \{$\hat{\lambda}_1, \hat{\lambda}_2, \hdots,
+\hat{\lambda}_\infty\}$. If
 these estimates are produced using the method of maximum likelihood,
-the distribution of estimates, called the sampling distribution, will be normally distributed with
-$\mathbb{E}(\hat{\lambda})=\lambda$. The variance of the sampling
-distribution
+the distribution of estimates, called the sampling distribution, will
+be normally distributed with $\mathbb{E}(\hat{\lambda})=\lambda$. The
+standard deviation of the sampling distribution is called the standard
+error, which can als be estimated as part of the maximum likelihood
+proceedure. Given $\hat{\lambda}$ and an estimate of its standard
+deviation, we can construct a confidence interval
+that will include the true value of $\lambda$ for with some prescribed
+coverage probability.
+%which will tend toward zero as the sample size $J$ increases toward
+%infinity. In other words, if the sample size is large, the estimate
+%will always be close to the actual parameter value. Maximum likelihood
+%is a method of estimating both $\lambda$ and the standard error (or
+%variance) of lambda.
+%variance of the sampling distribution
 %{\bf XXXX not sure sampling distribution was defined yet XXXXX}
-will approach zero as the size of the sample increases towards
-infinity. Note that there is
+%will approach zero as the size of the sample increases towards
+%infinity.
+Note that there is
 no uncertainty associated with the actual parameter---it is regarded
-as a fixed value. Hence, probability is only used to characterize
-sampling distributions.
+as a fixed value, and hence probability is only used to characterize
+the sampling distribution.
 
 Maximum likelihood is heuristially a method of finding the most ``likely''
-value of $\lambda$, given the observed data. Endless numbers of
+value of $\lambda$, given the observed data, and of characterizing the
+variance of the sampling distribution. Of course, it also applies to
+cases where the observations are multivariate, or the probability
+distribution is a funciton of multiple parameters. Endless numbers of
 textbooks and online resources are available for those interested in a
 detailed explaination of maximum likelihood. For our purposes, we wish
 to keep it simple and focus on \textit{how} to do it. The first step
@@ -906,7 +953,7 @@ Poisson distributed, then
 $[y_i | \lambda] = \text{Poisson}(\lambda) = \frac{\lambda^{y_i}e^{-\lambda}}{y_i!}$.
 Although likelihoods are typically shown on the natural scale, we
 almost always maximize the logarithm of the likelihood to
-avoid computational problems that arise when multiplying very samll
+avoid computational problems that arise when multiplying very small
 probabilities. Thus, we rewrite~\ref{modeling.eq.like} as
 \begin{equation}
   \ell(\lambda | \mathbf{y}) = \sum_i \log(f(y_i | \lambda))
@@ -915,23 +962,23 @@ probabilities. Thus, we rewrite~\ref{modeling.eq.like} as
 Here is some simple \R~code to simulate independent Poisson outcomes
 and estimate $\lambda$ (as though we did not know it) using the
 method of maximum likelihood. Actually, we will minimize the negative
-log-likelihood because it is equivalent and is the default for ~{\bf R}'s
+log-likelihood because it is equivalent and is the default for \R's
 optimizers like \verb+optim+ and \verb+nlm+.
 \begin{verbatim}
-> lambda <- 3 # Truth
-> y1 <- rpois(100, lambda)
+> lambda <- 3               # Actual parameter value
+> y1 <- rpois(100, lambda)  # Realized values (data)
 > negLogLike1 <- function(par) -sum(dpois(y1, par, log=TRUE))
-> starting.value <- c('lambda'=1)
-> optim(starting.value, negLogLike1)$par
+> starting.value <- c(`lambda'=1)
+> optim(starting.value, negLogLike1)$par # MLE
   lambda
 3.039844
 \end{verbatim}
-Maximum likelihood isn't necessary here because the best estimate of
+Maximum likelihood isn't actually necessary here because the best estimate of
 $\lambda$ is given by the mean of the observations. A more interesting
 example where maximum likelihood is more useful is when there are
 covariates of $\lambda$. For example, suppose $\lambda$ is a function
 of elevation and vegetation height according to: $\log(\lambda_i) =
-\beta_0 + \beta_1\text{ELEV} + \beta_2\text{VEGHT}$. This is a
+\beta_0 + \beta_1\text{ELEV}_i + \beta_2\text{VEGHT}_i$. This is a
 standard Poisson regression problem, whose likelihood is:
 \begin{equation}
   \mathcal{L}(\bm{\beta} | \mathbf{y}) = \prod_i \text{Poisson}(y_i | \lambda_i)
@@ -939,10 +986,10 @@ standard Poisson regression problem, whose likelihood is:
 \end{equation}
 This likelihood is essentially identical to the previous one except
 that $\lambda$ is now a function, and so we need to estimate the
-parameters of the function, i.e. the $\beta$'s. This class of models is
-known as Poisson regression, a form of a generalized linear model that
-we alluded to earlier. Some
-code to fit this model to simulated data is shown here:
+parameters of the function, i.e. the $\beta$'s. %This class of models is
+%known as Poisson regression, a form of a generalized linear model that
+%we alluded to earlier.
+Some code to fit this model to simulated data is shown here:
 \begin{verbatim}
 > nsites <- 100
 > elevation <- rnorm(100)
@@ -985,19 +1032,22 @@ the true parameter values.
 
 In these examples, the parameters we estimated are called fixed
 effects by frequentists. Fixed effects are parameters that are not
-themselves random variables,
-\footnote{Thus, technically speaking, there are no such
-  things as fixed effects in Bayesian inference}. A random effect in
-contrast is a parameter that is a random variable. For instance,
+%themselves
+random variables.
+%\footnote{Thus, technically speaking, there are no such
+%  things as fixed effects in Bayesian inference}.
+A random effect in
+contrast is a parameter that can be regarded as the outcome of
+probability distribution. For instance,
 we could entertain the idea that the intercept of our GLM differs
 among locations, and that it's actual value is an outcome of a normal
 distribution with parameters $\mu$ and $\sigma^2$. In this case,
 $\beta_i$ would be a random effect, and our model could be written:
-\begin{gather}
+\begin{gather*}
 y_i \sim \text{Poisson}(\lambda_i) \\
-\log(\lambda_i) = \beta_i + \beta_1\text{ELEV} + \beta_2\text{VEGHT} \\
+\log(\lambda_i) = \beta_i + \beta_1\text{ELEV}_i + \beta_2\text{VEGHT}_i \\
 \beta_i \sim \text{Normal}(\mu, \sigma^2)
-\end{gather}
+\end{gather*}
 This is an example of a mixed effects model or a hierarchical
 model. How do we estimate the parameters of a model that includes
 random effects? Earlier the likelihood function was written as the
@@ -1010,9 +1060,6 @@ This type of conditional dependence among parameters is the essence of hierarchi
 models, and statistical analysis of hierarchical models requires that
 we discuss joint distributions, marginal distributions and conditional
 distributions.
-
-
-
 
 
 
