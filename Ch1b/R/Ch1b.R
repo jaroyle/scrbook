@@ -249,33 +249,84 @@ rowSums(YgivenX)
 
 # DAGS
 
-png("../figs/DAGr1.png", width=5, height=6, units="in", res=400)
+
+
+# The full Monte, minus hyper
+png("../figs/DAGr0.png", width=6, height=6.5, units="in", res=400)
 par(mai=c(0.1, 0.1, 0.1, 0.1))
-plot(0, 0, xlim=c(-0.5, 1.5), ylim=c(-1, 1), asp=1, type="n", axes=FALSE,
+plot(0, 0, xlim=c(-0.5, 1.4), ylim=c(-.85, 0.9),
+     asp=1, type="n", axes=FALSE,
      ann=FALSE, frame=TRUE)
 symbols(0, 0.8, circles=0.1, inches=FALSE, add=TRUE)
-text(0, 0.8, "s")
-text(0.2, 0.8, "Activity center location", pos=4)
-arrows(0, 0.7, 0, 0.5, length=0.1)
-symbols(-.4, 0.4, circles=0.1, inches=FALSE, add=TRUE)
-text(-.4, 0.4, "tau")
-arrows(-.3, 0.4, -.1, 0.4, length=0.1)
+text(0, 0.8, expression(bold(s)))
+text(0.5, 0.8, "Activity center location", pos=4)
+arrows(0, 0.7, 0, 0.5, length=0.1, lwd=2)
 symbols(0, 0.4, circles=0.1, inches=FALSE, add=TRUE)
-text(0, 0.4, "u")
-text(0.2, 0.4, "Location of animal", pos=4)
+text(0, 0.4, expression(bold(u)))
+text(0.5, 0.4, "Location of animal", pos=4)
 arrows(0, 0.3, 0, 0.1, length=0.1)
-#symbols(0, 0, rectangles=matrix(c(.2,.2), 1), inches=FALSE, add=TRUE)
 symbols(0, 0, circles=0.1, inches=FALSE, add=TRUE)
-text(0, 0, "d") #"d(||x-u||)") #"distance")
-text(0.2, 0, "Distance between trap and animal", pos=4)
+text(0, 0, "d")
+text(0.5, 0, "Distance between trap and animal", pos=4)
 arrows(0, -0.1, 0, -0.3, length=0.1)
 symbols(0, -0.4, circles=0.1, inches=FALSE, add=TRUE)
 text(0, -0.4, "p")
-text(0.2, -0.4, "Capture probability", pos=4)
-arrows(0, -0.5, 0, -0.7, length=0.1)
+text(0.5, -0.4, "Capture/detection probability", pos=4)
+arrows(0, -0.5, 0, -0.7, length=0.1, lwd=2)
 symbols(0, -0.8, circles=0.1, inches=FALSE, add=TRUE)
 text(0, -0.8, "y")
-text(0.2, -0.8, "Capture data", pos=4)
+text(0.5, -0.8, "Capture/detection data", pos=4)
+dev.off()
+system("open ../figs/DAGr0.png")
+
+
+
+
+
+
+# The full Monte
+png("../figs/DAGr1.png", width=6, height=6.5, units="in", res=400)
+par(mai=c(0.1, 0.1, 0.1, 0.1))
+plot(0, 0, xlim=c(-0.5, 1.4), ylim=c(-.85, 0.9),
+     asp=1, type="n", axes=FALSE,
+     ann=FALSE, frame=TRUE)
+symbols(0, 0.8, circles=0.1, inches=FALSE, add=TRUE)
+text(0, 0.8, expression(bold(s)))
+text(0.5, 0.8, "Activity center location", pos=4)
+arrows(0, 0.7, 0, 0.5, length=0.1, lwd=2)
+symbols(-.4, 1, circles=0.05, inches=FALSE, add=TRUE)
+text(-.4, 1, expression(mu))
+arrows(-.36, 0.965, -.09, 0.84, length=0.1, lwd=2)
+symbols(.4, 1, rectangles=matrix(c(0.1, 0.1), 1), inches=FALSE, add=TRUE)
+text(.4, 1, expression(italic(S)))
+arrows(.35, 0.965, .09, 0.84, length=0.1, lwd=2)
+symbols(0, 0.4, circles=0.1, inches=FALSE, add=TRUE)
+text(0, 0.4, expression(bold(u)))
+text(0.5, 0.4, "Animal location", pos=4)
+arrows(0, 0.3, 0, 0.1, length=0.1)
+symbols(-.4, 0.6, circles=0.05, inches=FALSE, add=TRUE)
+text(-.4, 0.6, expression(tau))
+arrows(-.36, 0.565, -.09, 0.45, length=0.1, lwd=2)
+symbols(0, 0, circles=0.1, inches=FALSE, add=TRUE)
+text(0, 0, "d")
+text(0.5, 0, "Distance between trap and animal", pos=4)
+arrows(0, -0.1, 0, -0.3, length=0.1)
+symbols(-.4, 0.2, rectangles=matrix(c(.1, .1), 1), inches=FALSE, add=TRUE)
+text(-.4, 0.2, expression(bold(X)))
+arrows(-.35, 0.18, -.09, 0.05, length=0.1)
+symbols(0, -0.4, circles=0.1, inches=FALSE, add=TRUE)
+text(0, -0.4, "p")
+text(0.5, -0.4, "Capture/detection probability", pos=4)
+arrows(0, -0.5, 0, -0.7, length=0.1, lwd=2)
+symbols(-.4, -0.2, circles=0.05, inches=FALSE, add=TRUE)
+text(-.4, -0.2, expression(sigma))
+arrows(-.36, -0.226, -.09, -0.35, length=0.1)
+symbols(.4, -0.2, circles=0.05, inches=FALSE, add=TRUE)
+text(.4, -0.2, expression(italic(p)[0]))
+arrows(.36, -0.226, .09, -0.35, length=0.1)
+symbols(0, -0.8, circles=0.1, inches=FALSE, add=TRUE)
+text(0, -0.8, "y")
+text(0.5, -0.8, "Capture/detection data", pos=4)
 dev.off()
 system("open ../figs/DAGr1.png")
 
@@ -283,7 +334,110 @@ system("open ../figs/DAGr1.png")
 
 
 
-plot(0, xlim=c(1,50), ylim=c(0, 2))
-for(i in 1:50) {
-    segments(i, 0, i, 1, lty=i)
-}
+# Typical SCR
+png("../figs/DAGr2.png", width=6, height=6.5, units="in", res=400)
+par(mai=c(0.1, 0.1, 0.1, 0.1))
+plot(0, 0, xlim=c(-0.5, 1.4), ylim=c(-.85, 0.9),
+     asp=1, type="n", axes=FALSE,
+     ann=FALSE, frame=TRUE)
+symbols(0, 0.8, circles=0.1, inches=FALSE, add=TRUE)
+text(0, 0.8, expression(bold(s)))
+text(0.5, 0.8, "Activity center location", pos=4)
+arrows(0, 0.7, 0, 0.1, length=0.1)
+symbols(-.4, 1, circles=0.05, inches=FALSE, add=TRUE)
+text(-.4, 1, expression(mu))
+arrows(-.36, 0.965, -.09, 0.84, length=0.1)
+symbols(.4, 1, rectangles=matrix(c(0.1, 0.1), 1), inches=FALSE, add=TRUE)
+text(.4, 1, expression(italic(S)))
+arrows(.35, 0.965, .09, 0.84, length=0.1)
+#symbols(0, 0.4, circles=0.1, inches=FALSE, add=TRUE)
+#text(0, 0.4, expression(bold(u)))
+#text(0.5, 0.4, "Animal location", pos=4)
+#arrows(0, 0.3, 0, 0.1, length=0.1)
+#symbols(-.4, 0.6, circles=0.05, inches=FALSE, add=TRUE)
+#text(-.4, 0.6, expression(tau))
+#arrows(-.36, 0.565, -.09, 0.45, length=0.1)
+symbols(0, 0, circles=0.1, inches=FALSE, add=TRUE)
+text(0, 0, "d")
+text(0.5, 0, "Distance between trap and animal", pos=4)
+arrows(0, -0.1, 0, -0.3, length=0.1)
+symbols(-.4, 0.2, rectangles=matrix(c(.1, .1), 1), inches=FALSE, add=TRUE)
+text(-.4, 0.2, expression(bold(X)))
+arrows(-.35, 0.18, -.09, 0.05, length=0.1)
+symbols(0, -0.4, circles=0.1, inches=FALSE, add=TRUE)
+text(0, -0.4, "p")
+text(0.5, -0.4, "Capture/detection probability", pos=4)
+arrows(0, -0.5, 0, -0.7, length=0.1)
+symbols(-.4, -0.2, circles=0.05, inches=FALSE, add=TRUE)
+text(-.4, -0.2, expression(sigma))
+arrows(-.36, -0.226, -.09, -0.35, length=0.1)
+symbols(.4, -0.2, circles=0.05, inches=FALSE, add=TRUE)
+text(.4, -0.2, expression(italic(p)[0]))
+arrows(.36, -0.226, .09, -0.35, length=0.1)
+symbols(0, -0.8, circles=0.1, inches=FALSE, add=TRUE)
+text(0, -0.8, "y")
+text(0.5, -0.8, "Capture/detection data", pos=4)
+dev.off()
+system("open ../figs/DAGr2.png")
+
+
+
+
+
+
+
+
+# Typical distance sampling
+png("../figs/DAGr3.png", width=6, height=6.5, units="in", res=400)
+par(mai=c(0.1, 0.1, 0.1, 0.1))
+plot(0, 0, xlim=c(-0.5, 1.4), ylim=c(-.85, 0.9),
+     asp=1, type="n", axes=FALSE,
+     ann=FALSE, frame=TRUE)
+#symbols(0, 0.8, circles=0.1, inches=FALSE, add=TRUE)
+#text(0, 0.8, expression(bold(s)))
+#text(0.5, 0.8, "Activity center location", pos=4)
+#arrows(0, 0.7, 0, 0.5, length=0.1)
+#symbols(-.4, 1, circles=0.05, inches=FALSE, add=TRUE)
+#text(-.4, 1, expression(mu))
+#arrows(-.36, 0.965, -.09, 0.84, length=0.1)
+#symbols(.4, 1, rectangles=matrix(c(0.1, 0.1), 1), inches=FALSE, add=TRUE)
+#text(.4, 1, expression(italic(S)))
+#arrows(.35, 0.965, .09, 0.84, length=0.1)
+symbols(0, 0.4, circles=0.1, inches=FALSE, add=TRUE)
+text(0, 0.4, expression(bold(u)))
+text(0.5, 0.4, "Animal location", pos=4)
+arrows(0, 0.3, 0, 0.1, length=0.1)
+#symbols(-.4, 0.6, circles=0.05, inches=FALSE, add=TRUE)
+#text(-.4, 0.6, expression(tau))
+#arrows(-.36, 0.565, -.09, 0.45, length=0.1)
+symbols(0, 0, circles=0.1, inches=FALSE, add=TRUE)
+text(0, 0, "d")
+text(0.5, 0, "Distance between trap and animal", pos=4)
+arrows(0, -0.1, 0, -0.3, length=0.1)
+symbols(-.4, 0.2, rectangles=matrix(c(.1, .1), 1), inches=FALSE, add=TRUE)
+text(-.4, 0.2, expression(bold(X)))
+arrows(-.35, 0.18, -.09, 0.05, length=0.1)
+symbols(0, -0.4, circles=0.1, inches=FALSE, add=TRUE)
+text(0, -0.4, "p")
+text(0.5, -0.4, "Capture/detection probability", pos=4)
+arrows(0, -0.5, 0, -0.7, length=0.1)
+symbols(-.4, -0.2, circles=0.05, inches=FALSE, add=TRUE)
+text(-.4, -0.2, expression(sigma))
+arrows(-.36, -0.226, -.09, -0.35, length=0.1)
+symbols(.4, -0.2, circles=0.05, inches=FALSE, add=TRUE)
+text(.4, -0.2, expression(italic(p)[0]))
+arrows(.36, -0.226, .09, -0.35, length=0.1)
+symbols(0, -0.8, circles=0.1, inches=FALSE, add=TRUE)
+text(0, -0.8, "y")
+text(0.5, -0.8, "Capture/detection data", pos=4)
+dev.off()
+system("open ../figs/DAGr3.png")
+
+
+
+
+
+
+
+
+
