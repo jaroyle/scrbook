@@ -1,5 +1,8 @@
 \chapter{
-Basic Statistical Concepts
+%Basic Statistical Concepts
+%Basic Statistical Concepts and Statistical Description of SCR Models
+%Basic Statistical Concepts and the Hierarchy of SCR Models
+Basics of Hierarchical Modeling
 }
 \markboth{Modeling}{}
 \label{chapt.modeling}
@@ -1068,13 +1071,16 @@ distributions.
 
 \section{Joint, Marginal, and Conditional Distributions}
 
-So far we have restricted our attention to single random variables.
+So far we have restricted our attention to situations in which we wish
+to make inference about a single random variable.
 However, in ecology, we often are interested in multiple random
-variables and how they are related. Define $Y$ as a random variable
-whose realized values may or may not be independent of $X$. Inference
+variables and how they are related.
+Let $Y$ be a random variable
+%whose realized values
+that may or may not be independent of $X$. Inference
 about these two random variables can be made using the joint,
 marginal, or conditional distributions---or, we may make use of all of
-them---it depends upon our question being asked. In the case of
+them depending on the question being asked. In the case of
 discrete random variables, the joint
 distribution is the probability that $X$ takes on the value $x$
 \textit{and} that $Y$ takes on the value $y$, which is written
@@ -1087,15 +1093,16 @@ the number of other fisherman at the hole. Specifically, let's say
 that the probability of catching a fish $p$ is related to $X$
 according to $\text{logit}(p) = -0.6 + -2y$. Furthermore, let's
 make the intuitive assumption that the number of fishermen at the hole
-is a Possion random variable with mean $0.6$, i.e. $x \sim
+is a Possion random variable with mean $0.6$, i.e. $X \sim
 \text{Poisson}(0.6)$. Our model is now fully specified, and so we can
 answer the question: ``what is the probability of catching $x$ fish
-\textit{and} of there being $y$ a-holes at the hole''. This joint
+\textit{and} of there being $y$ fishermen at the hole''. This joint
 distribution is given by the product of the binomial pmf (with $p$
-determined by $y$), and the Poisson pmf with $\lambda=0.6$. The
+determined by $y$) and the Poisson pmf with $\lambda=0.6$. The
 following \R~code creates the joint distribution.
+\begin{small}
 \begin{verbatim}
-> X <- 0:20 # All possible values of X
+> X <- 0:20  # All possible values of X
 > Y <- 0:10  # All possible values of Y
 > lambda <- 0.6
 > p <- plogis(-0.62 + -2*Y) # p as function of Y
@@ -1133,15 +1140,19 @@ X=18 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
 X=19 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
 X=20 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
 \end{verbatim}
+\end{small}
 This matrix tells us the probability of all possible combinations of
-$x$ and $y$, and, as dicatated by the law of total probability, the sum
-of these probabilities equals 1.
+$x$ and $y$, and we see that the most likely value is $(X=1,Y=1)$,
+i.e. we will catch 1 fish and there will be 1 other fisherman. This
+matrix also demonstrates the law of total probability, which dictates
+that the sum of of these probabilities must equal 1.
 
-Perhaps most fisherman don't care about joint distributions. But, a
+Perhaps most fisherman don't care about joint distributions, but a
 question that might be asked is ``what is the probability
-of catching 1 fish today?'' Well, we know that this depends upon the
+of catching 1 fish today?'' We know that this depends on the
 number of fisherman, but we don't know how many will show up
-today. This brings us to the marginal distribution, which is defined by
+today, so this is a different question than ``what is most likely
+value of $X$ and $Y$''. This brings us to the marginal distribution, which is defined by
 %{\bf XXXX I think these are wrong. $[X] = \int_{y} [X,Y] = \int_{y}
 %  [X|Y][Y]$ etc... XXXXX} %%% FIXED
 \begin{equation*}
@@ -1159,7 +1170,7 @@ values of $Y$. Computing marginal distributions is a key step in
 maximilizing likelihoods involving random effects, as will be
 demonstrated in Chapt.\ref{chapt.mle}. Here is some \R~code to compute
 the marginal distribution of $X$, i.e. the probability of catching
-different number of fish:
+$X=x$ fish:
 \begin{verbatim}
 > margX <- rowSums(joint)
 > round(margX, 2)
@@ -1212,37 +1223,32 @@ X=20 0.00 0.00 0.00 0.00   0   0   0   0   0   0    0
 \end{verbatim}
 Note that we have 11 probability distributions for $X$, one for each
 possible value of $Y$, and each pmf sums to unity as it should. Note
-also that if you show up at the hole and there are more than 2
-fisherman, you might want to head home (assuming you actually want to
-catch a fish).
+also that if you show up at the hole and there are $>2$
+fisherman, your chance of catching a fish is very low.
 %Why is this? Well, remember that capture probability
 %declined as a function of the the number of fisherman.
 
-These concepts are explained in more detail, and with more attention
-to detail, in other texts such as \citet{casella_berger:2002}, but hopefully, the
+These concepts are explained in more detail %, and with more attention
+%to detail,
+in other texts such as \citet{casella_berger:2002} and \citet{link_barker:2010}, but hopefully, the
 code shown here complements the equations and makes it easier for
 non-statisticians to understand these concepts.
 
 The last point we wish
-to make in the section is that this simple toy example is an example
-of a hierarchical model, and we can put all the pieces together using
+to make in the section is that this simple example \textit{is}
+a hierarchical model, and we can put the pieces together using
 the following notation:
 \begin{gather}
   Y \sim \text{Poisson}(0.6) \\
-  \text{logit}(p_y) = -0.6 + -2y \\
-  X|Y \sim \text{Binomial}(20, p_y)
+  \text{logit}(p) = -0.6 + -2Y \\
+  X|Y \sim \text{Binomial}(20, p)
 \end{gather}
 From here on out, when you see such notation, you should immediately
 grasp the fact that $Y$ is a random variable independent of $X$, but
 $X$ depends upon $Y$ through $p$. Now you have the tools to make
 probability statements about the random variables in this system. The
 one caveat faced in reality is that we typically do not know the
-values of the parameters, and instead we have to estimate them.[DETAILS]
-
-
-
-
-
+values of the parameters, and instead we have to estimate them. %[DETAILS]
 
 
 
@@ -1269,7 +1275,7 @@ they are ordered according to their conditional probability structure.
 Thus, a hierarchical model is {\it an ordered series of models,
   ordered by their conditional probability structure}.
 
-If we declare that the random variable $y = $ \# of times an
+If we declare that the random variable $y = $ number of times an
 individual is encountered in a trap out of $K=10$ days has a
 $\mbox{Binomial}(10, p)$ distribution then this is but a single model and,
 thus, not a hierarchical model. If, however, we declare that
@@ -1303,7 +1309,7 @@ p_{i}\sim \mbox{Beta}(\mu, \tau).
 \]
 Because of the meaningful group structure, this is a more interesting
 hierarchical model. In fact, in the context of capture-recapture this
-is a specific version of ``Model Mh'' (see Chapt. 3 and
+is a specific version of ``Model Mh'' (see Chapt.~\ref{chapt.closed} and
 \citet{dorazio_royle:2003}).  We should consider this a type of a
 hierarchical model although we will make a further conceptual
 distinction shortly that further dichotimizes the space of
@@ -1332,7 +1338,7 @@ models) where the latent variables don't
 correspond to an actual state of nature -- but rather just soak up
 variation that is unmodeled by explicit elements of the model.
 At best, latent variables in such models
-are a a surrogate for something of ecological relevance
+are surrogates for something of ecological relevance
 (``time effects'', ``space effects'' etc.).
 
 
