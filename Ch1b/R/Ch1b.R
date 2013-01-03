@@ -247,4 +247,43 @@ rowSums(YgivenX)
 
 
 
+# DAGS
 
+png("../figs/DAGr1.png", width=5, height=6, units="in", res=400)
+par(mai=c(0.1, 0.1, 0.1, 0.1))
+plot(0, 0, xlim=c(-0.5, 1.5), ylim=c(-1, 1), asp=1, type="n", axes=FALSE,
+     ann=FALSE, frame=TRUE)
+symbols(0, 0.8, circles=0.1, inches=FALSE, add=TRUE)
+text(0, 0.8, "s")
+text(0.2, 0.8, "Activity center location", pos=4)
+arrows(0, 0.7, 0, 0.5, length=0.1)
+symbols(-.4, 0.4, circles=0.1, inches=FALSE, add=TRUE)
+text(-.4, 0.4, "tau")
+arrows(-.3, 0.4, -.1, 0.4, length=0.1)
+symbols(0, 0.4, circles=0.1, inches=FALSE, add=TRUE)
+text(0, 0.4, "u")
+text(0.2, 0.4, "Location of animal", pos=4)
+arrows(0, 0.3, 0, 0.1, length=0.1)
+#symbols(0, 0, rectangles=matrix(c(.2,.2), 1), inches=FALSE, add=TRUE)
+symbols(0, 0, circles=0.1, inches=FALSE, add=TRUE)
+text(0, 0, "d") #"d(||x-u||)") #"distance")
+text(0.2, 0, "Distance between trap and animal", pos=4)
+arrows(0, -0.1, 0, -0.3, length=0.1)
+symbols(0, -0.4, circles=0.1, inches=FALSE, add=TRUE)
+text(0, -0.4, "p")
+text(0.2, -0.4, "Capture probability", pos=4)
+arrows(0, -0.5, 0, -0.7, length=0.1)
+symbols(0, -0.8, circles=0.1, inches=FALSE, add=TRUE)
+text(0, -0.8, "y")
+text(0.2, -0.8, "Capture data", pos=4)
+dev.off()
+system("open ../figs/DAGr1.png")
+
+
+
+
+
+plot(0, xlim=c(1,50), ylim=c(0, 2))
+for(i in 1:50) {
+    segments(i, 0, i, 1, lty=i)
+}
