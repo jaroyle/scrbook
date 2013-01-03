@@ -1439,9 +1439,10 @@ relate these random variables, which can be written compactly as
 % Thus, models covered in this book all have distinct
 % characteristics related to the following decomposition as a
 % hierarchical model:
-\[
+\begin{equation}
 [n(y)|y][y|{\bf u}][{\bf u}|{\bf s}][{\bf s}].
-\]
+\label{modeling.eq.nyus}
+\end{equation}
 Every model we talk about in this book has either all of these
 components or a subset of them. A full description of these four model
 components is the subject of this book, and we will not pretend to
@@ -1486,35 +1487,88 @@ such as the bivariate normal model.
 The third component of the generic SCR model describes how the
 observed data---the so-called capture-histories---arise conditional on
 \textit{either} $\mathbf{s}$ or $\bf u$. This encounter model
-generally has at least two parameters describing the probability of
+generally has at least two parameters, say $p_0$ and $\sigma$, describing the probability of
 capturing or detecting an individual given the distance between $\bf
 s$ or $\bf u$ and the trap or the observer. The most basic model is
-often called the half-normal model, although we tend to prefer the
-Gaussian model since we are working in two-dimensional space. The
-model is
+often called the half-normal model, although we prefer calling it the
+Gaussian model since, in two-dimensional space, it is the kernel of a
+bivariate normal distribution. The model is
 $p_{ij} = p_0\exp(-\|{\bf x}_j - {\bf s}_i\| / (2\sigma^2)$ where
 $p_0$ is the capture probability when the activity center occurs at
 the trap location ${\bf x}_j$, and $\sigma$ is a spatial scale
 parameter determining how rapidly capture probability declines with
-distance.
+distance. One common design leads to the model
+$[y_{ij}|{\bf s_i}] =  \text{Bern}(p_{ij})$. Chapt.~\ref{chapt-} and
+Chapt.~\ref{} describe many other possible encounter models.
 
-Fig.~\ref{modeling.fig.fig1} is an example of the whole
-enchilada in which we make the following assumptions:
-\begin{gather}
+When individuals are marked by biologists or have natural markings
+permitting individual recongnition, then $y_{ij}$ is the observed
+data. However, some or all of the individuals cannot be uniquely
+identified, then we cannot record this individual-specific encounter
+history data. Instead, the data might be simply the number of
+detections at a trap or perhaps binary detection/non-detection data at
+each trap. We call this reduced information data $n(y)$, and
+Chapt.~\ref{chapt.unmarked} and Chapt.~\ref{chapt.resight} describe
+models for $[n(y)|y]$. The basic strategy is to view $y$ as ``missing
+data'' and to use the spatial correlation in the counts, or other
+sources of information, to provide information about these latent
+encounter histories.
+
+Eq.~\ref{modeling.eq.nyus} is a compact description of the the basic components of a
+SCR model, but it is also very vague. The previous four paragraphs
+added enough extra detail so that we can now describe a specific SCR
+model. Perhaps the simplest SCR model is this:
+\begin{gather*}
+N \sim \text{Poisson}(\mu A(\mathcal{S})) \\
 {\bf s}_{i} \sim \mbox{Uniform}({\cal S}) \\
-{\bf u}_{ik} | {\bf s}_{i} \sim \mbox{Normal}({\bf s}_{i}, \sigma) \\
+%{\bf u}_{ik} | {\bf s}_{i} \sim \mbox{Normal}({\bf s}_{i}, \sigma) \\
 y_{ijk} | {\bf u}_{ik} \sim \mbox{Bernoulli}(p(\| x_j - u_{ik} \|)
-\end{gather}
+\end{gather*}
 These ``assumptions'' are statistical statements of three basic hypotheses
-that (1) activity centers are uniformly distributed in two-dimensional
-space, (2) movements are normally distributed around the activity
-centers, and (3) capture probability is a funciton of the distance
-between the animal and the trap. Each of thse model components can be
+that (1) population size $N$ is Poisson distributed
+(2) activity centers are uniformly distributed in two-dimensional
+space,
+%(2) movements are bivarate normal outcomes around the activity centers
+and (3) capture probability is a funciton of the distance
+between the activity and the trap. Each of thse model components can be
 modified as needed to match specific hypotheses, study designs, and data
-structures.
-
+structures. For example, spatial variation in abundance or density can
+be easily modeled as a function of covariates, and as previously
+noted, movement outcomes can be modeled explicitly.
 %\begin{comment}
 
+We realize that many the model description in Eq.~\ref{} may not be
+self-evident to ecologists that are only beginning to explore the
+statistical aspects of the field. For those readers, simulation can
+help clarify the concepts, as demonstrated by the following ~\R code,
+which generates
+Fig.~\ref{modeling.fig.fig1}.
+% is an example of the whole
+%enchilada in which we make the following assumptions:
+\begin{small}
+\begin{verbatim}
+set.seed(36372)
+Area <- 1                               # area of state-space (unit square)
+x <- cbind(rep(seq(.1,.9,.2), each=5),  # trap locations
+           rep(seq(.1,.9,.2), times=5))
+p0 <- 0.3                               # baseline capture probability
+sigma <- 0.05                           # Gaussian scale parameter
+mu <- 50                                # population density
+N <- rpois(1, mu*Area)                  # population size
+s <- cbind(runif(N, 0, 1),              # activity centers in unit square
+           runif(N, 0, 1))
+K <- 5
+y <- matrix(NA, N, nrow(x))             # capture data
+for(i in 1:N) {
+  d.ij <- sqrt((x[,1] - s[i,1])^2 +     # distance between x and s[i]
+               (x[,2] - s[i,2])^2)
+  p.ij <- p0*exp(-d.ij^2 / (2*sigma^2)) # capture probability
+  y[i,] <- rbinom(nrow(x), K, p.ij)     # capture history for animal i
+}
+\end{verbatim}
+\end{small}
+
+\begin{comment}
 {\small
 \begin{verbatim}
 set.seed(36372)       # so that results can be reproduced
@@ -1531,7 +1585,7 @@ for(t in 1:5) {
 }
 \end{verbatim}
 }
-
+\end{comment}
 %\end{comment}
 
 Fig. \ref{intro.fig.fig1} shows the results of executing these {\bf R} commands. The crosses
@@ -1551,15 +1605,16 @@ statistical formalization of these considerations.
 
 \begin{figure}
 \begin{center}
-\includegraphics[height=3in]{Ch1/figs/northingeasting}
+%\includegraphics[height=3in]{Ch1/figs/northingeasting}
+\includegraphics[width=0.6\textwidth]{Ch1b/figs/SCR0}
 \end{center}
-\caption{Population of $N$ individual home-range centers ($\bf s_i$,
-  blue points) and locations during $K=5$ occasions ($\bf u_{ik}$,
-  green points). Crosses represent trap locations.}
+\caption{Population of $N=69$ home-range centers ($\bf s$,
+  circles) and 25 trap locations ($\bf x$, crosses). Line segments connect
+  activity centers to the traps where the individuals were detected.}
 \label{modeling.fig.fig1}
 \end{figure}
 
-
+\subsection{This and That}
 
 Although the full model including $u$ and $s$ fully describes the
 ecological process, in practice we usually work with reduced forms of

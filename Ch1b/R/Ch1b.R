@@ -245,6 +245,74 @@ rowSums(YgivenX)
 
 
 
+# Basic simulation
+
+
+set.seed(36372)
+Area <- 1                               # area of state-space (unit square)
+x <- cbind(rep(seq(.1,.9,.2), each=5),  # trap locations
+           rep(seq(.1,.9,.2), times=5))
+p0 <- 0.3                               # baseline capture probability
+sigma <- 0.05                           # Gaussian scale parameter
+mu <- 50                                # population density
+N <- rpois(1, mu*Area)                  # population size
+s <- cbind(runif(N, 0, 1),              # activity centers in unit square
+           runif(N, 0, 1))
+K <- 5
+y <- matrix(NA, N, nrow(x))             # capture data
+for(i in 1:N) {
+  d.ij <- sqrt((x[,1] - s[i,1])^2 +     # distance between x and s[i]
+               (x[,2] - s[i,2])^2)
+  p.ij <- p0*exp(-d.ij^2 / (2*sigma^2)) # capture probability
+  y[i,] <- rbinom(nrow(x), K, p.ij)     # capture history for animal i
+}
+
+
+png("../figs/SCR0.png", width=7, height=7, units="in", res=400)
+par(mai=c(0.1, 0.1, 0.1, 0.1))
+plot(x, xlim=c(0,1), ylim=c(0,1), pch="+", cex=1.5, axes=FALSE, frame=TRUE)
+points(s)
+for(i in 1:N) {
+    t1 <- y[i,]==1
+    nj <- sum(t1)
+    if(nj == 0)
+       next
+    points(s[i,,drop=FALSE], pch=16, col="gray")
+    segments(rep(s[i,1],nj), rep(s[i,2],nj), x[t1,1], x[t1,2])
+}
+dev.off()
+system("open ../figs/SCR0.png")
+
+
+
+set.seed(36372)       # so that results can be reproduced
+N <- 10               # population size
+                      # create trap coordinates:
+x <- cbind(rep(seq(0.1,0.9,0.2), each=5), rep(seq(0.1,0.9,0.2), times=5))
+                      # generate individual home range centroids
+s <- cbind(runif(N), runif(N))
+                      # create nice graphic:
+plot(x, pch= "+", xlim=c(0,1), ylim=c(0,1), xlab="Easting", ylab="Northing")
+points(s, pch=16, col="blue")
+for(t in 1:5) {
+  points(cbind(rnorm(N, s[,1], 0.05), rnorm(N, s[,2], 0.05)), col="green",pch=20)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # DAGS
