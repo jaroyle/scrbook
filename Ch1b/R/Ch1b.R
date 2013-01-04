@@ -144,6 +144,27 @@ plot(runif(100), runif(100))
 
 
 
+# Bivariate normal
+
+library(mvtnorm)
+set.seed(3)
+mu <- c(0,0)
+Sigma <- matrix(c(1, .9, .9, 1), 2, 2)
+X1 <- cbind(rnorm(50, mu[1], Sigma[1,1]), # No correlation (rho=0)
+            rnorm(50, mu[2], Sigma[2,2]))
+X2 <- rmvnorm(50, mu, Sigma)              # rho=0.9
+
+
+
+png("../figs/bvn.png", width=12, height=6, units="in", res=400)
+par(mfrow=c(1,2), mai=c(0.1, 0.1, 0.1, 0.1))
+plot(X1, axes=FALSE, frame=TRUE, xlim=c(-3, 3), ylim=c(-3, 3))
+points(0, 0, pch=16, col="gray", cex=2)
+plot(X2, axes=FALSE, frame=TRUE, xlim=c(-3, 3), ylim=c(-3, 3))
+points(0, 0, pch=16, col="gray", cex=2)
+dev.off()
+system("open ../figs/bvn.png")
+
 
 # Maximum likelihood
 
