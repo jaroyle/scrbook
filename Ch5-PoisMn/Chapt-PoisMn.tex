@@ -1938,12 +1938,180 @@ ballpark and so too is the estimated $\sigma$.
 
 
 \section{Acoustic sampling}
+\label{poisson-mn.sec.acoustic}
+
+The last decade has seen an explosion of technology that benefits 
+the study of animal populations. This includes DNA sampling methods that
+allow for identification from hair or scat, camera trapping and
+identification software that allow efficient sampling of many
+carnivores, and the resulting statistical technology that helps us
+to make sense of such data (Borchers and Efford 2008; Gopalaswamy et
+al. 2012; Sollmann et al. 2012; Chandler and Royle 2012). 
+One other extremely promising technology area is that of acoustic
+sampling using microphones.  That is, instead of having cameras record
+data, or humans pick up scat, we could establish an array of
+electronic recording devices which, instead of establishing a visual
+identity of individuals, they record a vocal expression of each
+individaul. Then, the spatial pattern of the {\it signal strength} at
+the different microphones can be used for inference about density
+(Efford et al 2009; Dawson and Efford 2009).
+
+In this context, Efford et al. (2009) called a microphone 
+to be a 
+``signal strength proximity detector'' as opposed to a camera, in
+camera trapping, which is basically a visual proximity detector. 
+
+The basic technical formulation of these models comes from the Efford
+et al. 2009 papter, and it was applied to a 
+really nice data set by Dawson and Efford (2009) who organized 4
+recorders in a cross pattern, with an array of 5 x 15 such
+cross-patterns, seperated by 100 m.  (300 total recorder locations). 
+
+The development here mostly follows Efford et al. (2009) but we change
+some notation to be consistent with our previous material.
+Let $S({\bf x}, {\bf u})$ be  the strength of a signal emanating from
+location ${\bf u}$ as recorded by a device at location ${\bf x}$. 
+Like ordinary SCR is a model of encounter frequency as a
+function of distance, in acoustic models the model is a model of sound
+attenuation as a function of distance.
+In particular, the acoustic models 
+assuems that $S$ (or a transformation) declines with distance d.
+e.g., a model used by Dawson and Efford (2009) is:
+\[
+S({\bf x},{\bf u})  = \alpha_{0} + \alpha_{1} d({\bf x},{\bf u}) + \epsilon
+\]
+where $\epsilon \sim \mbox{Normal}(0, \sigma^{2})$. In many standard
+situations, $S$ will be measured in decibels, which has domain the
+real line.
+In the conduct of acoustic sampling and the development of custom
+models for your own situation, it would probably be helpful to know
+something about sound dynamics and signal processing.
+The parameters $\alpha_0$, $\alpha_1$ and $\sigma$ are to be
+estimated. 
+
+We assert that an individual is detected if $S$ exceeds a
+threshold, $c$. The reason for introducing this threshhold $c$ is that 
+sound recorders will always record some sound, and so effective use
+of the acoustic SCR models requires specification of the threshold of measured signal below which
+the record is censored (non-detection occurs) because the recorded
+sound it assumed to be background noise. 
+So we assert that an individual is detected if $S>c$ which occurs 
+with probability $\Pr(S > c)$, the encounter probability.   
+
+Let $y_{ij}$ be the value of S for animal $i$ at detector $j$. Note that it
+is assumed that the sounds are reconcilable and reconciled by the 
+investigator. 
+Anyhow, the probabiliy of detection is $\Pr(y_{ij}>c)$ which is:
+$\Pr(y_{ij}>c) = 1- \Pr(y_{ij} < c)$, which if we standardize the variate 
+we have $1-\Pr( ( (y_{ij}- \mathbb{E}(y))- c)/\sigma < 0)$ then the probability
+calculation is the CDF  of a standard normal variate, say $\eta$, and so
+$\Pr(y_{ij}>c) = 1-\Pr(  \eta < 0 )$. We'll label the CDF of a
+standard normal by $\Phi()$.
+
+Naturally this quantity should depend on {\it where} an individual lives
+-- its instantaneous location, say ${\bf u}$ (note: this is {\it not}
+the home-range center ${\bf s}$!!!) and also the trap ${\bf x}$, so we
+can index the random variable $\eta$ by those two quantities, in
+addition to the parameters $\alpha_{0}$, $\alpha_{1}$ and $\sigma$. 
+The probability of detection:
+\[
+\Pr(y_{ij} > c) = 1- \Pr( \eta  < 0  | {\bf x}_{j}, {\bf u}_{i} )
+\]
+where:
+
+$\bullet$ {\bf u}_{i} = instantaneous location of individual $i$
+
+$\bullet$ {\bf x}_{j} = location of trap $j$.
+
+How do we interpret this probability? Well, two things have to happen:
+(1)  an individual has to  vocalize and (2) 
+ the microphone has to record a signal $>c$, so these two things
+ together are a product of biological and environmental factors which
+ could include time of day, wind direction and speed, or maybe rain,
+ humidity and other things. The bottom line is a lot of facors are
+ balled up in whether or not the microphone records a sound greater
+ than the threshhold. 
+
+The likelihood component assoc. with the signal from animal i at
+detector k is this formula here:
+\begin{verbatim}
+Pr(y(i,k) | X) = phi( gamma(X,k)^(1-delta(i,k)) )
+*(1-phi(stuff))^delta(i,k)
+\end{verbatim}
+where delta(i,k) is an indicator variable for whether the observed
+signal strength y(i,k) exceeds c..... i.e.,certain detection of
+individual i by microphone k. 
+
+The probability that signal strength exceeds ``c'' at one or more
+detectors is:
+\begin{verbatim}
+p_{dot}(X) = 1- \prod_{k=1}^{K}(   1-\phi(  gamma(X,k)) ) 
+\end{verbatim}
+
+\subsection{Implementation in \mbox{\tt secr}}
+
+Fitting acoustic encounter models in \mbox{\tt secr} is no more
+difficult than other SCR models. \citet{efford_dawson:2010} have a
+handy manual with examples, and also see the help file xxxxxxxx.....
+
+The basic process is that \mbox{\tt 
+make.capthist} will make a \mbox{\tt capthis}t object from a 3-d encounter
+array  -- which is a binary array indicating whether each individual
+was
+detected or not at each recorder/microphone. Normally, 
+occasions = 1 because the recorders obtain data for a single
+interval.  (check out the example file and see......)
+The ``signal'' attribute of the \mbox{\tt capthist} object contains the signal
+strength in decibels. 
 
 
-Optional (if time permits) material on acoustic sampling here. Citing Borchers
-recent material from the ISEC.
+\subsection{Implementation in {\bf BUGS}}
 
-Signal strength detector .... from \citep{efford_etal:2009ecol}
+We don't know if any Bayesian applications of acoustic SCR models,
+including 
+ in the {\bf BUGS} engines.  It seems easy enough to write down a
+ general model that would accomomdate sampling at repeated
+ occassions, based on a model that has two latent variables ${\bf s}$, the home range
+ center, and ${\bf u}_{ik}$ the location of individual $i$ during
+ sample occasion $k$ (see
+ Chapt. \ref{chapt.search-encounter} for similar models). The model
+ for ${\bf u}_{ik}$ is conditional on ${\bf s}_{i}$. For example, we
+ could assume that ${\bf u}_{ik}$ are bivariate normal draws with mean
+ ${\bf s}_{i}$ and some variance $\sigma_{u}^{2}$. Then,
+ conditional on ${\bf u}_{ik}$ an individual produces a signal
+ according to the signal attenuation model (Eq. XXXX) or some other
+ model. Then we generate the binary encounter data by truncating the
+ observed signal at $c$. 
+
+ Instead of doing this here, we leave it to the reader to explore a
+ Bayesian implementation of the acoustic model. 
+
+
+
+
+
+\subsection{Other types of acoustic data}
+
+
+Efford and Dawson (2010) and probably their other papers suggested
+that various other types of acoustic data might arise for which
+types of SCR models would be useful.
+For example, we could have devices that measure the {\it time of
+  arrival} of a queue of some sort at distinct microphones.  
+Borchers probably gave an example of this at his ISEC talk or
+whatever.
+Another example is that where we measure {\it direction} to a queue
+from multiple devices and do, effectively, a type of statistical
+triangulation to the multiple but unknown number of sources. Borchers
+also gave a type of example of this in his ISEC talk. This is really
+cool because it has direct relevance to types of double or
+multiple-observer sampling that people do in field studies of
+birds. Normally 2 observers stand around and record birds and they
+reconcile their lists. This new type of SCr-double observer method has
+two guys stand around, but 50 or 100 meters apart (or 3 or 4 guys) and
+they mark individual birds on a map and a time of hearing and probably
+the model could do all of the reconciling, don't you think?
+
 
 \section{Summary and Outlook}
 
@@ -1976,12 +2144,12 @@ Different observation models, where we discuss then in this
 \hline \hline
 observation model & Where in this book?  &  \mbox{\tt secr} name  \\ \hline
 Bernoulli         & Chapt. \ref{chapt.scr0}    &   \mbox{\tt proximity} \\
-Poisson           & sec. \ref{poisson-mn.sec.poisson} & \mbox{\tt count} \\
-Multinomial (ind) & sec. \ref{poisson-mn.sec.multinomial} & \mbox{\tt  multi-catch} \\
-Multinomial (dep) & sec. \ref{poisson-mn.sec.singlecatch} & \mbox{\tt  single-catch} \\
-Acoustic          & we suck    &  ``signal'' (??) \\
+Poisson           & Sec. \ref{poisson-mn.sec.poisson} & \mbox{\tt count} \\
+Multinomial (ind) & Sec. \ref{poisson-mn.sec.multinomial} & \mbox{\tt  multi-catch} \\
+Multinomial (dep) & Sec. \ref{poisson-mn.sec.singlecatch} & \mbox{\tt  single-catch} \\
+Acoustic          & Sec. \ref{poisson-mn.sec.acoustic}
+   &  \mbox{\tt signal}  \\
 Search-encounter      & Chapt. \ref{chapt.search-encounter}  & \mbox{\tt polygon} (in part) \\
-others            & ?          &   ??             \\ \hline
 \end{tabular}
 \label{poisson-mn.tab.models}
 \end{table}
