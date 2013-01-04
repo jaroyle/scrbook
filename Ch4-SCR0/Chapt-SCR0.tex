@@ -1588,30 +1588,30 @@ encounter histories including the augmented potential individuals, the
 data augmentation parameters $z_{i}$, and the data augmentation
 parameter $\psi$:
 {\small
-\begin{Verbatim}[commandchars=\\\{\}]
+\begin{verbatim}
 cat("
-model \{
-alpha0 \mytilde dnorm(0,.1)
+model{
+alpha0 ~ dnorm(0,.1)
 logit(p0)<- alpha0
-alpha1 \mytilde dnorm(0,.1)
+alpha1 ~ dnorm(0,.1)
 sigma<- sqrt(1/(2*alpha1))
-psi \mytilde dunif(0,1)
+psi ~ dunif(0,1)
 
-for(i in 1:M)\{
-   z[i] \mytilde dbern(psi)
-   s[i,1] \mytilde dunif(xlim[1],xlim[2])
-   s[i,2] \mytilde dunif(ylim[1],ylim[2])
-   for(j in 1:J)\{
+for(i in 1:M){
+   z[i] ~ dbern(psi)
+   s[i,1] ~ dunif(xlim[1],xlim[2])
+   s[i,2] ~ dunif(ylim[1],ylim[2])
+   for(j in 1:J){
       d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
-      y[i,j] \mytilde dbin(p[i,j],K)
+      y[i,j] ~ dbin(p[i,j],K)
       p[i,j]<- z[i]*p0*exp(- alpha1*d[i,j]*d[i,j])
-  \}
-\}
+  }
+}
 N<-sum(z[])
 D<-N/64
-\}
+}
 ",file = "SCR0b.txt")
-\end{Verbatim}
+\end{verbatim}
 }
 The remainder of the code for bundling the data, creating initial
 values and executing {\bf WinBUGS} looks much the same as before
@@ -1751,7 +1751,7 @@ We modified the function \mbox{\tt  SCR0bayes} for this purpose which
 you should be able to do with little difficulty. We fit each model to
 the same simulated  data set using {\bf WinBUGS}, based only on 1000
 post-burn-in samples and 3 chains, which produced the posterior
-summaries given in Tab. \ref{scr0.tab.implied}.
+summaries given in Table \ref{scr0.tab.implied}.
 \begin{comment}
 XXXXXX
 We could use the MCMC histories of parameters to compute the posterior
@@ -2042,7 +2042,7 @@ individual is captured in. At the same time, it is useful to
 understand how many total captures we have of each individual because
 this is, in an intuitive sense, the effective sample size.  So, we
 reproduce Table 1 from \citet{royle_etal:2011jwm} which shows,
-in Tab. \ref{scr0.tab.wolverine}, the trap
+in Table \ref{scr0.tab.wolverine}, the trap
 and total encounter frequencies.
 
 
@@ -2133,7 +2133,7 @@ The argument \mbox{\tt buffer} determines the buffer size of the
 state-space.  Note that this analysis takes between 1-2 hours on many
 machines so we recommend trying it out with lower values of $M$ and
 fewer iterations.  The posterior summaries are shown in
-Tab. \ref{scr0.tab.wolverine-results}.
+Table \ref{scr0.tab.wolverine-results}.
 
 
 \begin{comment}
@@ -2295,7 +2295,7 @@ increase the size of the state-space beyond a certain point.  For the
 10 km state-space buffer, we see a slight effect on the posterior
 distribution of $D$ because the state-space is not sufficiently large.
 The full results from the analysis based on 20 km state-space buffer
-are given in Tab. \ref{scr0.tab.wolverine-results2}.
+are given in Table \ref{scr0.tab.wolverine-results2}.
 
 \begin{table}
 \centering
@@ -2490,10 +2490,12 @@ we generated the actual activity centers as a continuous random
 variable and thus the discrete state-space is, strictly speaking, an
 approximation to truth. That said, we regard all state-space
 specifications as approximations to truth in the sense that they
-represent a component of the SCR model.  Thus the use of any specific
-discrete state-space is not intrinsically more ``wrong'' than any
-specific continuous representation.
+represent a component of the SCR model. 
+% Thus the use of any specific
+%discrete state-space is not intrinsically more ``wrong'' than any
+%specific continuous representation.
 % XXXX Hmmm, I'm not sure I buy this last sentence. XXXX
+%%% Fair enough
 
 As with our {\bf R} function \mbox{\tt SCR0bayes}, the modification
 \mbox{\tt SCR0bayesDss} will use either {\bf WinBUGS} or {\bf
@@ -2532,13 +2534,11 @@ algorithms that often simply do not work for some problems, so be
 careful when using {\bf JAGS}. To improve its performance, always
 start the latent activity centers at values near where individuals
 were captured.
+The performance of either should improve if we compute the full
+distance matrix outside of {\bf BUGS} and pass it as data, although we
+haven't fully evaluated this approach.
 
 
-{\bf XXXX computing the distance matrix outside of the model should
-  really improve WinBUGS performance. We need to test this. A new
-  version of the code is on the repo that uses that approach. Problem
-  for Kimmy to work on.
- XXXXXXX}
 
 \begin{table}
 \centering
@@ -2603,7 +2603,7 @@ computational stand-point and so we would prefer to use them, but
 only if there is no strong influence on estimated density.
 The density estimates are quite a bit larger than obtained in our
 analysis
-(Tab. \ref{scr0.tab.wolverine-results})
+(Table \ref{scr0.tab.wolverine-results})
 based on a rectangular, continuous state-space.
 We also see that there are slight differences depending on the
 resolution of the state-space grid.
@@ -2735,23 +2735,41 @@ the desired summaries. We demonstrate that in this section.
 
 \subsection{Realized vs. Expected Density}
 
-Key point here is ``inference about density'' -- need to distinguish
-between N for the data vs. its expected value, etc...
+In some problems, there will be interest in distinguishing between 
+the size of a specific population, usually the one under study, and
+its expected value, which might serve as a guess at the size of a
+hypothetical or unsampled population. The former is usually called the
+{\it realized} population size.
+
+In the model we've developed so far, we suppose that our population
+size is $N$ and this is meant to be the realized population size of
+the population that was sampled. We might produce a density estimate
+based on this realized population size or we might produce a density
+estimate based on the expected value. The former should be less
+variable because a portion of the realized population is observed and,
+hence, has no uncertainty with it (see Chapt. \ref{chapt.state-space}
+for more on this).  For studying a single population it probably only
+makes sense to ever consider the realized population of individuals. 
+
 Making a density map can be either of these things but with constant N
 as we've considered so far there is no point to estimate ``expected''
 density.  See chapt\ref{chapt.state-space}.
 
-More stuff here.
+The expected population size, using the data augmentation formulation
+of the model, is $\mathbb{E}(N) = \psi M$ which can be converted
+directly to expected density by dividing by area.
+A question that might arise is, what is the size of some new
+population that we didn't sample?  For the sake of elaboration,
+suppose we fitted our model to a grid of 10 x 10 traps of some sort
+and we want to predict population size on a grid that we might use for
+sampling in some adjacent landscape. In that case we might choose to
+estimate the size of this new population by the quantity $\psi M$. On
+the other hand, that under-states the variability of that prediction
+because there should be some binomial variation added in............
 
 % XXXX I would distinguish between realized and expected values of N
 % and density here. E[D] = (M*phi)/area, right? XXXX
 
-\subsection{Where does a guy live?}
-
-XXXXX to be completed XXXXXX
-make a posterior density map of a specific individual.......
-comment that it is affected by traps of capture {\it and} traps of
-non-capture.
 
 
 \subsection{Constructing Density Maps}
@@ -2967,6 +2985,28 @@ out, which we discuss in the next section.
 \label{scr0.fig.density20x20}
 \end{figure}
 \end{comment}
+
+
+\subsection{Estimating where an individual lives}
+
+A problem related to producing a density map, is producing a map of
+where a specific individual's activity center is located. 
+For any observed encounter history, we can easily generate a posterior
+distribution of ${\bf s}_{i}$ for individual $i$ and produce a
+posterior density surface of those individuals. [see Fig. XXXXXX]. 
+In addition, for an individual that is {\it not} captured, we can use
+the MCMC output to produce a corresponding plot of where such an
+individual might live, say ${\bf s}_{n+1}$ [see Fig. XXXXX].   Obviously, all such
+uncaptured individuals (for $i=n+1,\ldots,N$) should have the same posterior distribution.
+
+A few notes:
+the posterior distributions of both are affected by
+ traps of capture {\it and} traps of
+non-capture in fairly intuitive ways. 
+
+
+
+
 
 
 \section{Effective Sample Area}
