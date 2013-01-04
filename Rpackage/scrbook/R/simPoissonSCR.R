@@ -69,7 +69,7 @@ if(array3d){
 Y<-array(NA,dim=c(N,K,ntraps))
 for(i in 1:nrow(Y)){
 for(j in 1:ntraps){
- Y[i,1:K,j]<-rpois(K,1,muy[i,j])
+ Y[i,1:K,j]<-rpois(K,muy[i,j])
 }
 }
 
