@@ -2,7 +2,7 @@
 %Basic Statistical Concepts
 %Basic Statistical Concepts and Statistical Description of SCR Models
 %Basic Statistical Concepts and the Hierarchy of SCR Models
-Basics of Hierarchical Modeling
+Hierarchical Modeling and SCR
 }
 \markboth{Modeling}{}
 \label{chapt.modeling}
@@ -131,9 +131,10 @@ When
 we wish to be specific about a probability distribution, we will do
 so in one of two ways, one precise and one symbolic. Before explaining
 these two options, let's choose a specific distribution as a model for
-the data in our example. In this case, the natural distribution for
-$[X|K,p]$ is the binomial. The precise representation of this
-distribution will be shown as:
+the data in our example. In this case, the natural choice for
+$[X|K,p]$ is the binomial distribution, the precise representation of
+which is
+%this distribution will be shown as:
 \begin{equation}
   [X|K,p] = %\text{Bin}(K,p) =
              \binom{X}{K}p^X(1-p)^{K-X}.
@@ -207,9 +208,10 @@ essential to this process, and thus we need to
 understand them in some more depth.
 
 
-%%%% Add support??
+%%%% XXXX Add support??
+% XXXX Make sideways table?
 \begin{table}%[t!]
-  \small
+%  \small
   \caption{Common probability density functions (pdfs) and probability
     mass functions (pmfs) used throughout this book.}
   \begin{tabular}[t]{lcccc}
@@ -237,6 +239,8 @@ understand them in some more depth.
     (1-X)^{b-1}$ & $a/(a+b)$ & $\frac{ab}{(a+b)^2(a+b+1)}$ \\
     Gamma & $X \sim \text{Gamma}(a,b)$ &
     $\frac{b^a}{\Gamma(a)}X^{a-1}\exp(-bX)$ & $a/b$ & $a/b^2$  \\
+    Multivariate Normal & $\mathbf{X} \sim MVN(\bm{\mu}, \bm{\Sigma})$
+    & & & \\
     \hline
   \end{tabular}
   \label{modeling.tab.pdfs}
@@ -269,7 +273,7 @@ this for the normal and binomial distributions:
 \end{samepage}
 This requirement is important to remember when one must develop a
 non-standard probability distribution. For example, in Chapt.
-~\ref{chapt.state-space} and \ref{chapt.rsf},
+\ref{chapt.state-space} and \ref{chapt.rsf},
 we work with resource selection functions whose probability
 density function is not one that is pre-defined in software packages
 such as \R~or \bugs.
@@ -321,7 +325,6 @@ integration: %{\bf XXXX same here XXXXX}
   \label{modeling:eq:EXd}
 \end{equation}
 where the summation is over all possible values of $X$.
-
 Earlier we
 approximted the expected value of the binomial distribution
 with $K=20$ trials and $p=0.35$ by taking a Monte Carlo
@@ -354,12 +357,14 @@ $\sigma^2$, or similarly the residual standard error $\sigma$. For
 other distributions, the variance is not an explicit parameter to be
 estiamted, and instead, the mean to variance ratio is fixed. In the
 case of the Poisson distribution, the mean is equal to the
-variance, $\mathbb{E}(X) = \text{Var}(X) = \lambda$. This is often viewed as a restriction because in ecology
-count data often have a variance greater than the mean. However, much
-of this variation can be ``explained'' by modeling the mean as a
-function of covarites. Still, in cases where extra-Poisson variation
-exists, other distributions such as the negative binomial or
-zero-inflated Poisson distribution may be required. A similar
+variance, $\mathbb{E}(X) = \text{Var}(X) = \lambda$.
+%This is often viewed as a restriction because in ecology
+%count data often have a variance greater than the mean. However, much
+%of this variation can be ``explained'' by modeling the mean as a
+%function of covarites. Still, in cases where extra-Poisson variation
+%exists, other distributions such as the negative binomial or
+%zero-inflated Poisson distribution may be required.
+A similar
 situation is true for the binomial distribuiton---the variance is
 determined by the two parameters $K$ and $p$, $\text{Var}(X) = Kp(1-p)$. Thus
 in our earlier example with $K=20$ and $p=0.35$, the variance is
@@ -380,10 +385,12 @@ may be helpful. Here is some code to illustrate some of these basic concepts:
 
 We got a little ahead of ourselves in the previous sections by using
 the binomial and Poisson distributions without describing them in detail.
-A solid understanding of the binomial, Poisson, multinomial, and uniform,
+A solid understanding of the binomial, Poisson, multinomial, uniform,
+and normal
 distributions is absolutely essential throughout the
 remainder of the book. We will occasionally make use of other
-distributions such as the normal (or Gaussian), beta, log-normal, multivariate-normal,
+distributions such as the %normal (or Gaussian),
+beta, log-normal, %multivariate-normal,
 gamma, Dirichlet, etc$\dots$ that can be helpful when
 modeling capture-recapture data, but these distributions can be
 readily understood once you are comfortable with the more commonly
@@ -408,12 +415,6 @@ site on $K$ occasions, the observations $\{n_1, \ldots, n_K\}$
 would not be random outcomes---we would always observe
 $n_k=10$. That is, the observed data would exactly equal the expected
 value and the variance would be zero.
-\begin{comment}
-  The \texttt{stats} package that comes with \R~has random number
-  generators for most of the distributions we will use in this
-  book. These functions always begin with \texttt{r}, as in
-  \texttt{rbinom} for generating random binomial outcomes. Thus, to
-\end{comment}
 However, when $p<1$, we can expect that we will observe %different
 a different number of warblers on each replicate visit. To see this,
 we can simulate data under this simple model with $K=3$ survey occasions
@@ -447,18 +448,15 @@ function. For example, the probability of observing $n_k=5$ is given by:
 dbinom(5, 10, 0.5)
 \end{verbatim}
 This simply evaluates the function shown in
-Table~\ref{stat.tab.pdfs}. We could do the same more transparently, but
+Table~\ref{modeling.tab.pdfs}. We could do the same more transparently, but
 less efficiently, using any of the following:
 \begin{verbatim}
-N <- 10
-n <- 5
-p <- 0.5
+n <- 5; N <- 10; p <- 0.5
 factorial(N)/(factorial(n)*factorial(N-n))*p^n*(1-p)^(N-n)
 exp(lgamma(N+1) - (lgamma(n+1) + lgamma(N-n+1)))*p^n*(1-p)^(N-n)
 choose(N, n)*p^n*(1-p)^(N-n)
 \end{verbatim}
-
-Note that these three expressions differ only in how they compute the
+Note that the last three lines of code differ only in how they compute the
 binomial coefficient $\binom{N}{n}$, which is the number of different ways
 we could observe $n=5$ of the $N=10$ chestnut-sided warblers at the site. The
 binomial coefficient, which is read ``N choose n'' is defined as
@@ -549,12 +547,12 @@ n_k = \sum_{i=1}^N y_{ik}
 \label{modeling.eq.Bern}
 \end{gather}
 This simply states that individual $i$ is detected with probability
-$p_i$, and the observed count is the sum of the $N$ Bernoulli random
+$p_i$, and the observed count is the sum of the $N$ Bernoulli
 outcomes.
 
-Note that the individual-specific data $y_{ik}$ can only be
-observed when we can keep track of each individual, such as when they
-are marked or otherwise distinguishable.
+An important point is that the individual-specific data $y_{ik}$ can only be
+observed when if the individuals are uniquely distinguishable, such as when they
+are marked by biologists.
 %Indeed, this is one of the important
 %motivations for capture-recapture studies.
 In such cases, the Bernoulli distribution allows us to
@@ -580,7 +578,7 @@ observing $n=1$ given $p=0.3$.
 \label{modeling.sec.multinom}
 
 The binomial distribution is used
-when there are two possible categories, such as success or failure.
+when there are two possible categories, such as success/failure or captured/not-captured.
 The multinomial distribution is a multivariate extension of
 the binomial used when there are $G>2$ categories.
 The multinomial distribution can be thought of as a model for placing
@@ -654,7 +652,8 @@ Chapt.~\ref{chapt.state-space} where we discuss how to model the
 probability that an individual's activity center is located in one of
 the cells of a raster defining the spatial region of interest.
 
-It is worth noting that, just as the Bernoulli distribution is a
+%It is worth noting that,
+Just as the Bernoulli distribution is a
 special case of the binomial distribution when $N \equiv 1$, the
 categorical distribution is essentially equivalent to
 %special case of
@@ -665,8 +664,8 @@ where the 1 occurs. For example, if $\mathbf{y}=(0,0,1,0)$ is an outcome of a
 multinomial distribution with $N=1$, then the categorical outcome
 would be 3 because the 1 is located in third position in the vector. Thus, in spatial
 capture-recapture models, we might use either the multinomial
-distribution with $N=1$, or we can just as well use the categorical
-distribution. %They are equivalent.
+distribution with $N=1$ or %we can just as well use
+the categorical distribution. %They are equivalent.
 
 
 \subsection{The Poisson Distribution}
@@ -687,7 +686,8 @@ $\lambda$.
 The Poisson distribution is related to
 both the binomial and multinomial distributions, and the following two
 bits of trivia are occasionally worth knowing. First, it is the limit of the binomial
-distribution as $p \to -\infty$, which means that for very low values
+distribution as $N \to \infty$ and $p \to 0$, which means that for
+high values of $N$ and low values
 of $p$, $\text{Pois}(N\times p)$ is approximately equal to $\text{Bin}(N,
 p)$. Second, if $\{n_1 \sim \text{Pois}(\lambda_1),
 %n_k \sim \text{Pois}(\lambda_k),
@@ -732,7 +732,7 @@ The second use of the Poisson distribution in spatial capture-recapture is
 to describe data from sampling methods in which an
 individual can be detected multiple times at a trap during a single
 occasion. For example, in camera trapping studies we might obtain
-multiple pictures of the same individual during a single sampling
+multiple pictures of the same individual at a trap during a single sampling
 occasion. Thus, $\lambda$ in this case would be defined as the
 expected number of detections or captures per occasion.
 
@@ -755,7 +755,8 @@ simply states that $p$ is equally likely to take on any value between
 zero and one.
 
 Another common usage of the uniform distribution is as a prior for the
-x- and y- coordinates points in the real plane, i.e. in two-dimensional
+%x- and y-
+coordinates of points in the real plane, i.e. in two-dimensional
 space. Such a use of the uniform distribution implies that a point process is
 ``homogeneous'', meaning that the location of one point does not
 affect the location of another point and that the expected density of
@@ -768,7 +769,7 @@ A <- 1   # Area of unit square
 N <- rpois(1, D*A)
 plot(s <- cbind(runif(N), runif(N)))
 \end{verbatim}
-where $\mathbf{s}$ is the matrix of coordinates with 2 columns. We
+where \verb+s+ is a matrix of coordinates with $N$ rows and 2 columns. We
 will often represent the uniform point process using the following notation:
 \begin{equation}
   {\bf s} \sim \text{Uniform}(\mathcal{S}).
@@ -776,20 +777,22 @@ will often represent the uniform point process using the following notation:
 It would be more correct to somehow distiguish this
 two-dimensional uniform distribution for the univariate one. That is,
 it might be more clear to use notation such as
-${\bf s} \sim \text{Uniform}_2(\mathcal{S})$ instead. However, this is rather
-tedious and cumbersome, so we will opt for the former expression.
+${\bf s} \sim \text{Uniform}_2(\mathcal{S})$ instead, but this is somewhat
+cumbersome, so we will opt for the former expression.
 
 
 \subsection{The Normal and Bivariate Normal Distributions}
 
-The normal distribution, also called the Gaussian distribution, %has
-%two parameters, $\mu = \mathbb{E}(X)$ and $\sigma^2 = \text{Var}(X)$,
-%and
+The normal distribution, also called the Gaussian
+distribution, is perhaps the most widely recongnized and applied probability model in
+statistics, but it plays only a minor role in SCR models. The reason
+being that many of the random variables in SCR models are discrete,
+and distinctly not normally distributed. Nonetheless, it
 is the canonical prior for any continous random variable with
-infinite support. Few parameters of SCR models actually have unbounded
-support; however, when a parameter is defined as a linear function
-(usually on a link scale), then the regression coefficients of the
-linear model are often given normal priors. An example, including a
+infinite support, and thus can be used as prior when using Bayesian
+methods. One common usage is as a prior for the $\beta$
+coefficients of a linear model defining some parameter as a function
+of covariates (usually on a link scale). An example, including a
 cautionary note, is provided in Sec.~\ref{glms.subsec.choice}.
 %is attractive
 % it allows us to estimate both the mean and variance of a
@@ -808,10 +811,14 @@ cautionary note, is provided in Sec.~\ref{glms.subsec.choice}.
 %parameters...
 %\subsection{The Beta Distribution}
 
-
 The bivariate normal distribution is a generalization of the
 normal distribution and a special case of the multivariate normal
-distribution.
+distribution whose pdf is shown in Table~\ref{modeling.tab.pdfs}. The
+bivariate normal distribution is used to model two (possibly) dependent
+continuous variables whose symmetric variance-covariance matrix is
+denoted $\bm{\Sigma}$. In SCR models, we most often use this model as
+a rudimentary description of movement outcomes about a home range
+center. If there is no correlation between the
 
 
 \subsection{Other Distributions}
