@@ -19,10 +19,13 @@ models, it is impossible to fully appreciate them, and apply them to
 real data, without a solid grasp of the fundamentals of statistical
 inference.
 
-In this chapter, we present a brief primer on key
+In this chapter, we present a brief overview of the key
 statistical concepts that are referenced throughout the remainder of
-this book. For some readers, this material will be familiar,
-perhaps even elementary, and thus you may want to skip to the next
+this book. Emphasis is placed on the definition of a random variable,
+the common probability distributions used to model random variables,
+and how hierarchical models can be used to describe conditionally
+related random variabes. For some readers, this material will be
+familiar, perhaps even elementary, and thus you may want to skip to the next
 chapter. However, our experience is that many basic statistics courses
 taken by ecologists do not emphasize the important subjects covered in
 this chapter. Instead, there seems to be much attention paid to
@@ -52,12 +55,20 @@ data and because it is free. We do not, however, try to explain how to
 use \R~because there are so many good references already, inluding
 \citet{venables_ripley:2002,bolker:2008,venables_etal:2012}.
 
-Following our introduction to basic statistical concepts, we lay out our
-philosophy of modeling ecological data, including spatial
-capture-recapture data. We also introduce hierarchical
-models, and discuss why they are relevant to so many problems in
-ecology. Finally, we address the common concerns levied against the
-hierarchical modeler, {e.g.} assumptions are bad.
+After covering some basic concepts of hierarchcial modeling, we end the
+chapter by describing spatial capture-recapture models using
+hierarchical modeling notation. This makes the concepts outlined in
+the previous chapter more precise, and it provides the basis for describing
+variations on the basic them of combining models of the ecological
+process of interest with models describing how the observations are
+thought to arise conditional on the actual state of the system.
+
+% Following our introduction to basic statistical concepts, we lay out our
+% philosophy of modeling ecological data, including spatial
+% capture-recapture data. We also introduce hierarchical
+% models, and discuss why they are relevant to so many problems in
+% ecology. Finally, we address the common concerns levied against the
+% hierarchical modeler, {e.g.} assumptions are bad.
 
 \section{Random Variables and Probability Distributions}
 
@@ -1616,7 +1627,7 @@ basic, yet very useful, SCR model.
 \label{modeling.fig.fig1}
 \end{figure}
 
-\subsection{Varieties of SCR models}
+\subsection{Variations on the SCR theme}
 
 Having now briefly explained each of the model components in
 Eq.~\ref{modeling.eq.nyus}, and having
@@ -1630,13 +1641,13 @@ Examples include:
 (2) Spatial capture-recapture models with fixed arrays of traps
     \citep{efford:2004, borchers_efford:2008, royle_etal:2009ecol,
            royle_etal:2009jae,
-           gardner_etal:2010ecol,royle_etal:2011jwm},
+           gardner_etal:2010ecol,royle_etal:2011jwm}, and
 (3) Search-encounter models \citep{royle_young:2008,
-  royle_etal:2011mee}, and
-(4) Capture-recapture distance-sampling \citep{borchers_etal:1998}.
-The constituent pieces of these models are listed in
-Table~\ref{modeling.tab.fam}. We will now elaborate on some of
-these distinctions.
+  royle_etal:2011mee}. %, and
+%(4) Capture-recapture distance-sampling \citep{borchers_etal:1998}.
+%The constituent pieces of these models are listed in
+%Table~\ref{modeling.tab.fam}.
+We will now elaborate on some of these distinctions.
 %of such models are:
 % \begin{enumerate}
 %   \item Classical distance sampling \citep{buckland_etal:2001, borchers_etal:2002}
@@ -1656,28 +1667,29 @@ these distinctions.
 % these various model components are manifest in specific cases is
 % described as follows:
 \begin{enumerate}
-\item {\bf Distance sampling -- } The last 2 stages of the hierarchy
+\item {\bf Distance sampling}. The last 2 stages of the hierarchy
   are confounded (implicitly) and so analysis is based on the model
-  $[y|u*] [u*]$. The ``process model'' is that of ``uniformity'': ${\bf u}^{*}
-  \sim \text{Unif}({\cal S})$. Sometimes it is argued that distance sampling
-  estimators are ``pooling robust'' which is a way of saying they are
-  (or may be)
-  relatively insensitive to this assumption. That may be true, but the
-  construction of distance sampling estimators makes explicit the
-  uniformity assumption as a mathematical fact.
+  $[y|{\bf u}*] [{\bf u}*]$. The ``process model'' is that of ``uniformity'': ${\bf u}^{*}
+  \sim \text{Unif}({\cal S})$.
+%  Sometimes it is argued that distance sampling
+%  estimators are ``pooling robust'' which is a way of saying they are
+%  (or may be)
+%  relatively insensitive to this assumption. That may be true, but the
+%  construction of distance sampling estimators makes explicit the
+%  uniformity assumption as a mathematical fact.
 
-\item {\bf Spatial capture-recapture model with a fixed array of traps} --
+\item {\bf Spatial capture-recapture model with a fixed array of traps}.
 SCR models appear to have little in common with distance sampling
 because observations are made only at a pre-defined set of discrete
-locations -- where traps are placed. However, the models are closely
-related in terms of our hierarchical representation above\footnote{Really
-they're kind of like point-count distance sampling where the identity
-of individuals is preserved across point samples , and distance is a
-latent variable. i.e., SCR-DS. I feel like this point should be
-emphasized somehow. Here? Later?}.
-In SCR models based on fixed arrays,
-we cannot estimate both
-$\Pr(y=1|{\bf u})$ and $\Pr({\bf u}|{\bf s})$ -- the probability  that
+locations---where traps are placed. However, the models are closely
+related in terms of our hierarchical representation above
+%\footnote{Really
+%they're kind of like point-count distance sampling where the identity
+%of individuals is preserved across point samples , and distance is a
+%latent variable. i.e., SCR-DS. I feel like this point should be
+%emphasized somehow. Here? Later?}.
+In SCR models based on fixed arrays, we cannot estimate both
+$\Pr(y=1|{\bf u})$ and $\Pr({\bf u}|{\bf s})$---the probability that
 an individual ``moves to ${\bf u}$'' cannot be seperated from the
 probability that it is detected given that it moves to ${\bf u}$,
 because of the fact that the observation locations are fixed by
@@ -1685,62 +1697,64 @@ design.
 Formally, such SCR models confound $[y|{\bf u}]$  with $[{\bf
   u}|{\bf s}]$ so that the observation model arises as:
 \[
- [y|{\bf s}] = \int_{u} [y|{\bf u}][{\bf u}|{\bf s}] du
+ [y|{\bf s}] = \int_{\bf u} [y|{\bf u}][{\bf u}|{\bf s}] \mathrm{d}{\bf u}
 \]
-This confounding happens because SCR sampling is spatially biased -
-restricted to a fixed pre-determined set of locations.
-
+This confounding happens because SCR sampling is spatially
+biased---restricted to a fixed pre-determined set of locations.
 Conversely,
 distance sampling confounds $[{\bf u}|{\bf s}][{\bf s}]$ because, essentially, there is
 only a single realization of the encounter process.
-
 It is probably
 reasonable to assume that $\Pr(y=1|{\bf u})=1$ or at least it is locally
 constant for most devices (e.g., cameras, etc..), and thus the
 detection model will have the interpretation in terms of movement (see
-chapter XXX.YY).
+Chapt. \ref{chapt-rsf} and \ref{chapt-ecoldist}).
 
-\item {\bf Search-encounter models -- } What we call
-  ``search-encounter'' models \citep{royle_etal:2011mee}
-  are kind of a hybrid model - combining features of SCR models and
+\item {\bf Search-encounter models}. What we call
+  ``search-encounter'' models \citep{royle_young:2008,royle_etal:2011mee}
+  are kind of a hybrid model combining features of SCR models and
   features of distance sampling. Like distance sampling they allow for
   encounters in continuous space which provide direct observations
-  from $[{\bf u}|{\bf s}]$.
-Thus, the
+  from $[{\bf u}|{\bf s}]$. Thus, the
   hierarchical model is fully identified.
 
-\item {\bf Capture-recapture/distance-sampling -- } See
-  \citet{borchers_etal:1998}. As with the search-encounter models the
-full hierarchical model is identified:
-$[y|{\bf u}][{\bf u}|{\bf s}][{\bf s}]$ but the quantities don't
-really mean the same thing as before.
+  \begin{comment}
+  \item {\bf Capture-recapture/distance-sampling}. See
+    \citet{borchers_etal:1998}. As with the search-encounter models
+    the full hierarchical model is identified: $[y|{\bf u}][{\bf
+      u}|{\bf s}][{\bf s}]$ but the quantities don't really mean the
+    same thing as before.
 
-To understand this, we expand the model to accommodate imperfect
-measurements of ${\bf u}$. Let ${\bf u}_{obs}$ be an observation of
-${\bf u}$ (i.e., made with error). A larger hiearchical model is this:
-\[
-[y|{\bf u}][{\bf u}_{obs}|{\bf u}][{\bf u}|{\bf s}][{\bf s}]
-\]
-If we make replicate ``instantaneous'' observations of location, then
-information is provided about
- $[{\bf u}_{obs}|{\bf u}]$ (i.e., measurement error). However, in a normal
- distance sampling application, with instantaneous sampling, we don't
- learn anything about $[{\bf u}|{\bf s}]$,
-in effect, we are again confounding $[{\bf u}|{\bf s}]$ and $[{\bf
-  s}]$: ${\bf u}^{*} = \int_{s} [{\bf u}|{\bf s}][{\bf s}] ds$. So the CR-DS model focuses on:
-\[
-[y|{\bf u}^{*}][{\bf u}_{obs}|{\bf u}^{*}][{\bf u}^{*}].
-\]
-Structurally, this is the same basic model as the search-encounter
-model notwithstanding (1) that it is usually talked about in terms of
-repeated measures of distance instead of location and (2) the 2nd
-component of the hierarchy is not movement (an ecological process) but
-rather ``measurement error'' and (3) the third component is not a home
-range center but rather a movement outcome (``instantaneous
-location'').  Thus, while the models are structurally identically, the
-meaning and interpretation of quantities are distinct.
+    To understand this, we expand the model to accommodate imperfect
+    measurements of ${\bf u}$. Let ${\bf u}_{obs}$ be an observation
+    of ${\bf u}$ (i.e., made with error). A larger hiearchical model
+    is this:
+    \[ [y|{\bf u}][{\bf u}_{obs}|{\bf u}][{\bf u}|{\bf s}][{\bf s}]
+    \]
+    If we make replicate ``instantaneous'' observations of location,
+    then information is provided about $[{\bf u}_{obs}|{\bf u}]$
+    (i.e., measurement error). However, in a normal distance sampling
+    application, with instantaneous sampling, we don't learn anything
+    about $[{\bf u}|{\bf s}]$, in effect, we are again confounding
+    $[{\bf u}|{\bf s}]$ and $[{\bf s}]$: ${\bf u}^{*} = \int_{s} [{\bf
+      u}|{\bf s}][{\bf s}] ds$. So the CR-DS model focuses on:
+    \[ [y|{\bf u}^{*}][{\bf u}_{obs}|{\bf u}^{*}][{\bf u}^{*}].
+    \]
+    Structurally, this is the same basic model as the search-encounter
+    model notwithstanding (1) that it is usually talked about in terms
+    of repeated measures of distance instead of location and (2) the
+    2nd component of the hierarchy is not movement (an ecological
+    process) but rather ``measurement error'' and (3) the third
+    component is not a home range center but rather a movement outcome
+    (``instantaneous location'').  Thus, while the models are
+    structurally identically, the meaning and interpretation of
+    quantities are distinct.
+  \end{comment}
+
+\end{enumerate}
 
 
+\begin{comment}
 \begin{table}
   \centering
   \caption{Spatial capture-recapture models and allies.}
@@ -1748,16 +1762,17 @@ meaning and interpretation of quantities are distinct.
     \hline
     Description & Notation & Chapters \\
     \hline
-    Queen bee            & $[n(y)|y][y|{\bf u}][{\bf u}|{\bf s}][{\bf s}]$ & --- \\
-    Distance sampling SCR hybrid & $[y|{\bf u}][{\bf u}|{\bf s}][{\bf s}]$ & --- \\
+    Full Monte            & $[n(y)|y][y|{\bf u}][{\bf u}|{\bf s}][{\bf s}]$ & --- \\
+%    Distance sampling SCR hybrid & $[y|{\bf u}][{\bf u}|{\bf s}][{\bf s}]$ & --- \\
     Standard SCR         & $[y|{\bf s}][{\bf s}]$ & \ref{chapt.scr0} \\
     Distance sampling    & $[y|{\bf u}][{\bf u}]$ & --- \\
     Search-encounter SCR & $[y|{\bf u}][{\bf u}|{\bf s}]$ & \ref{chapt.search} \\
-    Mark-resight SCR     & $[n(y)|y][y|{\bf s}][{\bf s}]$ & \ref{chapt.scr-unmarked,chapt.partialID} \\
+%    Mark-resight SCR     & $[n(y)|y][y|{\bf s}][{\bf s}]$ & \ref{chapt.scr-unmarked,chapt.partialID} \\
     \hline
   \end{tabular}
   \label{modeling.tab.fam}
 \end{table}
+\end{comment}
 
 
 %These are
@@ -1772,7 +1787,6 @@ meaning and interpretation of quantities are distinct.
 % ${\bf s}$ & activity center & instaneous location \\
 %\end{tabular}
 %\end{table}
-\end{enumerate}
 
 
 \begin{comment}
