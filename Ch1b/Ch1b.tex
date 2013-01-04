@@ -2,7 +2,7 @@
 %Basic Statistical Concepts
 %Basic Statistical Concepts and Statistical Description of SCR Models
 %Basic Statistical Concepts and the Hierarchy of SCR Models
-Basics of Hierarchical Modeling
+Hierarchical Modeling and SCR
 }
 \markboth{Modeling}{}
 \label{chapt.modeling}
@@ -131,9 +131,10 @@ When
 we wish to be specific about a probability distribution, we will do
 so in one of two ways, one precise and one symbolic. Before explaining
 these two options, let's choose a specific distribution as a model for
-the data in our example. In this case, the natural distribution for
-$[X|K,p]$ is the binomial. The precise representation of this
-distribution will be shown as:
+the data in our example. In this case, the natural choice for
+$[X|K,p]$ is the binomial distribution, the precise representation of
+which is
+%this distribution will be shown as:
 \begin{equation}
   [X|K,p] = %\text{Bin}(K,p) =
              \binom{X}{K}p^X(1-p)^{K-X}.
@@ -207,9 +208,10 @@ essential to this process, and thus we need to
 understand them in some more depth.
 
 
-%%%% Add support??
+%%%% XXXX Add support??
+% XXXX Make sideways table?
 \begin{table}%[t!]
-  \small
+%  \small
   \caption{Common probability density functions (pdfs) and probability
     mass functions (pmfs) used throughout this book.}
   \begin{tabular}[t]{lcccc}
@@ -237,6 +239,8 @@ understand them in some more depth.
     (1-X)^{b-1}$ & $a/(a+b)$ & $\frac{ab}{(a+b)^2(a+b+1)}$ \\
     Gamma & $X \sim \text{Gamma}(a,b)$ &
     $\frac{b^a}{\Gamma(a)}X^{a-1}\exp(-bX)$ & $a/b$ & $a/b^2$  \\
+    Multivariate Normal & $\mathbf{X} \sim MVN(\bm{\mu}, \bm{\Sigma})$
+    & & & \\
     \hline
   \end{tabular}
   \label{modeling.tab.pdfs}
@@ -269,7 +273,7 @@ this for the normal and binomial distributions:
 \end{samepage}
 This requirement is important to remember when one must develop a
 non-standard probability distribution. For example, in Chapt.
-~\ref{chapt.state-space} and \ref{chapt.rsf},
+\ref{chapt.state-space} and \ref{chapt.rsf},
 we work with resource selection functions whose probability
 density function is not one that is pre-defined in software packages
 such as \R~or \bugs.
@@ -321,7 +325,6 @@ integration: %{\bf XXXX same here XXXXX}
   \label{modeling:eq:EXd}
 \end{equation}
 where the summation is over all possible values of $X$.
-
 Earlier we
 approximted the expected value of the binomial distribution
 with $K=20$ trials and $p=0.35$ by taking a Monte Carlo
@@ -354,12 +357,14 @@ $\sigma^2$, or similarly the residual standard error $\sigma$. For
 other distributions, the variance is not an explicit parameter to be
 estiamted, and instead, the mean to variance ratio is fixed. In the
 case of the Poisson distribution, the mean is equal to the
-variance, $\mathbb{E}(X) = \text{Var}(X) = \lambda$. This is often viewed as a restriction because in ecology
-count data often have a variance greater than the mean. However, much
-of this variation can be ``explained'' by modeling the mean as a
-function of covarites. Still, in cases where extra-Poisson variation
-exists, other distributions such as the negative binomial or
-zero-inflated Poisson distribution may be required. A similar
+variance, $\mathbb{E}(X) = \text{Var}(X) = \lambda$.
+%This is often viewed as a restriction because in ecology
+%count data often have a variance greater than the mean. However, much
+%of this variation can be ``explained'' by modeling the mean as a
+%function of covarites. Still, in cases where extra-Poisson variation
+%exists, other distributions such as the negative binomial or
+%zero-inflated Poisson distribution may be required.
+A similar
 situation is true for the binomial distribuiton---the variance is
 determined by the two parameters $K$ and $p$, $\text{Var}(X) = Kp(1-p)$. Thus
 in our earlier example with $K=20$ and $p=0.35$, the variance is
@@ -380,10 +385,12 @@ may be helpful. Here is some code to illustrate some of these basic concepts:
 
 We got a little ahead of ourselves in the previous sections by using
 the binomial and Poisson distributions without describing them in detail.
-A solid understanding of the binomial, Poisson, multinomial, and uniform,
+A solid understanding of the binomial, Poisson, multinomial, uniform,
+and normal
 distributions is absolutely essential throughout the
 remainder of the book. We will occasionally make use of other
-distributions such as the normal (or Gaussian), beta, log-normal, multivariate-normal,
+distributions such as the %normal (or Gaussian),
+beta, log-normal, %multivariate-normal,
 gamma, Dirichlet, etc$\dots$ that can be helpful when
 modeling capture-recapture data, but these distributions can be
 readily understood once you are comfortable with the more commonly
@@ -408,12 +415,6 @@ site on $K$ occasions, the observations $\{n_1, \ldots, n_K\}$
 would not be random outcomes---we would always observe
 $n_k=10$. That is, the observed data would exactly equal the expected
 value and the variance would be zero.
-\begin{comment}
-  The \texttt{stats} package that comes with \R~has random number
-  generators for most of the distributions we will use in this
-  book. These functions always begin with \texttt{r}, as in
-  \texttt{rbinom} for generating random binomial outcomes. Thus, to
-\end{comment}
 However, when $p<1$, we can expect that we will observe %different
 a different number of warblers on each replicate visit. To see this,
 we can simulate data under this simple model with $K=3$ survey occasions
@@ -447,18 +448,15 @@ function. For example, the probability of observing $n_k=5$ is given by:
 dbinom(5, 10, 0.5)
 \end{verbatim}
 This simply evaluates the function shown in
-Table~\ref{stat.tab.pdfs}. We could do the same more transparently, but
+Table~\ref{modeling.tab.pdfs}. We could do the same more transparently, but
 less efficiently, using any of the following:
 \begin{verbatim}
-N <- 10
-n <- 5
-p <- 0.5
+n <- 5; N <- 10; p <- 0.5
 factorial(N)/(factorial(n)*factorial(N-n))*p^n*(1-p)^(N-n)
 exp(lgamma(N+1) - (lgamma(n+1) + lgamma(N-n+1)))*p^n*(1-p)^(N-n)
 choose(N, n)*p^n*(1-p)^(N-n)
 \end{verbatim}
-
-Note that these three expressions differ only in how they compute the
+Note that the last three lines of code differ only in how they compute the
 binomial coefficient $\binom{N}{n}$, which is the number of different ways
 we could observe $n=5$ of the $N=10$ chestnut-sided warblers at the site. The
 binomial coefficient, which is read ``N choose n'' is defined as
@@ -549,12 +547,12 @@ n_k = \sum_{i=1}^N y_{ik}
 \label{modeling.eq.Bern}
 \end{gather}
 This simply states that individual $i$ is detected with probability
-$p_i$, and the observed count is the sum of the $N$ Bernoulli random
+$p_i$, and the observed count is the sum of the $N$ Bernoulli
 outcomes.
 
-Note that the individual-specific data $y_{ik}$ can only be
-observed when we can keep track of each individual, such as when they
-are marked or otherwise distinguishable.
+An important point is that the individual-specific data $y_{ik}$ can only be
+observed when if the individuals are uniquely distinguishable, such as when they
+are marked by biologists.
 %Indeed, this is one of the important
 %motivations for capture-recapture studies.
 In such cases, the Bernoulli distribution allows us to
@@ -580,7 +578,7 @@ observing $n=1$ given $p=0.3$.
 \label{modeling.sec.multinom}
 
 The binomial distribution is used
-when there are two possible categories, such as success or failure.
+when there are two possible categories, such as success/failure or captured/not-captured.
 The multinomial distribution is a multivariate extension of
 the binomial used when there are $G>2$ categories.
 The multinomial distribution can be thought of as a model for placing
@@ -654,7 +652,8 @@ Chapt.~\ref{chapt.state-space} where we discuss how to model the
 probability that an individual's activity center is located in one of
 the cells of a raster defining the spatial region of interest.
 
-It is worth noting that, just as the Bernoulli distribution is a
+%It is worth noting that,
+Just as the Bernoulli distribution is a
 special case of the binomial distribution when $N \equiv 1$, the
 categorical distribution is essentially equivalent to
 %special case of
@@ -665,8 +664,8 @@ where the 1 occurs. For example, if $\mathbf{y}=(0,0,1,0)$ is an outcome of a
 multinomial distribution with $N=1$, then the categorical outcome
 would be 3 because the 1 is located in third position in the vector. Thus, in spatial
 capture-recapture models, we might use either the multinomial
-distribution with $N=1$, or we can just as well use the categorical
-distribution. %They are equivalent.
+distribution with $N=1$ or %we can just as well use
+the categorical distribution. %They are equivalent.
 
 
 \subsection{The Poisson Distribution}
@@ -687,7 +686,8 @@ $\lambda$.
 The Poisson distribution is related to
 both the binomial and multinomial distributions, and the following two
 bits of trivia are occasionally worth knowing. First, it is the limit of the binomial
-distribution as $p \to -\infty$, which means that for very low values
+distribution as $N \to \infty$ and $p \to 0$, which means that for
+high values of $N$ and low values
 of $p$, $\text{Pois}(N\times p)$ is approximately equal to $\text{Bin}(N,
 p)$. Second, if $\{n_1 \sim \text{Pois}(\lambda_1),
 %n_k \sim \text{Pois}(\lambda_k),
@@ -732,7 +732,7 @@ The second use of the Poisson distribution in spatial capture-recapture is
 to describe data from sampling methods in which an
 individual can be detected multiple times at a trap during a single
 occasion. For example, in camera trapping studies we might obtain
-multiple pictures of the same individual during a single sampling
+multiple pictures of the same individual at a trap during a single sampling
 occasion. Thus, $\lambda$ in this case would be defined as the
 expected number of detections or captures per occasion.
 
@@ -755,7 +755,8 @@ simply states that $p$ is equally likely to take on any value between
 zero and one.
 
 Another common usage of the uniform distribution is as a prior for the
-x- and y- coordinates points in the real plane, i.e. in two-dimensional
+%x- and y-
+coordinates of points in the real plane, i.e. in two-dimensional
 space. Such a use of the uniform distribution implies that a point process is
 ``homogeneous'', meaning that the location of one point does not
 affect the location of another point and that the expected density of
@@ -768,7 +769,7 @@ A <- 1   # Area of unit square
 N <- rpois(1, D*A)
 plot(s <- cbind(runif(N), runif(N)))
 \end{verbatim}
-where $\mathbf{s}$ is the matrix of coordinates with 2 columns. We
+where \verb+s+ is a matrix of coordinates with $N$ rows and 2 columns. We
 will often represent the uniform point process using the following notation:
 \begin{equation}
   {\bf s} \sim \text{Uniform}(\mathcal{S}).
@@ -776,32 +777,22 @@ will often represent the uniform point process using the following notation:
 It would be more correct to somehow distiguish this
 two-dimensional uniform distribution for the univariate one. That is,
 it might be more clear to use notation such as
-${\bf s} \sim \text{Uniform}_2(\mathcal{S})$ instead. However, this is rather
-tedious and cumbersome, so we will opt for the former expression.
+${\bf s} \sim \text{Uniform}_2(\mathcal{S})$ instead, but this is somewhat
+cumbersome, so we will opt for the former expression.
 
 
-
-
+%\subsection{The Normal and Bivariate Normal Distributions}
 \subsection{Other Distributions}
 
-% {\bf XXXX I would combine these into 1 short section on ``Other
-%   distributions'' and make the point that we use the normal
-%   distribution as the canonical prior for any real-valued parameter,
-%   the beta distribution is a good prior for probability parameters,
-%   and maybe say we use a Gamma distribution for positive-valued
-%   parameters. Keep it short and sweet and just make the point that we
-%   use other distributions throughout the book
-%  XXXXX}
-
-As with the uniform distribution, most of the other common continuous
-distributions such as the normal, beta, and gamma distributions are
-primarily used as priors in spatial capture-recapture models. For that
-reason, we will avoid lengthy descriptions of these distributions and
-instead describe how they are typically used %as prior distributions
-when conducting
-Bayesian inference. Although we will keep it very brief, note that
-Table~\ref{modeling.tab.pdfs} includes
-the pdfs, expected values, and variances of these distributions.
+The other continuous distributions that are regularly encountered in SCR
+models are %generally such as the normal,beta, and gamma distributions are
+primarily used as priors in Bayesian analyses, and thus we will avoid
+a lengthy discussion of their properties. %The  we will briefly
+%cover here are the beta and gamma distributions, which are
+%particularly useful as priors for probabilities and positive-valued
+%parameters respectively. Although we will keep it very brief, note that
+%Table~\ref{modeling.tab.pdfs} includes
+%the pdfs, expected values, and variances of these distributions.
 %A more thorough treatment of
 %these distributions can be found in \citet{link_barker:2010}.
 %This might seem odd given that
@@ -814,62 +805,79 @@ the pdfs, expected values, and variances of these distributions.
 %distributed. One reason for this is that methods such a linear
 %regression and $t$-tests were all that were available in many
 %primitive stats software programs. Another reason why
-
-The normal distribution, also called the Gaussian distribution, %has
-%two parameters, $\mu = \mathbb{E}(X)$ and $\sigma^2 = \text{Var}(X)$,
-%and
+The normal distribution, also called the Gaussian
+distribution, is perhaps the most widely recongnized and applied probability model in
+statistics, but it plays only a minor role in SCR models. %The reason
+%being that many of the random variables in SCR models are discrete,
+%and distinctly not normally distributed.
+Nonetheless, it
 is the canonical prior for any continous random variable with
-infinite support. Few parameters of SCR models actually have unbounded
-support; however, when a parameter is defined as a linear function
-(usually on a link scale), then the regression coefficients of the
-linear model are often given normal priors. An example, including a
+infinite support, and thus can be used as prior when applying Bayesian
+methods. One common usage is as a prior for the $\beta$
+coefficients of a linear model defining some parameter as a function
+of covariates (usually on a link scale). An example, including a
 cautionary note, is provided in Sec.~\ref{glms.subsec.choice}.
-%is attractive
-% it allows us to estimate both the mean and variance of a
-%random variable, and to develop explicit models for each. This is really
-%great, but often random variables are simply not continuous and cannot
-%take on values between $-\infty$ and $\infty$.
-%Think for example of:
-%population size $\dots$ discrete; presence-absence data $\dots$ discrete;
-%survival times $\dots$ continuous but positive, etc $\dots$.
-%Okay, fine, but are we just being hard-asses by worrying about these
-%discrepancies? Is there really a problem with applying modeling some
-%of these variables using the normal distribution even if it isn't
-%technically correct? Well, on
-%In SCR models, the data are never normally distributed, but the normal
-%distribution is still very useful as a model for some of the
-%parameters...
-%\subsection{The Beta Distribution}
-Several of the parameters in capture-recapture models are
-probabilities, and the first distribution that comes to the mind of a
-Bayesian is the beta distribution. % to
-%describe prior knowledge about.  and the beta distribution is a
-%suitable prior for these parameters that may be given a beta
-%prior. %distribution an appealing prior. %---think of
-%capture probability or survival
-%probability. %If we think of these parameters as random variables,
-%as Bayesians do, then we will often describe these distributions using
-%the beta distribution.
-The beta distribution is particularly useful as
-a prior for such parameters because it can be used to express either a
+Be aware that although the normal distribution is typically
+parameterized in terms of the variance parameter $\sigma^2$, in
+the \bugs~language, the inverse of the variance, or precision, is used
+instead, $\tau = 1/\sigma^2$.
+
+The bivariate normal distribution is a generalization of the
+normal distribution and a special case of the multivariate normal
+distribution whose pdf is shown in Table~\ref{modeling.tab.pdfs}. The
+bivariate normal distribution is used to model two (possibly) dependent
+continuous variables whose symmetric variance-covariance matrix is
+denoted $\bm{\Sigma}$.
+%The parameter $\rho$ is two off-diagonals of this matrix are
+In SCR models, we most often use this model as
+a rudimentary description of movement outcomes about a home range
+center. If there is there is no correlation, then the model reduces to
+two independent normals. The following code generates bivariate normal
+outcomes with no correlation ($\rho=0$, the object \verb+X1+) and with
+$\rho=0.9$, the object \verb+X2+.
+\begin{verbatim}
+library(mvtnorm)
+set.seed(3)
+mu <- c(0,0)
+Sigma <- matrix(c(1, .9, .9, 1), 2, 2)
+X1 <- cbind(rnorm(50, mu[1], Sigma[1,1]), # No correlation (rho=0)
+            rnorm(50, mu[2], Sigma[2,2]))
+X2 <- rmvnorm(50, mu, Sigma)              # rho=0.9
+\end{verbatim}
+Fig.~\ref{modeling.fig.bvn} shows the points.
+\begin{figure}
+  \centering
+  \includegraphics[width=0.9\textwidth]{Ch1b/figs/bvn}
+  \caption{Two realized point patterns from the bivariate normal distribution. }
+  \label{modeling.fig.bvn}
+\end{figure}
+
+Several of the parameters in capture-recapture models do not have
+infinite support, but are instead are
+probabilities restricted to the range $[0,1]$, or are positive valued
+living between zero and $\infty$. The beta distribution is the
+standard prior used for probabilities because it can be used to express either a
 lack of knowledge or very precise knowledge about a
-parameter. Specifically, a $\text{Beta}(1,1)$ distribution is
+parameter. For example, a $\text{Beta}(1,1)$ distribution is
 equivalent to a $\text{Unif}(0, 1)$ distribution. However, unlike the
 the uniform distribution, the beta distribution can be used as an
 informative prior; for example if published estimates of detection
 probability exist. To gain some familiarity with the beta
-distribution, execute the following \R~ commands:
+distribution, execute the following \R~commands:
 \begin{verbatim}
 curve(dbeta(x, 1, 1), col="black", ylim=c(0,5))
 curve(dbeta(x, 10, 10), col="blue", add=TRUE)
 curve(dbeta(x, 10, 20), col="darkgreen", add=TRUE)
 \end{verbatim}
+
 Other parameters in SCR models are continuous but
 positive-valued and can be modeled using the gamma distribution. As
 with the beta distribution, the gamma distribution is typically
 favored over the uniform distribution when one is interested in using
-an informative prior.
-
+an informative prior. It is also frequently used as a vague prior for
+variance parameters, but this is not recommended because it can exert
+more influence over the posterior than intended. In such cases, the
+uniform distribution may be a more attractive vague prior.
 
 
 \section{Statistical Inference and Parameter Estimation}
@@ -1379,8 +1387,11 @@ in this book: \newline
 
 Most models considered in this book describe the encounter of
 individuals conditional on the ``activity center'' of the individual,
-which is a latent variable (i.e., unobserved random effect). The
-collection of these latent variables represents the outcome of an
+which is a latent variable (i.e., unobserved random effect).
+The definition of an activity center will be context-dependent as
+discussed in Chapt.~\ref{chapt.SCR0}, but
+often it can be thought of as an individual's home range center.
+The collection of these latent variables represents the outcome of an
 ecological process describing how individuals distribute themselves
 over the landscape. Moreover, how individuals are encountered in traps
 is, in some cases, the result of a model governing movement.  As such,
@@ -1413,10 +1424,11 @@ variables, ${\bf s}$, ${\bf u}$ and $y$ where ${\bf s}$ is the
 activity or home range center, ${\bf u}$ is the location of the
 individual at the time of sampling,
 %(i.e., where the observer records the animal)
-which we think of as realizations from some movement
-model, and $y$ is the ``response variable'' -- what the observer
+which we may think of as a realization from some movement
+model, and $y$ is the ``response variable''---what the observer
 records. For example, $y=1$ means ``detected'' and $y=0$ means ``not
-detected'', but many other types of responses are possible.
+detected'', but many other types of responses are possible
+(Chapt~\ref{chapt.poisson-mn}).
 A broad class of models for estimating density are unified by a
 hierarchical model involving explicit models for
 animal activity centers ${\bf s}$, movement outcomes ${\bf u}$, and
@@ -1424,14 +1436,14 @@ encounter data $y$.  In some cases, we don't observe $y$ but rather
 summaries of $y$, say $n(y)$, yet it might be convenient in such cases
 to retain an explicit focus on $y$ in terms of model construction.
 We thus introduce a sequence of models---a hierarchical model---to
-relate these random variables, which can be written compactly as
+relate these random variables, which can be written as
 %and it goes something like this:
 % {\small
 % \begin{verbatim}
 % # NEED A graphic made out of this somehow
 % # possibly a Directed Acyclic Graph with some parameters,
 % # Fixed nodes, and stochastic nodes, might look cool.
-
+%
 % Home range center    movement model   observation model  [data summarization]
 %    g(s)                  h(u|s)            f(y|u)	        n(y)
 % \end{verbatim}
@@ -1443,17 +1455,21 @@ relate these random variables, which can be written compactly as
 [n(y)|y][y|{\bf u}][{\bf u}|{\bf s}][{\bf s}].
 \label{modeling.eq.nyus}
 \end{equation}
-Every model we talk about in this book has either all of these
-components or a subset of them. A full description of these four model
+%Not shown here is a model for the number of activity centers,
+%i.e. population size, $N$. In
+Every model we talk about in this book has
+%either all of these components or
+a subset of these components (Table~\ref{modeling.tab.fam}), although we never fit the
+full model because there is
+rarely a reason to do so. A full description of these four model
 components is the subject of this book, and we will not pretend to
 condense hundreds of pages of material into the next few
-paragraphs. However, we give a cursory treatment of these model
-components at this point to whet the appetite and provide some
-indication of where we are going. Don't worry if some of this doesn't
-make sense at this point---we will walk through all of this material
+paragraphs. However, we give a cursory overview here to whet the appetite and provide some
+indication of where we are going. Don't worry if some of this material
+doesn't sink in just yet---we will walk through it
 slowly in the subsequent chapters.
 
-Let's begin with the model $[{\bf s}]$. This model describes the
+Let's begin with the model $[{\bf s}]$ that describes the
 distribution of the activity centers of each animal in the
 spatial region $\mathcal{S}$.
 As will be explained in Chapt.~\ref{chapt.scr0} and
@@ -1463,17 +1479,19 @@ be homogeneous if density is constant throughout $\mathcal{S}$. In the
 later case, we can write $[{\bf s}] = \text{Unif}(\mathcal{S})$, which
 is to say that the $N$ activity centers are uniformly distributed in
 the polygon $\mathcal{S}$. A point process is also a model for the
-number of individual in the population $N$. So, to be precise, we
-should write the model as $[{\bf s}|\mu]$ where $\mu$ is an intensity
+number of individual in the population $N$. So
+%, to be precise, we should
+could write %the model as
+$[{\bf s}|\mu]$ where $\mu$ is an intensity
 parameter defined as the number of points per unit area. In other
 words, $\mu$ is population density, and we often model population size
-as either $N \sim \text{Pois}(\mu A(\mathcal{S})$, where
+as either $N \sim \text{Pois}(\mu A(\mathcal{S}))$, where
 $A(\mathcal{S})$ is the area of the state-space; or,
 $N \sim \text{Bin}(M, \psi)$ where $\psi = \mu A(\mathcal{S}) / M$ and
 $M$ is some large integer used simply as a convenience measure when
 conducting Bayesian analysis. As it turns out, there is very little
-practical difference in the
-Poisson prior versus a binomial prior for $N$.
+practical difference in the Poisson prior versus a binomial prior for
+$N$.
 
 The model $[\mathbf{u}|\mathbf{s}]$ describes the locations of
 animals conditional on their activity center. In the original
@@ -1482,15 +1500,20 @@ was intentionally ignored. Indeed when movement is not of direct
 interest, or when $\bf s$ is defined in a way not related to a home
 range center, it may be preferable to ignore this model component
 \citep{borchers:2011}. In other cases, we might use an explict model
-such as the bivariate normal model.
+such as the bivariate normal model \citep{royle_young:2008}.
 
-The third component of the generic SCR model describes how the
+The third component of the model, $[y|{\bf u}]$, describes how the
 observed data---the so-called capture-histories---arise conditional on
-\textit{either} $\mathbf{s}$ or $\bf u$. This encounter model
+the locations of animals. However, as mentioned previously, most SCR
+models do not contain a movement model
+(Table~\ref{modeling.tab.family}). Thus, we typically entertain
+the model $[y|{\bf s}]$ instead of $[y|{\bf u}]$.
+%\textit{either} $\mathbf{s}$ or $\bf u$.
+This encounter model
 generally has at least two parameters, say $p_0$ and $\sigma$, describing the probability of
 capturing or detecting an individual given the distance between $\bf
-s$ or $\bf u$ and the trap or the observer. The most basic model is
-often called the half-normal model, although we prefer calling it the
+s$ and the trap. The most basic model is
+often called the half-normal model, although we typically refer to it as the
 Gaussian model since, in two-dimensional space, it is the kernel of a
 bivariate normal distribution. The model is
 $p_{ij} = p_0\exp(-\|{\bf x}_j - {\bf s}_i\| / (2\sigma^2)$ where
@@ -1498,32 +1521,34 @@ $p_0$ is the capture probability when the activity center occurs at
 the trap location ${\bf x}_j$, and $\sigma$ is a spatial scale
 parameter determining how rapidly capture probability declines with
 distance. One common design leads to the model
-$[y_{ij}|{\bf s_i}] =  \text{Bern}(p_{ij})$. Chapt.~\ref{chapt-} and
-Chapt.~\ref{} describe many other possible encounter models.
+$[y_{ij}|{\bf s_i}] =  \text{Bern}(p_{ij})$. Chapt.~\ref{chapt.scr0} and
+Chapt.~\ref{chapt.poisson-mn} describe many other possible encounter models.
 
 When individuals are marked by biologists or have natural markings
-permitting individual recongnition, then $y_{ij}$ is the observed
+permitting individual recongnition, $y_{ij}$ is the observed
 data. However, some or all of the individuals cannot be uniquely
 identified, then we cannot record this individual-specific encounter
 history data. Instead, the data might be simply the number of
 detections at a trap or perhaps binary detection/non-detection data at
-each trap. We call this reduced information data $n(y)$, and
+each trap on each survey occasion. We call this reduced information data $n(y)$, and
 Chapt.~\ref{chapt.unmarked} and Chapt.~\ref{chapt.resight} describe
-models for $[n(y)|y]$. The basic strategy is to view $y$ as ``missing
+models for $[n(y)|y]$ that still allow for density estimation. The
+basic strategy is to view $y$ as ``missing
 data'' and to use the spatial correlation in the counts, or other
 sources of information, to provide information about these latent
 encounter histories.
 
 Eq.~\ref{modeling.eq.nyus} is a compact description of the the basic components of a
-SCR model, but it is also very vague. The previous four paragraphs
+SCR model, but it is also rather vague. The previous four paragraphs
 added enough extra detail so that we can now describe a specific SCR
 model. Perhaps the simplest SCR model is this:
-\begin{gather*}
-N \sim \text{Poisson}(\mu A(\mathcal{S})) \\
-{\bf s}_{i} \sim \mbox{Uniform}({\cal S}) \\
-%{\bf u}_{ik} | {\bf s}_{i} \sim \mbox{Normal}({\bf s}_{i}, \sigma) \\
-y_{ijk} | {\bf u}_{ik} \sim \mbox{Bernoulli}(p(\| x_j - u_{ik} \|)
-\end{gather*}
+\begin{gather}
+N \sim \text{Poisson}(\mu A(\mathcal{S})) \nonumber \\
+{\bf s}_{i} \sim \mbox{Uniform}({\cal S}) \label{modeling.eq.scr0} \\
+%{\bf u}_{ik} | {\bf s}_{i} \sim \mbox{Normal}({\bf s}_{i}, \sigma)
+%\nonumber \\
+y_{ijk} | {\bf s}_{i} \sim \mbox{Bernoulli}(p(\| x_j - s_{i} \|) \nonumber
+\end{gather}
 These ``assumptions'' are statistical statements of three basic hypotheses
 that (1) population size $N$ is Poisson distributed
 (2) activity centers are uniformly distributed in two-dimensional
@@ -1533,18 +1558,17 @@ and (3) capture probability is a funciton of the distance
 between the activity and the trap. Each of thse model components can be
 modified as needed to match specific hypotheses, study designs, and data
 structures. For example, spatial variation in abundance or density can
-be easily modeled as a function of covariates, and as previously
-noted, movement outcomes can be modeled explicitly.
+be easily modeled as a function of habitat covariates
+(Chapt.~\ref{chapt.state-space}). %, and movement outcomes can be modeled explicitly.
 %\begin{comment}
 
-We realize that many the model description in Eq.~\ref{} may not be
-self-evident to ecologists that are only beginning to explore the
-statistical aspects of the field. For those readers, simulation can
-help clarify the concepts, as demonstrated by the following ~\R code,
-which generates
-Fig.~\ref{modeling.fig.fig1}.
-% is an example of the whole
-%enchilada in which we make the following assumptions:
+We realize that many the model description in Eq.~\ref{modeling.eq.scr0} may not be
+self-evident to some ecologists. However, it is absolutely essential
+that one can understand such a model description---not just for being
+able to read this book, but also for understanding any statistical
+model in ecology. One of the best ways of familiarlizing oneself with
+this notation is to translate it into \R~code that simulates outcomes
+from the model. The following code is an example.
 \begin{small}
 \begin{verbatim}
 set.seed(36372)
@@ -1567,41 +1591,21 @@ for(i in 1:N) {
 }
 \end{verbatim}
 \end{small}
-
-\begin{comment}
-{\small
-\begin{verbatim}
-set.seed(36372)       # so that results can be reproduced
-N <- 10               # population size
-                      # create trap coordinates:
-x <- cbind(rep(seq(0.1,0.9,0.2), each=5), rep(seq(0.1,0.9,0.2), times=5))
-                      # generate individual home range centroids
-s <- cbind(runif(N), runif(N))
-                      # create nice graphic:
-plot(x, pch= "+", xlim=c(0,1), ylim=c(0,1), xlab="Easting", ylab="Northing")
-points(s, pch=16, col="blue")
-for(t in 1:5) {
-  points(cbind(rnorm(N, s[,1], 0.05), rnorm(N, s[,2], 0.05)), col="green",pch=20)
-}
-\end{verbatim}
-}
-\end{comment}
-%\end{comment}
-
-Fig. \ref{intro.fig.fig1} shows the results of executing these {\bf R} commands. The crosses
-in the figure are trap locations, the blue circles are the locations
-of each animal's activity center, and the green circles are animal
-locations at 5 points in time.  The resulting plot not only
-illustrates a simple state model for animal distribution and movement,
-but it also hints at the potential influence of the distance between
-animals and traps on the detection process. One would expect that the
-traps in the northern part of the study area would capture more
-animals than those in the south because fewer animals occur in the
-south and movements are small. Clearly the encounter rate will also
-depend upon the methods used to capture the animals, which we describe
-in the next section.  Spatial capture-recapture models provide a
-statistical formalization of these considerations.
-
+Fig. \ref{intro.fig.fig1} shows the results of this simulation from a
+basic, yet very useful, SCR model.
+% The crosses
+% in the figure are trap locations, the circles are the locations
+% of each animal's activity center, which are filled for individual's
+% that were actually detected.  The resulting plot not only
+% illustrates a simple state model for animal distribution and movement,
+% but it also hints at the potential influence of the distance between
+% animals and traps on the detection process. One would expect that the
+% traps in the northern part of the study area would capture more
+% animals than those in the south because fewer animals occur in the
+% south and movements are small. Clearly the encounter rate will also
+% depend upon the methods used to capture the animals, which we describe
+% in the next section.  Spatial capture-recapture models provide a
+% statistical formalization of these considerations.
 
 \begin{figure}
 \begin{center}
@@ -1610,11 +1614,13 @@ statistical formalization of these considerations.
 \end{center}
 \caption{Population of $N=69$ home-range centers ($\bf s$,
   circles) and 25 trap locations ($\bf x$, crosses). Line segments connect
-  activity centers to the traps where the individuals were detected.}
+  activity centers to the traps where the individuals were
+  detected. Here, as in many SCR models, movement outcomes ($\bf u$)
+  are ignored.}
 \label{modeling.fig.fig1}
 \end{figure}
 
-\subsection{This and That}
+\subsection{Varieties of SCR models}
 
 Although the full model including $u$ and $s$ fully describes the
 ecological process, in practice we usually work with reduced forms of
@@ -1721,6 +1727,26 @@ rather ``measurement error'' and (3) the third component is not a home
 range center but rather a movement outcome (``instantaneous
 location'').  Thus, while the models are structurally identically, the
 meaning and interpretation of quantities are distinct.
+
+
+\begin{table}
+  \centering
+  \caption{Spatial capture-recapture models and allies.}
+  \begin{tabular}{lll}
+    \hline
+    Description & Notation & Chapters \\
+    \hline
+    Queen bee            & $[n(y)|y][y|{\bf u}][{\bf u}|{\bf s}][{\bf s}]$ & --- \\
+    Distance sampling SCR hybrid & $[y|{\bf u}][{\bf u}|{\bf s}][{\bf s}]$ & --- \\
+    Standard SCR         & $[y|{\bf s}][{\bf s}]$ & \ref{chapt.scr0} \\
+    Distance sampling    & $[y|{\bf u}][{\bf u}]$ & --- \\
+    Search-encounter SCR & $[y|{\bf u}][{\bf u}|{\bf s}]$ & \ref{chapt.search} \\
+    Mark-resight SCR     & $[n(y)|y][y|{\bf s}][{\bf s}]$ & \ref{chapt.scr-unmarked,chapt.partialID} \\
+    \hline
+  \end{tabular}
+  \label{modeling.tab.fam}
+\end{table}
+
 
 %These are
 %mostly all semantic and conceptual distinctions which are easy to
@@ -1892,9 +1918,29 @@ hypotheses that may explain why animals move the way they do.
 
 Spatial capture-recapture models are hierarchical models, and hierarchical
 models are models of multiple random variables that are conditionally
-related. It is therefore very important that the basic rules of
+related. It is therefore important that the basic rules of
 modeling random variables are understood, and we hope that this chapter
 has made some of the basic concepts accessible to ecologists with
-rudimentary background in statistics. In some respects, it is possible
+rudimentary background in statistics. If some of this material still
+seems difficult to grasp, we recommend working with the
+provided \R~code, which is perhaps the best way of making the
+equations more tangible.
+
+In some respects, it is possible
 to understand the jist of SCR without knowing anything about marginal
-and conditional relationships. One can always ...
+and conditional relationships. One can always fit models using canned
+software and interpret the output without understanding the guts of
+the model or the details of the estimation process. For some applied
+ecologists, this may be perfectly fine, and this book is meant to be
+useful for both statistical novices and ecologists with more advanced
+quantiative skills. In most chapters, we begin with a basic conceptual
+discussion, then we explain
+the technical details that require an understanding of the concepts in
+this chapter, and finally we end with one or more worked examples. For
+those not interested in the technical details, we recommend focusing
+on the chapter introductions and the examples. However, taking the
+time to understand the concepts presented in this chapter can only
+increase one's ability to tackle the unique and complex problems that
+often present themselves when modeling spatial and temporal aspects of
+population dynamics.
+
