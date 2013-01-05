@@ -20,7 +20,7 @@ niter<-nrow(z)
 xg<-seq(Xl,Xu,,nx)
 yg<-seq(Yl,Yu,,ny)
 area<- (Xu-Xl)*(Yu-Yl)
- 
+
 Sxout2<-cut(Sxout[z==1],breaks=xg)
 Syout2<-cut(Syout[z==1],breaks=yg)
 
@@ -35,22 +35,22 @@ stat2<-statsim2<-stat<-statsim<-rep(NA,niter)
 for(i in 1:niter){
 #### this is wrong
 N<- sum(z[i,])
-D<- N/area 
+D<- N/area
 E<- N/( (nx-1)*(ny-1) )
 
 Dn<- table(cut(Sxout[i,][z[i,]==1],breaks=xg),cut(Syout[i,][z[i,]==1],breaks=yg))
 Dnv<-Dn[1:length(Dn)]
 
 E<-mean(Dnv)
-stat[i]<-(length(Dnv)-1)*(var(Dnv)/mean(Dnv))
+stat[i]<-  (var(Dnv)/mean(Dnv))
 stat2[i]<-   sum(   (sqrt(Dnv) - sqrt(E))^2 )
 
-Sxsim<-sample(G[,1],sum(z[i,]),replace=TRUE)
-Sysim<-sample(G[,2],sum(z[i,]),replace=TRUE)
+Sxsim<-runif(sum(z[i,]),Xl,Xu)
+Sysim<-runif(sum(z[i,]),Yl,Yu)
 
 Dnsim<- table(cut(Sxsim,breaks=xg),cut(Sysim,breaks=yg))
 Dnsimv<-Dnsim[1:length(Dnsim)]
-statsim[i]<- (length(Dnsimv)-1)*(var(Dnsimv)/mean(Dnsimv))
+statsim[i]<- (var(Dnsimv)/mean(Dnsimv))
 statsim2[i]<-  sum(   (sqrt(Dnsimv) - sqrt(E))^2)
 
 

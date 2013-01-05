@@ -64,17 +64,50 @@ wolvSCR0ms(y3d, traps, wsex, nb = 1000, ni = 2000, buffer = 2, M = 200, model = 
 }
 \examples{
 
-library("R2jags")
-library("scrbook")
-data(wolverine)
-traps<-wolverine$wtraps
-y3d <-SCR23darray(wolverine$wcaps,wolverine$wtraps)
-wsex<-wolverine$wsex
+# library("R2jags")
+# library("scrbook")
+# data(wolverine)
+#
+# These functions load libraries and data -- please read through them
+# Default to run with jags()
 
-toad1<-wolvSCR0ms(y3d,traps,wsex=wsex,nb=1000,ni=2000,buffer=2,M=200,model=1,parm="a")
-toad2<-wolvSCR0ms(y3d,traps,wsex=wsex,nb=1000,ni=2000,buffer=2,M=200,model=2,parm="a")
-toad3<-wolvSCR0ms(y3d,traps,wsex=wsex,nb=1000,ni=2000,buffer=2,M=200,model=3,parm="a")
-toad4<-wolvSCR0ms(y3d,traps,wsex=wsex,nb=1000,ni=2000,buffer=2,M=200,model=4,parm="a")
+## Run here with too FEW iterations -- increase to at least 10000 total
+##
+## This takes several hours to run
+## 
+ toad0<-wolvSCR0ms(nb=1000,ni=2000,buffer=2,M=200,model=0)
+ toad1<-wolvSCR0ms(nb=1000,ni=2000,buffer=2,M=200,model=1)
+ toad2<-wolvSCR0ms(nb=1000,ni=2000,buffer=2,M=200,model=2)
+ toad3<-wolvSCR0ms(nb=1000,ni=2000,buffer=2,M=200,model=3)
+ toad4<-wolvSCR0ms(nb=1000,ni=2000,buffer=2,M=200,model=4)
+ toad5<-wolvSCR0ms(nb=1000,ni=2000,buffer=2,M=200,model=5)
+
+# summary function to extract DIC info
+dev.smy<-function(a){
+b<-print(a)
+dev<-mean(a$BUGSoutput$sims.list$deviance)
+c(dev,b$pD,b$DIC,a$BUGSoutput$DICbyR)
+}
+
+# make a table
+rbind(dev.smy(toad0),dev.smy(toad1),dev.smy(toad2),dev.smy(toad3),dev.smy(toad4))
+
+# summary function for parameters
+parms.smy<-function(a){
+b<-print(a)
+b<- b$summary[,1:2]
+nam<-c("D","N","alpha0","alpha.sex","beta","beta.sex","sigma","psi","psi.sex","deviance")
+round(b[nam,],2)
+}
+
+# make a table
+cbind(parms.smy(toad0),parms.smy(toad1),parms.smy(toad2),parms.smy(toad3),parms.smy(toad4))
+
+
+
+
+
+
 
 }
 
