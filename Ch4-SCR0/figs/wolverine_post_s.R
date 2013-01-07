@@ -67,9 +67,9 @@ else{
 
 
 
-png("wolv_post_s.png",width=5.25,height=8.625, units="in", res=400)
+png("wolv_post_s.png",width=5.25,height=4.3, units="in", res=400)
 
-par(mfrow=c(2,1),mar=c(2,2,2,6))
+par(mfrow=c(1,1),mar=c(2,2,2,6))
 X<-wolverine$wtraps[,2:3]
 X[,1]<-(X[,1]-min(X[,1]))/10000
 X[,2]<-(X[,2]-min(X[,2]))/10000
