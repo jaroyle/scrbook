@@ -7,14 +7,14 @@ pGauss1
 blah blah
 }
 \usage{
-pGauss1(parms, D)
+pGauss1(parms, Dmat)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{parms}{
 %%     ~~Describe \code{parms} here~~
 }
-  \item{D}{
+  \item{Dmat}{
 %%     ~~Describe \code{D} here~~
 }
 }
@@ -49,12 +49,12 @@ pGauss1(parms, D)
 ##--	or do  help(data=index)  for the standard data sets.
 
 ## The function is currently defined as
-function (parms, D) 
+function (parms, Dmat) 
 {
     a0 <- parms[1]
     sigma <- parms[2]
     p <- plogis(parms[1]) * exp(-(1/(2 * parms[2] * parms[2])) * 
-        D * D)
+        Dmat * Dmat)
     p
   }
 }

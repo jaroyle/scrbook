@@ -267,34 +267,16 @@ kernel.
 %various dependencies by writing $p_{ij}$ or sometimes $p_{\theta,ij}$,
 %understanding that $p_{ij}$ is actually a function of the various important
 %quantities.
-Whatever model we choose for encounter probability, we should always keep
-in mind that  the activity center for individual $i$, ${\bf s}_{i}$,
- is an unobserved random variable.  To be precise about
-this in the model,  we should express the observation model as
+Whatever model we choose for encounter probability, we should always
+keep in mind that the activity center for individual $i$, ${\bf
+  s}_{i}$, is an unobserved random variable.  To be precise about this
+in the model, we should express the observation model as
 \[
 y_{ij}|{\bf s}_{i} \sim \mbox{Binomial}(K, p({\bf s}_{i};\alpha_{1}))
 \]
 but sometimes, for notational simplicity, we abbreviate this by
 omitting some of the arguments to $p$.
 
-\begin{comment}
-The joint likelihood for the
-data, conditional on the collection of individual activity centers,
-can be expressed as
-\[
-{\cal L}(\alpha_{1} | \{ {\bf y}_{i},{\bf s}_{i} \}_{i=1}^{N})
- =  \prod_{i} \prod_{j} \mbox{Bin}(y_{ij}|p_{ij}(\alpha_{1}))
-\]
-If we switch the indices on the product operators, we recognize that SCR likelihood (conditional on ${\bf s}$) is the product of $J$
-{\it independent} capture-recapture likelihoods - one for each trap.
-However, the data have a distinct ``repeated measures'' type of structure, with
-each of the $j$ likelihood contributions for each individual being
-grouped by individual. Thus, we cannot analyze the model
-meaningfully by $J$ trap-specific models. In classical repeated measures
-types of models, we accommodate the group structure of the data using
-random effects (random individual or group level variables). For SCR
-models we take the same basic approach, which we develop subsequently.
-\end{comment}
 
 
 
@@ -703,30 +685,34 @@ package that computes the home range area for any encounter model and
 prescribed parameter values. The help file for \mbox{\tt hra} has an
 example of simulating some data.  The following commands illustrate
 this calculation for two different bivariate normal models of space
-usage: XXXXXXXXX ANDY IS HERE XXXXXXXXXXXXXXXX
+usage: 
 % XXXX Can you add comments to this code? In the text, you have not been
 % using "D" for distance, so you might consider changing this XXXX
 {\small
 \begin{verbatim}
-pGauss2<-function(parms,D){
+##
+## Define encounter probability model as R function
+##
+pGauss2<-function(parms,Dmat){
   a0<-parms[1]
   sigma<-parms[2]
-  lp<-  parms[1] -(1/(2*parms[2]*parms[2]))*D*D
+  lp<-  parms[1] -(1/(2*parms[2]*parms[2]))*Dmat*Dmat
   p<- 1-exp(-exp(lp))
   p
 }
 
-pGauss1<-function(parms,D){
+pGauss1<-function(parms,Dmat){
   a0<-parms[1]
   sigma<-parms[2]
-  p<-  plogis(parms[1])*exp( -(1/(2*parms[2]*parms[2]))*D*D )
+  p<-  plogis(parms[1])*exp( -(1/(2*parms[2]*parms[2]))*Dmat*Dmat )
   p
 }
 
 xlim<-c(0,6)
 ylim<-c(0,6)
 
-> # execute hra with sigma = .3993
+## execute hra with sigma = .3993
+##
 > hra(pGauss1,parms=c(-2,.3993),plot=FALSE,xlim,ylim,ng=500,tol=.0005)
 [1] 0.9784019
 radius to achieve 95% of area:  0.9784019
@@ -734,8 +720,8 @@ home range area:  3.007353
 [1] 3.007353
 >
 >
-> ##  analytic solution
-> # true sigma to produce area of 3
+##  analytic solution
+##  true sigma to produce area of 3
 > sqrt(3/pi)/sqrt(5.99)
 [1] 0.3992751
 \end{verbatim}
@@ -752,8 +738,9 @@ find that it has no effect.
   that it shouldn't have an affect (except somewhat intuitively
   perhaps).
 \end{comment}
-The actual
-(analytic) value of $\sigma$ that produces a home range area of 3.0 is
+The 
+true (analytic)
+ value of $\sigma$ that produces a home range area of 3.0 is
 $0.3993$ which is the value we initially plugged in to the \mbox{\tt
   hra} function. We can improve on the numerical approximation to home range
 area (get it closer to $3.0$) by increasing
@@ -1047,22 +1034,7 @@ augmentation. If you increase the size of ${\cal S}$, then there are more
 individuals to account for and therefore the size of the augmented
 data set $M$ must increase. This has computational implications.
 
-\begin{comment}
-We have been told that one can carry-out non-Bayesian analyses of SCR
-models without having to specify the state-space of the point process
-or perhaps while only specifying it imprecisely.  This assertion is
-incorrect. We assume people are thinking this because {\it they} don't
-have to specify it explicitly because someone else has done it for
-them in a convenient software package, e.g., perhaps that does
-likelihood analysis. Even to do
-integrated likelihood (see Chapt. \ref{chapt.mle}) we have to integrate the
-conditional-on-${\bf s}$ likelihood over some 2-dimensional space.  It might
-work that the integration can be done from $-\infty$ to $+\infty$ but
-that is a mathematical artifact of specific detection functions, and
-not a general feature. Moreover, this amounts to
-an implicit definition of a state-space that doesn't make biological
-sense in any real context. %%%, even though it may in fact be innocuous.
-\end{comment}
+
 
 \subsubsection{Connection to Model  $M_h$}  \label{scr0.sec.scrmh}
 
@@ -1072,10 +1044,7 @@ heterogeneity in encounter probability is induced by both the effect
 of distance in the model for detection probability and also from
 specification of the state-space. Hence, the state-space  is an
 explicit element of the model.
-To understand this, suppose we have a random
-effect % XXXX Are we avoiding the term "activity center" at this
-       % point? XXXX
-with some prior distribution:
+To understand this, suppose activity centers have the uniform distribution:
 \[
 {\bf s} \sim \mbox{Uniform}({\cal S})
 \]
@@ -1191,16 +1160,14 @@ ntraps<-nrow(traplocs)
 # define state-space of point process. (i.e., where animals live).
 # "buffer" just adds a fixed buffer to the outer extent of the traps.
 buffer<-2
-Xl<-min(traplocs[,1] - buffer)
-Xu<-max(traplocs[,1] + buffer)
-Yl<-min(traplocs[,2] - buffer)
-Yu<-max(traplocs[,2] + buffer)
+xlim<-c(min(traplocs[,1] - buffer),max(traplocs[,1] + buffer))
+ylim<-c(min(traplocs[,2] - buffer),max(traplocs[,2] + buffer))
 
 N<-100   # population size
 K<- 20   # number nights of effort
 
-sx<-runif(N,Xl,Xu)    # simulate activity centers
-sy<-runif(N,Yl,Yu)
+sx<-runif(N,xlim[1],xlim[2])    # simulate activity centers
+sy<-runif(N,ylim[1],ylim[2])
 S<-cbind(sx,sy)
 D<- e2dist(S,traplocs)  # distance of each individual from each trap
 
@@ -1334,10 +1301,8 @@ nind<-nrow(y)
 X<-data$traplocs
 J<-nrow(X)   # number of traps
 K<-data$K
-Xl<-data$xlim[1]
-Yl<-data$ylim[1]
-Xu<-data$xlim[2]
-Yu<-data$ylim[2]
+xlim<-data$xlim
+ylim<-data$ylim
 \end{verbatim}
 
 Note that we specify \mbox{\tt discard0 = FALSE} so that we have a
@@ -1354,8 +1319,8 @@ cat("
  alpha1 \mytilde dnorm(0,.1)
  sigma<- sqrt(1/(2*alpha1))
  for(i in 1:N)\{  # note N here because N is KNOWN in this example
-    s[i,1] \mytilde dunif(Xl,Xu)
-    s[i,2] \mytilde dunif(Yl,Yu)
+    s[i,1] \mytilde dunif(xlim[1],xlim[2])
+    s[i,2] \mytilde dunif(ylim[1],ylim[2])
     for(j in 1:J)\{
       d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
       y[i,j] \mytilde dbin(p[i,j],K)
@@ -1383,14 +1348,14 @@ the state-space but, for the observed individuals, we replace those
 values by each individual's mean trap coordinate for all encounters
 {\small
 \begin{verbatim}
-sst<-cbind(runif(nind,Xl,Xu),runif(nind,Yl,Yu))  # starting values for s
+sst<-cbind(runif(nind,xlim[1],xlim[2]),runif(nind,ylim[1],ylim[2]))  # starting values for s
 for(i in 1:nind){
 if(sum(y[i,])==0) next
 sst[i,1]<- mean( X[y[i,]>0,1] )
 sst[i,2]<- mean( X[y[i,]>0,2] )
 }
 
-data <- list (y=y,X=X,K=K,N=nind,J=J,Xl=Xl,Yl=Yl,Xu=Xu,Yu=Yu)
+data <- list (y=y,X=X,K=K,N=nind,J=J,xlim=xlim,ylim=ylim)
 inits <- function(){
   list (alpha0=rnorm(1,-4,.4),alpha1=runif(1,1,2),s=sst)
 }
@@ -2736,10 +2701,15 @@ the desired summaries. We demonstrate that in this section.
 
 \subsection{Realized vs. Expected Density}
 
+
+XXX For wolverine data produce posterior of both E[N] and N itself XXXXXXX
+E[D] = E[N]/area = (psi*M/area)*newarea
+
+
 In some problems, there will be interest in distinguishing between 
 the size of a specific population, usually the one under study, and
 its expected value, which might serve as a guess at the size of a
-hypothetical or unsampled population. The former is usually called the
+hypothetical or unsampled population \citep{efford_fewster:2012}. The former is usually called the
 {\it realized} population size.
 
 In the model we've developed so far, we suppose that our population
@@ -2776,12 +2746,14 @@ because there should be some binomial variation added in............
 \subsection{Constructing Density Maps}
 \label{scr0.sec.mapping}
 
-We can make a spatial density plot by
-tallying up the number of activity centers ${\bf s}_{i}$ in pixels of
-arbitrary size and then producing a nice multi-color spatial plot of
-those.
-Specifically, let $B({\bf x})$ indicate a pixel of arbitrary size centered at
-${\bf x}$ then
+Because SCR models are spatially-explicit, it is natural to want to
+summarize the results of fitting a model by producing a map of
+density.  Using Bayesian analysis by MCMC, it is most easy to make a
+map of {\it realized} density.  We can do this by tallying up the
+number of activity centers ${\bf s}_{i}$ in pixels of arbitrary size
+and then producing a nice multi-color spatial plot of the result.
+Specifically, let $B({\bf x})$ indicate a pixel centered at ${\bf x}$
+then
 \[
 N({\bf x})=\sum_{i=1}^{M} I({\bf s}_{i} \in B({\bf x}))
 \]
@@ -2795,10 +2767,9 @@ appropriate Monte Carlo average (see Chapt.  \ref{chapt.glms}).
 % XXXX Another good time to discuss realized vs expected N (or D) and
 % reference the recent Efford and Fewster paper. XXXX
 
-One thing to be
-careful about, in the context of models in which $N$ is unknown, is
-that, for each MCMC iteration $m$, we only tabulate those activity
-centers which correspond to individuals in the sampled
+One thing to be careful about, in the context of models in which $N$
+is unknown, is that, for each MCMC iteration $m$, we only tabulate
+those activity centers which correspond to individuals in the sampled
 population, i.e., for which the data augmentation variable $z_{i} =
 1$.  In this case, we take all of the output for MCMC iterations
 $m=1,2,\ldots,\mbox{\tt niter}$ and compute this summary:
@@ -2813,8 +2784,8 @@ plot from the MCMC output.
 {\flushleft \bf Step 1:} Define the center points of each pixel $B({\bf
   x})$, or point at which local density will be estimated:
 \begin{verbatim}
-xg<-seq(Xl,Xu,,50)
-yg<-seq(Yl,Yu,,50)
+xg<-seq(xlim[1],xlim[2],,50)
+yg<-seq(ylim[1],ylim[2],,50)
 \end{verbatim}
 
 {\flushleft \bf Step 2:} Extract the MCMC histories for the activity
@@ -2876,16 +2847,19 @@ can always specify the $x$ and $y-$ labels explicitly as we did above.
 \mbox{\tt scrbook}), which uses
 the function \mbox{\tt image.scale()}.
 The \mbox{\tt spatial.plot} function requires arguments of point
-locations and the resulting value to be displayed:
+locations and the resulting value to be displayed. A simplified
+version of this function is as follows:
 \begin{verbatim}
-spatial.plot<- function(x,y){
+> spatial.plot<- function(x,y){
  nc<-as.numeric(cut(y,20))
  plot(x,pch=" ")
  points(x,pch=20,col=topo.colors(20)[nc],cex=2)
  image.scale(y,col=topo.colors(20))
-}
+ }
+
 # To execute the function do this:
-spatial.plot(cbind(xg,yg), Dn/nrow(z))
+#
+> spatial.plot(cbind(xg,yg), Dn/nrow(z))
 \end{verbatim}
 
 \subsection{Example: Wolverine density map}
@@ -2893,16 +2867,14 @@ spatial.plot(cbind(xg,yg), Dn/nrow(z))
 We return to the wolverine study which took place in 2008 in SE Alaska
 (Fig. \ref{scr0.fig.wolverinelocs}) and we produce a density map of
 wolverines from that analysis. We include the function \mbox{\tt
-  SCRdensity} which requires a specific data structure as shown
-below.
-We used the posterior output from the wolverine model fitted previously
-to compute a relatively coarse version of a density map, using 100
-pixels in a $10 \times
-10$ grid (Fig. \ref{scr0.fig.density} top panel) and using 900 pixels
-arranged in
- a $30 \times 30$
-grid (Fig. \ref{scr0.fig.density} lower panel) for a fine-scale map. The {\bf R} commands for
-producing such a plot (for short MCMC run) are as follows:
+  SCRdensity} which requires a specific data structure as shown below.
+We used the posterior output from the wolverine model fitted
+previously to compute a relatively coarse version of a density map,
+using 100 pixels in a $10 \times 10$ grid (Fig. \ref{scr0.fig.density}
+top panel) and using 900 pixels arranged in a $30 \times 30$ grid
+(Fig. \ref{scr0.fig.density} lower panel) for a fine-scale map. The
+{\bf R} commands for producing such a plot (for short MCMC run) are as
+follows: 
 {\small
 \begin{verbatim}
 library(scrbook)
@@ -2922,7 +2894,7 @@ expressed in units of individuals per $100$ km$^2$, while the area of
 the pixels is about 103.7 $km^2$ and 11.5 km$^2$, respectively. That
 calculation is based on:
 \begin{verbatim}
-> total.area<- (Yu-Yl)*(Xu-Xl)*100
+> total.area<- (ylim[2]-ylim[1])*(xlim[2]-xlim[1])*100
 > total.area/(10*10)
 [1] 103.7427
 > total.area/(30*30)
@@ -2988,26 +2960,43 @@ out, which we discuss in the next section.
 \end{comment}
 
 
-\subsection{Estimating where an individual lives}
+\subsection{Predicting  where an individual lives}
 
-A problem related to producing a density map, is producing a map of
-where a specific individual's activity center is located. 
+The density maps in the previous section show the expected number of
+individuals per unit area.  A closely related problem is that of
+producing a map of the probable location of a specific individual's
+activity center. 
 For any observed encounter history, we can easily generate a posterior
-distribution of ${\bf s}_{i}$ for individual $i$ and produce a
-posterior density surface of those individuals. [see Fig. XXXXXX]. 
+distribution of ${\bf s}_{i}$ for individual $i$.
 In addition, for an individual that is {\it not} captured, we can use
 the MCMC output to produce a corresponding plot of where such an
-individual might live, say ${\bf s}_{n+1}$ [see Fig. XXXXX].   Obviously, all such
+individual might live, say ${\bf s}_{n+1}$.   Obviously, all such
 uncaptured individuals (for $i=n+1,\ldots,N$) should have the same posterior distribution.
-
-A few notes:
-the posterior distributions of both are affected by
+To illustrate,
+ we show the posterior distribution of ${\bf s}_{1}$, the
+activity center for the individual labeled 1 in the data set, in Fig. \ref{scr0.fig.guy1}. This
+individual was captured a single time at trap 30 which is circled in
+Fig. \ref{scr0.fig.guy1}.  We see that 
+the posterior distribution is affected by 
  traps of capture {\it and} traps of
-non-capture in fairly intuitive ways. 
+non-capture in fairly intuitive ways.  In particular, because there
+are other traps in close proximity to trap 30 which individual 1 was
+{\it not} captured, the model pushes  it's activity center away from
+the trap array.
+The help file for \mbox{\tt SCRdensity} shows how to calculate Fig. \ref{scr0.fig.guy1}.
 
 
-
-
+\begin{figure}[ht]
+\begin{center}
+\includegraphics[height=3in,width=3.375in]{Ch4-SCR0/figs/wolv_post_s}
+\end{center}
+\caption{
+Posterior probability distribution of ${\bf s}_{1}$, the activity
+center for individual 1 in the wolverine data set. The trap of capture
+(trap 30) is circled. 
+}
+\label{scr0.fig.guy1}
+\end{figure}
 
 
 \section{Effective Sample Area}
@@ -3066,7 +3055,7 @@ So to compute ESA for a model we  plug-in $\mathbb{E}(n)$ into the equation to g
 % D(x)p(x), and perhaps reference the IPP chapter. XXXX
 %These are good points. You can do this with N/A or E[N]/A it doesn't matter
 % -- one is realized, the other is expected. Right?
-% About D(x) -- I agree. We could have that generality. I'll add text
+% About D(x) -- I agree. We could have that generality. But is it necessary?
 Imagine our habitat mask for the wolverine data, or the bins we just
 used to produce a density map, then we can write $\mathbb{E}(n)$
 according to
@@ -3187,9 +3176,11 @@ connection a little bit more in chapter XXX XYZ.
 
 \section{ Summary and Outlook }
 
-We have emphasized in this chapter that our basic ``model SCR0''
-is an ordinary capture-recapture model for
-closed populations, but augmented with a set
+We have emphasized in this chapter that our basic ``model SCR0'' which
+assumes that encounters of individuals in each trap are independent
+Bernoulli trials, 
+is an ordinary capture-recapture model like model $M_0$, 
+ but augmented with a set
 of latent individual effects, ${\bf s}_{i}$, which relate encounter
 probability to some sense of individual location. SCR models are
 therefore a type of individual covariate model (as introduced in
@@ -3198,27 +3189,39 @@ individual covariate.
 Such models are not too dissimilar from standard GLMMs used throughout
 statistics and, therefore, we
 find that they are  easy to analyze using standard MCMC
-methods encased in black boxes such as {\bf WinBUGS} or {\bf JAGS} and
-no doubt other packages. We find also that they are easy to analyze using
+methods encased in black boxes such as {\bf WinBUGS} or {\bf JAGS}. 
+We will also see that they are easy to analyze using
 likelihood methods, which we address in Chapt. \ref{chapt.mle}.
 
 Formal consideration of the collection of individual locations $({\bf
-  s}_{1}, \ldots, {\bf s}_{N})$ in the model is fundamental to all of
+  s}_{1}, \ldots, {\bf s}_{N})$  is fundamental to all of
 the models considered in this book. In statistical terminology, we
 think of the collection of points $\{ {\bf s}_{i} \}$ as a realization of a
-point process. Part of the promise, and ongoing challenge, of SCR
+point process. 
+Because SCR models formally link individual encounter history data to
+an underlying point process, we can obtain formal inferences about the
+point process. For example, we showed how to produce a density
+map (Fig. \ref{scr0.fig.density}). We can do
+traditional point process analyses such as testing for
+``complete spatial randomness''
+(CSR) (see Chapt.  \ref{chapt.gof}),
+calculation of Ripley's K-functions,
+and related point process summaries \citep{illian_etal:2008}.
+
+Part of the promise, and ongoing challenge, of SCR
 models is to develop models that reflect interesting biological
 processes, for example interactions among points or temporal dynamics
-in point locations.  Here we considered the simplest possible point
+in point locations.  In this chapter  we considered the simplest possible point
 process model -- the points are independent and uniformly
 (``randomly'') distributed over space. Despite the simplicity of this
-assumption, it should suffice in many applications of SCR models
-although we do address generalizations of this model in later
+assumption, it should suffice in many applications of SCR models, 
+although we do address generalizations in later
 chapters. Moreover, even though the {\it prior} distribution on the
 point locations is uniform, the realized pattern may deviate markedly
 from uniformity as the observed encounter data provide information to
-impart deviations from uniformity. Thus, the estimated density map
-will typically appear distinctly non-uniform.  As a general rule,
+impart deviations from uniformity. Thus,  estimated density maps
+will typically appear distinctly non-uniform (as we saw in the
+wolverine example).  As a general rule,
 information in the data will govern estimates of individual point
 locations so even fairly complex patterns of non-independence or
 non-uniformity will appear in the data. That is, we find in
@@ -3233,21 +3236,13 @@ the point pattern will depend on the quantity of data, both number of
 individuals and captures per individual.  Because the point process is
 such an integral component of SCR models, the state-space of the point
 process plays an important role in developing SCR models. As we
-emphasized in this chapter, the choice of the state-space is part of
+emphasized in this chapter, the state-space is part of
 the model. It can have an influence on parameter estimates and other
 inferences such as model selection (see chapter \ref{chapt.gof}).
-Because SCR models formally link individual encounter history data to
-an underlying point process, we can obtain formal inferences about the
-point process. For example, we showed how to produce a density
-map (Fig. \ref{scr0.fig.density}). We can do
-traditional point process analyses such as testing for
-``complete spatial randomness''
-(CSR) (see Chapt.  \ref{chapt.gof}),
-calculation of Ripley's K-functions,
-and related point process summaries \citep{illian_etal:2008}.
 
-One of the things we've introduced in this chapter, which has not
-previously been discussed explicitly in the literature on SCR models,
+
+One concept we introduced in this chapter, which has not
+previously been discussed much in the literature on SCR models,
 is the manner in which the encounter probability model relates to a
 model of space usage by individuals. The standard SCR models of
 encounter probability can all be motivated as simplistic models of
@@ -3258,6 +3253,17 @@ underlying model of space usage and also suggests a direct extension
 to produce more realistic models, which we discuss in
 Chapt. \ref{chapt.rsf}.
 
+
+In later chapters, we consider some important extensions of this basic
+SCR model.  For example, we consider models that include covariates
+that vary by individual, trap, or over time (Chapt.
+\ref{chapt.covariates}), spatial covariates on density (Chapt.
+\ref{chapt.state-space}), open populations (Chapt. \ref{chapt.open}),
+and methods for model assessment and selection
+(Chapt. \ref{chapt.gof}) among other topics.  We also consider
+technical details of Bayesian (Chapt.  \ref{chapt.mcmc}) and maximum
+likelihood (Chapt.  \ref{chapt.mle}) estimation so that the interested
+reader can develop or extend their own methods to suit their needs.
 
 
 \begin{comment}
@@ -3288,17 +3294,3 @@ formality of their derivation, can be extended and generalized to a
 large variety of different situations, as we demonstrate in subsequent
 chapters.
 \end{comment}
-
-In the next few chapters we continue to work with this basic SCR
-design and model but consider some important extensions of the basic
-model.  For example, we consider
-extensions
-to  include covariates that vary by individual, trap, or over time
-(Chapt.  \ref{chapt.covariates}), spatial covariates on density
-(Chapt.  \ref{chapt.state-space}),
- open populations (Chapt. \ref{chapt.open}), model assessment and
- selection (Chapt. \ref{chapt.gof}) and other topics.
-We also consider technical details of Bayesian (Chapt.
-\ref{chapt.mcmc}) and  maximum
-likelihood (Chapt.  \ref{chapt.mle}) estimation so that the interested
-reader can develop or extend their own methods to suit their needs.

@@ -64,10 +64,10 @@ hra(func, parms, plot = TRUE, xlim, ylim, ng = 100, target.area = NULL, tol = 0.
 }
 \examples{
 
-pGauss1<-function(parms,D){
+pGauss1<-function(parms,Dmat){
 a0<-parms[1]
 sigma<-parms[2]
-p<-  expit(parms[1])*exp( -(1/(2*parms[2]*parms[2]))*D*D )
+p<-  expit(parms[1])*exp( -(1/(2*parms[2]*parms[2]))*Dmat*Dmat )
 p
 }
 
