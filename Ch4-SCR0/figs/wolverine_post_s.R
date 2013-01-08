@@ -7,8 +7,8 @@ unix.time(out<-wolvSCR0(y3d,traps,nb=1000,ni=2000,buffer=1,M=100,keepz=TRUE))
 
 Sx<-out$sims.list$s[,,1]
 Sy<-out$sims.list$s[,,2]
-w<- out$sims.list$z
-obj<-list(Sx=Sx,Sy=Sy,z=w)
+z<- out$sims.list$z
+obj<-list(Sx=Sx,Sy=Sy,z=z)
 SCRdensity(obj)
 
 allx<-Sx[1:length(Sx)]

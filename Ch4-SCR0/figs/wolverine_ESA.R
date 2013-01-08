@@ -3,7 +3,9 @@ figname<-"wolv_esa.png"
 
 ### not sure of dimensions to match the current version of the fig.
 
-png(figname,width=7,height=7, units="in", res=400)
+###png(figname,width=7,height=7, units="in", res=400)
+
+wolvESA<-function(noargs=TRUE){
 
 library("scrbook")
 data(wolverine)
@@ -34,16 +36,13 @@ Sgrid<-Sgrid/10000 # units of 10 km
 Dmat<-e2dist(traplocs,Sgrid)
 probs<-rep(1/nrow(Sgrid),nrow(Sgrid))
 
-  ncaps[i,j]~ dbin(mu[i,j],ndays[j]) 
-  p[i,j] <- p0*exp(-beta*dist2[i,j] )
-  dist2[i,j]<-  pow(Sgrid[s[i],1] - traplocs[j,1],2)   + pow(Sgrid[s[i],2] - traplocs[j,2],2) 
-
-# 2km values
+# posterior means of parameters for the 2km state-space
 p0<- 0.05
 sigma<- 0.62
 
 D<-e2dist(traplocs,Sgrid)
 netp<- rep(NA,nrow(Sgrid))
+
 for(i in 1:nrow(Sgrid)){
 
  d2<- (traplocs[,1]-Sgrid[i,1])^2 + (traplocs[,2]-Sgrid[i,2])^2
@@ -69,9 +68,9 @@ plot(x,pch=" ")
     image.scale(y, col = cc)
 
 
+}
 
 
-
-dev.off()
+##dev.off()
 
 
