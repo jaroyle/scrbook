@@ -2686,43 +2686,79 @@ sigma  0.66956  0.040989 3.055e-04      0.0015070
 
 One of the most useful aspects of SCR models is that they are
 parameterized in terms of individual locations -- i.e., {\it where}
-each individual lives -- and, thus, we can compute many useful or
+each individual lives -- and, thus, we can compute many useful and
 interesting summaries of the activity centers obtained from an MCMC
 simulation, including maps of density (the number of activity centers
 per unit area), estimates of $N$ for any well-defined polygon, or
 estimates of where the activity centers for specific individuals
-reside. In Bayesian analysis, obtaining such summaries is
-straightforward because, when we do analysis by MCMC, we need only
+reside. In Bayesian analysis, obtaining such summaries entails no
+added calculations, 
+ when we do analysis by MCMC, because we need only
 post-process the output for the individual activity centers to obtain
 the desired summaries. We demonstrate that in this section.
+Note that you have to be sure to 
+retain the MCMC history for the ${\bf s}$
+variables and also the data augmentation variables z in order to do
+some of the following analyses. 
+
 
 \subsection{Realized vs. Expected Density}
 
 
-XXX For wolverine data produce posterior of both E[N] and N itself XXXXXXX
-E[D] = E[N]/area = (psi*M/area)*newarea
 
 
-In some problems, there will be interest in distinguishing between 
-the size of a specific population, usually the one under study, and
-its expected value \citep{efford_fewster:2012}. The distinction
-between these two has to do with the scope of inference. On one hand,
-if we care only about a specific population, or {\it the} population
+In some problems, there will be interest in distinguishing between 3
+distinct estimates of population size or density: (1)
+the size of {\it the} specific population under study; (2) the size of
+some specific population that we didn't study; (3) Less often we care
+about the expected population size for some population.
+[some of this is covered by
+ \citep{efford_fewster:2012}]. Efford and Fewster called (1) the
+ realized population size and they also used the term expected
+ population size in an ambiguous manner. 
+
+Imagine 2 populations of tigers in 2 reserves. You do a camera
+trapping study on one of the reserves to estimate $N_{1}$ and you
+think the reserves are similar and homoegeneous so you're willing to
+apply a density estimate based on $N_{1}$ to the 2nd reserve. 
+
+
 that we're studying, then we probably want to make an inference about
 $N$, the realized population size. If, on the other hand, we wish to
 make a guess at the size of some population that wasn't sampled, then
 we probably want an estimate of $\mathbb{E}(N)$ for that population,
 possibly scaled by area. Thus, the same distinction between realized
-and expected value applies to {\it density} as well. Realized density
+and expected value applies to {\it density} as well, although it is
+not usually thought of as such. Realized density
 is $N/\mbox{area}$ whereas the expected density is
 $\mathbb{E}(N)/\mbox{area}$. 
 
 In the model we've developed so far, we suppose that our population
-size is $N$ and this is meant to be the realized population size of
-the population that was sampled. We might produce a density estimate
-based on this realized population size or we might produce a density
-estimate based on the expected value. The former should be less
-variable because a portion of the realized population is observed and,
+size is $N$ and this is meant to be the realized population size --
+i.e., of
+the population that was sampled. 
+
+Think of it this way: Suppose $N \sim Poisson(\lambda)$ and $\lambda$
+is known with certainty.
+If we have some patch of landscape with area $A$ then our best guess
+at the expected number of guys out there is $A\lambda$ and there is no
+variation in that at all. If we have estimated $\lambda$ somehow then
+ther eis some estimation error involved.   On the other hand suppose
+we really care about some realized population $N$ on a reserve that we
+never sampled but we suppose our estimate of $\lambda$ applies to that
+reserve. Then we care about predicting a new $N$, say $N_{new}$ just
+to be clear, and there is extra variation in that prediction.  In
+particular, $Var(N_{new}) = Var(N_{new} | \lambda) + Var(\lambda)$
+Var(E Nnew|lambda) + E Var Nnew|lambda = 
+Var(\hat{lambda}) + \hat{\lambda}
+### need to put an A in there. 
+
+Now suppose we care about a population that we just sampled, then N =
+n + n0 and because we observe a component of that population (n) there
+is no variation about that, and we only have variation about the n0 part.
+The variance of this realized N should be less than the variation of
+predicting a new N
+ because a portion of the population is observed and,
 hence, has no uncertainty with it (see Chapt. \ref{chapt.state-space}
 for more on this).  For studying a single population it probably only
 makes sense to ever consider the realized population of individuals. 
@@ -2743,6 +2779,8 @@ sampling in some adjacent landscape. In that case we might choose to
 estimate the size of this new population by the quantity $\psi M$. On
 the other hand, that under-states the variability of that prediction
 because there should be some binomial variation added in............
+
+
 
 % XXXX I would distinguish between realized and expected values of N
 % and density here. E[D] = (M*phi)/area, right? XXXX
@@ -2873,7 +2911,12 @@ version of this function is as follows:
 We return to the wolverine study which took place in 2008 in SE Alaska
 (Fig. \ref{scr0.fig.wolverinelocs}) and we produce a density map of
 wolverines from that analysis. We include the function \mbox{\tt
-  SCRdensity} which requires a specific data structure as shown below.
+  SCRdensity} which requires a specific data structure as shown
+below. In particular, we have to package up the MCMC history for the
+activity centers and the data augmentation variables $z$ into a
+list. This also requires that we add those variables to the
+parameters-to-be-monitored list when we pass things to {\bf BUGS}.
+
 We used the posterior output from the wolverine model fitted
 previously to compute a relatively coarse version of a density map,
 using 100 pixels in a $10 \times 10$ grid (Fig. \ref{scr0.fig.density}
@@ -2913,20 +2956,19 @@ calculation is based on:
 %\mbox{\tt SCRdensity} in the package \mbox{\tt scrbook}.
 
 A couple of things are worth noting: First is that as we move away
-from ``where the data live'' -- away from the trap array -- we see that
-the density approaches the mean density. This is a property of the
-estimator as long as the detection function decreases sufficiently
+from ``where the data live'' -- away from the trap array -- we see
+that the density approaches the mean density. This is a property of
+the estimator as long as the detection function decreases sufficiently
 rapidly as a function of distance.  Relatedly, it is also a property
 of statistical smoothers such as splines, kernel smoothers, and
 regression smoothers -- predictions tend toward the global mean as the
-influence of data diminishes.
- Another way to think of it is that it is
-a consequence of the prior -- which imposes uniformity, and as you get
-far away from the data, the predictions tend to the expected constant
-density under the prior.  The other thing to note about this map is
-that density is not $0$ over water (although the coastline is not
-shown). This might be perplexing to some who are fairly certain that
-wolverines do not like water. However, there is nothing about the
+influence of data diminishes.  Another way to think of it is that it
+is a consequence of the prior -- which imposes uniformity, and as you
+get far away from the data, the predictions tend to the expected
+constant density under the prior.  The other thing to note about this
+map is that density is not $0$ over water (although the coastline is
+not shown). This might be perplexing to some who are fairly certain
+that wolverines do not like water. However, there is nothing about the
 model that recognizes water from non-water and so the model predicts
 over water {\it as if} it were habitat similar to that within which
 the array is nested. But, all of this is OK as far as estimating
@@ -2952,8 +2994,10 @@ out, which we discuss in the next section.
 \begin{center}
 \includegraphics[height=3in,width=3.375in]{Ch4-SCR0/figs/density10x10}
 \end{center}
-\caption{Density of wolverines (individuals per 100 km$^2$) in SE Alaska in 2007 based on
-  model SCR0. Map grid cells are about 103.7 km$^2$ in area. Dots are the estimated activity centers of the  observed individuals.}
+\caption{Density of wolverines (individuals per 100 km$^2$) in SE
+  Alaska in 2007 based on model SCR0. Map grid cells are about 103.7
+  km$^2$ in area. Dots are the estimated activity centers of the
+  observed individuals.}
 \label{scr0.fig.density10x10}
 \end{figure}
 
@@ -2969,29 +3013,28 @@ out, which we discuss in the next section.
 
 
 \subsection{Predicting  where an individual lives}
+\label{scr0.sec.post_s}
 
 The density maps in the previous section show the expected number of
 individuals per unit area.  A closely related problem is that of
 producing a map of the probable location of a specific individual's
-activity center. 
-For any observed encounter history, we can easily generate a posterior
-distribution of ${\bf s}_{i}$ for individual $i$.
+activity center.  For any observed encounter history, we can easily
+generate a posterior distribution of ${\bf s}_{i}$ for individual $i$.
 In addition, for an individual that is {\it not} captured, we can use
 the MCMC output to produce a corresponding plot of where such an
-individual might live, say ${\bf s}_{n+1}$.   Obviously, all such
-uncaptured individuals (for $i=n+1,\ldots,N$) should have the same posterior distribution.
-To illustrate,
- we show the posterior distribution of ${\bf s}_{1}$, the
-activity center for the individual labeled 1 in the data set, in Fig. \ref{scr0.fig.guy1}. This
+individual might live, say ${\bf s}_{n+1}$.  Obviously, all such
+uncaptured individuals (for $i=n+1,\ldots,N$) should have the same
+posterior distribution.  To illustrate, we show the posterior
+distribution of ${\bf s}_{1}$, the activity center for the individual
+labeled 1 in the data set, in Fig. \ref{scr0.fig.guy1}. This
 individual was captured a single time at trap 30 which is circled in
-Fig. \ref{scr0.fig.guy1}.  We see that 
-the posterior distribution is affected by 
- traps of capture {\it and} traps of
-non-capture in fairly intuitive ways.  In particular, because there
-are other traps in close proximity to trap 30 which individual 1 was
-{\it not} captured, the model pushes  it's activity center away from
-the trap array.
-The help file for \mbox{\tt SCRdensity} shows how to calculate Fig. \ref{scr0.fig.guy1}.
+Fig. \ref{scr0.fig.guy1}.  We see that the posterior distribution is
+affected by traps of capture {\it and} traps of non-capture in fairly
+intuitive ways.  In particular, because there are other traps in close
+proximity to trap 30 which individual 1 was {\it not} captured, the
+model pushes it's activity center away from the trap array.  The help
+file for \mbox{\tt SCRdensity} shows how to calculate
+Fig. \ref{scr0.fig.guy1}.
 
 
 \begin{figure}[ht]
