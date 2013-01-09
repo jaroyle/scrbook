@@ -4,6 +4,10 @@ scrPID.tel<-function (n, X, y, M, locs,telID, obsmod = c("pois", "bern"),nmarked
 library(mvtnorm)
     obsmod <- match.arg(obsmod)
     nmarked <- match.arg(nmarked)
+
+    if(identical(nmarked, "unknown") & !missing(npics)) 
+	stop ("Need to know number of marked individuals if individual identification of marks is imperfect")
+
     R <- nrow(n)
     T <- ncol(n)
     S <- inits$S

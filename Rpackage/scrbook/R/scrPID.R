@@ -3,6 +3,10 @@ scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unk
 {
     obsmod <- match.arg(obsmod)
     nmarked <- match.arg(nmarked)
+
+    if(identical(nmarked, "unknown") & !missing(npics)) 
+	stop ("Need to know number of marked individuals if individual identification of marks is imperfect")
+
     J <- nrow(n)
     K <- ncol(n)
     S <- inits$S
