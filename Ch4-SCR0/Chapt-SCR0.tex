@@ -788,34 +788,39 @@ achieved by regarding the two sources of data as resulting from the
 same underlying process of space usage but telemetry data produce
 ``perfect'' observations, like always-on camera traps blanketing a
 landscape.  We use this idea to model the effect of a measured
-covariate at each pixel, say $z({\bf x})$, on home range size and geometry
+covariate at each pixel, say $C({\bf x})$, on home range size and geometry
 and, hence, the probability of encounter in traps.
 
 
 
-\begin{comment}  We assume the telemetry fixes are made sufficiently far apart
-so that the locations represent independent movement outcomes of
-individuals within their home range [note: otherwise we need to devise
-a model for correlated outcomes which is difficult, except in the
-bivariate normal situation].
+\subsection{Contamination due to behavioral response}
 
-Conceptually we regard these two data sets as independent. Let $y_{i}$
-denote the individual encounter history data for individual $i$ and let
-$u_{m,t}; t=1,\ldots,T]$ denote the telemetry locations for individual $m$. If
-we have a common model in terms of space usage then we can combine the
-two data sources to improve information.  Bivariate normal model is
-covered in chapter XXXX but we can also, I think, handle the general
-case: Some other detection probability models probably do correspond
-to specific bivariate distributions that can be evaluated and
-simulated from directly. In general, we can view the telemetry
-outcomes u[i,t] as realizations of a point process with intensity
-function
-\[
-\pi(x,s) = p(x,s)/[ \int_{x} p(x,s) ]
-\]
-Which allows us to analyze models with auxiliary data by MCMC or directly by likelihood.
-\end{comment}
-
+Interpretation of encounter probability models as models
+of animal home range and space usage can be complicated by a number of
+factors, including whether traps are baited or not. In the case of
+baited traps, this might lead to a
+bevhioralal response (Sec. \ref{covariates.sec.behavior}) could
+certain affect animal space usage. For example, if traps attract
+animals from a long distance, it could make typical home ranges appear
+larger than normal. 
+ More likely, in our view, it wouldn't
+change the typical size of a range but would change how individuals
+use their range e.g., by moving from baited trap to baited trap, so
+that observed movement distances of individuals are typically larger
+than normal. 
+In the help file for (e.g., \mbox{\tt ?ARL}) for asymptotic range
+length, 
+Efford writes this: 
+\begin{quote}
+Inclusion of these measures in the secr package does not mean they are
+recommended for general use! It is usually better to use a spatial
+parameter from a fitted model (e.g., sigma of the half-normal
+detection function). Even then, be careful that sigma is not
+'contaminated' with behavioural effects (e.g. attraction of animal to
+detector) or 'detection at a distance'.
+\end{quote}
+Caution is in order when interpreting parameters of
+encounter probability models. 
 
 
 \section{ The Binomial Point Process Model}
@@ -995,16 +1000,16 @@ is of the form
 where $\pi_{j}$ is the probability of detecting an individual in
 distance class $j$, which depends on parameters of the detection
 function (the manner of which is not relevant for the present
-discussion).  Choosing $B$ sufficiently large guarantees that $\mathbb{E}(y_{J})
-= 0$ and therefore the observed frequency in the ``last cell''
-contributes nothing to the likelihood, in regular situations in which
-the detection function decays monotonically with distance and prior
-density is constant.
-We can think of $B$ as being related to the state-space
-in an SCR model; $B \times L$, $L$ being the length of the transect, defines
-a rectangular state-space, ${\cal S}$. Thus, if we choose $B$ large enough, then
-we ensure that the expected trap-frequencies beyond $B$ will be 0, and
-thus contribute nothing to the likelihood.
+discussion).  Choosing $B$ sufficiently large guarantees that
+$\mathbb{E}(y_{J}) = 0$ and therefore the observed frequency in the
+``last cell'' contributes nothing to the likelihood, in regular
+situations in which the detection function decays monotonically with
+distance and prior density is constant.  We can think of $B$ as being
+related to the state-space in an SCR model; $B \times L$, $L$ being
+the length of the transect, defines a rectangular state-space, ${\cal
+  S}$. Thus, if we choose $B$ large enough, then we ensure that the
+expected trap-frequencies beyond $B$ will be 0, and thus contribute
+nothing to the likelihood.
 
 Sometimes our estimate of density can be affected by choosing ${\cal
   S}$ too small. However, this might be sensible if ${\cal S}$ is
@@ -1308,25 +1313,25 @@ corresponding to uncaptured individuals. Now, within an {\bf R} session, we
 can create the {\bf BUGS} model file and fit the model using the following
 commands.
 {\small
-\begin{Verbatim}[commandchars=\\\{\}]
+\begin{verbatim}
 cat("
- model \{
- alpha0 \mytilde dnorm(0,.1)
+ model{
+ alpha0 ~ dnorm(0,.1)
  logit(p0)<- alpha0
- alpha1 \mytilde dnorm(0,.1)
+ alpha1 ~ dnorm(0,.1)
  sigma<- sqrt(1/(2*alpha1))
- for(i in 1:N)\{  # note N here because N is KNOWN in this example
-    s[i,1] \mytilde dunif(xlim[1],xlim[2])
-    s[i,2] \mytilde dunif(ylim[1],ylim[2])
-    for(j in 1:J)\{
+ for(i in 1:N){     # note N here -- N is KNOWN in this example
+    s[i,1] ~ dunif(xlim[1],xlim[2])
+    s[i,2] ~ dunif(ylim[1],ylim[2])
+    for(j in 1:J){
       d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
-      y[i,j] \mytilde dbin(p[i,j],K)
+      y[i,j] ~ dbin(p[i,j],K)
       p[i,j]<- p0*exp(- alpha1*d[i,j]*d[i,j])
-    \}
-  \}
-\}
+    }
+  }
+}
 ",file = "SCR0a.txt")
-\end{Verbatim}
+\end{verbatim}
 }
 This model describes the half-normal detection model but it
 would be trivial to modify that to various others including the
@@ -1347,9 +1352,9 @@ values by each individual's mean trap coordinate for all encounters
 \begin{verbatim}
 sst<-cbind(runif(nind,xlim[1],xlim[2]),runif(nind,ylim[1],ylim[2]))  # starting values for s
 for(i in 1:nind){
-if(sum(y[i,])==0) next
-sst[i,1]<- mean( X[y[i,]>0,1] )
-sst[i,2]<- mean( X[y[i,]>0,2] )
+    if(sum(y[i,])==0) next
+    sst[i,1]<- mean( X[y[i,]>0,1] )
+    sst[i,2]<- mean( X[y[i,]>0,2] )
 }
 
 data <- list (y=y,X=X,K=K,N=nind,J=J,xlim=xlim,ylim=ylim)
@@ -2704,85 +2709,94 @@ some of the following analyses.
 
 \subsection{Realized vs. Expected Density}
 
-
-
-
-In some problems, there will be interest in distinguishing between 3
-distinct estimates of population size or density: (1)
-the size of {\it the} specific population under study; (2) the size of
-some specific population that we didn't study; (3) Less often we care
-about the expected population size for some population.
-[some of this is covered by
- \citep{efford_fewster:2012}]. Efford and Fewster called (1) the
- realized population size and they also used the term expected
- population size in an ambiguous manner. 
-
-Imagine 2 populations of tigers in 2 reserves. You do a camera
-trapping study on one of the reserves to estimate $N_{1}$ and you
+In Bayesian analysis of the SCR model, we estimate a parameter $N$
+which is the population size that was sampled. In the context of
+\citet{efford_fewster:2012} this is the {\it realized} population
+size. Conversely, sometimes we see estimates of {\it expected}
+population size reported, which is $E(N)$, although the distinction is
+not usually made explicitly in applications of SCR models. 
+In fact, there is a third type of inference objective that is relevant
+in pratice. To elaborate on this, consider a simple situation in which
+we are concerned about the tiger population in 2 distinct reserves in
+India.
+We do a camera trapping
+study on one of the reserves to estimate $N_{1}$ and you
 think the reserves are similar and homoegeneous so you're willing to
-apply a density estimate based on $N_{1}$ to the 2nd reserve. 
+apply a density estimate based on $N_{1}$ to the 2nd reserve. So lets
+do this $D_{1} = N_{1}/A_{1}$ and then $N_{2} = D_{1}*A_{2}$ should be
+an estimate of the realized population size for reserve 2. If we do
+this all as part of the MCMC algorithm then our shit should be tight, bro.
 
+I read the Efford and Fewster paper and I find this to be difficult to
+read. Frequentists have a tough time with the idea of predicting
+random variables and this is a good illustration of that.  In my mind
+there are 3 basic inference problems:
+\begin{itemize} 
+\item[(1)] What is the value of N for some population that was
+  sampled.  In this case, it is necessary that you account for the
+  fact that part of N was observed.  This is what Efford and Fewster
+  call "realized N"
+\item[(2)] You need to estimate N for some population that you didn't
+  sample but it is "similar" to the population that you have
+  information on.  In this case, you have to account for both
+  variation in having to estimate parameters of the distribution of N
+  AND you have to account for process variation in N (i.e., due to the
+  stochastic model of N).
+ 
+    As near as I can tell, Efford and Fewster did not talk about this problem.
+  \item[(3)] In some extremely limited cases (but probably none, in
+    reality) you might care about estimating the expected value of N,
+    E[N] = lambda or psi*M under data augmentation.  This is only
+    useful as a point estimator of N and doesn't have any information
+    about uncertainty in N. It is not useful, ever, from a practical
+    stand point.  Anyhow, this is what Efford and Fewster call
+    "Expected population size".
+\end{itemize} 
+ 
+If you do likelihood analysis then distinctions between different
+inference problems are often discussed as whether they're
+``conditional on $N$'' (realized) or not (expected).  The argument
+goes something like this: If you obtian an MLE of $N$, say $\hat{N}$,
+then the inference procedure tell us the variance of this {\it
+  conditional} on $N$. i.e., $Var(\hat{N}|N)$. This is fine, if we
+care about the specific value of $N$ in question.  However, if we
+don't care about the specific one in question then we want to
+``uncondition'' on $N$ to introduce a new variance component. Law of
+total variance says:
+\[ 
+ Var(\hat{N}) = E[ Var( \hat{N}|N)] +  Var E( \hat{N} |N)
+\]
+If $\hat{N}$ is unbiased then we say
+\[
+ Var(\hat{N}) = \sigma^{2}(\hat{N}) + Var(N)
+\]
+ the first part is estimation error and the 2nd part is process error.  
+In practice, we need to make some adjustment for having observed part
+of the population size $N=n+n_{0}$ but this is a technical detail not
+really an important conceptual one.  
+	
+If you do Bayesian analysis then none of this really matters. You
+decide if you care about $N$ or its expected value, or predictions of
+some ``new'' $N$,  and you tabulate
+the correct posterior distribution.
 
-that we're studying, then we probably want to make an inference about
-$N$, the realized population size. If, on the other hand, we wish to
-make a guess at the size of some population that wasn't sampled, then
-we probably want an estimate of $\mathbb{E}(N)$ for that population,
-possibly scaled by area. Thus, the same distinction between realized
-and expected value applies to {\it density} as well, although it is
-not usually thought of as such. Realized density
-is $N/\mbox{area}$ whereas the expected density is
-$\mathbb{E}(N)/\mbox{area}$. 
-
-In the model we've developed so far, we suppose that our population
-size is $N$ and this is meant to be the realized population size --
-i.e., of
-the population that was sampled. 
-
-Think of it this way: Suppose $N \sim Poisson(\lambda)$ and $\lambda$
-is known with certainty.
-If we have some patch of landscape with area $A$ then our best guess
-at the expected number of guys out there is $A\lambda$ and there is no
-variation in that at all. If we have estimated $\lambda$ somehow then
-ther eis some estimation error involved.   On the other hand suppose
-we really care about some realized population $N$ on a reserve that we
-never sampled but we suppose our estimate of $\lambda$ applies to that
-reserve. Then we care about predicting a new $N$, say $N_{new}$ just
-to be clear, and there is extra variation in that prediction.  In
-particular, $Var(N_{new}) = Var(N_{new} | \lambda) + Var(\lambda)$
-\begin{verbatim}
-Var(E Nnew|lambda) + E Var Nnew|lambda = 
-Var(\hat{lambda}) + \hat{\lambda}
-### need to put an A in there. 
-\end{verbatim}
-
-Now suppose we care about a population that we just sampled, then N =
-n + n0 and because we observe a component of that population (n) there
-is no variation about that, and we only have variation about the n0 part.
-The variance of this realized N should be less than the variation of
-predicting a new N
- because a portion of the population is observed and,
-hence, has no uncertainty with it (see Chapt. \ref{chapt.state-space}
-for more on this).  For studying a single population it probably only
-makes sense to ever consider the realized population of individuals. 
-
-Making a density map can be either of these things but with constant N
-as we've considered so far there is no point to estimate ``expected''
-density.  See chapt\ref{chapt.state-space}.
-
-The expected population size, using the data augmentation formulation
-of the model, is $\mathbb{E}(N) = \psi M$ which can be converted
-directly to expected density by dividing by area.
-
-A question that might arise is, what is the size of some new
-population that we didn't sample?  For the sake of elaboration,
-suppose we fitted our model to a grid of 10 x 10 traps of some sort
-and we want to predict population size on a grid that we might use for
-sampling in some adjacent landscape. In that case we might choose to
-estimate the size of this new population by the quantity $\psi M$. On
-the other hand, that under-states the variability of that prediction
-because there should be some binomial variation added in............
-
-
+The considerations for estimating density are the same. Density can be
+$N/area$ where $N$ is the realized population -- we understand it to
+be that, or else we would put an expectation operator around it like
+$\mathbb{E}(N)/area$.
+In any case,  the formula for this is slightly different depending on
+whether we assume $N$ has  a Poisson distribution or whether we do
+this by data augmentation. In the latter case $\psi$ is related to the
+point process intensity (see Chapt. \ref{chapt.state-space}) in the
+sense that, under the binomial point process model
+\[
+E[N] = M*\psi
+\]
+whereas, under the Poisson point process model
+\[
+E[N] = D*A
+\]
+so what we think of as ``density'', $D$, is $ D = M \psi /Area$.
 
 % XXXX I would distinguish between realized and expected values of N
 % and density here. E[D] = (M*phi)/area, right? XXXX
