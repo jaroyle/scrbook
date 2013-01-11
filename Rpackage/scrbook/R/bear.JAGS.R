@@ -4,7 +4,7 @@ bear.JAGS<-function(model=c('SCR0', 'SCR0exp', 'SCRt','SCRB','SCRb', 'SCRsex', '
 
 mod<-match.arg(model)
 
-if (mod =="SCRB" | mod == "SCRb") warning("Detection parameter alpha0 reported on logit scale; all other models report p0 (on real scale)")
+if (mod =="SCRB" | mod == "SCRb") warning("SCRb and SCRB: Detection parameter alpha0 reported on logit scale; all other models report p0 (on real scale)")
 
 ##data setup
 library(rjags)
