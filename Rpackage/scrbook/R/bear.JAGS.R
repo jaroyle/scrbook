@@ -4,6 +4,8 @@ bear.JAGS<-function(model=c('SCR0', 'SCR0exp', 'SCRt','SCRB','SCRb', 'SCRsex', '
 
 mod<-match.arg(model)
 
+if (mod =="SCRB" | mod == "SCRb") warning("Detection parameter alpha0 reported on logit scale; all other models report p0 (on real scale)")
+
 ##data setup
 library(rjags)
 library(scrbook)
@@ -301,7 +303,7 @@ D<-N/area
 
 
 data<-list(y=Yaug, M=M, K=K, C=C, J=ntraps, Xl=Xl, Yl=Yl, Xu=Xu, Yu=Yu, X=X, area=areaX)
-parameters<-c('psi','p0','alpha2','N', 'D', 'sigma')
+parameters<-c('psi','alpha0','alpha2','N', 'D', 'sigma')
 
 inits =  function() {list(z=c(rep(1,nind), rbinom(nz,1,0.5)), psi=runif(1), s=Sin,
 		 sigma=runif(1,2,3),alpha0=runif(1), alpha2=runif(1)) }
@@ -352,7 +354,7 @@ D<-N/area
 
 
 data<-list(y=Yaug, M=M, K=K, C=C, J=ntraps, Xl=Xl, Yl=Yl, Xu=Xu, Yu=Yu, X=X, area=areaX)
-parameters<-c('psi','p0','alpha2','N', 'D', 'sigma')
+parameters<-c('psi','alpha0','alpha2','N', 'D', 'sigma')
 
 inits =  function() {list(z=c(rep(1,nind), rbinom(nz,1,0.5)), psi=runif(1), s=Sin,
 		 sigma=runif(1,2,3),alpha0=runif(1), alpha2=runif(1)) }
