@@ -58,6 +58,9 @@ out[i,]<-c(beta0,beta1) # save the current values
 }
 
 
-plot(out[1:300,1],ylim=c(-1.5,3.3),type="l",lwd=2,ylab="parameter value",
-xlab="MCMC iteration")
+
+plot(out[1:300,1],ylim=c(-3,3.3),type="l",lwd=2,ylab="parameter value",
+xlab="MCMC iteration",cex.lab=1.5)
 lines(out[,2],lwd=2) 
+
+
