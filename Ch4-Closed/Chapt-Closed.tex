@@ -1381,24 +1381,35 @@ the {\bf WinBUGS} option in \mbox{\tt modelMhBUGS}, we ran 3 chains of 1
 {\it million} iterations (mixing is poor for this model and this data
 set), which produced the posterior distribution for $N$ shown in
 Fig. \ref{closed.fig.bearMh}. Posterior summaries of parameters are
-given as follows\footnote{The reported \mbox{\tt n.sims} printed appears
-  to be an error in the \mbox{\tt R2WinBUGS} package}:
-{\small
-\begin{verbatim}
-> print(wbout,digits=3)
-Inference for Bugs model at "modelMh.txt", fit using WinBUGS,
- 3 chains, each with 1010000 iterations (first 10000 discarded)
- n.sims = 2970000 iterations saved
-            mean     sd    2.5%     25%     50%     75%   97.5%  Rhat n.eff
-p0         0.072  0.056   0.002   0.027   0.060   0.106   0.203 1.008   540
-sigmap     2.096  0.557   1.215   1.694   2.025   2.424   3.373 1.003   820
-psi        0.176  0.101   0.084   0.117   0.147   0.198   0.458 1.006   650
-N        122.695 69.897  62.000  82.000 102.000 137.000 319.000 1.006   630
-deviance 187.089 17.998 155.400 174.400 185.900 198.500 225.700 1.002  3600
+given in Table \ref{closed.tab.bear}.
 
-[... output deleted ... ]
-\end{verbatim}
+
+\begin{table}[ht]
+  \caption{
+    Posterior summaries from model $M_h$ fitted to the Fort Drum black
+    bear data. Results 
+    were obtained using {\bf WinBUGS}
+    running 3 chains, each with 1010000 iterations, discarding the
+    first 10000 for a total of three {\it million} posterior samples. 
+%\footnote{The reported \mbox{\tt n.sims} printed appears
+%  to be an error in the \mbox{\tt R2WinBUGS} package}: 
 }
+\begin{tabular}{crrrrrrr} \hline \hline
+ parameter &  mean   &  sd    &   2.5\% &  50 \%  &   97.5\% &Rhat& n.eff  \\ \hline
+$p_0$      &   0.072 & 0.056  &   0.002 &  0.060  &   0.203  &1.008 &
+540  \\ 
+$\sigma_p$ &    2.096&  0.557 &   1.215 &  2.025  &   3.373  &1.003 &
+820 \\ 
+$\psi$     &    0.176&  0.101 &   0.084 &  0.147  &   0.458  & 1.006&
+650 \\ 
+$N$        & 122.695 &69.897  &  62.000 & 102.000 & 319.000  &1.006 &
+630 \\ \hline
+%deviance 187.089 17.998 155.400   185.900  225.700 1.002  3600
+\end{tabular}
+\label{closed.tab.bear}
+\end{table}
+
+
 
 
 We used $M=700$ for this analysis and we
@@ -1427,7 +1438,7 @@ the buffered area of the convex hull is 277.11 $km^2$):
 0.2237379 0.3680849 1.1511674
 \end{verbatim}
 }
-so the point estimate, characterized by the posterior median, is around
+{\flushleft Therefore}, the point estimate, characterized by the posterior median, is around
 $0.37$ bears per square km and a 95\% Bayesian credible interval is
 $(0.224, 1.151)$.
 
@@ -1476,7 +1487,8 @@ If we want to smooth out some of the Monte
 Carlo error a bit, we can use a smoother of some sort applied to the tabled
 posterior frequencies of $N$. Here we use a smoothing spline ({\bf R}
 function \mbox{\tt smooth.spline}) with the
-degree of smoothing chosen by cross-validation:
+degree of smoothing chosen by cross-validation (the \mbox{\tt cv=TRUE}
+argument):
 {\small
 \begin{verbatim}
 > N<-table(jout$BUGSoutput$sims.list$N)
@@ -1531,7 +1543,9 @@ shown in Fig. \ref{closed.fig.bearMh}.
 \end{comment}
 
 
-We don't dwell too much on the difference, but we do note here that
+We don't dwell too much on the difference between the MLE and features
+of the posterior, 
+ but we do note here that
 the posterior distribution for the parameters of this model, for the
 Fort Drum data set, are very sensitive to the prior
 distributions. While MLEs are invariant to transformation of the
@@ -1543,9 +1557,11 @@ $\mu$, and this affects the posterior.  We generally always recommend
 use of a $\mbox{Uniform}(0,1)$ prior for $\mbox{logit}^{-1}(\mu)$ in
 such models. That said, we were surprised at this result, and we
 experimented with other prior configurations including putting a flat
-prior on $\mu$ directly. That specific prior suggests the possibility
-that the posterior distribution may be improper for that prior
-specification. This kind of small sample instability has been widely
+prior on $\mu$ directly. 
+%That specific prior suggests the possibility
+%that the posterior distribution may be improper for that prior
+%specification. 
+This kind of small sample instability has been widely
 noted in model $M_h$ \citep{fienberg_etal:1999, dorazio_royle:2003},
 as has extreme sensitivity to the specific form of model $M_{h}$
 \citep{link:2003}.  In summary, while the mode is well-defined, the
@@ -1591,32 +1607,35 @@ which is thought to influence encounter probability is measured for
 each individual.  As with other closed population models, we begin
 with the basic binomial observation model:
 \[
-y_{i} \sim \mbox{Binomial}(K, p_{i})
+y_{i} \sim \mbox{Binomial}(K, p_{i}).
 \]
-and we assume also  a model for encounter probability according to:
+To model the covariate, we use a logit model for encounter probability
+of the form:
 \begin{equation}
  \mbox{logit}(p_{i}) = \alpha_0 + \alpha_1 x_{i}
 \label{closed.eq.ha}
 \end{equation}
-where $x_i$ is the covariate value for individuals $i$ and the
-parameters $\bm{\alpha}$ are the regression coefficients. Classical
+where $x_i$ is the covariate value for individual $i$ and the
+parameters $\bm{\alpha}= (\alpha_0, \alpha_1)$ are the regression coefficients. Classical
 examples of covariates influencing detection probability are type of
 animal (juvenile/adult or male/female), a continuous covariate such as
-body mass \citep[][ch. 6]{royle_dorazio:2008}, or a discrete covariate
+body mass \citep[e.g.,][Chapt. 6]{royle_dorazio:2008}, or a discrete covariate
 such as group or cluster size. For example, in models of aerial survey
 data, it is natural to model the detection probability of a group as a
 function of the observation-level individual covariate, ``group size''
 \citep{royle:2008, royle:2009, langtimm_etal:2011}.
 
-Such ``individual covariate models'' are similar in structure to model
+These ``individual covariate models'' are similar in structure to model
 $M_{h}$, except that the individual effects are {\it observed} for the
 $n$ individuals that appear in the sample. These models are important
 here because spatial capture-recapture models can be described
 precisely as a form of individual covariate model, where the covariate
 describes {\it where} the individual is located in relation to the
-trapping array.  Specifically, they are such models, but where the
-individual covariate is a partially observed latent variable for
-captured individuals.  Unlike model $M_h$, in individual covariate
+trapping array.  Specifically, SCR models {\it are} individual
+covariate models, but where the
+individual covariate is only observed imperfectly (or partially
+observed) for each 
+captured individual.  Unlike model $M_h$, in individual covariate
 models (and SCR models) we do have some direct information about the
 latent variable, which comes from the spatial locations/distribution
 of individual recaptures.
@@ -1652,7 +1671,7 @@ value of $y$ the 2nd term is necessarily 0, and so we rearrange to
 obtain
 $\Pr(y|y>0) = \Pr(y)/\Pr(y>0)$ which, in the specific case where
 $\Pr(y)$ is the
-binomial pmf produces Eq. \ref{closed.eq.cond}.
+binomial probability mass function (pmf) produces Eq. \ref{closed.eq.cond}.
 
 
 Here we take a formal model-based approach to Bayesian analysis of
@@ -1670,9 +1689,10 @@ x_{i} \sim \mbox{Normal}(\mu,\sigma^{2})
 \]
 Data augmentation can be applied directly to this class of models. In
 particular, reformulation of the model under DA yields a basic
-zero-inflated binomial model of the form:
+zero-inflated binomial model of the following form, for each
+$i=1,2,\ldots, M$:
 \begin{eqnarray*}
-z_{i} &\sim& \mbox{Bernoulli}(\psi) \; \; \; i=1,2,\ldots,M\\
+z_{i} &\sim& \mbox{Bernoulli}(\psi)  \\
 y_{i}|{z_{i}\! =\! 1} &\sim& \mbox{Binomial}(K,p_{i}(x_{i})) \\
 y_{i} |{ z_{i}\! =\! 0} &\sim& 1(y=0)  \\
 x_{i} & \sim & \mbox{Normal}(\mu,\sigma^{2})
@@ -1705,13 +1725,13 @@ intuitively appealing because we can imagine, in some kind of an ideal
 situation where we have a dense grid of traps over some geographic
 region, that the average location of capture would be a decent
 estimate (heuristically) of an individual's home range center.  We
-provide an example of this type of heuristically motivated approach
+provide an example of this type of approach
 using a fully model-based individual covariate model described above
 analyzed by data augmentation. We take a slightly different approach
 than that adopted by \citet{boulanger_mclellan:2001}. By analyzing the
 full likelihood and placing a prior distribution on the individual
 covariate, we will resolve the problem of having an ill-defined
-sampled area.  After you read later chapters of this book, it will be
+sample area.  After you read later chapters of this book, it will be
 apparent that SCR models represent a formalization of this heuristic
 procedure.
 
@@ -1734,31 +1754,33 @@ quantify, as ``edge'' itself is not precisely defined.
 Conceptually, individuals in the middle of the array should have a
 higher probability of encounter and, as $x_{i}$ increases, $p_{i}$
 should therefore decrease. We note that we have defined ${\bf s}_{i}$
-in terms of a sample quantity---the observed mean---which is ad hoc
-but consistent with the use of individual covariate models
+in terms of a sample quantity---the observed mean encounter
+location---which, while ad hoc,
+is consistent with the use of individual covariate models
  in the literature.  For an
 expansive, dense trapping grid we might expect the sample mean
 encounter location to be a good estimate of home range center but,
 clearly this is biased for individuals that live around the edge (or
 off) the trapping array.
+
+
  A key point is that
 ${\bf s}_{i}$ is missing for each individual that is not encountered
-and so  $x_{i}$ is also missing. Therefore, it is a latent variable, or random
-effect, and we need  to specify a probability distribution
+and so  $x_{i}$ is also missing. Therefore, it is a latent variable,
+and we need  to specify a probability distribution
 for it.  As a measurement of distance we know it must be
 positive-valued, and it seems sensible that an individual located
 extremely far from the array of traps would not be captured.
 Therefore, let's assume that $x_{i}$ is uniformly distributed from $0$ to some large number,
 say $B$, beyond which it would be difficult to imagine an
-individual being captured by the trap array. For example, $B$ should be at a home
-range diameter past the furthest trap from the center.  As such, we
-use this distribution for the individual covariate ``distance from
-center of the trap array''
+individual being captured by the trap array:
 \[
  x_{i} \sim \mbox{Uniform}(0,B)
 \]
 where $B$ is a specified constant, which we may choose to be
 arbitrarily large.
+For example, $B$ should be at least a home
+range diameter past the furthest trap from the centroid of the array.
 
 
 \subsection{Fort Drum Bear Study}
@@ -1771,7 +1793,8 @@ trapping array) using the {\bf R} function \mbox{\tt spiderplot}
 provided in \mbox{\tt scrbook}. This function also produces the keen
 plot shown in Fig. \ref{closed.fig.spiderplot} which we call a
 ``spider plot''.  The {\bf R} commands for obtaining the individual
-covariate ``distance from trap centroid'' and making the spider plot
+covariate ``distance from trap centroid'' (the variable \mbox{\tt
+  xcent} returned by \mbox{\tt spiderplot}) and making the spider plot
 are as follows:
 \begin{verbatim}
 library(scrbook)
@@ -1799,7 +1822,10 @@ For the analysis of these data using the individual covariate
 with $B = 11.5$ $km^2$, which is about the distance from the array
 center to the furthest trap.  Once we choose a value for $B$, the direct
 implication is that the population size parameter, $N$, applies to the area
-within 11.5 units of the trap centroid. We will see shortly that $N$
+within 11.5 units of the trap centroid. Therefore, the model
+associates a precise area within which the population of $N$ individuals
+resides. 
+We will see shortly that $N$
 does, in fact, scale with our choice of $B$ to reflect the changing
 area over which the $N$ individuals of the model reside.  The {\bf
   BUGS} model specification and {\bf R} commands to package the data
@@ -1832,32 +1858,43 @@ fit2 =   bugs(data2, inits, params2, model.file="modelMcov.txt",
          n.chains=3, n.iter=11000, n.burnin=1000, n.thin=1)
 \end{verbatim}
 }
-This produces the following posterior summary statistics:
-{\small
-\begin{verbatim}
-Inference for Bugs model at "modelMcov.txt", fit using WinBUGS,
- 3 chains, each with 11000 iterations (first 1000 discarded)
- n.sims = 30000 iterations saved
-           mean    sd   2.5%    25%    50%    75%  97.5% Rhat n.eff
-p0         0.54  0.07   0.40   0.50   0.54   0.59   0.67    1  1100
-psi        0.34  0.05   0.25   0.31   0.34   0.37   0.44    1  3500
-N         58.92  5.49  50.00  55.00  58.00  62.00  71.00    1  1900
-beta      -0.25  0.06  -0.36  -0.29  -0.25  -0.21  -0.12    1   780
-deviance 459.51 13.21 435.80 450.20 458.80 467.90 487.40    1  2600
-\end{verbatim}
+This produces the posterior summary statistics given in Table \ref{closed.tab.bear2}.
+
+\begin{table}[ht]
+  \caption{
+    Posterior summaries from the individual covariate model with
+    covariate ``distance from the centroid of the trap array'', 
+ fitted to the Fort Drum black
+    bear data. Results 
+    were obtained using {\bf WinBUGS}
+    running 3 chains, each with 11000 iterations, discarding the
+    first 1000 for a total of 30000 posterior samples. 
 }
+\begin{tabular}{crrrrrrr} \hline \hline
+ parameter &  mean&  sd  &   2.5\% &  50 \%  &   97.5\% &Rhat& n.eff  \\ \hline
+p0         &0.54  &0.07  & 0.40   &  0.54  &  0.67  &  1 & 1100  \\
+psi        &0.34  &0.05  & 0.25   &  0.34  &  0.44  &  1 & 3500 \\
+N          &58.92 & 5.49 & 50.00  &  58.00 &  71.00 &   1&  1900 \\
+beta       &-0.25 & 0.06 & -0.36  &  -0.25 &  -0.12 &   1&   780 \\ \hline
+%deviance 459.51 13.21 435.80  458.80  487.40    1  2600
+\end{tabular}
+\label{closed.tab.bear2}
+\end{table}
+
+
 
 We note that the estimated $N$ is much lower than obtained by model
-$M_h$ but there is a good explanation for this, discussed
-subsequently. That issue notwithstanding, it is worth pondering how
+$M_h$ but there is a good explanation for this which we discuss in the
+next section.
+That issue notwithstanding, it is worth pondering how
 this model could be an improvement (conceptually or technically) over
 some other model/estimator including $M_0$ and $M_h$ considered
 previously. Well, for one, we have accounted formally for
 heterogeneity due to spatial location of individuals relative to
 exposure to the trap array, characterized by the centroid of the
 array. Moreover, we have done so using a model that is based on an
-explicit mechanism, as opposed to a phenomenological one such as Model
-$M_h$. Moreover, importantly, using our new model, {\it the estimated
+explicit mechanism, as opposed to a phenomenological one such as model
+$M_h$. In addition, and importantly, using our new model, {\it the estimated
   N applies to an explicit area which is defined by our prescribed
   value of $B$}. That is, this area is a fixed component of the model
 and the parameter $N$ therefore has explicit spatial context, as the
@@ -1890,7 +1927,7 @@ increases.  Conceptually, what we want to do is impose a prior on
 distance from the centroid, $x$, such that density is proportional to
 the amount of area in each successive distance band as you move
 farther away from the centroid.  In fact, theory exists which tells us
-what the correct distribution of $x$ is: $2x/B^2$. This can be derived
+we should choose $[x] = 2x/B^2$. This can be derived
 by noting that $F(x) = \Pr(X<x) = (\pi x^2)/(\pi*B^{2})$ . Then, $f(x)
 = dF/dx = 2*x/(B^{2})$. This is a sort of triangular distribution in
 density induced because the incremental area in each additional
@@ -1919,37 +1956,40 @@ distance classes of width $\delta$, with probabilities proportional to
 $2*x$. In particular, if we denote the cut-points by $g_{1}=0,g_{2},
 \ldots, g_{L+1}=B$ and the interval midpoints are $m_{i} =
 g_{i+1}-\delta$.
-Then the interval probabilities are, approximately, $p_{i} =
-2 m_{i} \delta/(B^{2})$, which we can compute once and then
+Then the interval probabilities are, approximately\footnote{This is
+  just length $\times$ width, the area of small rectangles approximating the integral.}, $p_{i} =
+\delta (2 m_{i} /B^{2})$, which we can compute once and then
 pass them to {\bf BUGS} as data.
 The {\bf R} commands for doing all of this (noting that we have
 already loaded and processed the Fort Drum bear data) are given in the
-following {\bf BUGS} code:
+following {\bf R}/{\bf BUGS} script:
+% andy changed Dgrid to "midpts" and "Dmax" to "B" on 1/13/2013
+% needs changed in repo!
 {\small
 \begin{verbatim}
 delta<-.2
-xbin<-xcent%/%delta  + 1
-Dgrid<- seq(delta,Dmax,delta)
-xprobs<- delta*(2*Dgrid/(Dmax*Dmax))
+xbin<-xcent%/%delta  + 1               # put x in bins
+midpts<- seq(delta,Dmax,delta)
+xprobs<- delta*(2*midpts/(B*B))
 xprobs<-xprobs/sum(xprobs)
 
 cat("
 model{
-p0 ~ dunif(0,1)       # prior distributions
+p0 ~ dunif(0,1)                        # prior distributions
 alpha0<- log(p0/(1-p0))
 psi~dunif(0,1)
 beta~dnorm(0,.01)
 
 for(i in 1:(nind+nz)){
   xbin[i]~dcat(xprobs[])
-  z[i]~dbern(psi)                     # zero inflation variables
-  lp[i] <- alpha0 + beta*xbin[i]*delta # individual effect
+  z[i]~dbern(psi)                      # DA variables
+  lp[i] <- alpha0 + beta*xbin[i]*delta # individual covariate model
   logit(p[i])<-lp[i]
   mu[i]<-z[i]*p[i]
-  y[i]~dbin(mu[i],K)  #  observation model
+  y[i]~dbin(mu[i],K)                   #  observation model
  }
 
-N<-sum(z[1:(nind+nz)])
+N<-sum(z[1:(nind+nz)])                 # N is derived
 }
 ",file="modelMcov.txt")
 \end{verbatim}
@@ -1997,11 +2037,10 @@ the trap array) on up to 20. The results are given in Table
 \caption{Analysis of Fort Drum bear hair snare data using the
   individual covariate model, for different values of $B$, the upper
   limit of the uniform distribution of `distance from centroid of the
-  trap array'. ``Density'' is the posterior mean of density and SD is
-  the posterior standard deviation.}
+  trap array'. ``Density'' is the posterior mean of density.}
 \begin{tabular}{ccc}
-\hline %\hline
- $B$ & Density & SD \\ \hline
+\hline \hline
+ $B$ & Density (post. mean) & Posterior SD \\ \hline
   12& 0.230 & 0.038 \\
   15& 0.244 &0.041 \\
   17& 0.249 &0.044 \\
@@ -2020,12 +2059,12 @@ $B=17$ or so.
 The estimated density of
 0.25 per km$^2$ is actually quite a bit lower than we reported using
 model $M_h$ for which no relevant ``area'' quantity is explicit in the
-model, and so we had to make one up.  Using MLEs of $N$ in conjunction with buffer strips (see Tab.
+model (and so we had to make it up).  Using MLEs of $N$ in conjunction with buffer strips (see Tab.
 \ref{intro.tab.fdests}) our estimates were in the range of
 $0.32-0.43$ and see Sec.  \ref{closed.sec.modelmh} above.  On the
 other hand our estimate of $\hat{D} = 0.25$ here (based on the
 posterior mean) is higher than that reported from model $M_0$ using
-the buffered area (0.18). There is no basis really for comparing or
+the buffered area ($\hat{D} = 0.18$). There is no basis really for comparing or
 contrasting these various estimates.
 In
 particular, application of models $M_0$ and $M_h$ are distinctly {\it
@@ -2049,9 +2088,9 @@ which seems like a desirable feature.
 
 Under this individual covariate model, and also under models that we
 consider in later chapters, a general property of the estimators is
-that while $N$ increases with the prescribed ``area of the modeled
-population'' (equivalent to $B$ in this case)\footnote{define this
-  earlier in the section}, we expect that density estimators should be
+that while $N$ increases with the prescribed area of the model
+(defined by $B$ in this model),
+ we expect that density estimators should be
 invariant to this area. In the model used above, we note that
 $\mbox{Area}(B) = \pi B^{2}$ and $\mathbb{E}(\mbox{N}(B)) = \lambda
 \mbox{Area}(B)$ and thus $\mathbb{E}(\mbox{Density}(B)) = \lambda$,
@@ -2096,7 +2135,8 @@ regarded as latent variables and the observation locations (i.e., trap
 specific encounters) are linked to those latent variables with an
 explicit model. We note that the model fitted previously could be
 adapted easily to deal with ${\bf s}_{i}$ as a latent variable, simply
-by adding a prior distribution for ${\bf s}_{i}$.
+by adding a prior distribution for ${\bf s}_{i}$.  This is actually
+easier, and less ad hoc in a number of respects, and you should try it out.
 
 
 
@@ -2113,10 +2153,10 @@ distance sampling provides explicit estimates of {\it density}.
  In terms of
 methodological context, the distance sampling model is a special case
 of a closed population model with an individual covariate. The
-covariate in this case, $x_{i}$, is the distance between an
+covariate in this case, $x$, is the distance between an
 individual's location say ${\bf u}$ and the observation location or transect. In
-fact, the model underlying distance sampling is precisely the same
-model as that which applies to the individual-covariate models, except
+fact, distance sampling is precisely an
+individual-covariate model, except
 that observations are made at only $K=1$ sampling occasion. Thus, in
 that sense, distance sampling is a spatial capture-recapture model,
 % XXXX I'm not sure the reader quite understands how it is a "spatial"
@@ -2144,9 +2184,10 @@ detection probability, normally imposed as the assumption that
 detection probability is $1.0$ when distance equals 0.  A standard
 model for detection probability is the ``half-normal'' model:
 \[
-\log(p_{i}) = \alpha_{1} x_{i}^{2}
+p_{i} = \exp(-\alpha_{1} x_{i}^{2})
 \]
-for $\alpha_{1} < 0$, where $x_i$ denotes the distance at which the $i$th
+for $\alpha_{1} > 0$, 
+where $x_i$ denotes the distance at which the $i$th
 individual is detected relative to some reference location where
 perfect detectability ($p=1$) is assumed. This encounter probability
 model is more often written with
@@ -2180,16 +2221,16 @@ alpha1~dunif(0,10)
 psi~dunif(0,1)
 
 for(i in 1:(nind+nz)){
-   z[i]~dbern(psi)      # DA Variables
-   x[i]~dunif(0,B)      # B=strip width
-   p[i]<-exp(logp[i])   # DETECTION MODEL
+   z[i]~dbern(psi)             # DA variables
+   x[i]~dunif(0,B)             # B=strip width
+   p[i]<-exp(logp[i])          # Detection function
    logp[i]<-   - alpha1*(x[i]*x[i])
    mu[i]<-z[i]*p[i]
-   y[i]~dbern(mu[i])  # OBSERVATION MODEL
+   y[i]~dbern(mu[i])           # Observation model 
  }
 
-N<-sum(z[1:(nind+nz)])
-D<- N/striparea  # area of transects
+N<-sum(z[1:(nind+nz)])         # N is a derived parameter
+D<- N/striparea                # D = N/total area of transects
 \end{verbatim}
 \end{minipage}
 \rule[-0.15in]{\textwidth}{.03in}
@@ -2224,16 +2265,15 @@ previous section.
 
 The preceding paragraph makes it clear that distance sampling is a
 special case of spatial capture-recapture models, such as those
-derived from model $M_{x}$ of the previous section, 
- where
-the encounter probability is related directly to {\it distance}, which is
-a reduced information summary of {\it location}, ${\bf u}$.
-Some
-intermediate forms of SCR/DS models can be described \citep{royle_etal:2011mee}.
-In the context of our general characterization of SCR models
-(Chapt. \ref{modeling.sec.characterization}),
-we suggested that every SCR model can be described,
-conceptually, by a hierarchical model of the form:
+derived from model $M_{x}$ of the previous section, where the
+encounter probability is related directly to {\it distance}, which is
+a reduced information summary of {\it location}, ${\bf u}$.  Some
+intermediate forms of SCR/DS models can be described
+\citep{royle_etal:2011mee}.  In the context of our general
+characterization of SCR models
+(Chapt. \ref{modeling.sec.characterization}), we suggested that every
+SCR model can be described, conceptually, by a hierarchical model of
+the form:
 \[
  [y|{\bf u}][{\bf u}|{\bf s}][{\bf s}].
 \]
@@ -2280,7 +2320,7 @@ details). The data are from 120 square transects having four 250 m sides,
  although we ignore this detail in our analysis here and regard
 them as 1 km transects, and we pooled the detection data from all
 120 transects. The histogram of encounter distances from the 65
-encounter individuals is
+encountered individuals is
 shown in Fig. \ref{closed.fig.tortoisehist}
 \begin{figure}[ht]
 \centering
@@ -2292,21 +2332,31 @@ shown in Fig. \ref{closed.fig.tortoisehist}
 
 \begin{figure}[ht]
 \centering
-\includegraphics[height=3.0in,width=3.0in]{Ch4-Closed/figs/tortoise.png}
+\includegraphics[height=2.8in,width=2.8in]{Ch4-Closed/figs/tortoise.png}
 \caption{
-Distance histogram of Sonoran desert tortoise detections from 120 km of
+Distance histogram of $n=65$ Sonoran desert tortoise detections from a
+total of 120 km of
 survey transect. }
 \label{closed.fig.tortoisehist}
 \end{figure}
 
 Commands for reading in and organizing the data for analysis using {\bf
-  WinBUGS}, followed by writing the model to a text file, are given
-below. Note that the total sampled area of the transects \mbox{\tt
+  WinBUGS} are given in the help file \mbox{\tt ?tortoise} provided
+with the \mbox{\tt scrbook} package. 
+To compute density, the total sampled area of the transects \mbox{\tt
   striparea} is input as data, and computed as: $120$ (transects)
-multiplied by the length ($1000$ m) and width ($B=40$ m), then
-multiplied by 2, and then divided by $10000$ to convert to
-units of individuals per ha. The full script is provided with the
-\mbox{\tt scrbook} {\bf R} package (see \mbox{\tt ?tortoise}), where  we also give some commands for
+multiplied by the length ($1000$ m) and half-width ($B=40$ m), then
+multiplied by 2, and  divided by $10000$ to convert to
+units of individuals per ha. 
+We also provide commands for 
+analyzing the data with \mbox{\tt unmarked}
+\citep{fiske_chandler:2011} using hierarchical distance sampling
+models \citep{royle_etal:2004}.
+
+\begin{comment}
+The full script is provided with the
+\mbox{\tt scrbook} {\bf R} package (see \mbox{\tt ?tortoise}), where  
+we also give some commands for
 analyzing the data with \mbox{\tt unmarked}
 \citep{fiske_chandler:2011} using hierarchical distance sampling
 models \citep{royle_etal:2004}.
@@ -2359,12 +2409,14 @@ fit = bugs(data, inits, params, model.file="dsamp.txt",working.directory=getwd()
        debug=FALSE, n.chains=3, n.iter=3000, n.burnin=1000, n.thin=2)
 \end{verbatim}
 }
+\end{comment}
+
 Posterior summaries for the tortoise data are given in Tab. \ref{closed.tab.dsamp}.
 Estimated density (posterior mean) is $0.54$ individuals
   per ha and the estimated scale parameter of the distance function
 (posterior mean) is $\sigma=9.12$ meters.  The Rhat statistics of
 around $1.02$ suggest that slightly longer MCMC simulations might be
-useful. The posterior mass of the data augmentation parameter $\psi$
+called for. The posterior mass of the data augmentation parameter $\psi$
 is located away from the upper-bound $\psi=1$ and so the degree of
 data augmentation appears sufficient.
 
@@ -2389,6 +2441,7 @@ $\psi$    &   0.61&  0.07 &  0.49  & 0.61    &   0.75 &1.02&    96  \\ \hline
 \end{table}
 
 
+
 \section{Summary and Outlook}
 
 Traditional closed population capture-recapture models are closely
@@ -2405,8 +2458,8 @@ individuals. If instead we analyze the models using data augmentation,
 which arises under a $\mbox{Uniform}(0,M)$ prior for $N$,
 the observations can be modeled using a zero-inflated binomial
 distribution. When we deal with the unknown-$N$ problem using
-data augmentation then we are left with zero-inflated GLM and GLMMs
-instead of ordinary GLM or GLMMs. The analysis of such zero-inflated
+data augmentation then we are left with zero-inflated GLMs and GLMMs
+instead of ordinary GLMs or GLMMs. The analysis of such zero-inflated
 models is practically convenient, especially using the
 {\bf BUGS} variants.
 
@@ -2425,17 +2478,25 @@ assumption provides for invariance of the density estimator to the
 choice of population size area (induced by maximum distance from the
 centroid of the trap array). The model addressed some important problems in the
 use of closed population models: it allows for heterogeneity in
-encounter probability due to the spatial context of the problem and it
+encounter probability due to the spatial juxtaposition of individuals
+with the array of traps, and it 
 also provides a direct estimate of density because area is a feature
 of the model (via the prior on the individual covariate). The model is
-still not completely general because it does not make use of
-the fully spatial encounter histories, which provide direct
-information about the locations and density of individuals.  A
-specific individual covariate model that is in widespread use is
+still not completely general, however, because it does not make full use of
+the spatial encounter histories, which provide direct
+information about the locations and density of individuals.  
+
+A specific individual covariate model that is in widespread use is
 classical distance sampling. The model underlying distance
 sampling is precisely a special kind of SCR model---but one without
 replicate samples. Understanding distance sampling and individual
 covariate models more broadly provides a solid basis for understanding
-and analyzing spatial capture-recapture models.
+and analyzing spatial capture-recapture models. In fact if, instead of
+placing an explicit model on {\it distance} in the classical distance
+sampling model, we were to place the prior distribution on {\it
+  location}, ${\bf s}$, of each individual, then the form of the
+distance sampling model more closely resembles the SCR model we
+introduce in the next chapter.
+
 
 
