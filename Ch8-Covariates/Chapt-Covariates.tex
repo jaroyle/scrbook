@@ -381,15 +381,15 @@ Parameter & Mean & SD & 2.5 & 97.5 \\
 Gaussian  &   &      &           &        \\
 \hline
 $D$    &   0.17   & 0.022     &  0.122 & 0.207  \\
-$N$    &  500.63 & 66.652  & 371   & 628       \\
+$N$    &  500.63 & 66.652  & 371.000   & 628.000       \\
 $p_0$  &    0.11  & 0.014   & 0.081& 0.135     \\
 $\psi$  &   0.77  & 0.104    & 0.566 & 0.966    \\
 $\sigma$ &  1.99 & 0.131  &1.762 & 2.275     \\
 
 Exponential &   &      &          &        \\
 \hline
-$D$  &   0.17 &  0.022 &	0.13		& 	0.21	 \\
-$N$   &  512.06 &  65.771  &	382		& 	634	 \\
+$D$  &   0.17 &  0.022 &	0.130		& 	0.210	 \\
+$N$   &  512.06 &  65.771  &	382.000		& 	634.000	 \\
 $p_0$  &    0.34 &   0.056  &	0.246	& 0.465		 \\
 $\psi$  &   0.79  &  0.102  &	0.584		& 	0.974	 \\
 $\sigma$ &  1.12  & 0.095  &	0.951		& 	1.323	 \\ \hline
@@ -415,7 +415,7 @@ We  now move onto incorporating
 covariates into the model using the {\bf JAGS}
 language.  For this part, we will stick with the Gaussian encounter
 probability model
- shown in the panel \ref{covariates.panel.basicSCR} above.
+ shown in the Panel \ref{covariates.panel.basicSCR} above.
 %%%
 %%%
 %%%
@@ -1067,12 +1067,14 @@ p_{ijk}& = &p_{0,i} \exp(- \alpha_1*||{\bf x}_{j}-{\bf s}_{i}||^2)
 where $\eta_{i}$ is an individual random effect having distribution
 $[\eta|\sigma_{p}]$.  A popular class of models arises by assuming
 $\eta_{i} \sim \mbox{Normal}(0,\sigma_{p}^{2})$ \citep{coull_agresti:1999,
-dorazio_royle:2003}.  Many other random effects
-distributions are possible, a popular one being the finite-mixture of
+dorazio_royle:2003}. 
+We show how to implement this specific SCR + Mh model in 
+Panel \ref{covariates.panel.SCRMhjags}, although
+many other random effects
+distributions are possible. A popular one is the finite-mixture of
 point masses
-\citep{norris_pollock:1996, pledger:2000}. 
-We demonstrate how to fit 
-finite-mixture models using \secr~ in
+\citep{norris_pollock:1996, pledger:2000} which 
+we demonstrate how to fit using \secr~ in
 Sec. \ref{covariates.sec.secrH2}.  
 % However, it seems more natural to think of heterogeneity as
 % continuous, unless one expects the heterogeneity to be due to
@@ -1085,46 +1087,6 @@ Sec. \ref{covariates.sec.secrH2}.
 % components 
 % of variation, 
 % and so the normal model seems sensible in that regard.  
-
-\subsection{Heterogeneity Induced by Variation in Home Range Size} 
-\label{covariates.sec.heterogeneityHR}
-
-An alternative heterogeneity model, one that has more of a direct
-biological motivation and interpretation, describes heterogeneity in
-home range size among individuals. This is manifest in the scale
-parameter of the encounter  probability model $\sigma^{2}$ or its inverse
-$\alpha_1 = 1/\sigma^{2}$. We might thus assume a distribution for
-either $\sigma^{2}$ or its inverse, $\alpha_1$.  We call this 
-``model SCR + Ah'' (Ah here for area-induced heterogeneity).
-\begin{eqnarray*}
-\mbox{logit}(p_{0}) &=& \alpha_0   \\
-p_{ijk} &=& p_{0} \exp(- \alpha_{1,i}*||{\bf s}_{i}-{\bf x}_{j}||^2)
-\end{eqnarray*}
-This model is a model of heterogeneity in home range area. For example
-if we assume that $\alpha_{1,i} \sim \mbox{Normal}(\beta_0,\tau^{2})$
-with $\beta_{0} = 2$ and $\tau = 0.50$. Then the population
-distribution of $\sigma$ in this case is given in Figure
-\ref{covariates.fig.one}. In Panel \ref{covariates.panel.SCRMhjags}, 
-we show how to implement the SCR + Mh model.  
-The motivating point of this model is that we expect
-such variability in natural populations. Thus we suggest this
-biologically sensible model of heterogeneity, which fills a
-methodological gap in the literature in the sense that SCR models have
-usually  been homogeneous with respect to their explicit treatment of home
-range size and geometry.
-
-
-\begin{figure}[ht]
-\begin{center}
-\includegraphics[height=3.5in,width=3.5in]{Ch8-Covariates/figs/fig1.ps}
-\end{center}
-\caption{
-Population distribution of $\sigma$ if $(1/\sigma^{2}) \sim \mbox{Normal}(2, 0.50)$.
-}
-\label{covariates.fig.one}
-\end{figure}
-
-
 
 \begin{panel}[htp]
 \centering
@@ -1163,10 +1125,78 @@ D<-N/area
 \caption{
 \jags~ model specification for the SCR + Mh model with Gaussian
 encounter 
-probability model.
+probability model and additive normal random effect.
 }
 \label{covariates.panel.SCRMhjags}
 \end{panel}
+
+
+
+
+\subsection{Heterogeneity Induced by Variation in Home Range Size} 
+\label{covariates.sec.heterogeneityHR}
+
+An alternative heterogeneity model, one that has more of a direct
+biological motivation and interpretation, describes heterogeneity in
+home range size among individuals.
+To model heterogeneity in home range
+area, we can  assume a distribution for
+a transformation of the scale
+parameter of the encounter  probability model such as $\sigma^{2}$, or
+$\log(\sigma^2)$, etc..
+We call this 
+``model SCR + Ah'' (Ah here for area-induced heterogeneity).
+
+Consider the following log-normal model for individual scale parameter
+of the Gaussian encounter probability model, $\sigma_{i}^{2}$:
+\[
+ \log(\sigma^{2}_{i}) \sim \mbox{Normal}(\mu_{hra}, \tau^{2}_{hra})
+\]
+then the 95\% home range area has a scaled
+log-normal distribution with mean $6 \pi \exp(\mu_{hra} +
+\tau^{2}_{hra}/2)$. The variance is slightly more complicated, but you
+can look-up  the variance of a log-normal distribution and combine it
+with the 95\% home range area calculation in
+Sec. \ref{closed.sec.implied} to work out the implied variance of home
+range area under this model.
+We show two examples of the implied {\it population} distribution of
+home range area under this log-normal model that implies 
+ a mean home range area of about 6.9 area units (Figure
+\ref{covariates.fig.one}). The left panel shows a standard deviation
+in home range area of 2.88 units and the right panel shows a standard
+deviation in home range area of 0.70 units. The two cases were
+generated by tweeking the $\mu_{hra}$ and $\tau^{2}_{hra}$ parameters
+of the log-normal distribution to achieve a constant expected value of
+home range area, but modify the standard deviation. 
+
+
+
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics[height=2.5in,width=5in]{Ch8-Covariates/figs/area_heterogeneity.png}
+\end{center}
+\caption{
+Population distribution of home range area for a model in which
+$\log(\sigma^{2})$ has a normal distribution with mean $\mu_{hra}$ and
+variance $\tau^{2}_{hra}$. The parameters were chosen to yield a
+constant expected value of about 6.9 units of area, but to produce two
+different levels of heterogeneity: A population standard deviation of
+2.88 units (left panel) and 0.70 units (right panel). 
+}
+\label{covariates.fig.one}
+\end{figure}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
