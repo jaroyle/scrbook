@@ -9,7 +9,7 @@ Likelihood Analysis of Spatial Capture-Recapture Models
 We have so far mainly focused on Bayesian analysis of spatial
 capture-recapture models. And, in the previous chapters we learned how
 to fit some basic spatial capture-recapture models using a Bayesian
-formulation of the models analyzed in BUGS engines including {\bf
+formulation of the models analyzed in {\bf BUGS} engines including {\bf
   WinBUGS} and {\bf JAGS}.  Despite our focus on Bayesian analysis, it
 is instructive to develop the basic concepts and ideas behind
 classical analysis based on likelihood methods and frequentist
@@ -19,16 +19,16 @@ Therefore, in this chapter, we provide some conceptual and technical
 foundation for likelihood-based analysis of spatial capture-recapture
 models. We recognized earlier (Chapt. \ref{chapt.scr0}) that SCR
 models are versions of binomial (or other) GLMs, but with random
-effects, i.e., GLMMs. These models are routinely analyzed by
+effects (i.e., GLMMs). 
+Throughout statistics, such models 
+are routinely analyzed by
 likelihood methods. In particular, likelihood analysis is based on the
-integrated likelihood in which the random effects are removed by
-integration from the likelihood. In SCR models, the 2-dimensional
-coordinate, ${\bf s}$, is a bivariate random effect. Beyond that,
-there is little difference between likelihood analysis of SCR models
-and ordinary GL(M)Ms.
+integrated or marginal likelihood in which the random effects are removed, by
+integration, from the conditional-on-${\bf s}$ likelihood. 
+
 
 We will show here that it is straightforward to compute the maximum
-likelihood estimates (MLE) for SCR models by integrated or marginal
+likelihood estimates (MLE) for SCR models by integrated 
 likelihood. We develop the MLE framework using {\bf R}, and we also
 provide a basic introduction to an {\bf R} package \mbox{\tt secr}
 \citep{efford:2011} which mostly does likelihood analysis of SCR
@@ -74,8 +74,9 @@ Chapt. \ref{chapt.closed}).
 
  To develop the integrated
 likelihood for SCR models, we first identify the conditional-on-${\bf s}$
-likelhiood. 
-The observation model for each encounter observation $y_{ij}$,
+likelihood. 
+The observation model for each encounter observation $y_{ij}$, for
+individual $i$ and trap $j$,
 specified conditional on ${\bf s}_{i}$, is 
 \begin{equation}
 y_{ij}| {\bf s}_{i} \sim \mbox{Binomial}(K, p_{\alpha}({\bf x}_{j},{\bf s}_{i}))
@@ -176,13 +177,13 @@ unique values with equal probabilities $1/nG$.
 
 \subsection{Implementation (simulated data)}
 
-Here we will illustrate how to carryout this integration and
+Here we will illustrate how to carry out this integration and
 optimization based on the integrated likelihood using simulated data
  (i.e., see Sec. \ref{scr0.sec.simulating}). Using \mbox{\tt simSCR0}
- we simulate data for 100 individuals and a 25 trap array
+ we simulate data for 100 individuals and an array of 25 traps
 laid out in a $5 \times 5$ grid of traps having unit spacing.  The specific encounter
 model is the Gaussian model. The 100 activity centers were
-simulated on a state-space defined by a $8 \times 8$ square 
+simulated on a state-space defined by an $8 \times 8$ square 
 within which the
 trap array was centered (thus the trap array is buffered by 2
 units). Therefore, the density of individuals in this system is fixed
@@ -192,15 +193,15 @@ then harvest the required data objects:
 {\small
 \begin{verbatim}
   ## simulate a complete data set (perfect detection)
-data <- simSCR0(discard0=FALSE,rnd=2013)
+> data <- simSCR0(discard0=FALSE,rnd=2013)
   ## extract the objects that we need for analysis
-y <- data$Y
-traplocs <- data$traplocs
-nind <- nrow(y)  ## in this case nind=N
-J <- nrow(traplocs)
-K <- data$K
-xlim <- data$xlim
-ylim <- data$ylim
+> y <- data$Y
+> traplocs <- data$traplocs
+> nind <- nrow(y)  ## in this case nind=N
+> J <- nrow(traplocs)
+> K <- data$K
+> xlim <- data$xlim
+> ylim <- data$ylim
 \end{verbatim}
 }
 {\flushleft Now } we need to define the integration grid, say
@@ -208,12 +209,12 @@ ylim <- data$ylim
 the following set of {\bf R} commands (here, \mbox{\tt delta} is the grid spacing):
 {\small
 \begin{verbatim}
-delta <- .2
-xg <- seq(xlim[1]+delta/2,xlim[2]-delta/2,by=delta) 
-yg <- seq(ylim[1]+delta/2,ylim[2]-delta/2,by=delta) 
-npix <- length(xg)          # valid for square state-space only
-G <- cbind(rep(xg,npix),sort(rep(yg,npix)))
-nG <- nrow(G)
+> delta <- .2
+> xg <- seq(xlim[1]+delta/2,xlim[2]-delta/2,by=delta) 
+> yg <- seq(ylim[1]+delta/2,ylim[2]-delta/2,by=delta) 
+> npix <- length(xg)          # valid for square state-space only
+> G <- cbind(rep(xg,npix),sort(rep(yg,npix)))
+> nG <- nrow(G)
 \end{verbatim}
 }
 {\flushleft In this case}, the integration grid is set up as a grid with spacing
@@ -228,7 +229,7 @@ standardized by the area of the state-space, will not be so sensitive
 in most cases. 
 
 We are now ready to  compute the conditional-on-{\bf s} likelihood and
-carry-out the marginalization described by Eq. \ref{mle.eq.intlik}.
+carry out the marginalization described by Eq. \ref{mle.eq.intlik}.
 We need to do this by defining an {\bf R} function that computes the
 likelihood for the integration grid, as a function of the data objects \mbox{\tt y} and
 \mbox{\tt traplocs} which were created above. However,
@@ -273,7 +274,8 @@ ymat<-rbind(ymat,rep(0,ncol(ymat)))
 lik.marg<-rep(NA,nrow(ymat))
 for(i in 1:nrow(ymat)){
  ## next line: log conditional likelihood for ALL possible values of s
-Pm[1:length(Pm)]<- (dbinom(rep(ymat[i,],nG),K,probcap[1:length(Pm)],log=TRUE))
+Pm[1:length(Pm)]<- 
+      (dbinom(rep(ymat[i,],nG),K,probcap[1:length(Pm)],log=TRUE))
  ## next line: sum the log conditional likelihoods, exp() result
  ## same as taking the product
 lik.cond<- exp(colSums(Pm))
@@ -322,9 +324,9 @@ the simulated data set:
 \begin{verbatim}
 # should take 15-30 seconds
 
-starts <- c(-2,2)
-frog <- nlm(intlik1,starts,y=y,delta=.1,X=traplocs,ssbuffer=2,hessian=TRUE)
-frog
+> starts <- c(-2,2)
+> frog <- nlm(intlik1,starts,y=y,delta=.1,X=traplocs,ssbuffer=2,hessian=TRUE)
+> frog
 
 $minimum
 [1] 297.1896
@@ -434,7 +436,7 @@ account for the fact that of the $n$ observed individuals there are
 ${N \choose n}$ 
 ways to realize a sample of size $n$. The
 combinatorial term involves the unknown $n_{0}$ and thus it must be
-included in the likelihood. In evaluating the {\it log}-likelihood, we
+included in the likelihood. In evaluating the  log-likelihood, we
 have to compute terms such as the log-factorial $\log(N!) = \log((n_{0}+n)!)$. 
 We do this in {\bf R} by making use of the log-gamma function
 (\mbox{\tt lgamma}) and the identity
@@ -564,7 +566,8 @@ $estimate
 
 [... additional output deleted ...]
 \end{verbatim}
-While usually produces one or more {\bf R} warnings due to numerical
+Executing \mbox{\tt nlm} here
+ usually produces one or more {\bf R} warnings due to numerical
 calculations happening on extremely small or large numbers
 (calculation of $p$ near the
 edge of the state-space), and they also happen if a poor
@@ -606,6 +609,9 @@ Therefore, the asymptotic ``Wald-type'' confidence interval for $N$ is
 $110.91 \pm 1.96 \times 16.125 = (79.305, 142.515)$. To report this in
 terms of density, we scale appropriately by the area of the prescribed
 state-space which is $64$ units of area (i.e., an $8 \times 8$ square).
+Our MLE of $D$ is $\hat{D} = 110.91/64  = 1.733$ individuals per
+square unit.
+
 
 
 \begin{comment}
@@ -662,7 +668,7 @@ parameter $N$ with $\psi$ \citep[e.g., see Sec. 7.1.6][for an example]{royle_dor
 We don't go into detail here, but we note that the
 likelihood under data augmentation is a zero-inflated binomial
 mixture -- precisely an occupancy type model \citep{royle:2006}.
-Thus, while it is possible to carryout likelihood analysis of
+Thus, while it is possible to carry out likelihood analysis of
 models under data augmentation, we primarily advocate data
 augmentation for Bayesian analysis.
 
@@ -703,7 +709,7 @@ joint likelihood using  data augmentation
 \citep{gardner_etal:2010jwm,russell_etal:2012}, discussed further in
 Chapt. \ref{chapt.covariates}. For such covariates (i.e., that are
 not fixed and known for all individuals), it is somewhat more
-challenging to do MLE for these based on the joint likelihood as we
+challenging to do MLE based on the joint likelihood as we
 have developed above. Instead it is more conventional to use what is
 colloquially referred to as the ``Huggins-Alho'' type model which is
 one of the approaches taken in the software package \mbox{\tt secr}
@@ -733,7 +739,7 @@ models it is not objectionable to use hypothesis tests or confidence
 intervals to determine importance of effects. 
 The second model
 selection context has to do with choosing among various detection
-functions although, as a general rule, we don't recommend this
+models, although, as a general rule, we don't recommend this
 application of model selection.  This is because there is hardly ever
 (if at all) a rational subject-matter based reason motivating specific
 distance functions. As a result, we believe that doing too much model
@@ -744,13 +750,15 @@ discuss many possibilities in Chapt. \ref{chapt.covariates}.
 
 
 {\bf Goodness-of-fit or model-checking} -- For many standard capture-recapture models,
-it is possible to identify goodness-of-fit statistics ({\bf XXXX REF XXXXX})
+it is possible to identify goodness-of-fit statistics 
 based on the
-multinomial likelihood and evaluate model adequacy using formal
+multinomial likelihood,
+\citep[][Chapt. 5]{cooch_white:2006},
+ and evaluate model adequacy using formal
 statistical tests. Similar strategies can be applied to SCR models
 using expected cell-frequencies based on the marginal distribution of
 the observations. Also, because computing MLEs is somewhat more
-efficient in many cases compared to Bayesian analysis, it is also
+efficient in many cases compared to Bayesian analysis, it is 
 sometimes feasible to use bootstrap methods. At the present time,
 we don't know of any applications of goodness-of-fit testing for SCR
 models based on likelihood inference, although we discuss the use of
@@ -797,21 +805,22 @@ study, we execute the following commands (note: these are in the help
 file and will execute if you type \mbox{\tt example(intlik3)}:
 {\small
 \begin{verbatim}
-library(scrbook)
-data(wolverine)
+> library(scrbook)
+> data(wolverine)
  
-traps <- wolverine$wtraps
-traplocs <- traps[,2:3]/10000
-K.wolv <- apply(traps[,4:ncol(traps)],1,sum)
+> traps <- wolverine$wtraps
+> traplocs <- traps[,2:3]/10000
+> K.wolv <- apply(traps[,4:ncol(traps)],1,sum)
 
-y3d <- SCR23darray(wolverine$wcaps,traps)
-y2d <- apply(y3d,c(1,3),sum)
+> y3d <- SCR23darray(wolverine$wcaps,traps)
+> y2d <- apply(y3d,c(1,3),sum)
 
-starts <- c(-1.5,0,3)
+> starts <- c(-1.5,0,3)
 
-frog <- nlm(intlik3,starts,hessian=TRUE,y=y2d,K=K.wolv,X=traplocs,delta=.2,ssbuffer=2)
+> frog <- nlm(intlik3,starts,hessian=TRUE,y=y2d,K=K.wolv,X=traplocs,
++             delta=.2,ssbuffer=2)
 
-frog
+> frog
 $minimum
 [1] 220.4313
 
@@ -830,17 +839,19 @@ To do all of that we need to manipulate the output of
   log(n0)}$. We execute the following commands:
 {\small 
 \begin{verbatim}
-frog <- nlm(intlik3,starts,hessian=TRUE,y=y2d,K=K.wolv,X=traplocs,delta=.2,ssbuffer=2)
-Nhat <- nrow(y2d)+exp(frog$estimate[3])
-area <- attr(intlik3(starts,y=y2d,K=K.wolv,X=traplocs,delta=.2,ssbuffer=2),"SSarea")
-Dhat <- Nhat/area
+> frog <- nlm(intlik3,starts,hessian=TRUE,y=y2d,K=K.wolv,X=traplocs,delta=.2,
++             ssbuffer=2)
+> Nhat <- nrow(y2d)+exp(frog$estimate[3])
+> area <- attr(intlik3(starts,y=y2d,K=K.wolv,X=traplocs,delta=.2,ssbuffer=2), 
++              "SSarea")
+> Dhat <- Nhat/area
 
-Dhat
+> Dhat
 [1] 0.5494947
 
-SE <- (1/area)*exp(frog$estimate[3])*sqrt(solve(frog$hessian)[3,3])
+> SE <- (1/area)*exp(frog$estimate[3])*sqrt(solve(frog$hessian)[3,3])
 
-SE
+> SE
 [1] 0.1087073
 \end{verbatim}
 } 
@@ -854,7 +865,11 @@ Sec. \ref{scr0.sec.wolverine} based on Bayesian
 analysis of the model.
 
 
-To evaluate the effect of the integration grid density, 
+The effect of approximating the integral by a discrete mesh of points
+is that it induces some numerical error in evaluation of the integral
+and, further, that error increases as the
+coarseness of the mesh increases. 
+To evaluate the effect (or sensitivity) of the integration grid density, 
 we obtained the MLEs for a state-space buffer of 2 (standardized
 units) and for integration grid with spacing $\delta = .3, .2, .1,
 .05$. The MLEs for these 4 cases including the relative runtime are
@@ -864,10 +879,7 @@ integration grid increases. Conversely, the runtime on the platform of
 the day for the 4 cases increases rapidly. 
 These runtimes could be regarded in
 relative terms,  across platforms, for gaging the decrease in
-speed as the fineness of the integration grid increases. The effect of
-this is that we anticipate some numerical error in approximating the
-integral on a mesh of points, and that error increases as the
-coarseness of the mesh increases. 
+speed as the fineness of the integration grid increases.
 
 
 \begin{table}[ht]
@@ -877,7 +889,7 @@ coarseness of the mesh increases.
 \begin{tabular}{crccc}
 \hline \hline
 $\delta$ &   & \multicolumn{3}{c}{Estimates} \\ \hline
-         &  runtime        & $\hat{\alpha}_0$ & $\hat{\alpha}_1$ &  $\widehat{\log(n_0)}$ \\ \hline
+         &  runtime (sec)       & $\hat{\alpha}_0$ & $\hat{\alpha}_1$ &  $\widehat{\log(n_0)}$ \\ \hline
  0.30   &  9.9  &  -2.819786 & 1.258468 & 3.569731  \\
  0.20   & 32.3  &  -2.817610 & 1.254757 & 3.583690 \\
  0.10  & 115.1  &  -2.817570 & 1.255112 & 3.599040 \\
@@ -960,17 +972,18 @@ function. We have saved the result into an {\bf R} data object called
 the {\bf R} commands for doing this (see the helpfile \mbox{\tt
   ?intlik4}): {\small
 \begin{verbatim}
-library(maptools)
-library(sp)
-library(scrbook)
+> library(maptools)
+> library(sp)
+> library(scrbook)
 
-data("fakeshapefile")
-#### replaces this:
-#####SSp <- readShapeSpatial('Sim_Polygon.shp')
-Pcoord <- SpatialPoints(G)
-PinPoly <- over(Pcoord,SSp)  ### determine if each point is in polygon
-mask <- as.numeric(!is.na(PinPoly[,1]))  ## convert to binary 0/1
-G <- G[mask==1,]
+    #### If we have the .shp file in place, we would use this command:
+    ####  SSp <- readShapeSpatial('Sim_Polygon.shp')
+    #### data(fakeshapefile) has SSp stored as an R data file
+> data(fakeshapefile)  
+> Pcoord <- SpatialPoints(G)
+> PinPoly <- over(Pcoord,SSp)  ### determine if each point is in polygon
+> mask <- as.numeric(!is.na(PinPoly[,1]))  ## convert to binary 0/1
+> G <- G[mask==1,]
 \end{verbatim}
 }
 We created  the function \mbox{\tt intlik4} which accepts the integration
@@ -979,27 +992,29 @@ the package  \mbox{\tt scrbook}.
 
 We apply this modification to the wolverine camera trapping
 study. \citet{royle_etal:2011jwm} created 2, 4 and 8 km state-space
-grids so as to remove ``non-habitat'' (mostly ocean, bayes, and large
+grids so as to remove ``non-habitat'' (mostly ocean, bays, and large
 lakes). We previously analyzed the model using {\bf JAGS} and {\bf WinBUGS} in
 Chapt. \ref{chapt.scr0}.  To set up the wolverine data and fit the
-model we execute the following commands
+model using maximum likelihood 
+we execute the following commands:
 {\small 
 \begin{verbatim}
-library(scrbook)
-data(wolverine)
+> library(scrbook)
+> data(wolverine)
 
-traps <- wolverine$wtraps
-traplocs <- traps[,2:3]/10000
-K.wolv <- apply(traps[,4:ncol(traps)],1,sum)
+> traps <- wolverine$wtraps
+> traplocs <- traps[,2:3]/10000
+> K.wolv <- apply(traps[,4:ncol(traps)],1,sum)
 
-y3d <- SCR23darray(wolverine$wcaps,traps)
-y2d <- apply(y3d,c(1,3),sum)
-G <- wolverine$grid2/10000
+> y3d <- SCR23darray(wolverine$wcaps,traps)
+> y2d <- apply(y3d,c(1,3),sum)
+> G <- wolverine$grid2/10000
 
-starts <- c(-1.5,0,3)
-frog <- nlm(intlik4,starts,hessian=TRUE,y=y2d,K=K.wolv,X=traplocs,G=G)
+> starts <- c(-1.5,0,3)
+> frog <- nlm(intlik4,starts,hessian=TRUE,y=y2d,K=K.wolv,X=traplocs,G=G)
 
-frog
+> frog
+
 $minimum
 [1] 225.8355
 
@@ -1098,7 +1113,10 @@ the \mbox{\tt secr} help manual can be accessed with the command:
 \end{verbatim}
 We note that \mbox{\tt secr} has many capabilities that we will not
 cover or do so only sparingly. We encourage you to read through the
-manual to get a better understanding of what the package is capable of.
+manual, the extensive documentation, and the vignettes, in order
+to get a better understanding of what the package is capable of. We
+also cover certain capabilities of \mbox{\tt secr} in many other
+chapters. 
 
 The main model-fitting function in   \mbox{\tt secr} is called
 \mbox{\tt secr.fit}, which 
@@ -1111,17 +1129,20 @@ basic model SCR0  is fitted as follows:
  secr.fit(capturedata, model = list(D  ~ 1, g0 ~ 1, sigma ~ 1), buffer = 20000)
 \end{verbatim}
 }
-where \mbox{\tt capturedata} is the  object created by \mbox{\tt secr}
+{\flushleft where} \mbox{\tt capturedata} is the  object created by \mbox{\tt secr}
 containing the encounter history data and the trap information, and
 the model expression \verb#g0~1# indicates the intercept-only (i.e.,
-constant) model.  Possible predictors for detection probability
+constant) model.  Note that we use $p_{0}$ for the baseline encounter
+probability parameter, which is $g_{0}$ here (but the meaning of
+$g_{0}$ changes depending on the model). Possible predictors for detection probability
 include both pre-defined variables (e.g., \mbox{\tt t} and \mbox{\tt
   b} corresponding to ``time'' and ``behavior''), and user-defined
 covariates of several kinds.  For example, to include a global
 behavioral response, this would be written as \verb#g0~b#.  The
 discussion of this (global versus local trap-specific behavioral
 response) and other covariates is developed more in
-Chapt. \ref{chapt.covariates}.
+Chapt. \ref{chapt.covariates}.  We can also model covariates on
+density in \mbox{\tt secr}, which we discuss in Chapt. \ref{chapt.state-space}.
 
 Before we can fit the models, the data must first be packaged properly
 for 
@@ -1137,7 +1158,7 @@ Sample session can be thought of as primary period identifier in a
 robust design like framework -- it could represent a yearly sample or
 multiple sample periods within a year, each of them producing data on
 a closed population. We discuss ``multi-session'' models in more
-detail below, in sec. \ref{mle.sec.multisession}.
+detail below, in Sec. \ref{mle.sec.multisession} and Chapt. \ref{chapt.multi-session}.
 
 
 There are three important constructor functions that help package-up
@@ -1219,7 +1240,8 @@ As with all SCR models, \mbox{\tt secr} fits a detection function relating
 the probability of detection to the distance of a detector from an
 individual activity center. \mbox{\tt secr} allows the user to specify one of a
 variety of detection functions including the commonly used
-half-normal, hazard rate, and exponential.  There are 12 different
+half-normal (``Gaussian''), hazard rate (``Gaussian hazard''), and
+(negative) exponential models.  There are 12 different
 functions as of version 2.3.1 (see Table \ref{covariates.tab.detmodels} in Chapt. \ref{chapt.covariates}), but
 some are only available for simulating data.
 %, and one
@@ -1234,16 +1256,17 @@ detection function:
 \end{verbatim}
 It is useful to note that \mbox{\tt secr} requires the buffer distance to be
 defined in meters and density will be returned as number of animals
-per hectare.  Thus to make comparisons between \mbox{\tt secr} and other models,
+per hectare.  Thus to make comparisons between \mbox{\tt secr} and
+output from other programs, 
 we will often have to convert the density to the same units.
 
 Most of the detection functions available in \mbox{\tt secr} contain
 some kind of a scale parameter which is usually labeled $\sigma$.  The
 units of this parameter default to meters in the \mbox{\tt secr}
 output.  We caution that the meaning of this parameter depends on the
-specific model being used and it should not be directly compared as a
+specific detection model being used, and it should not be directly compared as a
 measure of home-range size across models. Instead, as we noted in
-sec. \ref{scr0.sec.implied} every encounter probability model implies
+Sec. \ref{scr0.sec.implied} every encounter probability model implies
 a model of space-usage and fitted encounter models should be converted
 to a common currency such as ``area used.''
 
@@ -1492,7 +1515,10 @@ of marginalization over this prior distribution:
  \pi_{0}^{n_{0}}
 \frac{\exp(-\Lambda) \Lambda^{N}}{N!}
 \]
-Carrying-out the summation above produces exactly this marginal likelihood:
+In Chapt. \ref{chapt.state-space} we write $\Lambda = \mu ||{\cal
+  S}||$ where $||{\cal S}||$ is the area of the state-space, and $\mu$
+is the density (``intensity'') of the point process. 
+Carrying out the summation above produces exactly this marginal likelihood:
 \[
 {\cal L}_{2}({\bm \alpha}, \Lambda | {\bf y}) = 
  \left\{ \prod_{i}  [{\bf y}_{i}|{\bm \alpha}] \right\}  \Lambda^{n}   \exp( - \Lambda (1-\pi_{0}) )
@@ -1602,7 +1628,8 @@ baseline encounter probability $p_{0}$ (named $g_{0}$  in \mbox{\tt
   secr}) by just doing this (see Chapt. \ref{chapt.gof} for the {\bf
   R} code to set this up):
 \begin{verbatim}
-out <- secr.fit(capdata,model=list(D ~ session, g0 ~ session, sigma ~ 1), buffer=20000)
+> out <- secr.fit(capdata, model=list(D ~ session, g0 ~ session, sigma~ 1),
++                buffer=20000)
 \end{verbatim}
 More detailed analysis is given in Sec. \ref{gof.sec.aic} where we fit
 a number of different models and apply methods of model selection to
@@ -1621,7 +1648,7 @@ of SCR data sets, including model fitting, selection, and many summary
 analyses. In the previous sections, we've given a basic overview, and
 we do more in later chapters of this book.  Here we mention a few of
 these other capabilities that you should know about as you use
-\mbox{\tt secr}. Of course, you might as well skim through the
+\mbox{\tt secr}. Of course, you should skim through the
 associated documentation (\mbox{\tt ?secr}) to see more of whats available.
 
 \subsubsection{Alternative observation models}
@@ -1635,8 +1662,8 @@ Chapt. \ref{chapt.poisson-mn} and elsewhere in the book.
 \subsubsection{Summary Statistics} 
 \mbox{\tt secr} provides a useful default summary of the data, but it
 also has summary statistics about animal movement including
-mean-maximum distance moved. For example, see the help page \mbox{\tt
-  ?MMDM} which lists a number of other summary funcations which take a
+mean-maximum distance moved (the function \mbox{\tt MMDM}). For example, see the help page \mbox{\tt
+  ?MMDM} which lists a number of other summary functions which take a
 \mbox{\tt capthist} object:
 \begin{verbatim}
 dbar(capthist)
@@ -1809,7 +1836,7 @@ straightforward to develop in {\bf BUGS} but, so far, there is no
 available platform for doing MLE of such models, although we imagine
 one could develop this.  On the other hand, likelihood analysis makes
 it easy to do model-selection by AIC and in some cases compute
-standard errors or carry-out goodness-of-fit evaluations.  
+standard errors or carry out goodness-of-fit evaluations.  
 
 
 \begin{comment}
