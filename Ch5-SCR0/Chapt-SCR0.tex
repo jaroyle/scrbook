@@ -1749,6 +1749,165 @@ hra         & 3.85  & 3.78 &  5.51  & 2.64 \\
 \end{table}
 
 
+\subsection{Realized and  Expected Density}
+
+In Bayesian analysis of the SCR model, we estimate a parameter $N$
+which is the size of the population for the prescribed state-space
+(presumably the state-space is defined so as to be relevant to where
+our traps were located, so $N$ can be thought of as the size of the
+sampled population). In the context of \citet{efford_fewster:2012}
+this is the {\it realized} population size. Conversely, sometimes we
+see estimates of {\it expected} population size reported, which are
+estimates of $\mathbb{E}(N)$,
+% XXXX I often use brackets instead of parentheses for E[N]. Should we
+% be consistent? Let me know which you prefer.
+the expected size of some hypothetical,
+unspecified population.  Usually the distinction between realized
+and expected population size is not made in SCR models, because almost
+everyone only cares about  actual populations -- and their realized
+population size.
+
+If you do likelihood analysis of SCR models, then the distinction between realized and
+expected is often discussed by whether the estimator is ``conditional on $N$''
+(realized) or not (expected). The naming arises because in obtaining
+the MLE of $N$, its properties are evaluated
+{\it conditional} on $N$ --
+in particular, if the estimator is unbiased then $\mathbb{E}(\hat{N}|N) = N$ and
+$\mbox{Var}(\hat{N}|N) = \tilde{\sigma}_{N}^{2}$
+% XXXX Should Var be Roman font? i.e. \textrm{Var} or \mbox{Var} or whatever?
+is the sampling variance.
+This is bad nomenclature because,
+%if we need to predict a new
+%population that was not sampled (see below), then we need to
+% predict a new random variable ``unconditionally'', then we
+%have to do some gyrations to cook-up estimates and variances (see
+%below).  Nor does this nomenclature
+it does not conform to anything relevant to
+Bayesian inference.  If we care about $N$ for the population that we
+sampled it is understood to be a
+realization of a random variable, but the relvance of ``conditional on
+$N$'' is hard to see. Bayesian analysis will provide a prediction of
+$N$ that is based on the posterior $[N|y,\theta]$ -- which is
+certainly {\it not} conditional on $N$.
+
+There is a third type of inference objective that is relevant
+in pratice and that is prediction of $N$ for a population that was not
+sampled -- i.e., a ``new'' population.
+To elaborate on this, consider a situation in which we are
+concerned about the tiger population in 2 distinct reserves in India.
+We do a camera trapping study on one of the reserves to estimate
+$N_{1}$ and you think the reserves are similar and homoegeneous so
+you're willing to apply a density estimate based on $N_{1}$ to the 2nd
+reserve. For the 2nd reserve, do we want a prediction of the realized
+population size, $N_{2}$, or do we want an estimates of its expected
+value? We believe the former is the proper quantity for inference
+about the population size in the 2nd reserve. An estimate of $N_{2}$
+should include the uncertainty with which the mean is estimated (from
+reserve 1) and it should also include ``process variation'' for making
+the prediction of the latent variable $N_{2}$.  
+
+To do a bayesian analysis of this you could just define the
+state-space to be the union of the two state-spaces, increase $M$ so
+that the posterior of the total population size is not truncated, and
+then have MCMC generate a posterior sample of individuals on the joint
+state-space. You can tally-up the ones that are on ${\cal S}_{2}$ as
+an estimate of $N_{2}$.
+
+To carry-out a classical likelihood analysis of this 2nd type of
+problem, what should we do?
+The argument for making a prediction of a new value of $N$
+would go something like this: If you obtian an MLE of $N$, say
+$\hat{N}$, then the inference procedure tell us the variance of this
+{\it conditional} on $N$. i.e., $Var(\hat{N}|N)$. This is fine, if we
+care about the specific value of $N$ in question.  However, if we
+don't care about the specific one in question then we want to
+``uncondition'' on $N$ to introduce a new variance component. Law of
+total variance says:
+\[
+ \mbox{Var}(\hat{N}) = \mathbb{E}[ \mbox{Var}( \hat{N}|N)] +  \mbox{Var}[ \mathbb{E}( \hat{N} |N)]
+\]
+If $\hat{N}$ is unbiased then we say
+\[
+ \mbox{Var}(\hat{N}) = \sigma^{2}(\hat{N}) + \mbox{Var}(N)
+\]
+The first part is estimation error and the 2nd part is process error.
+\begin{comment}
+  XXXX Here is what Murray has to say about this on the help page for
+  region.N():
+
+Realised N is given by R(N) = n + integral_over_B (1 - p.(X))D(X) dX
+(the second term represents undetected animals). This definition
+strictly holds only when region B is at least as large as the region
+of integration used to fit the model; only with this condition can we
+be sure all n detected animals have centres within B. The sampling
+variance of R(N), technically a mean square prediction error (Johnson
+et al. 2010), is approximated by summing the expected Poisson variance
+of the true number of undetected animals and a delta-method estimate
+of its sampling variance, obtained as for E(N).
+\end{comment}
+%In practice, we need to make some adjustment for having observed part
+%of the population size $N=n+n_{0}$ but this is a technical detail not
+%really an important conceptual one.  So the Var(N) part decreases with
+%the magnitude of $n_{0}$ and, as $n_{0}$ approaches $N$ then .......
+%......... not sure where i'm going here .................
+
+%Frequentists have a tough time with the idea of predicting
+%random variables and this is a good illustration of that.
+
+
+The considerations for estimating density are the same. Density can be
+$N/\mbox{area}$ where $N$ is the realized population -- we understand it to
+be that, or else we would put an expectation operator around it like
+$\mathbb{E}(N)/\mbox{area}$.
+Classically, density is thought of as being defined
+as the expected value of $N$ but, clearly, it is not -- because it
+depends on whether you're talking about the realized density, of an
+actual population, or expected density for some hypothetical
+unspecified population.
+However, the formula for obtaining ``expected density''
+is slightly different depending on
+whether we assume $N$ has  a Poisson distribution or whether we do
+this by data augmentation. In the latter case $\psi$ is related to the
+point process intensity (see Chapt. \ref{chapt.state-space}) in the
+sense that, under the binomial point process model
+\[
+\mathbb{E}(N) = M*\psi
+\]
+whereas, under the Poisson point process model
+\[
+\mathbb{E}(N) = D*A
+\]
+so what we think of as ``density'', $D$, is $ D = M \psi /\mbox{area}$.
+
+
+In summary, there are 3 basic inference problems:
+\begin{itemize}
+\item[(1)] What is the value of $N$ for some population that was
+  sampled.  This is what Efford and Fewster call "realized N" In
+  general, you want the uncertainty to reflect having to estimate
+  $n_{0}$, the part of the population not seen.
+\item[(2)] You need to estimate $N$ for some population that you didn't
+  sample but it is ``similar'' to the population that you have
+  information on.  In this case, you have to account for both
+  variation in having to estimate parameters of the distribution of N
+  and you have to account for process variation in N (i.e., due to the
+  stochastic model of N).
+\item[(3)] In some extremely limited cases you might care about
+  estimating the expected value of $N$, $\mathbb{E}(N) = \lambda$ or
+  $\psi*M$ under data augmentation.  This is only useful as a
+  hypothetical statement that you might use, e.g., if you put a new 1
+  million ha refuge in somewhere then you might say its expected
+  population size is 200 tigers.
+\end{itemize}
+% XXXX This is good stuff, but rather subtle. Is it true that the
+% predition for (2) and (3) will be the same, but the variance will be
+% different? Isn't this the same distinction between a "prediction
+% interval" and a "confidence interval"?
+If you do Bayesian analysis then how to compute variances properly
+doesn't really matter. You
+decide if you care about $N$ or its expected value, or predictions of
+some ``new'' $N$,  and you tabulate
+the correct posterior distribution.
 
 \subsection{Use of other \textbf{BUGS} engines: {\bf JAGS}}
 
@@ -2702,173 +2861,6 @@ retain the MCMC history for the ${\bf s}$
 variables and also the data augmentation variables z in order to do
 some of the following analyses.
 
-
-\subsection{Realized vs. Expected Density}
-
-In Bayesian analysis of the SCR model, we estimate a parameter $N$
-which is the size of the population for the prescribed state-space
-(presumably the state-space is defined so as to be relevant to where
-our traps were located, so $N$ can be thought of as the size of the
-sampled population). In the context of \citet{efford_fewster:2012}
-this is the {\it realized} population size. Conversely, sometimes we
-see estimates of {\it expected} population size reported, which are
-estimates of $\mathbb{E}(N)$,
-% XXXX I often use brackets instead of parentheses for E[N]. Should we
-% be consistent? Let me know which you prefer.
-the expected size of some hypothetical,
-unspecified population.  Usually the distinction between realized
-and expected population size is not made in SCR models, because almost
-everyone only cares about  actual populations -- and their realized
-population size.
-
-If you do likelihood analysis of SCR models, then the distinction between realized and
-expected is often discussed by whether the estimator is ``conditional on $N$''
-(realized) or not (expected). The naming arises because in obtaining
-the MLE of $N$, its properties are evaluated
-{\it conditional} on $N$ --
-in particular, if the estimator is unbiased then $\mathbb{E}(\hat{N}|N) = N$ and
-$Var(\hat{N}|N) = \tilde{\sigma}_{N}^{2}$
-% XXXX Should Var be Roman font? i.e. \textrm{Var} or \mbox{Var} or whatever?
-is the sampling variance.
-This is bad nomenclature because,
-%if we need to predict a new
-%population that was not sampled (see below), then we need to
-% predict a new random variable ``unconditionally'', then we
-%have to do some gyrations to cook-up estimates and variances (see
-%below).  Nor does this nomenclature
-it does not conform to anything relevant to
-Bayesian inference.  If we care about $N$ for the population that we
-sampled it is understood to be a
-realization of a random variable, but the relvance of ``conditional on
-$N$'' is hard to see. Bayesian analysis will provide a prediction of
-$N$ that is based on the posterior $[N|y,\theta]$ -- which is
-certainly {\it not} conditional on $N$.
-
-There is a third type of inference objective that is relevant
-in pratice and that is prediction of $N$ for a population that was not
-sampled -- i.e., a ``new'' population.
-To elaborate on this, consider a situation in which we are
-concerned about the tiger population in 2 distinct reserves in India.
-We do a camera trapping study on one of the reserves to estimate
-$N_{1}$ and you think the reserves are similar and homoegeneous so
-you're willing to apply a density estimate based on $N_{1}$ to the 2nd
-reserve. For the 2nd reserve, do we want a prediction of the realized
-population size, $N_{2}$, or do we want an estimates of its expected
-value? We believe the former is the proper quantity for inference
-about the population size in the 2nd reserve. An estimate of $N_{2}$
-should include the uncertainty with which the mean is estimated (from
-reserve 1) and it should also include ``process variation'' for making
-the prediction of the latent variable $N_{2}$.  If we do this all as
-part of the MCMC algorithm then our shit should be tight, bro.
-% XXXX Yes!
-
-To do a bayesian analysis of this you could just define the
-state-space to be the union of the two state-spaces, increase $M$ so
-that the posterior of the total population size is not truncated, and
-then have MCMC generate a posterior sample of individuals on the joint
-state-space. You can tally-up the ones that are on ${\cal S}_{2}$ as
-an estimate of $N_{2}$.
-
-To carry-out a classical likelihood analysis of this 2nd type of
-problem, what should we do?
-The argument for making a prediction of a new value of $N$
-would go something like this: If you obtian an MLE of $N$, say
-$\hat{N}$, then the inference procedure tell us the variance of this
-{\it conditional} on $N$. i.e., $Var(\hat{N}|N)$. This is fine, if we
-care about the specific value of $N$ in question.  However, if we
-don't care about the specific one in question then we want to
-``uncondition'' on $N$ to introduce a new variance component. Law of
-total variance says:
-\[
- Var(\hat{N}) = E[ Var( \hat{N}|N)] +  Var[ E( \hat{N} |N)]
-\]
-If $\hat{N}$ is unbiased then we say
-\[
- Var(\hat{N}) = \sigma^{2}(\hat{N}) + Var(N)
-\]
-The first part is estimation error and the 2nd part is process error.
-\begin{comment}
-  XXXX Here is what Murray has to say about this on the help page for
-  region.N():
-
-Realised N is given by R(N) = n + integral_over_B (1 - p.(X))D(X) dX
-(the second term represents undetected animals). This definition
-strictly holds only when region B is at least as large as the region
-of integration used to fit the model; only with this condition can we
-be sure all n detected animals have centres within B. The sampling
-variance of R(N), technically a mean square prediction error (Johnson
-et al. 2010), is approximated by summing the expected Poisson variance
-of the true number of undetected animals and a delta-method estimate
-of its sampling variance, obtained as for E(N).
-
-\end{comment}
-%In practice, we need to make some adjustment for having observed part
-%of the population size $N=n+n_{0}$ but this is a technical detail not
-%really an important conceptual one.  So the Var(N) part decreases with
-%the magnitude of $n_{0}$ and, as $n_{0}$ approaches $N$ then .......
-%......... not sure where i'm going here .................
-
-%Frequentists have a tough time with the idea of predicting
-%random variables and this is a good illustration of that.
-
-
-
-The considerations for estimating density are the same. Density can be
-$N/\mbox{area}$ where $N$ is the realized population -- we understand it to
-be that, or else we would put an expectation operator around it like
-$\mathbb{E}(N)/\mbox{area}$.
-Classically, density is thought of as being defined
-as the expected value of $N$ but, clearly, it is not -- because it
-depends on whether you're talking about the realized density, of an
-actual population, or expected density for some hypothetical
-unspecified population.
-However, the formula for obtaining ``expected density''
-is slightly different depending on
-whether we assume $N$ has  a Poisson distribution or whether we do
-this by data augmentation. In the latter case $\psi$ is related to the
-point process intensity (see Chapt. \ref{chapt.state-space}) in the
-sense that, under the binomial point process model
-\[
-\mathbb{E}(N) = M*\psi
-\]
-whereas, under the Poisson point process model
-\[
-\mathbb{E}(N) = D*A
-\]
-so what we think of as ``density'', $D$, is $ D = M \psi /\mbox{area}$.
-
-% XXXX I would distinguish between realized and expected values of N
-% and density here. E[D] = (M*phi)/area, right? XXXX
-
-
-In summary, there are 3 basic inference problems:
-\begin{itemize}
-\item[(1)] What is the value of N for some population that was
-  sampled.  This is what Efford and Fewster call "realized N" In
-  general, you want the uncertainty to reflect having to estimate
-  $n_{0}$, the part of the population not seen.
-\item[(2)] You need to estimate N for some population that you didn't
-  sample but it is ``similar'' to the population that you have
-  information on.  In this case, you have to account for both
-  variation in having to estimate parameters of the distribution of N
-  and you have to account for process variation in N (i.e., due to the
-  stochastic model of N).
-\item[(3)] In some extremely limited cases you might care about
-  estimating the expected value of N, $\mathbb{E}(N) = \lambda$ or
-  $\psi*M$ under data augmentation.  This is only useful as a
-  hypothetical statement that you might use, e.g., if you put a new 1
-  million ha refuge in somewhere then you might say its expected
-  population size is 200 tigers.
-\end{itemize}
-% XXXX This is good stuff, but rather subtle. Is it true that the
-% predition for (2) and (3) will be the same, but the variance will be
-% different? Isn't this the same distinction between a "prediction
-% interval" and a "confidence interval"?
-If you do Bayesian analysis then how to compute variances properly
-doesn't really matter. You
-decide if you care about $N$ or its expected value, or predictions of
-some ``new'' $N$,  and you tabulate
-the correct posterior distribution.
 
 
 \subsection{Constructing Density Maps}
