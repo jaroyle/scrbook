@@ -280,12 +280,6 @@ employed models; for all analyses we ran 3 chains with a burn-in of
 % We start here by presenting the basic SCR model with no covariates and
 % the half normal distance function.
 
-
-%%% BETH: Later in the chapter you give commands for connecting the
-%% the bear data, through R, with the BUGS model specification for
-%% a SEX model.  I wonder if you should include HERE a similar
-%% set of R instructions for connecting the bear data with the BUGS
-%% model shown in THIS PANEL? (below)???
 In Panel \ref{covariates.panel.basicSCR}, we present the basic SCR
 model and show how to specify the negative exponential encounter
 probability model.
@@ -301,28 +295,36 @@ with dimensions $\mbox{\tt nind} \times \mbox{\tt ntraps} \times \mbox{\tt nreps
 representing the capture histories of $\mbox{\tt nind}$ captured individuals at
 $\mbox{\tt ntraps}$ trap locations.  In the Bayesian analysis, data augmentation is
 used to estimate $N$ and therefore the \mbox{\tt bearArray} data must be augmented with
-$M - \mbox{\tt nind}$ all zero encounter histories.  
+$M - \mbox{\tt nind}$ all zero encounter histories.  In models without time dependence,
+the augmented \mbox{\tt bearArray} (called \mbox{\tt Yaug} in the code) will be reduced
+to a 2 dimensional array (denoted \mbox{\tt y} in the code) that has dimensions 
+ $\mbox{\tt M} \times \mbox{\tt ntraps}$.
 
 \begin{verbatim}
-library(rjags)  #load the necessary libraries
-library(scrbook)
+>library(rjags)  #load the necessary libraries
+>library(scrbook)
 
-data(beardata)   #attach the bear data for Ft. Drum
-ymat<-beardata$bearArray
-trapmat<-beardata$trapmat
-nind<-dim(beardata$bearArray)[1]
-K<-dim(beardata$bearArray)[3]
-ntraps<-dim(beardata$bearArray)[2]
-M=650
-nz<-M-nind
+>data(beardata)   #attach the bear data for Ft. Drum
+>ymat<-beardata$bearArray
+>trapmat<-beardata$trapmat
+>nind<-dim(beardata$bearArray)[1]
+>K<-dim(beardata$bearArray)[3]
+>ntraps<-dim(beardata$bearArray)[2]
+>M=650
+>nz<-M-nind
 
-#create augmented array
-Yaug <- array(0, dim=c(M,ntraps,K))
-Yaug[1:nind,,]<-ymat
-y<-apply(Yaug,1:2, sum)
+  #create augmented array
+>Yaug <- array(0, dim=c(M,ntraps,K))
+>Yaug[1:nind,,]<-ymat
+>y<-apply(Yaug,1:2, sum)
 
 \end{verbatim}
 
+
+The function {\tt bear.JAGS} also establishes the upper 
+and lower limits on the state space by centering the trap
+array coordinates (which are imported with the {\tt beardata}
+and saved in the code above as {\tt trapmat}) and then buffering by 20km.  
 
 
 \begin{panel}[htp]
@@ -450,8 +452,7 @@ language.  For this part, we will stick with the Gaussian encounter
 probability model
  shown in the Panel \ref{covariates.panel.basicSCR} above.
 %%%
-%%%
-%%%
+
 
 \section{Modeling Covariate Effects}
 
@@ -776,13 +777,8 @@ are now also indexed by $k$):
 \end{eqnarray*}
 
 Since the behavioral response is occasion specific, to implement either the local or global 
-response model in \jags~, we will have to use the 3-d array of the
-%%% BETH: nind should be the size of the augmented data set M right?
-%%% I think you need a few sentences somewhere where you  bring that 
-%% up. It is worth saying that the observed DATA are the nind x ntraps
-%% x nreps BUT THAT, for the bayesian analysis, you have to do data
-%% augmentation and bring your data set up to size M
-capture histories ($\mbox{\tt nind} \times \mbox{\tt ntraps} \times
+response model in \jags~, we will have to use the 3-d array of the augmented
+capture histories ($\mbox{\tt M} \times \mbox{\tt ntraps} \times
 \mbox{\tt nreps}$) as we did for the time-varying encounter probability
 model above. The code must loop over each sampling occasion, but otherwise, the model
 varies only a little from the basic SCR model shown in Panel \ref{covariates.panel.basicSCR}.  
@@ -816,12 +812,9 @@ the model tends to over estimate encounter probability
 never observed have a lower encounter 
 probability than those that 
 have been captured in the study) and thereby reduce the 
-%%% BETH: Next 2 lines are contractory. Estimates were similar. But the
-%%% estimate of N was smaller? Which is it?
 estimate of $N$.  We do not include the results here, but 
 the estimates were similar under the local behavioral response
-model, although the estimate of $N$ was smaller and there 
-was a larger recapture effect at the local level.  
+model.  
 
 \begin{table}[ht]
 \centering
@@ -872,9 +865,9 @@ size, so that
 $\alpha_{1}$ might also be sex-specific also.  The fully sex-specific model is:
 \begin{eqnarray*}
 \mbox{logit}(p_{0,i}) &= &\alpha_{0,sex_{i}}  \\
-p_{ijk} &= &p_{0,i} \exp(- \alpha_{1, sex_{i}}*||{\bf s}_{i}-{\bf x}_{j}||^2)
+p_{ijk} &= &p_{0,i} \exp(- \alpha_{1, sex_{i}}*||{\bf x}_{j}-{\bf s}_{i}||^2)
 \end{eqnarray*}
-where $sex_{i}$ is a binary vector indicating the sex of
+where $sex_{i}$ is a vector indicating the sex of
 each individual (1 = male, 2 = female).  While we might know the sex of all
 individuals observed in the study, we will never know the
 sex of individuals that are not observed,
@@ -903,29 +896,35 @@ consideration in choosing the particular parameterization.
 Specifying a fully sex-specific model for {\bf JAGS} is similar to the
 time-specific model shown above. We need to use an index or dummy
 variable to let $\alpha_0$ and/or $\alpha_1$ be defined separately for
-males and females. The main difference is that we do
+males and females. The main difference in this sppecification is that we do
 not observe sex for the augmented individuals. Therefore, we have
 missing observations of the covariate for those individuals. As a
 result, sex is regarded as a random variable and so the missing values
 can be estimated along with the other structural parameters of the
-model. 
-%%% BETH: In the example analysis is the variable SEX a binary 0/1
-%%% variable or is it a CATEGORICAL Variable having values 1/2? This
-%%% makes a difference -- if the former, then the following is
-%%% correct. If the latter then the following is NOT CORRECT and it
-%%% should be categorical and the cell probabilities need to be a
-%%% vector of length 2. I think in this case below it is 0/1 so we're
-%%% good right?
-In regarding sex as a random variable, 
-we have to specify a distribution for it.
+model.    
+
+Because we are regarding sex as a random variable, 
+we have to specify a distribution for it.  
 With only two possible outcomes, it is natural to suppose that
 $\mbox{\tt Sex}_{i} \sim
-\mbox{Bernoulli}(\psi_{sex})$ where  the parameter $\psi_{sex}$ is the sex ratio of the
-population.
+\mbox{Bernoulli}(\psi_{sex})$ where the parameter $\psi_{sex}$ is the sex ratio of the
+population.  
 We assume our default non-informative prior for this parameter:
 $\psi_{sex} \sim \mbox{Uniform}(0,1)$.  The model
 specification in Panel \ref{covariates.panel.SCRsex} demonstrates how
 to incorporate a partially observed covariate (i.e., ``sex'').
+It is important to note that in the previous equation,
+$sex_{i}$ is a vector with two categories indicating the sex of
+each individual (e.g., 1 = male, 2 = female).  This corresponds
+directly to having a binary indicator of sex 
+(e.g., $\mbox{\tt Sex}_{i} = 1$ if individual $i$ is female, and 0 otherwise).
+In the Bayesian formulation of the model, we use 
+both the binary indicator ({\tt Sex}) and a categorical
+indicator ($\mbox{\tt Sex2} = \mbox{\tt Sex} + 1$).  The former (termed {\tt Sex} in 
+Panel \ref{covariates.panel.SCRsex}) allows us to specify the \mbox{Bernoulli} 
+distribution for the random variable, and the latter (termed {\tt Sex2}) allows
+us to use the dummy or indicator variable specification in the model.
+
 
 In both {\bf JAGS} or {\bf BUGS} missing data are indicated by  {\tt
   NA} in the data objects passed to the program through the \mbox{\tt
@@ -944,22 +943,15 @@ below shows you how to set up the data including the {\tt Sex} vector
 and the initial values function(the remainder of the code is identical to what we've
 shown before).  
 
-%%% BETH: I changed SEX to be Sex -- in trying to be consistent with
-%%% some other covariate models in other chapters
-%% BETH: Is beardata$sex a cateogircal variable? So you're convertin
-%% it to binary? Please add a sentence or two to the above paragraph
-%% to clarify that point in the paragraph (I see you have a comment
-%% below but I think saying it in the text will set the reader up to
-%% be understand whats going on)
 {\small
 \begin{verbatim}
-sex<-beardata$sex  #the sex data for captured individual
-Sex<-c(sex-1, rep(NA, nz)) #sex is coded as 1 and 2, this recodes it to 0 and 1
-                           #so we can use Bernoulli distribution for it
+>sex<-beardata$sex  #the sex data for captured individual
+>Sex<-c(sex-1, rep(NA, nz)) #sex is coded as 1 and 2, this recodes it to 0 and 1
+                            #so we can use Bernoulli distribution 
 
-data<-list(y=y,Sex=Sex, M=M,K=K, J=ntraps, xlim=xlim, ylim=ylim,area=areaX)
-params<-c('psi','p0','N', 'D', 'sigma', 'psi.sex')
-inits =  function() { list(z=c(rep(1,nind), rbinom(nz,1,0.5)),psi=runif(1), 
+>data<-list(y=y,Sex=Sex, M=M,K=K, J=ntraps, xlim=xlim, ylim=ylim,area=areaX)
+>params<-c('psi','p0','N', 'D', 'sigma', 'psi.sex')
+>inits =  function() { list(z=c(rep(1,nind), rbinom(nz,1,0.5)),psi=runif(1), 
            s=cbind(runif(M, xlim[1],xlim[2]), runif(M,ylim[1],ylim[2])),
            psi.sex=runif(1),Sex=c(rep(NA, nind), rbinom(nz,1,0.5)), 
            sigma=runif(2,2,3),alpha0=runif(2)) }
@@ -970,9 +962,7 @@ inits =  function() { list(z=c(rep(1,nind), rbinom(nz,1,0.5)),psi=runif(1),
 
 %%% BETH: NOTE: in this panel below I made a lot of notational changes
 %%%  We need to catch these in the R package LATER this summer
-%%% ALSO: I think you should say something in the text about the fact
-%%% that you're converting freely between categorical and Bernoulli
-%%% versions of the random variable Sex. This is confusing to some readers. 
+ 
 \begin{panel}[htp]
 \centering
 \rule[0.1in]{\textwidth}{.03in}
@@ -1219,21 +1209,6 @@ different levels of heterogeneity: A population standard deviation of
 }
 \label{covariates.fig.one}
 \end{figure}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
