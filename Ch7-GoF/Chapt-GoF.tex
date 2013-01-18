@@ -16,7 +16,7 @@ reasonable description of our data or not (model checking, assessment,
 or ``goodness-of-fit'').  In previous chapters we
 addressed the problems of estimation of model parameters, 
 and also making
-predictions of latent variables, either ${\bf s}$ or
+predictions of latent variables, ${\bf s}$ or $z$, or
 functions of these variables such as density or population size.
 In this chapter, we focus on the last two of these basic
 inference tasks: model selection (which model or models should be
@@ -30,7 +30,7 @@ implemented in the \mbox{\tt secr} package) and also Bayesian
 analysis.
 Specifically,
 we review a number of standard methods of model selection that apply
-to ``variable selection'' problems. That is, when our set of models
+to ``variable selection'' problems, when our set of models
 consists of distinct covariate effects and they represent constraints
 of some larger model.
 For classical analysis based on likelihood, model selection by
@@ -52,7 +52,7 @@ on these and many more related ideas for variable selection.
 also recommend \citet[][Chapt. 7]{link_barker:2010} for general
 information on model selection and assessment.
 
- To check model adequacy, or whether a
+ To check model adequacy in a Bayesian framework, or whether a
 specific model provides a satisfactory description of our data set
 (i.e., ``goodness-of-fit''), we rely exclusively on the Bayesian
 p-value framework \citep{gelman_etal:1996}.  For checking adequacy of
@@ -63,7 +63,7 @@ problem up into 2 components which we attack separately: (1)
 Conditional on the underlying point process, does the encounter model
 fit? (2) Do the uniformity and independence assumptions appear
 adequate for the point process model of activity centers? The latter
-component of model fit has a huge amount of precedent in the
+component of model fit has a huge amount of precedence in the
 ecological literature as it is analogous to the classical problem of
 testing ``complete spatial randomness'' \citep{cressie:1992, illian_etal:2008}.
 
@@ -255,14 +255,14 @@ which we demonstrate below. The AIC of a model is simply twice the
 negative log-likelihood evaluated at the MLE, penalized by the number of parameters
 ($np$) in the model:
 \[
- \mbox{AIC} = -2 \mbox{logL}({\bf y}|\hat{\bm \theta})  + 2 np
+ \mbox{AIC} = -2 \mbox{logL}(\hat{\bm \theta}|{\bf y})  + 2 np
 \]
 Models with small values of AIC are preferred.
 It is common to use a modified AIC referred to as $AIC_{c}$ for small
 sample sizes which is
 \[
  \mbox{AIC}_{c}  =
--2 \mbox{logL}({\bf y}|\hat{\bm \theta})  + \frac{2 np
+-2 \mbox{logL}(\hat{\bm \theta}|{\bf y})  + \frac{2 np
   (np+1)}{n-np-1}
 \]
 where $n$ is the sample size.  Two important problems with the use of
@@ -348,24 +348,26 @@ library(secr)
 library(scrbook)
 data(wolverine)
 traps <- as.matrix(wolverine$wtraps)
-  ## Name variables as required by secr
+
+## Name variables as required by secr
 dimnames(traps) <- list(NULL,c("trapID","x","y",paste("day",1:165,sep="")))
-  ## Convert trap information to a secr "traps" object
+## Convert trap information to a secr "traps" object
 trapfile2 <- scr2secr(scrtraps=traps,type="proximity")
 
-  ## Grab the wolverine state-space grid (2km here)
+## Grab the wolverine state-space grid (2km here)
 gr <- as.matrix(wolverine$grid2)
 dimnames(gr) <- list(NULL,c("x","y"))
 gr2 <- read.mask(data=gr)
 
-  ## Grab the encounter data, and re-name variables
+## Grab the encounter data, and re-name variables
 wolv.dat <- wolverine$wcaps
 dimnames(wolv.dat) <- list(NULL,c("Session","ID","Occasion","trapID"))
 
-  ## Convert binary 0/1 sex variable to categorical 1/2 for "session"
+## Convert binary 0/1 sex variable to categorical 1/2 for "session"
 wolv.dat[,1] <- wolverine$wsex[wolv.dat[,2]]+1
 wolv.dat <- as.data.frame(wolv.dat)
-  ## Convert to capthist object
+
+## Convert to capthist object
 wolvcapt3 <- make.capthist(wolv.dat,trapfile2,fmt="trapID",noccasions=165)
 \end{verbatim}
 }
@@ -567,7 +569,7 @@ based on a number of basic considerations:
 The importance of the covariate $C$ is then measured by the posterior
 probability that $w=1$.
 \item[(3)] DIC -- the Deviance Information Criterion: Bayesian model
-  selection is now routinely carried-out using the Deviance
+  selection is now routinely carried out using the Deviance
   Information Criterion (DIC; \citet{spiegelhalter_etal:2002})
   although its
   effectiveness in hierarchical models depends very much on the manner
@@ -608,7 +610,7 @@ for some standardized model selection problems.
 
 Model deviance is defined as negative twice the log-likelihood;
 i.e., for a given model with parameters $\theta$: $\mbox{Dev}(\theta) =
--2*\mbox{\tt logL}({\bf y}|\theta)$.  The DIC is defined as the
+-2*\mbox{\tt logL}(\theta|{\bf y})$.  The DIC is defined as the
 posterior mean of the deviance, $\overline{\mbox{Dev}}(\theta)$, plus a measure of model complexity,
 $p_{D}$:
 \[
@@ -648,7 +650,7 @@ and
  \mbox{log}(\sigma_{i}) = \log(\sigma_{0}) + \beta_{sex} \mbox{\tt Sex}_{i}
 \]
 
-Unlike the multi-session model in \mbox{\tt secr}, we carry-out the
+Unlike the multi-session model in \mbox{\tt secr}, we carry out the
 analysis of the sex-specific model here by putting all of the data
 into a single data set, and explicitly accounting for the covariate
 'sex' in the model by assigning it a Bernoulli prior distribution with
@@ -985,7 +987,7 @@ Conceptually, analysis of this expanded model within the data
 augmentation framework does not pose any additional difficulty. One
 broader, technical consideration is that posterior model probabilities
 are well known to be sensitive to priors on parameters
-\citep{aitkin:1991, link_barker:2006} and see also
+\citep{aitkin:1991, link_barker:2006}. See also 
 \citet[][Sec. 3.4.3]{royle_dorazio:2008} and
 \citet[][Sec. 7.2.5]{link_barker:2010}.  What might normally be viewed
 as vague or non-informative priors, are not usually innocuous or
@@ -1008,8 +1010,8 @@ of posterior model probabilities to different prior specifications.
 
 Our {\bf R} script \mbox{\tt wolvSCR0ms} in \mbox{\tt scrbook}
 provides the model indicator variable implementation for the fully
-sex-specific SCR0 model.  It is run by setting \mbox{\tt model=5} in
-the function call. We note that it is not very useful to report most
+sex-specific SCR model.  It is run by setting \mbox{\tt model=5} in
+the function call. We note again that it is not very useful to report most
 parameter estimates from this model because their marginal posterior
 is a mixture from the prior (when a value of the indicator variable of
 0 is sampled) and draws informed by the data (i.e., from the
@@ -1058,7 +1060,7 @@ posterior model weight of $0.420$. The model with no sex effect has
 posterior probability $0.286$ and the remaining posterior mass is
 distributed over the other six models. We could arrive at a
 qualitatively similar conclusion using a more ad hoc approach based
-on looking at the posterior mass for each parameter under each of the
+on looking at the posterior mass for each parameter under the
 full model (model 4; see Table \ref{gof.tab.dic}, in part). Considering
 the sex-specific intercept, it appears to be very important as its
 posterior mass is mostly away from 0.  On the other hand, the
@@ -1067,7 +1069,7 @@ $\psi_{sex}$ (probability that an individual is a male) is $0.54$ with
 a large posterior standard deviation.  We might therefore be inclined
 to discard the sex effect on $\log(\sigma)$ based on classical
 thinking-like-a-hypothesis-testing-guy and settle for the model with a
-sex-specific intercept. This is consistent with our indicator variable
+sex-specific intercept in the encounter probability model. This is consistent with our indicator variable
 approach which found that model (1,0,0) has posterior probability of
 0.420. So we're not really misled too much in looking at the
 posteriors for each parameter.  We can obtain model-averaged estimates
@@ -1125,9 +1127,9 @@ mod
   trouble getting consistent answers between WinBUGS and JAGS XXXX}
 
 Another approach to implementing model indicator variables is to
-introduce a categorical model identity variable which, i.e., so that
-``model identity'' is itself a parameter of the model and each
-distinct model is associated with a unique covariate combination or
+introduce a categorical ``model identity'' variable which is itself
+ a parameter of the model. Using this approach, then each 
+distinct model is associated with a unique set of covariates or
 other set of model features. This is convenient especially when we
 cannot specify the linear predictor as some general model that reduces
 to various alternative sub-models simply by switching binary variables
@@ -1135,7 +1137,7 @@ on or off. In the context of SCR models, choosing among different
 encounter probability models would be an example.  For this case we do
 something like this \mbox{\tt mod  $\sim$  dcat(probs[])}
 where \mbox{\tt probs} is a vector with elements $1/(\# models)$, and
-the encounter probability matrix is filled-in depending on the value
+the encounter probability matrix is filled in depending on the value
  of \mbox{\tt mod}.
 In particular, instead of a 2-dimensional array
  \mbox{\tt p[i,j]},  we build \mbox{\tt p[i,j,l]} for each of
@@ -1146,9 +1148,9 @@ $l=1,2,\ldots,L$ models. An example with 3 distinct models is:
 ##
 ## Using a double loop construction fill-in p[,,] for each model:
 ##
-  p[i,j,1] <-  p0[i,1]*exp( - beta.vec[i,1]*dist2[i,j] )
-  p[i,j,2] <-  1-exp(-p0[i,2]*exp( - beta.vec[i,2]*dist2[i,j] ) )
-  logit(p[i,j,3]) <- p0[i,3] - beta.vec[i,3]*dist2[i,j]
+  p[i,j,1] <-  p0[i,1]*exp( - alpha1.vec[i,1]*dist2[i,j] )
+  p[i,j,2] <-  1-exp(-p0[i,2]*exp( - alpha1.vec[i,2]*dist2[i,j] ) )
+  logit(p[i,j,3]) <- p0[i,3] - alpha1.vec[i,3]*dist2[i,j]
 
   mu[i,j] <- w[i]*p[i,j,mod]
   y[i,j] ~ dbin(mu[i,j],K[j])
@@ -1172,7 +1174,7 @@ models:
 %\ref{gof.panel.modsel}:
 The Gaussian encounter probability, Gaussian hazard, and logistic
 model with the square of distance (defined in Sec. \ref{scr0.sec.binomial}). The key things to note are that
-there are 3 intercepts and 3 different `\mbox{\tt beta}' parameters
+there are 3 intercepts and 3 different `\mbox{\tt alpha1}' parameters
 (the coefficient on distance). The parameters should not be regarded
 as equivalent across the models, so it is important to have them
 seperately defined (and estimated) for each model.  In our analysis we
@@ -1185,7 +1187,7 @@ In the BUGS model specification the priors look like this:
  for(i in 1:3){
    alpha0[i] ~ dnorm(0,.1)
    sigma[i] ~ dunif(0,5)
-   beta[i] <- 1/(2*sigma[i]*sigma[i])
+   alpha1[i] <- 1/(2*sigma[i]*sigma[i])
  }
 \end{verbatim}
 Then,  we create a probability of encounter for each
@@ -1194,9 +1196,9 @@ model description is a 3-dimensional array. (sometimes this would have to be a 4
 or 5-d array in more complex models with time effects, etc..), so that
 construction of the encounter probability models look like this:
 \begin{verbatim}
- p[i,j,1]       <-  p0[i,1]*exp( - beta[1]*dist2[i,j] )
- p[i,j,2]       <-  1-exp(-p0[i,2]*exp( - beta[2]*dist2[i,j] ) )
- logit(p[i,j,3])<- p0[i,3] - beta[3]*dist2[i,j]
+ p[i,j,1]       <-  p0[i,1]*exp( - alpha1[1]*dist2[i,j] )
+ p[i,j,2]       <-  1-exp(-p0[i,2]*exp( - alpha1[2]*dist2[i,j] ) )
+ logit(p[i,j,3])<- p0[i,3] - alpha1[3]*dist2[i,j]
 \end{verbatim}
 where
 \begin{verbatim}
@@ -1229,7 +1231,7 @@ wolverine camera trapping data are summarized as follows:
 model {
 for(i in 1:3){
   alpha0[i] ~ dnorm(0,.1)
-  beta[i] ~ dunif(0,2)
+  alpha1[i] ~ dunif(0,2)
   mod.probs[i] <- 1/3
 }
 psi ~ dunif(0,1)
@@ -1244,16 +1246,16 @@ for(i in 1:M){
  log(beta0.vec[i,2])<- alpha0[2]
  beta0.vec[i,3]<- alpha0[3]
 
- log(beta.vec[i,1])<- log( beta[1] )
- log(beta.vec[i,2])<- log( beta[2] )
- log(beta.vec[i,3])<- log( beta[3] )
+ log(alpha1.vec[i,1])<- log( alpha1[1] )
+ log(alpha1.vec[i,2])<- log( alpha1[2] )
+ log(alpha1.vec[i,3])<- log( alpha1[3] )
 
  for(j in 1:ntraps){
    dd[i,j]<- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2)
 
-   p[i,j,1]  <-  beta0.vec[i,1]*exp( - beta.vec[i,1]*dd[i,j] )
-   p[i,j,2] <-  1-exp(-beta0.vec[i,2]*exp( - beta.vec[i,2]*dd[i,j] ) )
-   logit(p[i,j,3])<- beta0.vec[i,3] - beta.vec[i,3]*dd[i,j]
+   p[i,j,1]  <-  beta0.vec[i,1]*exp( - alpha1.vec[i,1]*dd[i,j] )
+   p[i,j,2] <-  1-exp(-beta0.vec[i,2]*exp( - alpha1.vec[i,2]*dd[i,j] ) )
+   logit(p[i,j,3])<- beta0.vec[i,3] - alpha1.vec[i,3]*dd[i,j]
 
    mu[i,j]<-w[i]*p[i,j,catmod]
    ncaps[i,j]~ dbin(mu[i,j],K[j])
@@ -1364,7 +1366,7 @@ adequate description of our data?
 %the data we have consistent with realizations from the model which we
 %just fitted and upon which our inferences are based?
 Formal assessment of model adequacy or goodness-of-fit is a
-challenging problem and there are not all-purpose algorithms for doing
+challenging problem and there are no all-purpose algorithms for doing
 this in either frequentist or Bayesian paradigms. Moreover, there are
 some philosophical challenges to evaluating model fit, such as, if we
 do model averaging then should all of the models have to fit? Or
@@ -1412,7 +1414,7 @@ asymptotic distribution.  For examples from capture-recapture see
   p-value in sec. \ref{glms.sec.gof}).  Using this approach, datasets
   are simulated based on a posterior sample of the model parameters
   $\theta$ and some fit statistic for the simulated data sets, usually
-  based on the discrepancy from the observed data from its expected
+  based on the discrepancy of the observed data from its expected
   values, is compared to that for the actual data.  In most cases,
   whether Bayesian or frequentist, the main idea for assessing model
   fit is the same: We compare data sets from the model we're
@@ -1430,7 +1432,7 @@ p-values have been provided \citep{royle:2009,royle_etal:2011mee,
   gopalaswamy_etal:2012ecol,gopalaswamy_etal:2012mee,russell_etal:2012}.
 While we universally adopt the Bayesian p-value approach, and suggest
 some fit statistics in the following text, we caution that there is
-not general expectation to support how well they should do.
+no general expectation to support how well they should do.
 As such, one might consider doing some kind of custom
 evaluation or calibration when using such methods, if the power of the
 test (ability to reject under specific departures from the model) is
@@ -1446,14 +1448,16 @@ methods.
 
 For most SCR models, there are at least two distinct components of
 model fit, and we propose to evaluate these two distinct components
-individually.  First, we can ask, does the model explain the {\it
-  observation} process, conditional on the underlying point process?
+individually.  First, we can ask, are the data consistent with the
+ {\it
+  observation} model, conditional on the underlying point process?
 We can evaluate this based on the encounter frequencies of individuals
 {\it conditional} on (posterior samples of) the underlying point
 process ${\bf s}_{1}, \ldots, {\bf s}_{N}$.  We discuss some potential
 fit statistics for addressing this in the next section.  Second, we
 can evaluate whether the data appear consistent with the
-``uniformity'' assumption about the point process.  For the simple
+{\it state} process model (i.e., the ``uniformity'' assumption of 
+the point process).  For the simple
 model of independence and uniformity, this is similar to the
 assumption of {\it complete spatial randomness} (CSR) which we
 consider in sec. \ref{gof.sec.csr} below. Actually, this is not
@@ -1481,14 +1485,16 @@ for such things is \citet[][Ch. 8]{cressie:1992} and
 Kimmy: look this up make sure still active put access date here
   XXXXX.  } In the context of animal capture-recapture studies, the
 spatial randomness hypothesis is manifestly false, purely on
-biological grounds. Typically individuals will be clustered or more
-uniform (for territorial species) than expected under spatial
+biological grounds. Typically individuals will be clustered, or more
+uniform (for territorial species), than expected under spatial
 randomness and heterogeneous habitat will generate the appearance of
 clustering even if individuals are distributed independently of one
 another. While we recommend modeling spatial structure explicitly when
 possible (Chapts. \ref{chapt.state-space}, \ref{chapt.ecoldist},
 \ref{chapt.rsf}), the uniformity assumption may be an adequate
-description of data sets in some situations.
+description of data sets in some situations. Further, we find that it
+is generally flexible enough to reflect non-uniform patterns in the
+data, because we do observe some direct information about some of the point locations.
 
 
 %Before proceeding with the development of a framework for evaluating
@@ -1653,7 +1659,7 @@ Again the main
 feature is that the point process on which inference is focused is
 completely latent in SCR models -- so this makes the fit assessment
 slightly different than in classical point processes. That said, the
-methods should be adaptable e.g., in a Bayesian p-value kind of way.
+methods should be adaptable, e.g., in a Bayesian p-value kind of way.
 
 
 \subsubsection{Sensitivity to state-space extent}
@@ -1704,7 +1710,7 @@ data by individual and trap-specific counts $y_{ijk}$
 % XXXX I would call this something other than "y". Perhaps "C" or "n".
 aggregated over
 all sample occasions. Using standard ``dot notation'' to represent
-summaed quantities, we express that as:
+summed quantities, we express that as:
 $y_{ij.} = \sum_{k=1}^{K} y_{ijk}$.
  Conditional on ${\bf s}_{i}$, the expected value
 under any encounter model is:
@@ -1808,7 +1814,7 @@ locations and, (4) the buffer
 around the trap array to use in computing the bin counts.  This buffer could be that used
 in defining the state-space for the model fitting, but we think it should be
 relatively tighter to the trap array than the state-space used in
-model-fitting. For the wolverine analysis,  where we're using 10 km grid cells
+model-fitting. For the wolverine analysis,  where we're using 10-km grid cells
 (1 unit = 10 km) and a 20 km buffer for model fitting, we'll use a
 state-space buffer of  0.4 units (4 km) for
 computing the fit statistic.
@@ -1816,6 +1822,7 @@ The {\bf R} code to fit the model and obtain the goodness-of-fit
 result is as follows:
 %%%RUN on 12/20/2012
 %%%%%This is wolvSCR0gof-testing.R script off of desktop. Needs put in package.
+{\small
 \begin{verbatim}
 toad1 <- wolvSCR0gof(nb=1000,ni=6000,buffer=2,M=200,model=0)
 
@@ -1835,6 +1842,7 @@ Cluster index simulated:  1.000453
 P-value  index of dispersion:  0.408
 P-value2 freeman-tukey:  0.6842667
 \end{verbatim}
+}
 The output produced is the ratio of the variance to the mean cluster
 index (see above), which is computed as the posterior mean index of
 dispersion for the latent point process, and also the average value
@@ -1875,7 +1883,7 @@ T1obs <- sum(err[,])
 T1new <- sum(errnew[,])
 .......
 \end{verbatim}
-Similar calculations are carried-out to obtain the posterior samples
+Similar calculations are carried out to obtain the posterior samples
 of test statistics 2 (individual totals) and 3 (trap totals). For the
 wolverine data, the Bayesian p-value calculations produce:
 {\small
@@ -1983,8 +1991,8 @@ $T_{3}(new)$  & 12.94 & 3.05 & 7.77 &12.67 & 19.58 &1.00 &15000\\ \hline
 
 \subsection{Quantifying lack-of-fit and remediation}
 
-\citet{kery_etal:inreview} used a similar strategy for assessing model
-fit in dynamic occupancy models to that which we suggested above.
+\citet{kery_etal:inreview} used a strategy for assessing model
+fit in dynamic occupancy models similar to that which we suggested above.
 They constructed a fit statistic based on aggregating the data over
 replicate samples ($k$), to obtain the total detections per site $i$
 and year $j$.  They used a Bayesian p-value analysis based on a
@@ -2041,7 +2049,7 @@ natural to pick models that predict the observable spatial counts
 (i.e., at trap locations) well.
 
 Our suggestions for Bayesian model assessment, or goodness-of-fit
-checking, should be viewed as experimental, based on mostly ad hoc
+checking, should be viewed as experimental, based on mostly {\it ad hoc}
 attempts in a number of published applications
 \citep[e.g.,]{royle_etal:2009ecol,  royle_etal:2011mee,
 gopalaswamy_etal:2012ecol, russell_etal:2012}. We offered up
@@ -2063,8 +2071,9 @@ point process modeling should be pursued including nearest-neighbor
 methods or distance-based methods. In addition, studies to evaluate
 the power to detect relevant departures from the standard
 assumptions, and the robustness of inferences about $N$ or density,
-need to be conducted.  If the spatial randomness model appears in
-adequate, it is possible to fit models that allow for non-uniform
+need to be conducted.  If the spatial randomness model appears
+inadequate, 
+it is possible to fit models that allow for a non-uniform
 distribution of points (see Chapt. \ref{chapt.state-space}) and even
 point process models that allow for interactions among points
 \citep{reich_etal:2012}. On the other hand, we expect that most of
@@ -2074,10 +2083,11 @@ to detect a lack of fit may not be that meaningful. But, on the other
 hand, it may not make a difference in terms of density estimates
 either.  We think inference about density should be relatively
 insensitive to departures from spatial randomness, because we get to
-observe direct information on some component of the population -- so a
-component of density is {\it observed} -- and, for those activity
+observe direct information on some component of the population,
+component of density is {\it observed}. For those activity
 centers, the assumed model of the point process should exert little
-over placement of the activity centers.  Conversely, as is the case
+influence on 
+the placement of the activity centers.  Conversely, as is the case
 with classical closed population models \citep{otis_etal:1978,dorazio_royle:2003,
   link:2003}, inferences may be somewhat more sensitive to
 bad-fitting models for the observation process.
