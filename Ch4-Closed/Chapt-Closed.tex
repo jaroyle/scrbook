@@ -679,22 +679,22 @@ understand, especially without having to read surrounding text.
 \rule[0.15in]{\textwidth}{.03in}
 %\begin{minipage}{5in}
 {\small
-\begin{verbatim}
-model{
-p  ~ dunif(0,1)
-psi~dunif(0,1)
+\begin{alltt}
+model\{
+p  \(\sim\) dunif(0,1)
+psi \(\sim\) dunif(0,1)
 
 # nind = number of individuals captured at least once
 #   nz = number of uncaptured individuals added for DA
-for(i in 1:(nind+nz)) {
-    z[i]~dbern(psi)
-   mu[i]<-z[i]*p
-    y[i]~dbin(mu[i],K)
- }
+for(i in 1:(nind+nz))\{
+    z[i]\( \sim \) dbern(psi)
+   mu[i] <- z[i]*p
+    y[i]\( \sim \) dbin(mu[i],K)
+\}
 
 N<-sum(z[1:(nind+nz)])
-}
-\end{verbatim}
+\}
+\end{alltt}
 }
 %\end{minipage}
 \rule[-0.15in]{\textwidth}{.03in}
@@ -715,15 +715,15 @@ the individual encounter frequencies.  We define the
 observation model by a double loop and change the indexing of quantities
 accordingly, i.e.,
 {\small
-\begin{verbatim}
-for(i in 1:(nind+nz)) {
-    z[i]~dbern(psi)
-  for(k in 1:K){
+\begin{alltt}
+for(i in 1:(nind+nz))\{
+    z[i]\( \sim \) dbern(psi)
+  for(k in 1:K)\{
       mu[i,k]<-z[i]*p
-      y[i,k]~dbin(mu[i,k],1)
-  }
-}
-\end{verbatim}
+      y[i,k]\( \sim \)dbin(mu[i,k],1)
+  \}
+\}
+\end{alltt}
 }
 In this manner, it is straightforward to incorporate covariates on $p$
 for both individuals and sampling occasions
@@ -880,23 +880,23 @@ all-zero encounter histories, resulting in a total sample size of $M=175$.
 \end{figure}
 
 {\small
-\begin{verbatim}
+\begin{alltt}
 library(scrbook)
-data(beardata)
-trapmat<-beardata$trapmat
-nind<-dim(beardata$bearArray)[1]
-K<-dim(beardata$bearArray)[3]
-ntraps<-dim(beardata$bearArray)[2]
+data(beardata)              # load the bear data and extract components
+trapmat <- beardata\$trapmat
+nind <- dim(beardata\$bearArray)[1]
+K <- dim(beardata\$bearArray)[3]
+ntraps <- dim(beardata\$bearArray)[2]
 
 M=175
-nz<-M-nind
+nz <- M-nind
 Yaug <- array(0, dim=c(M,ntraps,K))
 
-Yaug[1:nind,,]<-beardata$bearArray
-y<- apply(Yaug,c(1,3),sum) # summarize by ind x rep
-y[y>1]<- 1                 # toss out multiple encounters per occasion
-                           #  b/c traditional CR models ignore space
-\end{verbatim}
+Yaug[1:nind,,] <- beardata\$bearArray 
+y <- apply(Yaug,c(1,3),sum) # summarize by ind x rep
+y[y>1] <- 1                 # toss out multiple encounters per occasion
+                            #    b/c traditional CR models ignore space
+\end{alltt}
 }
 
 
@@ -910,35 +910,35 @@ re-labeled "\mbox{\tt y}" above.  The {\bf BUGS} model file along with
 commands to fit the model are as follows:
 
 {\small
-\begin{verbatim}
-set.seed(2013)               # to obtain the same results each time
-library(R2WinBUGS)           # load R2WinBUGS, set-up:
-data0<-list(y=y,M=M,K=K)           # data ....
-params0<-list('psi','p','N')          # parameters .... 
-zst=c(rep(1,nind),rbinom(M-nind, 1, .5)) # inits .....
-inits =  function() {  list(z=zst, psi=runif(1), p=runif(1)) }
+\begin{alltt}
+set.seed(2013)                # to obtain the same results each time
+library(R2WinBUGS)            # load R2WinBUGS, set-up:
+data0 <- list(y=y,M=M,K=K)           # data ....
+params0 <- list('psi','p','N')          # parameters .... 
+zst <- c(rep(1,nind),rbinom(M-nind, 1, .5)) # inits .....
+inits <- function()\{  list(z=zst, psi=runif(1), p=runif(1)) \}
 
 cat("
-model {
+model\{
 
-psi~dunif(0, 1)
-p~dunif(0,1)
+psi\( \sim \)dunif(0, 1)
+p\( \sim \)dunif(0,1)
 
-for (i in 1:M){
-   z[i]~dbern(psi)
-   for(k in 1:K){
+for (i in 1:M)\{
+   z[i]\( \sim \)dbern(psi)
+   for(k in 1:K)\{
      tmp[i,k]<-p*z[i]
-     y[i,k]~dbin(tmp[i,k],1)
-      }
-     }
+     y[i,k]\( \sim \)dbin(tmp[i,k],1)
+      \}
+    \}
 N<-sum(z[1:M])
-}
+\}
 ",file="modelM0.txt")
 
 ## Run the model:
-fit0 = bugs(data0, inits, params0, model.file="modelM0.txt",n.chains=3,
+fit0 <- bugs(data0, inits, params0, model.file="modelM0.txt",n.chains=3,
        n.iter=2000, n.burnin=1000, n.thin=1,debug=TRUE,working.directory=getwd())
-\end{verbatim}
+\end{alltt}
 }
 This produces the following posterior
  summary statistics:
@@ -992,12 +992,12 @@ commands are as follows:
 \begin{verbatim}
 library(rgeos)
 
-bcharea<-function(buff,traplocs){
-p1<-Polygon(rbind(traplocs,traplocs[1,]))
-p2<-Polygons(list(p1=p1),ID=1)
-p3<-SpatialPolygons(list(p2=p2))
-p1ch<-gConvexHull(p3)
- bp1<-(gBuffer(p1ch, width=buff))
+bcharea <- function(buff,traplocs){
+p1 <- Polygon(rbind(traplocs,traplocs[1,]))
+p2 <- Polygons(list(p1=p1),ID=1)
+p3 <- SpatialPolygons(list(p2=p2))
+p1ch <- gConvexHull(p3)
+ bp1 <- (gBuffer(p1ch, width=buff))
  plot(bp1, col='gray')
  plot(p1ch, border='black', lwd=2, add=TRUE)
  gArea(bp1)
@@ -1278,26 +1278,26 @@ $\sigma \sim \mbox{Uniform}(0,B)$ for some large $B$.
 \begin{comment}
 The basic {\bf BUGS} description for this model is given as follows:
 {\small
-\begin{verbatim}
-model{
+\begin{alltt}
+model\{
 
-p0 ~ dunif(0,1)       # prior distributions
-mup<- log(p0/(1-p0))
-sigmap ~ dunif(0,10)
+p0 \( \sim \) dunif(0,1)         # prior distributions
+mup <- log(p0/(1-p0))
+sigmap \( \sim \) dunif(0,10)
 taup<- 1/(sigmap*sigmap)
-psi~dunif(0,1)
+psi \( \sim \) dunif(0,1)
 
-for(i in 1:(nind+nz)){
-  z[i]~dbern(psi)     # zero inflation variables
-  lp[i] ~ dnorm(mup,taup) # individual effect
-  logit(p[i])<-lp[i]
-  mu[i]<-z[i]*p[i]
-  y[i]~dbin(mu[i],K)  #  observation model
- }
+for(i in 1:(nind+nz))\{
+  z[i]\( \sim \)dbern(psi)       # zero inflation variables
+  lp[i]\( \sim \)dnorm(mup,taup) # individual effect
+  logit(p[i]) <- lp[i]
+  mu[i] <- z[i]*p[i]
+  y[i]\( \sim \)dbin(mu[i],K)    #  observation model
+ \}
 
 N<-sum(z[1:(nind+nz)])  # N is a derived parameter
-}
-\end{verbatim}
+\}
+\end{alltt}
 }
 \end{comment}
 Another common default prior is to assume
@@ -1326,39 +1326,39 @@ packages \mbox{\tt R2jags} or \mbox{\tt rjags}.  The function
 like the \mbox{\tt bugs} function which we demonstrate here for
 setting up and running model $M_{h}$ for the Fort Drum bear data:
 {\small
-\begin{verbatim}
+\begin{alltt}
 [... get data as before ....]
 
 set.seed(2013)
 
 cat("
-model{
-p0 ~ dunif(0,1)       # prior distributions
-mup<- log(p0/(1-p0))
-sigmap ~ dunif(0,10)
-taup<- 1/(sigmap*sigmap)
-psi~dunif(0,1)
+model\{
+p0\( \sim \)dunif(0,1)           # prior distributions
+mup <- log(p0/(1-p0))
+sigmap\( \sim \)dunif(0,10)
+taup <- 1/(sigmap*sigmap)
+psi\( \sim \)dunif(0,1)
 
-for(i in 1:(nind+nz)){
-  z[i]~dbern(psi)     # zero inflation variables
-  lp[i] ~ dnorm(mup,taup) # individual effect
-  logit(p[i])<-lp[i]
-  mu[i]<-z[i]*p[i]
-  y[i]~dbin(mu[i],K)  #  observation model
- }
+for(i in 1:(nind+nz))\{
+  z[i]\( \sim \)dbern(psi)       # zero inflation variables
+  lp[i]\( \sim \)dnorm(mup,taup) # individual effect
+  logit(p[i]) <- lp[i]
+  mu[i] <- z[i]*p[i]
+  y[i]\( \sim \)dbin(mu[i],K)    # observation model
+ \}
 
 N<-sum(z[1:(nind+nz)])
-}
+\}
 ",file="modelMh.txt")
 
-data1<-list(y=y, nz=nz, nind=nind,K=K)
-params1= c('p0','sigmap','psi','N')
-inits =  function() {list(z=as.numeric(y>=1), psi=.6, p0=runif(1),
-          sigmap=runif(1,.7,1.2),lp=rnorm(M,-2)) }
+data1 <- list(y=y, nz=nz, nind=nind,K=K)
+params1 <- c('p0','sigmap','psi','N')
+inits <- function()\{ list(z=as.numeric(y>=1), psi=.6, p0=runif(1),
+          sigmap=runif(1,.7,1.2),lp=rnorm(M,-2)) \}
 library(R2jags)
-wbout = jags(data1, inits, params1, model.file = "modelMh.txt", n.chains = 3,
+wbout <- jags(data1, inits, params1, model.file = "modelMh.txt", n.chains = 3,
             n.iter = 1010000, n.burnin =10000, working.directory = getwd())
-\end{verbatim}
+\end{alltt}
 }
 
 We provide an {\bf R} function \mbox{\tt modelMhBUGS} in the package
@@ -1479,10 +1479,10 @@ degree of smoothing chosen by cross-validation (the \mbox{\tt cv=TRUE}
 argument):
 {\small
 \begin{verbatim}
-> N<-table(jout$BUGSoutput$sims.list$N)
-> xg<-as.numeric(names(N))
+> N <- table(jout$BUGSoutput$sims.list$N)
+> xg <- as.numeric(names(N))
 
-> sp<- smooth.spline(xg,N,cv=TRUE)
+> sp <- smooth.spline(xg,N,cv=TRUE)
 
 > sp
 
@@ -1790,8 +1790,8 @@ are as follows:
 \begin{verbatim}
 library(scrbook)
 data(beardata)
-toad<- spiderplot(beardata$bearArray,beardata$trapmat)
-xcent<-toad$xcent
+toad <- spiderplot(beardata$bearArray,beardata$trapmat)
+xcent <- toad$xcent
 \end{verbatim}
 
 \begin{figure}[ht]
@@ -1822,32 +1822,32 @@ area over which the $N$ individuals of the model reside.  The {\bf
   BUGS} model specification and {\bf R} commands to package the data
 and fit the model are as follows:
 {\small
-\begin{verbatim}
+\begin{alltt}
 cat("
-model{
-p0 ~ dunif(0,1)       # prior distributions
-alpha0<- log(p0/(1-p0))
-psi~dunif(0,1)
-beta~dnorm(0,.01)
+model\{
+p0\( \sim \)dunif(0,1)            # prior distributions
+alpha0 <- log(p0/(1-p0))
+psi\( \sim \)dunif(0,1)
+beta\( \sim \)dnorm(0,.01)
 
-for(i in 1:(nind+nz)){
-  xcent[i]~dunif(0,B)
-  z[i]~dbern(psi)     # DA variables
+for(i in 1:(nind+nz))\{
+  xcent[i]\( \sim \)dunif(0,B)
+  z[i]\( \sim \)dbern(psi)        # DA variables
   lp[i] <- alpha0 + beta*xcent[i] # individual effect
-  logit(p[i])<-lp[i]
-  mu[i]<-z[i]*p[i]
-  y[i]~dbin(mu[i],K)  #  observation model
- }
+  logit(p[i]) <- lp[i]
+  mu[i] <- z[i]*p[i]
+  y[i]\( \sim \)dbin(mu[i],K)     #  observation model
+ \}
 N<-sum(z[1:(nind+nz)])
-}
+\}
 ",file="modelMcov.txt")
 
-data2<-list(y=y,nz=nz,nind=nind,K=K,xcent=xcent,B=11.5)
-params2<-list('p0','psi','N','beta')
-inits =  function() {list(z=zst, psi=psi, p0=runif(1),beta=rnorm(1) ) }
-fit2 =   bugs(data2, inits, params2, model.file="modelMcov.txt",
+data2 <- list(y=y,nz=nz,nind=nind,K=K,xcent=xcent,B=11.5)
+params2 <- list('p0','psi','N','beta')
+inits <- function() \{list(z=zst, psi=psi, p0=runif(1),beta=rnorm(1) ) \}
+fit2 <-  bugs(data2, inits, params2, model.file="modelMcov.txt",
          n.chains=3, n.iter=11000, n.burnin=1000, n.thin=1)
-\end{verbatim}
+\end{alltt}
 }
 This produces the posterior summary statistics given in Table \ref{closed.tab.bear2}.
 
@@ -1864,10 +1864,10 @@ This produces the posterior summary statistics given in Table \ref{closed.tab.be
 }
 \begin{tabular}{crrrrrrr} \hline \hline
  parameter &  mean&  sd  &   2.5\% &  50 \%  &   97.5\% &Rhat& n.eff  \\ \hline
-p0         &0.54  &0.07  & 0.40   &  0.54  &  0.67  &  1 & 1100  \\
-psi        &0.34  &0.05  & 0.25   &  0.34  &  0.44  &  1 & 3500 \\
-N          &58.92 & 5.49 & 50.00  &  58.00 &  71.00 &   1&  1900 \\
-beta       &-0.25 & 0.06 & -0.36  &  -0.25 &  -0.12 &   1&   780 \\ \hline
+$p_0$         &0.54  &0.07  & 0.40   &  0.54  &  0.67  &  1 & 1100  \\
+$\psi$        &0.34  &0.05  & 0.25   &  0.34  &  0.44  &  1 & 3500 \\
+$N$          &58.92 & 5.49 & 50.00  &  58.00 &  71.00 &   1&  1900 \\
+$\beta$       &-0.25 & 0.06 & -0.36  &  -0.25 &  -0.12 &   1&   780 \\ \hline
 %deviance 459.51 13.21 435.80  458.80  487.40    1  2600
 \end{tabular}
 \label{closed.tab.bear2}
@@ -1927,9 +1927,9 @@ distance band increases linearly with radius (i.e., distance from
 centroid). This can be verified empirically as follows:
 {\small
 \begin{verbatim}
- u<-runif(10000,-1,1)
- v<-runif(10000,-1,1)
- d<- sqrt(u*u+v*v)
+ u <- runif(10000,-1,1)
+ v <- runif(10000,-1,1)
+ d <- sqrt(u*u+v*v)
  hist(d[d<1])
  hist(d[d<1],100)
  hist(d[d<1],100,probability=TRUE)
@@ -1958,33 +1958,33 @@ following {\bf R}/{\bf BUGS} script:
 % andy changed Dgrid to "midpts" and "Dmax" to "B" on 1/13/2013
 % needs changed in repo!
 {\small
-\begin{verbatim}
-delta<-.2
-xbin<-xcent%/%delta  + 1               # put x in bins
-midpts<- seq(delta,Dmax,delta)
-xprobs<- delta*(2*midpts/(B*B))
-xprobs<-xprobs/sum(xprobs)
+\begin{alltt}
+delta <- .2
+xbin <- xcent\%/\%delta  + 1                # put x in bins
+midpts <- seq(delta,Dmax,delta)
+xprobs <- delta*(2*midpts/(B*B))
+xprobs <- xprobs/sum(xprobs)
 
 cat("
-model{
-p0 ~ dunif(0,1)                        # prior distributions
-alpha0<- log(p0/(1-p0))
-psi~dunif(0,1)
-beta~dnorm(0,.01)
+model\{
+p0\( \sim \)dunif(0,1)                      # prior distributions
+alpha0 <- log(p0/(1-p0))
+psi\( \sim \)dunif(0,1)
+beta\( \sim \)dnorm(0,.01)
 
-for(i in 1:(nind+nz)){
-  xbin[i]~dcat(xprobs[])
-  z[i]~dbern(psi)                      # DA variables
+for(i in 1:(nind+nz))\{
+  xbin[i]\( \sim \)dcat(xprobs[])
+  z[i]\( \sim \)dbern(psi)                  # DA variables
   lp[i] <- alpha0 + beta*xbin[i]*delta # individual covariate model
-  logit(p[i])<-lp[i]
-  mu[i]<-z[i]*p[i]
-  y[i]~dbin(mu[i],K)                   #  observation model
- }
+  logit(p[i]) <- lp[i]
+  mu[i] <- z[i]*p[i]
+  y[i]\( \sim \)dbin(mu[i],K)               #  observation model
+ \}
 
-N<-sum(z[1:(nind+nz)])                 # N is derived
-}
+N<-sum(z[1:(nind+nz)])                      # N is derived
+\}
 ",file="modelMcov.txt")
-\end{verbatim}
+\end{alltt}
 }
 In the model description the variable $x$ (observed distance
 from centroid of the trap array) has been rounded or binned so that the discrete
@@ -1998,10 +1998,10 @@ required below have been defined in previous analyses of this chapter,
 we do this:
 {\small
 \begin{verbatim}
-data2<-list(y=y,nz=nz,nind=nind,K=K,xbin=xbin,xprobs=xprobs,delta=delta)
-params2<-list('p0','psi','N','beta')
-inits =  function() {list(z=z, psi=psi, p0=runif(1),beta=rnorm(1) ) }
-fit = bugs(data2, inits, params2, model.file="modelMcov.txt",
+data2 <- list(y=y,nz=nz,nind=nind,K=K,xbin=xbin,xprobs=xprobs,delta=delta)
+params2 <- list('p0','psi','N','beta')
+inits <- function() {list(z=z, psi=psi, p0=runif(1),beta=rnorm(1) ) }
+fit <- bugs(data2, inits, params2, model.file="modelMcov.txt",
           working.directory=getwd(), debug=FALSE, n.chains=3, n.iter=11000,
           n.burnin=1000, n.thin=2)
 \end{verbatim}
@@ -2148,12 +2148,14 @@ of a closed population model with an individual covariate. The
 covariate in this case, $x$, is the distance between an
 individual's location say ${\bf u}$ and the observation location or transect. In
 fact, distance sampling is precisely an
-individual-covariate model, except
-that observations are made at only $K=1$ sampling occasion. Thus, in
-that sense, distance sampling is a spatial capture-recapture model,
+individual-covariate model,  except
+that observations are made at only $K=1$ sampling occasion. 
+%Thus, in
+%that sense, distance sampling is a spatial capture-recapture model,
 % XXXX I'm not sure the reader quite understands how it is a "spatial"
 % model at this point
-but without the ``recapture.''  Distance sampling  eliminates the need to
+%but without the ``recapture.''  
+Distance sampling  eliminates the need to
 explicitly identify individuals (except they need to be {\it
   distinguished} from other individuals) repeatedly and so distance
 sampling can be applied to unmarked populations.
@@ -2165,7 +2167,7 @@ locations (although this is not always stated explicitly) and, as a
 result, somewhat general models of how individuals are distributed in
 space can be specified \citep{hedley_etal:1999, royle_etal:2004,
   johnson_etal:2010, niemi_fernandez:2010, sillett_etal:2012}.
-% XXXX The Johnson et al 2010 Ref is missing coauthors
+
 
 As with other models we've encountered in this chapter, the distance sampling model, under data augmentation,
 includes a set of $M$ zero-inflation variables $z_{i}$ and a
@@ -2195,8 +2197,9 @@ x_{i} \sim \mbox{Uniform}(0,B)
 \]
 wherein $B>0$ is a known constant, being the upper limit of data
 recording by the observer (i.e., the point count radius, or transect
-half-width). In practice, this is sometimes asserted to be infinity,
-but in such cases the distance data are usually truncated.
+half-width). 
+%In practice, this is sometimes asserted to be infinity,
+%but in such cases the distance data are usually truncated.
 % XXXX Could cut previous sentence b/c I think people do use B=inf
 % fairly often
 Specification of this distance sampling model in the {\bf BUGS}
@@ -2208,22 +2211,22 @@ shown in Panel \ref{closed.panel.distance}, taken from \citet{royle_dorazio:2008
 \centering
 \rule[0.15in]{\textwidth}{.03in}
 \begin{minipage}{5in}
-\begin{verbatim}
-alpha1~dunif(0,10)
-psi~dunif(0,1)
+\begin{alltt}
+alpha1 \(\sim\) dunif(0,10)
+psi \(\sim\) dunif(0,1)
 
-for(i in 1:(nind+nz)){
-   z[i]~dbern(psi)             # DA variables
-   x[i]~dunif(0,B)             # B=strip width
-   p[i]<-exp(logp[i])          # Detection function
-   logp[i]<-   - alpha1*(x[i]*x[i])
-   mu[i]<-z[i]*p[i]
-   y[i]~dbern(mu[i])           # Observation model 
- }
+for(i in 1:(nind+nz))\{
+   z[i] \(\sim\) dbern(psi)          # DA variables
+   x[i] \(\sim\) dunif(0,B)          # B=strip width
+   p[i] <- exp(logp[i])              # Detection function
+   logp[i] <-   - alpha1*(x[i]*x[i])
+   mu[i] <- z[i]*p[i]
+   y[i] \(\sim\) dbern(mu[i])        # Observation model 
+ \}
 
 N<-sum(z[1:(nind+nz)])         # N is a derived parameter
 D<- N/striparea                # D = N/total area of transects
-\end{verbatim}
+\end{alltt}
 \end{minipage}
 \rule[-0.15in]{\textwidth}{.03in}
 \caption{Distance sampling model in {\bf BUGS} for a line transect situation, using a half-normal
@@ -2353,37 +2356,37 @@ analyzing the data with \mbox{\tt unmarked}
 \citep{fiske_chandler:2011} using hierarchical distance sampling
 models \citep{royle_etal:2004}.
 {\small
-\begin{verbatim}
+\begin{alltt}
 data(toroise)
-x<-tortoise[,"Dist"]
-nind<-sum(!is.na(x))
+x <- tortoise[,"Dist"]
+nind <- sum(!is.na(x))
 
-y<-rep(1,nind)        # create encounter vector
-nz<-700               # data augmentation
-y<-c(y,rep(0,nz))     # add 0s to the encounter vector
-x<-c(x,rep(NA,nz))    # pad distance vector with NA
-z<-y                  # starting vals for data augmentation variables
+y <- rep(1,nind)        # create encounter vector
+nz <- 700               # data augmentation
+y <- c(y,rep(0,nz))     # add 0s to the encounter vector
+x <- c(x,rep(NA,nz))    # pad distance vector with NA
+z <- y                  # starting vals for data augmentation variables
 
 cat("
-model{
-alpha1~dunif(0,10)
-sigma<- sqrt(1/(2*alpha1))
-psi~dunif(0,1)
+model\{
+alpha1 \(\sim\) dunif(0,10)
+sigma <- sqrt(1/(2*alpha1))
+psi \(\sim\) dunif(0,1)
 
-for(i in 1:(nind+nz)){
-   z[i]~dbern(psi)      # DA Variables
-   x[i]~dunif(0,B)      # B=strip width
-   p[i]<-exp(logp[i])   # DETECTION MODEL
-   logp[i]<-   -alpha1*(x[i]*x[i])
-   mu[i]<-z[i]*p[i]
-   y[i]~dbern(mu[i])    # OBSERVATION MODEL
- }
+for(i in 1:(nind+nz))\{
+   z[i] \(\sim\) dbern(psi)      # DA Variables
+   x[i] \(\sim\) dunif(0,B)      # B=strip width
+   p[i] <- exp(logp[i])          # Encounter model
+   logp[i] <-   -alpha1*(x[i]*x[i])
+   mu[i] <- z[i]*p[i]
+   y[i] \(\sim\) dbern(mu[i])    # Observation model 
+ \}
 
 N<-sum(z[1:(nind+nz)])
-D<- N/striparea  # area of transects
-}
+D<- N/striparea                  # area of transects
+\}
 ",file="dsamp.txt")
-\end{verbatim}
+\end{alltt}
 }
 After creating the model file, next
 we bundle the data,
@@ -2394,10 +2397,10 @@ pass those things to {\bf WinBUGS}:
 library(R2WinBUGS)
 
 # density to be reported in units of ind/ha
-data<-list(y=y,x=x,nz=nz,nind=nind,B=40,striparea=(120*1000*40*2/10000))
-params<-list('alpha1','sigma','N','D','psi')
-inits =  function() {list(z=z, psi=runif(1), alpha1=runif(1,0,.02) )}
-fit = bugs(data, inits, params, model.file="dsamp.txt",working.directory=getwd(),
+data <- list(y=y,x=x,nz=nz,nind=nind,B=40,striparea=(120*1000*40*2/10000))
+params <- list('alpha1','sigma','N','D','psi')
+inits <- function() {list(z=z, psi=runif(1), alpha1=runif(1,0,.02) )}
+fit <- bugs(data, inits, params, model.file="dsamp.txt",working.directory=getwd(),
        debug=FALSE, n.chains=3, n.iter=3000, n.burnin=1000, n.thin=2)
 \end{verbatim}
 }

@@ -175,7 +175,7 @@ trap.
 %``encountered at most 1 time'' assumption).
 
 
-As we did in sec. \ref{closed.sec.indcov}, we will make explicit the
+As we did in Sec. \ref{closed.sec.indcov}, we will make explicit the
 notion that $p_{ij}$ is defined conditional on {\it where} individual
 $i$ lives. Naturally, we think about defining an individual home range
 and then relating $p_{ij}$ explicitly to a summary of its location
@@ -676,9 +676,9 @@ Given the probabilities $\pi({\bf x},{\bf s})$ for all ${\bf x}$ we
 can find the value of $B(q)$, for any $q$, such that
 \[
 \sum_{{\bf x}
-  : ||x-s|| \le B(q) } \pi({\bf x},{\bf s}) \le 1-q
+  \ni ||x-s|| \le B(q) } \pi({\bf x},{\bf s}) \le 1-q
 \]
-(here, we use $:$ to mean ``such that'').
+(here, we use $\ni$ to mean ``such that'').
 We have a function called \mbox{\tt hra} in the \mbox{\tt scrbook}
 package that computes the home range area for any encounter model and
 prescribed parameter values. The help file for \mbox{\tt hra} has an
@@ -707,13 +707,10 @@ pGauss1 <- function(parms,Dmat){
   p
 }
 
-xlim <- c(0,6)
-ylim <- c(0,6)
-
 ##
 ## execute hra with sigma = .3993
 ##
-> hra(pGauss1,parms=c(-2,.3993),plot=FALSE,xlim,ylim,ng=500,tol=.0005)
+> hra(pGauss1,parms=c(-2,.3993),plot=FALSE,xlim=c(0,6),ylim=c(0,6),ng=500,tol=.0005)
 [1] 0.9784019
 radius to achieve 95% of area:  0.9784019
 home range area:  3.007353
@@ -731,13 +728,6 @@ encloses about 95\% of all movements under the standard bivariate
 normal encounter model.  Therefore, the area is about $\pi*.978*.978 =
 3.007$ spatial units.  You can change the intercept of the model and
 find that it has no effect.
-\begin{comment}
- note: I don't know if that works
-  out across all classes of models or not. Note that the intercept
-  never affects $p$ multiplicatively and so its not obvious (to me)
-  that it shouldn't have an affect (except somewhat intuitively
-  perhaps).
-\end{comment}
 The
 true (analytic)
  value of $\sigma$ that produces a home range area of 3.0 is
@@ -968,10 +958,10 @@ of points which the {\bf R} package \mbox{\tt secr}
 for what we call the state-space).  Defining the state-space by a
 discrete set of points is handy because it allows specific points to
 be deleted or not, depending on whether they represent available or
-suitable habitat (see sec.  \ref{scr0.sec.discrete}).  We can also
+suitable habitat (see Sec.  \ref{scr0.sec.discrete}).  We can also
 define the state-space as an arbitrary collection of polygons stored
 as a GIS shapefile which can be analyzed easily by MCMC in {\bf R}
-(see sec. \ref{mcmc.sec.state-space}), but not so easily in the {\bf
+(see Sec. \ref{mcmc.sec.state-space}), but not so easily in the {\bf
   BUGS} engines.  In what follows below we provide an analysis of the
 wolverine camera trapping data, in which we define the state-space to
 be a regular continuous polygon (a rectangle).
@@ -1243,7 +1233,7 @@ analyze data from 3 standard formats:
   establish here the convention that it has dimensions \mbox{\tt nind}
   $\times$ \mbox{\tt K} $\times$ \mbox{\tt ntraps}.
 \item[(3)] We use a compact format - the ``encounter data file'' -- which
-  we describe below in section \ref{scr0.sec.wolverine}.
+  we describe below in Sec. \ref{scr0.sec.wolverine}.
 \end{itemize}
 To simulate data in the most informative format - the ``3-d array'' -
 we can use the {\bf R} commands given previously but replace the last
@@ -1650,7 +1640,7 @@ as to reduce the MC error to a tolerable level. What constitutes
 tolerable is up to the investigator. Certainly less than 1\% is called
 for.
 \end{comment}
-The \mbox{\tt Rhat} statistic (discussed in secs. \ref{glms.sec.convergence} and
+The \mbox{\tt Rhat} statistic (discussed in Secs. \ref{glms.sec.convergence} and
 \ref{mcmc.sec.mcmcsummary}) for this analysis indicates satisfactory
 convergence.
 %As a general rule, Rhat gets closer to 1 (and Monte Carlo error decreases)
@@ -1701,13 +1691,53 @@ DIC is an estimate of expected predictive error (lower deviance is better).
 }
 \end{comment}
 
+\subsubsection{Use of other \textbf{BUGS} engines: {\bf JAGS}}
+
+There are two other popular {\bf BUGS} engines in widespread use: {\bf
+  OpenBUGS} \citep{thomas_etal:2006} and {\bf JAGS}
+\citep{plummer:2003}. Both of these are easily called from {\bf
+  R}. {\bf OpenBUGS} can be used instead of {\bf WinBUGS} by changing
+the package option in the \mbox{\tt bugs} call to \mbox{\tt
+  package=''OpenBUGS''}.  {\bf JAGS} can be called using the function
+\mbox{\tt jags()} in package \mbox{\tt R2jags} which has nearly the
+same arguments as \mbox{\tt bugs()}.  Or, it can be executed from
+the {\bf R}
+package
+ \mbox{\tt rjags} \citep{plummer:2009} which has a slightly
+different implementation that we demonstrate here as we reanalyze the
+simulated data set in the previous section (note: the same {\bf R}
+commands are used to generate the data and package the data, inits and
+parameters to monitor). The function \mbox{\tt jags.model} is used to
+initialize the model and run the MCMC algorithm for an adaptive period
+during which tuning of the MCMC algorithm might take place.  These
+samples cannot be used for inference.  Then the Markov chains are
+updated using \mbox{\tt coda.samples()} to obtain posterior samples
+for analysis, as follows:
+{\small
+\begin{verbatim}
+jinit <- jags.model("SCR0b.txt", data=data, inits=inits,
+                   n.chains=3, n.adapt=1000)
+jout <- coda.samples(jinit, parameters, n.iter=1000, thin=1)
+\end{verbatim}
+}
+These commands can be executed
+using the function
+\mbox{\tt SCR0bayes} provided with the {\bf R} package \mbox{\tt
+  scrbook}. \citet{hobbs:2011} provides a good introduction to
+ecological modeling with {\bf JAGS} which we recommend.
+
+
+
+
+
+
 \subsection{Implied Home Range Area}
 
-Here we apply the method described in sec. \ref{scr0.sec.implied} to
+Here we apply the method described in Sec. \ref{scr0.sec.implied} to
 compute the effective home range area under some different encounter
 probability models fit to simulated data.
 We simulated data from the Gaussian kernel model as in
-sec. \ref{scr0.sec.unknownN} and then we fitted 4 models to it: (1)
+Sec. \ref{scr0.sec.unknownN} and then we fitted 4 models to it: (1)
 the true data-generating model; (2) the ``hazard'' or complementary log-log link
 model (Eq. \ref{scr0.eq.hazard}); (3) the negative exponential model
 and (4) the logit model (Eq. \ref{scr0.eq.logit}).
@@ -1749,41 +1779,185 @@ hra         & 3.85  & 3.78 &  5.51  & 2.64 \\
 \end{table}
 
 
+\subsection{Realized and  Expected Density}
 
-\subsection{Use of other \textbf{BUGS} engines: {\bf JAGS}}
+In Bayesian analysis of the SCR model, we estimate a parameter $N$
+which is the size of the population for the prescribed state-space
+(presumably the state-space is defined so as to be relevant to where
+our traps were located, so $N$ can be thought of as the size of the
+sampled population). In the context of \citet{efford_fewster:2012}
+this is the {\it realized} population size. Conversely, sometimes we
+see estimates of {\it expected} population size reported, which are
+estimates of $\mathbb{E}(N)$,
+% XXXX I often use brackets instead of parentheses for E[N]. Should we
+% be consistent? Let me know which you prefer.
+the expected size of some hypothetical,
+unspecified population.  Usually the distinction between realized
+and expected population size is not made in SCR models, because almost
+everyone only cares about  actual populations -- and their realized
+population size.
 
-There are two other popular {\bf BUGS} engines in widespread use: {\bf
-  OpenBUGS} \citep{thomas_etal:2006} and {\bf JAGS}
-\citep{plummer:2003}. Both of these are easily called from {\bf
-  R}. {\bf OpenBUGS} can be used instead of {\bf WinBUGS} by changing
-the package option in the \mbox{\tt bugs} call to \mbox{\tt
-  package=''OpenBUGS''}.  {\bf JAGS} can be called using the function
-\mbox{\tt jags()} in package \mbox{\tt R2jags} which has nearly the
-same arguments as \mbox{\tt bugs()}.  Or, it can be executed from
-the {\bf R}
-package
- \mbox{\tt rjags} \citep{plummer:2009} which has a slightly
-different implementation that we demonstrate here as we reanalyze the
-simulated data set in the previous section (note: the same {\bf R}
-commands are used to generate the data and package the data, inits and
-parameters to monitor). The function \mbox{\tt jags.model} is used to
-initialize the model and run the MCMC algorithm for an adaptive period
-during which tuning of the MCMC algorithm might take place.  These
-samples cannot be used for inference.  Then the Markov chains are
-updated using \mbox{\tt coda.samples()} to obtain posterior samples
-for analysis, as follows:
-{\small
-\begin{verbatim}
-jinit <- jags.model("SCR0b.txt", data=data, inits=inits,
-                   n.chains=3, n.adapt=1000)
-jout <- coda.samples(jinit, parameters, n.iter=1000, thin=1)
-\end{verbatim}
-}
-These commands can be executed
-using the function
-\mbox{\tt SCR0bayes} provided with the {\bf R} package \mbox{\tt
-  scrbook}. \citet{hobbs:2011} provides a good introduction to
-ecological modeling with {\bf JAGS} which we recommend.
+If you do likelihood analysis of SCR models, then the distinction between realized and
+expected is often discussed by whether the estimator is ``conditional on $N$''
+(realized) or not (expected). The naming arises because in obtaining
+the MLE of $N$, its properties are evaluated
+{\it conditional} on $N$ --
+in particular, if the estimator is unbiased then $\mathbb{E}(\hat{N}|N) = N$ and
+$\mbox{Var}(\hat{N}|N) = \tilde{\sigma}_{N}^{2}$
+% XXXX Should Var be Roman font? i.e. \textrm{Var} or \mbox{Var} or whatever?
+is the sampling variance.
+This is bad nomenclature because,
+%if we need to predict a new
+%population that was not sampled (see below), then we need to
+% predict a new random variable ``unconditionally'', then we
+%have to do some gyrations to cook-up estimates and variances (see
+%below).  Nor does this nomenclature
+it does not conform to anything relevant to
+Bayesian inference.  If we care about $N$ for the population that we
+sampled it is understood to be a
+realization of a random variable, but the relvance of ``conditional on
+$N$'' is hard to see. Bayesian analysis will provide a prediction of
+$N$ that is based on the posterior $[N|y,\theta]$ -- which is
+certainly {\it not} conditional on $N$.
+
+There is a third type of inference objective that is relevant
+in pratice and that is prediction of $N$ for a population that was not
+sampled -- i.e., a ``new'' population.
+To elaborate on this, consider a situation in which we are
+concerned about the tiger population in 2 distinct reserves in India.
+We do a camera trapping study on one of the reserves to estimate
+$N_{1}$ and you think the reserves are similar and homoegeneous so
+you're willing to apply a density estimate based on $N_{1}$ to the 2nd
+reserve. For the 2nd reserve, do we want a prediction of the realized
+population size, $N_{2}$, or do we want an estimates of its expected
+value? We believe the former is the proper quantity for inference
+about the population size in the 2nd reserve. An estimate of $N_{2}$
+should include the uncertainty with which the mean is estimated (from
+reserve 1) and it should also include ``process variation'' for making
+the prediction of the latent variable $N_{2}$.  
+
+To do a bayesian analysis of this you could just define the
+state-space to be the union of the two state-spaces, increase $M$ so
+that the posterior of the total population size is not truncated, and
+then have MCMC generate a posterior sample of individuals on the joint
+state-space. You can tally-up the ones that are on ${\cal S}_{2}$ as
+an estimate of $N_{2}$.
+
+To carry-out a classical likelihood analysis of this 2nd type of
+problem, what should we do?
+The argument for making a prediction of a new value of $N$
+would go something like this: If you obtian an MLE of $N$, say
+$\hat{N}$, then the inference procedure tell us the variance of this
+{\it conditional} on $N$. i.e., $Var(\hat{N}|N)$. This is fine, if we
+care about the specific value of $N$ in question.  However, if we
+don't care about the specific one in question then we want to
+``uncondition'' on $N$ to introduce a new variance component. Law of
+total variance says:
+\[
+ \mbox{Var}(\hat{N}) = \mathbb{E}[ \mbox{Var}( \hat{N}|N)] +  \mbox{Var}[ \mathbb{E}( \hat{N} |N)]
+\]
+If $\hat{N}$ is unbiased then we say
+\[
+ \mbox{Var}(\hat{N}) = \sigma^{2}(\hat{N}) + \mbox{Var}(N)
+\]
+The first part is estimation error and the 2nd part is process error.
+\begin{comment}
+  XXXX Here is what Murray has to say about this on the help page for
+  region.N():
+
+Realised N is given by R(N) = n + integral_over_B (1 - p.(X))D(X) dX
+(the second term represents undetected animals). This definition
+strictly holds only when region B is at least as large as the region
+of integration used to fit the model; only with this condition can we
+be sure all n detected animals have centres within B. The sampling
+variance of R(N), technically a mean square prediction error (Johnson
+et al. 2010), is approximated by summing the expected Poisson variance
+of the true number of undetected animals and a delta-method estimate
+of its sampling variance, obtained as for E(N).
+\end{comment}
+%In practice, we need to make some adjustment for having observed part
+%of the population size $N=n+n_{0}$ but this is a technical detail not
+%really an important conceptual one.  So the Var(N) part decreases with
+%the magnitude of $n_{0}$ and, as $n_{0}$ approaches $N$ then .......
+%......... not sure where i'm going here .................
+
+%Frequentists have a tough time with the idea of predicting
+%random variables and this is a good illustration of that.
+
+
+The considerations for estimating density are the same. Density can be
+$N/\mbox{area}$ where $N$ is the realized population -- we understand it to
+be that, or else we would put an expectation operator around it like
+$\mathbb{E}(N)/\mbox{area}$.
+Classically, density is thought of as being defined
+as the expected value of $N$ but, clearly, it is not -- because it
+depends on whether you're talking about the realized density, of an
+actual population, or expected density for some hypothetical
+unspecified population.
+However, the formula for obtaining ``expected density''
+is slightly different depending on
+whether we assume $N$ has  a Poisson distribution or whether we do
+this by data augmentation. In the latter case $\psi$ is related to the
+point process intensity (see Chapt. \ref{chapt.state-space}) in the
+sense that, under the binomial point process model
+\[
+\mathbb{E}(N) = M*\psi
+\]
+whereas, under the Poisson point process model
+\[
+\mathbb{E}(N) = D*A
+\]
+so what we think of as ``density'', $D$, is $ D = M \psi /\mbox{area}$.
+
+
+In summary, there are 3 basic inference problems:
+\begin{itemize}
+\item[(1)] What is the value of $N$ for some population that was
+  sampled.  This is what Efford and Fewster call "realized N" In
+  general, you want the uncertainty to reflect having to estimate
+  $n_{0}$, the part of the population not seen.
+\item[(2)] You need to estimate $N$ for some population that you didn't
+  sample but it is ``similar'' to the population that you have
+  information on.  In this case, you have to account for both
+  variation in having to estimate parameters of the distribution of N
+  and you have to account for process variation in N (i.e., due to the
+  stochastic model of N).
+\item[(3)] In some extremely limited cases you might care about
+  estimating the expected value of $N$, $\mathbb{E}(N) = \lambda$ or
+  $\psi*M$ under data augmentation.  This is only useful as a
+  hypothetical statement that you might use, e.g., if you put a new 1
+  million ha refuge in somewhere then you might say its expected
+  population size is 200 tigers.
+\end{itemize}
+% XXXX This is good stuff, but rather subtle. Is it true that the
+% predition for (2) and (3) will be the same, but the variance will be
+% different? Isn't this the same distinction between a "prediction
+% interval" and a "confidence interval"?
+If you do Bayesian analysis then how to compute variances properly
+doesn't really matter. You
+decide if you care about $N$ or its expected value, or predictions of
+some ``new'' $N$,  and you tabulate
+the correct posterior distribution.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1799,7 +1973,7 @@ days, median = 45 days).  A consequence of this is that the binomial
 sample size $K$ (see Eq. \ref{scr0.eq.bin}) is variable for each
 camera. Thus, we must provide a matrix of sample sizes as data to {\bf
   BUGS} and modify the model specification in
-sec.
+Sec.
 \ref{scr0.sec.unknownN} accordingly. Our treatment of the data
 here is based on the analysis of \citet{royle_etal:2011jwm}.
 
@@ -1842,7 +2016,7 @@ structure is a simple matrix with 4 columns, those being: (1)
 {\it session} which usually corresponds to a year or a primary period
 in the context of a Robust Design situation, but it could also
 correspond to a distinct spatial unit (see
-sec. \ref{mle.sec.multisession} and Chapt. \ref{chapt.hscr}).
+Sec. \ref{mle.sec.multisession} and Chapt. \ref{chapt.hscr}).
 For a single-year study (as considered here) this
 should be an integer  that is constant for all records; (2) \mbox{\tt indID}: the
 individual identity, being an integer from $1$ to $n$ (repeated for
@@ -2064,7 +2238,7 @@ direction.  We also considered larger state-spaces up to 50 km to
 evaluate that choice.  The buffer of the state space should be large
 enough so that individuals beyond the state-space boundary are not
 likely to be encountered
-(sec. \ref{scr0.sec.ss}).
+(Sec. \ref{scr0.sec.ss}).
 Thus, some knowledge of typical space usage
 patterns of the species is useful to establish the model state-space.  For the analysis,
 we scaled the coordinate system
@@ -2311,13 +2485,13 @@ implement that in the {\bf BUGS} language but it is not difficult to
 devise custom MCMC algorithms to do that (see
 Chapt. \ref{chapt.mcmc}).  Alternatively, we recommend using a
 discrete representation of the state-space -- i.e., approximate ${\cal
-  S}$ by a grid of $G$ points. We discuss this in sec.
+  S}$ by a grid of $G$ points. We discuss this in Sec.
 \ref{scr0.sec.discrete}.
 
 \subsection{Wolverine Space Usage}
 
 The parameter $\alpha_{1}$ is related to the home range radius
-(sec. \ref{scr0.sec.implied}).  For the Gaussian kernel model we
+(Sec. \ref{scr0.sec.implied}).  For the Gaussian kernel model we
 interpret the scale parameter $\sigma$, related to $\alpha_1$ by
 $\alpha_1 = 1/(2\sigma^2)$, as the radius of a bivariate normal model
 of space usage.  In this case $\sigma = 0.64$ standardized units ($10$
@@ -2432,7 +2606,7 @@ The coarseness of the state-space should not really have much of an
 effect on estimates if the grain is sufficiently fine relative to
 typical animal home range sizes.  Why is this?  We have two analogies
 that can help us understand. First is the relationship to model
-$M_{h}$.  As noted in sec. \ref{scr0.sec.scrmh} above, we can think
+$M_{h}$.  As noted in Sec. \ref{scr0.sec.scrmh} above, we can think
 about SCR models as a type of finite mixture
 \citep{norris_pollock:1996, pledger:2000} where we are fortunate to be
 able to obtain direct information about which group individuals belong
@@ -2702,173 +2876,6 @@ retain the MCMC history for the ${\bf s}$
 variables and also the data augmentation variables z in order to do
 some of the following analyses.
 
-
-\subsection{Realized vs. Expected Density}
-
-In Bayesian analysis of the SCR model, we estimate a parameter $N$
-which is the size of the population for the prescribed state-space
-(presumably the state-space is defined so as to be relevant to where
-our traps were located, so $N$ can be thought of as the size of the
-sampled population). In the context of \citet{efford_fewster:2012}
-this is the {\it realized} population size. Conversely, sometimes we
-see estimates of {\it expected} population size reported, which are
-estimates of $\mathbb{E}(N)$,
-% XXXX I often use brackets instead of parentheses for E[N]. Should we
-% be consistent? Let me know which you prefer.
-the expected size of some hypothetical,
-unspecified population.  Usually the distinction between realized
-and expected population size is not made in SCR models, because almost
-everyone only cares about  actual populations -- and their realized
-population size.
-
-If you do likelihood analysis of SCR models, then the distinction between realized and
-expected is often discussed by whether the estimator is ``conditional on $N$''
-(realized) or not (expected). The naming arises because in obtaining
-the MLE of $N$, its properties are evaluated
-{\it conditional} on $N$ --
-in particular, if the estimator is unbiased then $\mathbb{E}(\hat{N}|N) = N$ and
-$Var(\hat{N}|N) = \tilde{\sigma}_{N}^{2}$
-% XXXX Should Var be Roman font? i.e. \textrm{Var} or \mbox{Var} or whatever?
-is the sampling variance.
-This is bad nomenclature because,
-%if we need to predict a new
-%population that was not sampled (see below), then we need to
-% predict a new random variable ``unconditionally'', then we
-%have to do some gyrations to cook-up estimates and variances (see
-%below).  Nor does this nomenclature
-it does not conform to anything relevant to
-Bayesian inference.  If we care about $N$ for the population that we
-sampled it is understood to be a
-realization of a random variable, but the relvance of ``conditional on
-$N$'' is hard to see. Bayesian analysis will provide a prediction of
-$N$ that is based on the posterior $[N|y,\theta]$ -- which is
-certainly {\it not} conditional on $N$.
-
-There is a third type of inference objective that is relevant
-in pratice and that is prediction of $N$ for a population that was not
-sampled -- i.e., a ``new'' population.
-To elaborate on this, consider a situation in which we are
-concerned about the tiger population in 2 distinct reserves in India.
-We do a camera trapping study on one of the reserves to estimate
-$N_{1}$ and you think the reserves are similar and homoegeneous so
-you're willing to apply a density estimate based on $N_{1}$ to the 2nd
-reserve. For the 2nd reserve, do we want a prediction of the realized
-population size, $N_{2}$, or do we want an estimates of its expected
-value? We believe the former is the proper quantity for inference
-about the population size in the 2nd reserve. An estimate of $N_{2}$
-should include the uncertainty with which the mean is estimated (from
-reserve 1) and it should also include ``process variation'' for making
-the prediction of the latent variable $N_{2}$.  If we do this all as
-part of the MCMC algorithm then our shit should be tight, bro.
-% XXXX Yes!
-
-To do a bayesian analysis of this you could just define the
-state-space to be the union of the two state-spaces, increase $M$ so
-that the posterior of the total population size is not truncated, and
-then have MCMC generate a posterior sample of individuals on the joint
-state-space. You can tally-up the ones that are on ${\cal S}_{2}$ as
-an estimate of $N_{2}$.
-
-To carry-out a classical likelihood analysis of this 2nd type of
-problem, what should we do?
-The argument for making a prediction of a new value of $N$
-would go something like this: If you obtian an MLE of $N$, say
-$\hat{N}$, then the inference procedure tell us the variance of this
-{\it conditional} on $N$. i.e., $Var(\hat{N}|N)$. This is fine, if we
-care about the specific value of $N$ in question.  However, if we
-don't care about the specific one in question then we want to
-``uncondition'' on $N$ to introduce a new variance component. Law of
-total variance says:
-\[
- Var(\hat{N}) = E[ Var( \hat{N}|N)] +  Var[ E( \hat{N} |N)]
-\]
-If $\hat{N}$ is unbiased then we say
-\[
- Var(\hat{N}) = \sigma^{2}(\hat{N}) + Var(N)
-\]
-The first part is estimation error and the 2nd part is process error.
-\begin{comment}
-  XXXX Here is what Murray has to say about this on the help page for
-  region.N():
-
-Realised N is given by R(N) = n + integral_over_B (1 - p.(X))D(X) dX
-(the second term represents undetected animals). This definition
-strictly holds only when region B is at least as large as the region
-of integration used to fit the model; only with this condition can we
-be sure all n detected animals have centres within B. The sampling
-variance of R(N), technically a mean square prediction error (Johnson
-et al. 2010), is approximated by summing the expected Poisson variance
-of the true number of undetected animals and a delta-method estimate
-of its sampling variance, obtained as for E(N).
-
-\end{comment}
-%In practice, we need to make some adjustment for having observed part
-%of the population size $N=n+n_{0}$ but this is a technical detail not
-%really an important conceptual one.  So the Var(N) part decreases with
-%the magnitude of $n_{0}$ and, as $n_{0}$ approaches $N$ then .......
-%......... not sure where i'm going here .................
-
-%Frequentists have a tough time with the idea of predicting
-%random variables and this is a good illustration of that.
-
-
-
-The considerations for estimating density are the same. Density can be
-$N/\mbox{area}$ where $N$ is the realized population -- we understand it to
-be that, or else we would put an expectation operator around it like
-$\mathbb{E}(N)/\mbox{area}$.
-Classically, density is thought of as being defined
-as the expected value of $N$ but, clearly, it is not -- because it
-depends on whether you're talking about the realized density, of an
-actual population, or expected density for some hypothetical
-unspecified population.
-However, the formula for obtaining ``expected density''
-is slightly different depending on
-whether we assume $N$ has  a Poisson distribution or whether we do
-this by data augmentation. In the latter case $\psi$ is related to the
-point process intensity (see Chapt. \ref{chapt.state-space}) in the
-sense that, under the binomial point process model
-\[
-\mathbb{E}(N) = M*\psi
-\]
-whereas, under the Poisson point process model
-\[
-\mathbb{E}(N) = D*A
-\]
-so what we think of as ``density'', $D$, is $ D = M \psi /\mbox{area}$.
-
-% XXXX I would distinguish between realized and expected values of N
-% and density here. E[D] = (M*phi)/area, right? XXXX
-
-
-In summary, there are 3 basic inference problems:
-\begin{itemize}
-\item[(1)] What is the value of N for some population that was
-  sampled.  This is what Efford and Fewster call "realized N" In
-  general, you want the uncertainty to reflect having to estimate
-  $n_{0}$, the part of the population not seen.
-\item[(2)] You need to estimate N for some population that you didn't
-  sample but it is ``similar'' to the population that you have
-  information on.  In this case, you have to account for both
-  variation in having to estimate parameters of the distribution of N
-  and you have to account for process variation in N (i.e., due to the
-  stochastic model of N).
-\item[(3)] In some extremely limited cases you might care about
-  estimating the expected value of N, $\mathbb{E}(N) = \lambda$ or
-  $\psi*M$ under data augmentation.  This is only useful as a
-  hypothetical statement that you might use, e.g., if you put a new 1
-  million ha refuge in somewhere then you might say its expected
-  population size is 200 tigers.
-\end{itemize}
-% XXXX This is good stuff, but rather subtle. Is it true that the
-% predition for (2) and (3) will be the same, but the variance will be
-% different? Isn't this the same distinction between a "prediction
-% interval" and a "confidence interval"?
-If you do Bayesian analysis then how to compute variances properly
-doesn't really matter. You
-decide if you care about $N$ or its expected value, or predictions of
-some ``new'' $N$,  and you tabulate
-the correct posterior distribution.
 
 
 \subsection{Constructing Density Maps}
