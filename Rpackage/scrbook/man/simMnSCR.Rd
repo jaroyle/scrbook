@@ -79,7 +79,7 @@ model {
 psi ~ dunif(0,1)
 alpha0 ~ dnorm(0,10)
 sigma ~dunif(0,10)
-alpha1<-  -1/(2*sigma*sigma)
+alpha1<-  1/(2*sigma*sigma)
 
 for(i in 1:M){
   z[i] ~ dbern(psi)
@@ -91,7 +91,7 @@ for(i in 1:M){
   }
   for(k in 1:K){
     for(j in 1:ntraps){
-      lp[i,k,j] <- exp(alpha0 + alpha1*d[i,j])*z[i]
+      lp[i,k,j] <- exp(alpha0 - alpha1*d[i,j])*z[i]
       cp[i,k,j] <- lp[i,k,j]/(1+sum(lp[i,k,]))
     }
     cp[i,k,ntraps+1] <- 1-sum(cp[i,k,1:ntraps])  # last cell = not captured
