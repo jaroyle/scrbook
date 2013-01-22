@@ -291,17 +291,17 @@ various types of sex specificity of model parameters:
 \hspace{.5in} \begin{itemize}
 \item[] Model 0: model SCR0 with constant density and constant
   encounter model parameters;
-\item[]
+
 \item[] Model 1: model SCR0 with constant parameter
 values for both male and female wolverines but with sex-specific
 density only;
-\item[]
+
 \item[] Model 2: Sex-specific density {\it and} sex-specific intercept
 $p_{0}$ but constant $\sigma$;
-\item[]
+
 \item[] Model 3: Sex-specific density, sex-specific $\sigma$ but constant
 $p_{0}$
-\item[]
+
 \item[] Model 4: Sex-specific density, sex-specific $p_{0}$ {\it and} $\sigma$.
 \end{itemize}
 
@@ -366,7 +366,7 @@ The {\bf R} commands are as follows (contained in the help file
 % occassionally create odd-looking spacing.
 {\small
 \begin{verbatim}
-##
+
 > library(secr)
 > library(scrbook)
 > data(wolverine)
@@ -710,7 +710,7 @@ each of the 5 models: {\small
 
 
 
-\begin{panel}[htp]
+\begin{panel}[tp]
 \centering
 \rule[0.15in]{\textwidth}{.03in}
 %\begin{minipage}{5in}
@@ -723,13 +723,13 @@ alpha0 \(\sim\) dnorm(0,.1)
 psi \(\sim\) dunif(0,1)                   ## Data augmentation parameter
 psi.sex  \(\sim\) dunif(0,1)              ## Probability of ``male''
 
-for(i in 1:M)\{                           ## DA loop
-  zsex[i] \(\sim\) dbern(psi.sex)         ## Latent sex state (male = 1)
+for(i in 1:M)\{                      ## DA loop
+  wsex[i] \(\sim\) dbern(psi.sex)         ## Latent sex state (male = 1)
   z[i] \(\sim\) dbern(psi)                ## DA variables
   s[i,1] \(\sim\) dunif(Xl,Xu)
   s[i,2] \(\sim\) dunif(Yl,Yu)
-  logit(p0[i]) <- alpha0 + alpha.sex*zsex[i]
-  log(sigma.vec[i]) <- log(sigma0) + beta.sex*zsex[i]
+  logit(p0[i]) <- alpha0 + alpha.sex*wsex[i]
+  log(sigma.vec[i]) <- log(sigma0) + beta.sex*wsex[i]
   alpha1[i] <- 1/(2*sigma.vec[i]*sigma.vec[i])
   for(j in 1:ntraps)\{
     mu[i,j] <- z[i]*p[i,j]
@@ -761,7 +761,7 @@ which we found above
 The posterior mean and SD of model parameters under the 5 models are
 given in Table \ref{gof.tab.dic}. 
 
-\begin{table}
+\begin{table}[ht]
 %%%%%XXX 01/17/2013 -- updated 
 \centering
 \caption{
@@ -800,7 +800,7 @@ deviance  441.01 12.42 441.78 12.45 440.12 12.53 443.31 12.61 441.24 12.66
 \end{verbatim}
 \end{comment}
 
-\begin{table}[htp]
+\begin{table}[ht]
 \centering
 \caption{
 Posterior summaries of model parameters for models with varying
@@ -808,6 +808,7 @@ sex-specificity of model parameters. Model 0 = no sex specificity,
 model 4 = fully sex specific (see text). Models are based on the 
  Gaussian encounter probability model), each with 21000 iterations,
  1000 burn-in, 3 chains for a total of 60000 posterior samples. }
+{\tiny
 \begin{tabular}{crrrrrrrrrr} \hline \hline
 parameter & \multicolumn{2}{c}{model 0} &
 \multicolumn{2}{c}{model 1} &
@@ -831,6 +832,7 @@ deviance   &441.01& 12.42& 441.78& 12.45& 440.12& 12.53& 443.31& 12.61&441.24& 1
 & \multicolumn{2}{c}{pD = 77.1} &\multicolumn{2}{c}{pD = 77.5} & \multicolumn{2}{c}{pD = 78.4}& \multicolumn{2}{c}{pD =79.5}  & \multicolumn{2}{c}{pD =80.1}  \\
 & \multicolumn{2}{c}{DIC = 518.1} & \multicolumn{2}{c}{DIC = 519.3} &\multicolumn{2}{c}{DIC = 518.6} &    \multicolumn{2}{c}{DIC = 522.8} &\multicolumn{2}{c}{DIC = 521.3} \\ \hline
 \end{tabular}
+}
 %\hline
 \label{gof.tab.dic}
 \end{table}
@@ -1164,10 +1166,10 @@ In particular, instead of a 2-dimensional array
 $m=1,2,\ldots,M$ models. An example with 3 distinct models is:
 {\small
 \begin{alltt}
-  mod  \(\sim\) dcat(probs[])}
-##
-## Using a double loop construction fill-in p[,,] for each model:
-##
+  mod  \(\sim\) dcat(probs[])
+\#\#
+\#\# Using a double loop construction fill-in p[,,] for each model:
+\#\#
   p[i,j,1] <-  p0[1]*exp( - alpha1[1]*dist2[i,j] )
   p[i,j,2] <-  1-exp(-p0[2]*exp( - alpha1[2]*dist2[i,j] ) )
   logit(p[i,j,3]) <- p0[3] - alpha1[3]*dist2[i,j]
@@ -1200,21 +1202,21 @@ model with the square of distance (defined in Sec. \ref{scr0.sec.binomial}). The
 there are 3 intercepts and 3 different `\mbox{\tt alpha1}' parameters
 (the coefficient on distance). The parameters should not be regarded
 as equivalent across the models, so it is important to have them
-seperately defined (and estimated) for each model.  In our analysis we
+separately defined (and estimated) for each model.  In our analysis we
 used a vague normal prior (precision = 0.1) for the intercept
 parameter (either log or logit-scale of baseline encounter probability
 $p_{0}$) and a \mbox{\tt Uniform}(0,5) prior for one-half the inverse of the
 coefficient on distance-squared.
 In the {\bf BUGS} model specification the priors look like this:
 \begin{alltt}
- for(i in 1:3){
+ for(i in 1:3)\{
    alpha0[i] \(\sim\) dnorm(0,.1)
    sigma[i] \(\sim\) dunif(0,5)
    alpha1[i] <- 1/(2*sigma[i]*sigma[i])
- }
+ \}
 \end{alltt}
 Then,  we create a probability of encounter for each
-individual, trap {\it and} model so that the holder object '\mbox{\tt p}' in the
+individual, trap {\it and} model so that the holder object ``\mbox{\tt p}'' in the
 model description is a 3-dimensional array (sometimes this would have to be a 4
 or 5-d array in more complex models with time effects, etc..), so that
 construction of the encounter probability models look like this:
@@ -1385,7 +1387,7 @@ Node statistics
 In practical settings, we estimate parameters of a desirable model, or
 maybe fit a bunch of models and report estimates from all of them or a
 model-averaged summary of density.  An important question is: Is our
-model worth a shit?  In other words, does the model appear to be an
+model worth anything?  In other words, does the model appear to be an
 adequate description of our data?
 %Put another way, we might ask, are
 %the data we have consistent with realizations from the model which we
@@ -1454,7 +1456,7 @@ Bayesian analysis of SCR models, there has not been a definitive or
 general proposal for a fit statistic or even a class of fit
 statistics, although a few specialized implementations of Bayesian
 p-values have been provided \citep{royle:2009,royle_etal:2011mee,
-  gopalaswamy_etal:2012ecol,gopalaswamy_etal:2012mee,russell_etal:2012}.
+  gopalaswamy_etal:2012mee,gopalaswamy_etal:2012ecol,russell_etal:2012}.
 While we universally adopt the Bayesian p-value approach, and suggest
 some fit statistics in the following text, we caution that there is
 no general expectation to support how well they should do.
@@ -1485,7 +1487,7 @@ can evaluate whether the data appear consistent with the
 the point process).  For the simple
 model of independence and uniformity, this is similar to the
 assumption of {\it complete spatial randomness} (CSR) which we
-consider in sec. \ref{gof.sec.csr} below. Actually, this is not
+consider in Sec. \ref{gof.sec.csr} below. Actually, this is not
 strictly the assumption of CSR because of the binomial assumption on
 $N$ under data augmentation, so we instead use the term {\it spatial
   randomness}.
@@ -1508,7 +1510,7 @@ for such things is \citet[][Ch. 8]{cressie:1992} and
   \url{http://www.seas.upenn.edu/~ese502/NOTEBOOK/Part_I/3_Testing_Spatial_Randomness.pdf}.
   XXXX
 Kimmy: look this up make sure still active put access date here
-  XXXXX.  } In the context of animal capture-recapture studies, the
+  XXXXX.  }. In the context of animal capture-recapture studies, the
 spatial randomness hypothesis is manifestly false, purely on
 biological grounds. Typically individuals will be clustered, or more
 uniform (for territorial species), than expected under spatial
@@ -1646,12 +1648,13 @@ bin size to be extremely small such that % XXXX.  In this case,
 $\mathbb{E}(N_{g})$
 tends to $N/G$ ($N$ being the number of activity centers).  Further,
 $N_{g}$ tends to a binary outcome. Therefore the fit statistic has $N$
-components that represent the $N_{g} = 1$ values and it has $G-N$
-components that represent the $N_{g} = 0$ values. Therefore, the fit statistic
+components that have value $N_{g} = 1$, and it has
+ $G-N$
+components that have value $N_{g} = 0$. Therefore, the fit statistic
 resembles:
 \[
 T({\bf N},\theta) = \sum_{g \ni N_{g} = 1}^{N}  (1 - \sqrt{N/G})^2 +
-\sum_{g \ni N_{g} = 1}^{G-N} (N/G)^2
+\sum_{g \ni N_{g} = 0}^{G-N} (N/G)^2
  = N(1 + (G-N)/G)
 \]
 (here $\ni$ means ``such that''). If $G$ is huge
@@ -1696,9 +1699,11 @@ then the cell counts (far away from the data) {\it are} independent
 binomial counts with constant density, and so we can overwhelm the fit
 statistic with extraneous ``data'' simulated from the posterior, which
 is equal to the prior as we move away from the data, and therefore
-uninformed by the actual data in the vicinity of the trap array.
-Therefore we recommend computing these fit statistics in the vicinity
-of the trap array only. For example, if typical trap spacing is, say,
+uninformed by the observed data  that live in the vicinity of the trap array.
+Therefore we recommend computing these goodness-of-fit statistics in the vicinity
+of the trap array only. Perhaps, as a rule-of-thumb, less than the
+average trap spacing from the rectangle enclosing the trap array.
+For example, if the average trap spacing is, say,
 10 km, then the bins used to obtain the observed and predicted
 activity centers should not extend any further from the traps than 5
 km.
@@ -1713,7 +1718,9 @@ km.
 \subsection{Assessing  Fit of the Observation Model}
 \label{gof.sec.obsfit}
 
-It is less clear how to approach goodness-of-fit evaluation of the
+In evaluating the spatial randomness hypothesis, we could draw on
+well-established ideas from point process modeling. On the other hand, 
+it is less clear how to approach goodness-of-fit evaluation of the
 observation model.  For most SCR problems, we have a 3-dimensional
 data array of {\it binary} observations, $y_{ijk}$ for individual $i$,
 trap $j$ and sample occasion $k$. As  discussed
@@ -1760,7 +1767,7 @@ distribution, say $\tilde{\bf y}$.
 We could also use a similar fit statistic derived from summarizing
 over traps to obtain an \mbox{\tt nind} $\times$ $K$ matrix of count
 statistics.  We imagine that either summary of the data will probably
-be too disaggregated in most practical settings to have much power.
+be too disaggregated (have mostly values of 0) in most practical settings to have much power.
 
 
 {\bf Fit statistic 2: Individual encounter frequencies. } SCR models
@@ -1800,7 +1807,7 @@ This seems like a sensible fit statistic because we can think of SCR
 models as 
 spatial models for counts
 \citep{chandler_royle:2012}. Therefore, we should seek models that
-provide good predictions of the observable spatial data which are the
+provide good predictions of the observable spatial data, which are the
 trap totals.  In this context, it might even make sense to pursue
 cross-validation based methods for model selection.  Cross-validation 
 is a standard method of evaluating models such as in kriging or spline
@@ -1812,8 +1819,8 @@ trap-specific frequencies.
 \subsection{Does the SCR model fit the wolverine data?}
 
 We use the ideas described in the previous section to evaluate
-goodness-of-fit of the SCR model to the wolverine camera trapping data
-which we have analyzed in previous chapters.
+goodness-of-fit of the SCR model to the wolverine camera trapping data.
+
 
 We consider first whether the simple model of spatial randomness of
 the activity centers is adequate.  We think that the
@@ -1825,7 +1832,7 @@ in the function \mbox{\tt wolvSCR0gof} which will default to fitting
 the model in {\bf JAGS}.  This is the same script as \mbox{\tt
   wolvSCR0ms} except that it saves the MCMC output for the activity
 centers ${\bf s}$ and the data augmentation variables $z$, which are
-required in order to compute the test of spatial randomness.
+required in order to compute the Bayesian p-value test of spatial randomness.
 
 The MCMC output is processed with  the {\bf R} function
 \mbox{\tt SCRgof} which
@@ -1849,18 +1856,18 @@ result is as follows:
 %%%%%This is wolvSCR0gof-testing.R script off of desktop. Needs put in package.
 {\small
 \begin{verbatim}
-toad1 <- wolvSCR0gof(nb=1000,ni=6000,buffer=2,M=200,model=0)
+> toad1 <- wolvSCR0gof(nb=1000,ni=6000,buffer=2,M=200,model=0)
 
-bugsout <- toad1$BUGSoutput$sims.list
+> bugsout <- toad1$BUGSoutput$sims.list
 
-traplocs <- wolverine$wtraps[,2:3]
-traplocs[,1] <- traplocs[,1] - min(traplocs[,1])
-traplocs[,2] <- traplocs[,2] - min(traplocs[,2])
-traplocs <- traplocs/10000
+> traplocs <- wolverine$wtraps[,2:3]
+> traplocs[,1] <- traplocs[,1] - min(traplocs[,1])
+> traplocs[,2] <- traplocs[,2] - min(traplocs[,2])
+> traplocs <- traplocs/10000
 
-set.seed(2013)   # set seed so Bayesian p-value is the same each time
+> set.seed(2013)   # set seed so Bayesian p-value is the same each time
 
-SCRgof(bugsout,5,5,traplocs=traplocs,buffer=.4)
+> SCRgof(bugsout,5,5,traplocs=traplocs,buffer=.4)
 
 Cluster index observed:  1.099822
 Cluster index simulated:  1.000453
@@ -1868,11 +1875,12 @@ P-value  index of dispersion:  0.408
 P-value2 freeman-tukey:  0.6842667
 \end{verbatim}
 }
-The output produced is the ratio of the variance to the mean cluster
-index (see above), which is computed as the posterior mean index of
+The output produced by \mbox{\tt SCRgof} is the cluster index based on
+the ratio of the variance to the mean
+(see above), which is computed as the posterior mean index of
 dispersion for the latent point process, and also the average value
 for simulated data. If this value is $>1$ then clustering is
-suggested, which we see a minor amount of evidence for here. Two
+suggested, which we see a (very) minor amount of evidence for here. Two
 Bayesian p-values are produced: the first is based on the cluster
 index, and the 2nd is based on the Freeman-Tukey statistic calculated
 as described in Sec. \ref{gof.sec.csr}.  Because our p-values aren't
@@ -1892,22 +1900,22 @@ calculations.  For example, to compute fit statistic 1, we have to add
 some commands to the {\bf
   BUGS} model specification such as this (note: this is only a
 fraction of the model specification):
-\begin{verbatim}
+\begin{alltt}
 .......
-for(j in 1:ntraps){
+for(j in 1:ntraps)\{
  mu[i,j] <- w[i]*p[i,j]
 
- y[i,j] ~ dbin(mu[i,j],K[j])
-ynew[i,j] ~ dbin(mu[i,j],K[j])
+ y[i,j] \(\sim\) dbin(mu[i,j],K[j])
+ynew[i,j] \(\sim\) dbin(mu[i,j],K[j])
 
 err[i,j] <-  pow(pow(y[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
 errnew[i,j] <- pow(pow(ynew[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
-}
+\}
 
 T1obs <- sum(err[,])
 T1new <- sum(errnew[,])
 .......
-\end{verbatim}
+\end{alltt}
 Similar calculations are carried out to obtain the posterior samples
 of test statistics 2 (individual totals) and 3 (trap totals). For the
 wolverine data, the Bayesian p-value calculations produce:
@@ -1971,15 +1979,15 @@ Bayesian p-values we do this:
 [1] 0.4990667
 \end{verbatim}
 Given that this model seems to fit better, we might prefer reporting
-estimates under this model which we do in
-Table \ref{gof.tab.wolvMb}.
-(the behavioral response parameter is labeled $\alpha_2$ in the Table).
-Estimated density is about 1 individual higher per 1000 km$^2$
-compared with the various models that lack a behavioral response.
-It might be useful to try these fit assessment exercises using the
-clipped state-space as described in Sec. \ref{scr0.sec.discrete}. That takes a long
-long time to run in \mbox{BUGS} though, especially for the behavioral
-response model.
+estimates under this model, which we do in Table \ref{gof.tab.wolvMb}.
+(the behavioral response parameter is labeled $\alpha_2$ in the
+Table).  Estimated density is about 1 individual higher per 1000
+km$^2$ compared with the various models that lack a behavioral
+response.  It might be useful to try these fit assessment exercises
+using the habitat mask as described in
+Sec. \ref{scr0.sec.discrete}. That takes an extremely long time to run
+in \mbox{\bf BUGS} though, especially for the behavioral response
+model.
 
 
 
@@ -1988,36 +1996,38 @@ response model.
 \caption{
 Posterior summary statistics for local (trap-specific) behavioral
 response model $M_{b}$ fitted to the wolverine camera trapping data
-using {\bf WinBUGS}. $T_{x}()$ are the posterior summaries of fit
+using {\bf WinBUGS}. The parameter $\alpha_{2}$ is the local
+(trap-specific) behavioral
+response parameter. $T_{x}()$ are the posterior summaries of fit
 statistics $x=1,2,3$ used in the Bayesian p-value analysis (See text for
 definitions). Results are based on
  3 chains, each with 6000 iterations (first 1000 discarded) for a
  total of 15000 posterior samples. 
 }
-\begin{tabular}{crrrrrrr} \hline \hline 
+\begin{tabular}{lrrrrrrr} \hline \hline 
 Parameter   & Mean  & SD  & 2.5\% & 50\% & 97.5\% & Rhat &n.eff \\ \hline
+$N$          & 71.32 &19.07 &42.00 &69.00 &114.02 &1.00  &2100 \\
+$D$          &  6.87 & 1.84 & 4.05 & 6.65 & 10.99 &1.00  &2100\\ \hline
 $\sigma$    &  0.88 & 0.13 & 0.68 & 0.86 & 1.17  &1.00  & 730 \\
 $p_0$        &  0.01 & 0.00 & 0.01 & 0.01 & 0.02  &1.01  & 530\\
 $\alpha_1$   &  0.69 & 0.19 & 0.37 & 0.67 &  1.10 &1.00  & 730\\
 $\alpha_2$   &  2.50 & 0.27 & 1.99 & 2.50 &  3.04 &1.00  & 700\\
 $\psi$       &  0.36 & 0.10 & 0.20 & 0.35 & 0.58  &1.00  &2600  \\
-$N$          & 71.32 &19.07 &42.00 &69.00 &114.02 &1.00  &2100 \\
-$D$          &  6.87 & 1.84 & 4.05 & 6.65 & 10.99 &1.00  &2100\\ \hline
-$T_{1}(obs)$  & 54.71 & 6.12 &43.69 &54.39 & 67.47 &1.00  &3900\\
-$T_{1}(new)$  & 64.73 & 7.62 &50.93 &64.39 & 80.96 &1.00  &3900\\
-$T_{2}(obs)$  & 13.93 & 4.07 & 7.25 &13.53 & 23.04 &1.00  &5700\\
-$T_{2}(new)$  & 12.65 & 3.35 & 6.93 &12.36 & 20.07 &1.00  &2000\\
-$T_{3}(obs)$  & 12.80 & 1.74 & 9.80 &12.64 & 16.61 &1.00  &2400\\
-$T_{3}(new)$  & 12.94 & 3.05 & 7.77 &12.67 & 19.58 &1.00 &15000\\ \hline
+$T_{1}^{obs}$  & 54.71 & 6.12 &43.69 &54.39 & 67.47 &1.00  &3900\\
+$T_{1}^{new}$  & 64.73 & 7.62 &50.93 &64.39 & 80.96 &1.00  &3900\\
+$T_{2}^{obs}$  & 13.93 & 4.07 & 7.25 &13.53 & 23.04 &1.00  &5700\\
+$T_{2}^{new}$  & 12.65 & 3.35 & 6.93 &12.36 & 20.07 &1.00  &2000\\
+$T_{3}^{obs}$  & 12.80 & 1.74 & 9.80 &12.64 & 16.61 &1.00  &2400\\
+$T_{3}^{new}$  & 12.94 & 3.05 & 7.77 &12.67 & 19.58 &1.00 &15000\\ \hline
 %deviance  1128.02 15.38 1101.00 1127.00  1161.00 1.00   640
 \end{tabular}
 \label{gof.tab.wolvMb}
 \end{table}
 
-\subsection{Quantifying lack-of-fit and remediation}
+\section{Quantifying lack-of-fit and remediation}
 
 \citet{kery_etal:inreview} used a strategy for assessing model
-fit in dynamic occupancy models similar to that which we suggested above.
+fit in dynamic occupancy models \citep{royle_kery:2007} similar to that which we suggested above.
 They constructed a fit statistic based on aggregating the data over
 replicate samples ($k$), to obtain the total detections per site $i$
 and year $j$.  They used a Bayesian p-value analysis based on a
@@ -2073,19 +2083,19 @@ as SCR models are a form of spatial model of counts, and so it is
 natural to pick models that predict the observable spatial counts
 (i.e., at trap locations) well.
 
-Our suggestions for Bayesian model assessment, or goodness-of-fit
-checking, should be viewed as experimental, based on mostly {\it ad hoc}
-attempts in a number of published applications
-\citep[e.g.,]{royle_etal:2009ecol,  royle_etal:2011mee,
-gopalaswamy_etal:2012ecol, russell_etal:2012}. We offered up
-a framework based on independent testing of the spatial model of
-independence and uniformity, and testing fit of the observation model
-conditional on the underlying point process.  While we think this
-general strategy should be fruitful, we know of no studies on the
- power to detect various model departures. We have not discussed 
-assessment of model fit for SCR models using likelihood methods, 
-although we imagine that standard bootstrapping ideas should be 
-effective, perhaps based on the fit statistics (or similar ones) we 
+For Bayesian model assessment, or goodness-of-fit checking, we
+suggested a framework based on independent testing of the spatial
+model of independence and uniformity, and testing fit of the
+observation model conditional on the underlying point process.  These
+ideas are based on mostly {\it ad hoc} attempts in a number of
+published applications \citep[e.g.,]{royle_etal:2009ecol,
+  royle_etal:2011mee, gopalaswamy_etal:2012ecol, russell_etal:2012}.
+While we think this general strategy should be fruitful, we know of no
+studies on the power to detect various model departures, and so the
+ideas should be viewed as experimental. We have not discussed
+assessment of model fit for SCR models using likelihood methods,
+although we imagine that standard bootstrapping ideas should be
+effective, perhaps based on the fit statistics (or similar ones) we
 suggested here for computing Bayesian p-values.
 
 Clearly there is much research to be done on assessment of model fit
@@ -2102,7 +2112,7 @@ it is possible to fit models that allow for a non-uniform
 distribution of points (see Chapt. \ref{chapt.state-space}) and even
 point process models that allow for interactions among points
 \citep{reich_etal:2012}. On the other hand, we expect that most of
-these Bayesian p-value tests will have lower power in typical data
+these Bayesian p-value tests will have low power in typical data
 sets consisting of a few to a few dozen individuals. As such, failure
 to detect a lack of fit may not be that meaningful. But, on the other
 hand, it may not make a difference in terms of density estimates
