@@ -16,7 +16,7 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 \end{comment}
 
 
-\section{Introduction}
+
 
 % In previous chapters we showed how to fit basic spatial
 % capture-recapture models using Bayesian analysis (in {\bf WinBUGS} or
@@ -254,7 +254,7 @@ demonstrate how to fit different encounter probability models
 framework here, and then provide a section on the likelihood analysis
 (in \secr) in a separate section below.
 
-\subsection{Bayesian Analysis with {\tt bear.JAGS}}
+\subsection{Bayesian analysis with {\tt bear.JAGS}}
 
 To demonstrate how to incorporate various types of covariates into
 models for encounter probability using {\bf JAGS}, we return to the
@@ -276,7 +276,7 @@ we will present the model code and output for the most commonly
 employed models; for all analyses we ran 3 chains with a burn-in of
 500 iterations and 20000 saved iterations.
 
-\subsection{Bayesian Analysis of encounter probability models}
+\subsection{Bayesian analysis of encounter probability models}
 % We start here by presenting the basic SCR model with no covariates and
 % the half normal distance function.
 
@@ -301,23 +301,22 @@ to a 2 dimensional array (denoted \mbox{\tt y} in the code) that has dimensions
  $\mbox{\tt M} \times \mbox{\tt ntraps}$.
 
 \begin{verbatim}
->library(rjags)  #load the necessary libraries
->library(scrbook)
+> library(rjags)  #load the necessary libraries
+> library(scrbook)
 
->data(beardata)   #attach the bear data for Ft. Drum
->ymat<-beardata$bearArray
->trapmat<-beardata$trapmat
->nind<-dim(beardata$bearArray)[1]
->K<-dim(beardata$bearArray)[3]
->ntraps<-dim(beardata$bearArray)[2]
->M=650
->nz<-M-nind
+> data(beardata)   #attach the bear data for Ft. Drum
+> ymat <- beardata$bearArray
+> trapmat <- beardata$trapmat
+> nind <- dim(beardata$bearArray)[1]
+> K <- dim(beardata$bearArray)[3]
+> ntraps <- dim(beardata$bearArray)[2]
+> M <- 650
+> nz <- M-nind
 
-  #create augmented array
->Yaug <- array(0, dim=c(M,ntraps,K))
->Yaug[1:nind,,]<-ymat
->y<-apply(Yaug,1:2, sum)
-
+#create augmented array
+> Yaug <- array(0, dim=c(M,ntraps,K))
+> Yaug[1:nind,,] <- ymat
+> y <- apply(Yaug,1:2, sum)
 \end{verbatim}
 
 
@@ -331,31 +330,30 @@ and saved in the code above as {\tt trapmat}) and then buffering by 20km.
 \centering
 \rule[0.1in]{\textwidth}{.03in}
 {\small
-\begin{verbatim}
+\begin{alltt}
 model{
-alpha0 ~ dnorm(0,.1)                         # Prior distributions
-logit(p0)<- alpha0
-alpha1<-1/(2*sigma*sigma)
-sigma ~ dunif(0, 15)
-psi ~ dunif(0,1)
+alpha0 \(\sim\) dnorm(0,.1)                         # Prior distributions
+logit(p0) <- alpha0
+alpha1 <- 1/(2*sigma*sigma)
+sigma \(\sim\) dunif(0, 15)
+psi \(\sim\) dunif(0,1)
 
-for(i in 1:M){
- z[i] ~ dbern(psi)
- s[i,1] ~ dunif(xlim[1],xlim[2])
- s[i,2] ~ dunif(ylim[1],ylim[2])
-for(j in 1:J){
-  d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
-  y[i,j] ~ dbin(p[i,j],K)
-  p[i,j]<- z[i]*p0*exp(- alpha1*d[i,j]*d[i,j])  # Gaussian model
- #p[i,j]<- z[i]*p0*exp(- alpha1*d[i,j])         # exponential model
- }
+for(i in 1:M)\{
+ z[i] \(\sim\) dbern(psi)
+ s[i,1] \(\sim\) dunif(xlim[1],xlim[2])
+ s[i,2] \(\sim\) dunif(ylim[1],ylim[2])
+for(j in 1:J)\{
+  d[i,j] <- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
+  y[i,j] \(\sim\) dbin(p[i,j],K)
+  p[i,j] <- z[i]*p0*exp(- alpha1*d[i,j]*d[i,j])  # Gaussian model
+ #p[i,j] <- z[i]*p0*exp(- alpha1*d[i,j])         # exponential model
+ \}
+\}
+N <- sum(z[])
+D <- N/area
+\}
+\end{alltt}
 }
-N<-sum(z[])
-D<-N/area
-}
-\end{verbatim}
-}
-
 \rule[-0.1in]{\textwidth}{.03in}
 \caption{
 \jags~ model specification for a basic SCR model with Gaussian
@@ -526,7 +524,7 @@ how to analyze the different
 %For example, $C$ might vary by
 %individual, trap, sampling occasion or combinations of these.
 
-\subsection{Date and Time}
+\subsection{Date and time}
 
 Often, researchers are interested in modeling the effect of date or
 chronological time on 
@@ -569,16 +567,15 @@ To implement this in \jags, $\alpha_0$ has to be
 estimated for each time period $k$ either using an index vector or
 dummy variables (as described in Chapt. \ref{chapt.modeling} and Sec. 
 \ref{closed.sec.timebehavefx})and this can be done by only 
-changing only a few lines in Panel \ref{covariates.panel.basicSCR}.
-
-\begin{verbatim}
-alpha0[k] ~ dnorm(0,.1)
-logit(p0[k])<- alpha0[k]
+changing only a few lines in Panel \ref{covariates.panel.basicSCR}:
+\begin{alltt}
+alpha0[k] \(\sim\) dnorm(0,.1)
+logit(p0[k]) <- alpha0[k]
 .......
 .......
-y[i,j,k] ~ dbin(p[i,j,k],K)
-p[i,j,k]<- z[i]*p0[k]*exp(- alpha1*d[i,j]*d[i,j])
-\end{verbatim}
+y[i,j,k] \(\sim\) dbin(p[i,j,k],K)
+p[i,j,k] <- z[i]*p0[k]*exp(- alpha1*d[i,j]*d[i,j])
+\end{alltt}
 
 Since the model contains a parameter for each time period, the
 encounter histories must be time-dependent.  Thus, a 3-d data array
@@ -728,7 +725,7 @@ yield identical results, sometimes one parameterization might work
 better than the other in {\bf WinBUGS} or {\bf JAGS}
 \citep{kery:2010}.
 
-\subsection{Behavior or Trap Response by Individual}
+\subsection{Behavior or trap response by individual}
 \label{covariates.sec.behavior}
 
 One of the most basic of encounter models is that which accommodates a
@@ -782,38 +779,33 @@ capture histories ($\mbox{\tt M} \times \mbox{\tt ntraps} \times
 model above. The code must loop over each sampling occasion, but otherwise, the model
 varies only a little from the basic SCR model shown in Panel \ref{covariates.panel.basicSCR}.  
 Here is the specification of the the occasion specific ($k$) loop:
-
 {\small
-\begin{verbatim}
-for(k in 1:K){
-  logit(p0[i,j,k])<- alpha0 + alpha2*C[i,j,k]
-  y[i,j,k] ~ dbin(p[i,j,k],1)
-  p[i,j,k]<- z[i]*p0[i,j,k]*exp(- alpha1*d[i,j]*d[i,j])
-}
-\end{verbatim}
+\begin{alltt}
+for(k in 1:K)\{
+  logit(p0[i,j,k]) <- alpha0 + alpha2*C[i,j,k]
+  y[i,j,k] \(\sim\) dbin(p[i,j,k],1)
+  p[i,j,k] <- z[i]*p0[i,j,k]*exp(- alpha1*d[i,j]*d[i,j])
+\}
+\end{alltt}
 }
 
-Despite the minor changes to the {\bf BUGS} code, this model can require quite a 
-bit of time and computational 
-effort to carry out the behavior response models.  Implementing the behavioral 
-models with the function {\tt bear.JAGS} by setting {\tt
-model=SCRb or model=SCRB} for the local or global model respectively, 
-returns the results, shown in Table \ref{covariates.tab.SCRb}.  
-There is a strong
-global behavior response suggested by the posterior mean of $\alpha_2 = 0.90$.  
-The estimate of $N$ and subsequently $D$ are larger 
-than under the model wihout a behavioral response, here we estimate $N = 577.56$ and in 
-the SCR0 model, we estimated $N = 500$. 
-This makes sense given the large estimate of $\alpha_2$, which suggests that bears
-are trap happy.  In situations where animals are trap happy, 
-the model tends to over estimate encounter probability
- (i.e., the bears that are 
-never observed have a lower encounter 
-probability than those that 
-have been captured in the study) and thereby reduce the 
-estimate of $N$.  We do not include the results here, but 
-the estimates were similar under the local behavioral response
-model.  
+Despite the minor changes to the {\bf BUGS} code, this model can
+require quite a bit of time and computational effort to carry out the
+behavior response models.  Implementing the behavioral models with the
+function {\tt bear.JAGS} by setting {\tt model=SCRb or model=SCRB} for
+the local or global model respectively, returns the results, shown in
+Table \ref{covariates.tab.SCRb}.  There is a strong global behavior
+response suggested by the posterior mean of $\alpha_2 = 0.90$.  The
+estimate of $N$ and subsequently $D$ are larger than under the model
+wihout a behavioral response, here we estimate $N = 577.56$ and in the
+SCR0 model, we estimated $N = 500$.  This makes sense given the large
+estimate of $\alpha_2$, which suggests that bears are trap happy.  In
+situations where animals are trap happy, the model tends to over
+estimate encounter probability (i.e., the bears that are never
+observed have a lower encounter probability than those that have been
+captured in the study) and thereby reduce the estimate of $N$.  We do
+not include the results here, but the estimates were similar under the
+local behavioral response model.
 
 \begin{table}[ht]
 \centering
@@ -834,7 +826,7 @@ $\sigma$ & 2.00 &  0.13  &   1.77 & 2.28  \\ \hline
 \end{table}
 
 
-\subsection{Individual Covariates}
+\subsection{Individual covariates}
 \label{covariates.sec.sex}
 
 
@@ -944,13 +936,13 @@ shown before).
 
 {\small
 \begin{verbatim}
->sex<-beardata$sex  #the sex data for captured individual
->Sex<-c(sex-1, rep(NA, nz)) #sex enters as 1/2, this recodes it to 0/1
+> sex <- beardata$sex  #the sex data for captured individual
+> Sex <- c(sex-1, rep(NA, nz)) #sex enters as 1/2, this recodes it to 0/1
                             #so we can use Bernoulli distribution 
 
->data<-list(y=y,Sex=Sex, M=M,K=K, J=ntraps, xlim=xlim, ylim=ylim,area=areaX)
->params<-c('psi','p0','N', 'D', 'sigma', 'psi.sex')
->inits =  function() { list(z=c(rep(1,nind), rbinom(nz,1,0.5)),psi=runif(1), 
+> data <- list(y=y,Sex=Sex, M=M,K=K, J=ntraps, xlim=xlim, ylim=ylim,area=areaX)
+> params <- c('psi','p0','N', 'D', 'sigma', 'psi.sex')
+> inits <- function() { list(z=c(rep(1,nind), rbinom(nz,1,0.5)),psi=runif(1), 
            s=cbind(runif(M, xlim[1],xlim[2]), runif(M,ylim[1],ylim[2])),
            psi.sex=runif(1),Sex=c(rep(NA, nind), rbinom(nz,1,0.5)), 
            sigma=runif(2,2,3),alpha0=runif(2)) }
@@ -966,35 +958,35 @@ shown before).
 \centering
 \rule[0.1in]{\textwidth}{.03in}
 {\small
-\begin{verbatim}
-model {
+\begin{alltt}
+model\{
 
-psi~dunif(0,1)                            # Prior distributions
-psi.sex~dunif(0,1)
-for(t in 1:2){                             
-  alpha0[t]~dnorm(0,.1)
-  logit(p0[t])<- alpha0[t]
-  alpha1[t]<-1/(2*sigma[t]*sigma[t])
-  sigma[t]~dunif(0, 15)
-}
+psi \(\sim\) dunif(0,1)                            # Prior distributions
+psi.sex \(\sim\) dunif(0,1)
+for(t in 1:2)\{                             
+  alpha0[t] \(\sim\) dnorm(0,.1)
+  logit(p0[t]) <- alpha0[t]
+  alpha1[t] <- 1/(2*sigma[t]*sigma[t])
+  sigma[t] \(\sim\) dunif(0, 15)
+\}
 
-for(i in 1:M){
- z[i] ~ dbern(psi)
- Sex[i]~dbern(psi.sex)                    # Sex is binary
-Sex2[i]<-Sex[i] + 1                       # Convert to categorical
- s[i,1]~dunif(xlim[1],xlim[2])
- s[i,2]~dunif(ylim[1],ylim[2])
+for(i in 1:M)\{
+  z[i] \(\sim\) dbern(psi)
+  Sex[i] \(\sim\) dbern(psi.sex)                    # Sex is binary
+  Sex2[i] <- Sex[i] + 1                       # Convert to categorical
+  s[i,1] \(\sim\) dunif(xlim[1],xlim[2])
+  s[i,2] \(\sim\) dunif(ylim[1],ylim[2])
 
-for(j in 1:J){
-d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
-y[i,j] ~ dbin(p[i,j],K)
-p[i,j]<- z[i]*p0[Sex2[i]]*exp(-alpha1[Sex2[i]]*d[i,j]*d[i,j])
-}
-}
-N<-sum(z[])
-D<-N/area
-}
-\end{verbatim}
+  for(j in 1:J)\{
+    d[i,j] <- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
+    y[i,j] \(\sim\) dbin(p[i,j],K)
+    p[i,j] <- z[i]*p0[Sex2[i]]*exp(-alpha1[Sex2[i]]*d[i,j]*d[i,j])
+   \}
+ \}
+N <- sum(z[])
+D <- N/area
+\}
+\end{alltt}
 }
 
 \rule[-0.1in]{\textwidth}{.03in}
@@ -1033,7 +1025,7 @@ $\sigma_{male}$ & 2.682 & 0.389 & 2.09 & 3.62 \\ \hline
 
 
 
-\section{Individual heterogeneity}
+\section{Individual Heterogeneity}
 
 Here we consider SCR models with individual heterogeneity.
 Capture-recapture models with individual
@@ -1076,7 +1068,7 @@ we consider a standard representation for heterogeneity in which an
 additive individual-specific random effect is included in the linear
 predictor for baseline encounter probability.  
 
-\subsection{Models of Heterogeneity}
+\subsection{Models of heterogeneity}
 \label{covariates.sec.heterogeneity}
 
 An obvious extension to the SCR model is to include an additive
@@ -1114,33 +1106,32 @@ Sec. \ref{covariates.sec.secrH2}.
 \centering
 \rule[0.1in]{\textwidth}{.03in}
 {\small
-\begin{verbatim}
-model{
+\begin{alltt}
+model\{
 
-alpha0 ~ dnorm(0,.1)                       # Prior distributions
-alpha1<-1/(2*sigma*sigma)
-sigma ~ dunif(0, 15)
-psi ~ dunif(0,1)
-tau_p ~ dgamma(.001,.001)
+alpha0 \(\sim\) dnorm(0,.1)                       # Prior distributions
+alpha1 <- 1/(2*sigma*sigma)
+sigma \(\sim\) dunif(0, 15)
+psi \(\sim\) dunif(0,1)
+tau_p \(\sim\) dgamma(.001,.001)
 
-for(i in 1:M){
-  eta[i] ~ dnorm(0, tau_p)                 # Individual level variables
-    z[i] ~ dbern(psi)
-  s[i,1] ~ dunif(xlim[1],xlim[2])
-  s[i,2] ~ dunif(ylim[1],ylim[2])
+for(i in 1:M)\{
+  eta[i] \(\sim\) dnorm(0, tau_p)                 # Individual level variables
+    z[i] \(\sim\) dbern(psi)
+  s[i,1] \(\sim\) dunif(xlim[1],xlim[2])
+  s[i,2] \(\sim\) dunif(ylim[1],ylim[2])
 
-   for(j in 1:J){                          # The "likelihood" etc..
-   d[i,j]<- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
-   y[i,j] ~ dbin(p[i,j],K)
- logit(p0[i,j])<-alpha0 + eta[i]
-    p[i,j]<- z[i]*p0[i,j]*exp(- alpha1*d[i,j]*d[i,j])
-  }
-}
-N<-sum(z[])                                # N, D are derived
-D<-N/area
-}
-
-\end{verbatim}
+   for(j in 1:J)\{                          # The "likelihood" etc..
+   d[i,j] <- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
+   y[i,j] \(\sim\) dbin(p[i,j],K)
+   logit(p0[i,j]) <- alpha0 + eta[i]
+   p[i,j] <- z[i]*p0[i,j]*exp(- alpha1*d[i,j]*d[i,j])
+  \}
+ \}
+N <- sum(z[])                                # N, D are derived
+D <- N/area
+\}
+\end{alltt}
 }
 
 \rule[-0.1in]{\textwidth}{.03in}
@@ -1155,7 +1146,7 @@ probability model and additive normal random effect.
 
 
 
-\subsection{Heterogeneity Induced by Variation in Home Range Size} 
+\subsection{Heterogeneity induced by variation in home range size} 
 \label{covariates.sec.heterogeneityHR}
 
 An alternative heterogeneity model, one that has more of a direct
@@ -1214,7 +1205,7 @@ different levels of heterogeneity: A population standard deviation of
 
 
 
-\section{Likelihood analysis in \secr}
+\section{Likelihood Analysis in \secr}
 \label{likelihood.secr}
 
 Previously, in Chapt. \ref{chapt.mle}, we introduced the {\bf R}
@@ -1268,59 +1259,57 @@ in \mbox{\tt secr}) and the
 Panel \ref{covariates.panel.secrfn} for how to fit the exponential 
 model to the Fort Drum bear dataset. 
 
-The \mbox{\tt secr} package easily fits a range of SCR equivalents of standard capture-recapture models.
-The package has pre-defined versions of the classic
-model $M_{t}$ where each
-occasion has its own encounter
- probability, as well as a linear
-trend in baseline encounter probability 
-over occasions (in a spatial modeling framework $\sigma$ could also be
-an occasion specific parameter, but having encounter probability 
- change with time seems like the more common case). For the classical
-time-effects type of model with $K$ distinct parameters \secr~ uses 't' to denote
-this in the model specification formula (see model 3 in 
-panel \ref{covariates.panel.secrfn}); whereas, for a linear
+The \mbox{\tt secr} package easily fits a range of SCR equivalents of
+standard capture-recapture models.  The package has pre-defined
+versions of the classic model $M_{t}$ where each occasion has its own
+encounter probability, as well as a linear trend in baseline encounter
+probability over occasions (in a spatial modeling framework $\sigma$
+could also be an occasion specific parameter, but having encounter
+probability change with time seems like the more common case). For the
+classical time-effects type of model with $K$ distinct parameters
+\secr~ uses 't' to denote this in the model specification formula (see
+model 3 in panel \ref{covariates.panel.secrfn}); whereas, for a linear
 trend over occasions \secr~ uses 'T'.
 
-The global trap response model (what we called model $M_{B}$), 
-or a local trap-specific behavioral response (model $M_{b}$)
-can be fitted in \mbox{\tt secr} using formulae with
- ``b'' for the global response model and
- ``bk'' for the local trap response model
-(see models 4 and 5 in 
-Panel \ref{covariates.panel.secrfn}; note that to fit the trap specific behavioral response model you need version 2.3.1 or newer of \secr).
+The global trap response model (what we called model $M_{B}$), or a
+local trap-specific behavioral response (model $M_{b}$) can be fitted
+in \mbox{\tt secr} using formulae with ``b'' for the global response
+model and ``bk'' for the local trap response model (see models 4 and 5
+in Panel \ref{covariates.panel.secrfn}; note that to fit the trap
+specific behavioral response model you need version 2.3.1 or newer of
+\secr).
 
 \begin{panel}[htp]
 \centering
 \rule[0.1in]{\textwidth}{.03in}
 {\small
-\begin{verbatim}
+\begin{alltt}
 1. null model with a bivariate normal encounter probability  model
-bear_0=secr.fit(bear.cap, model=list(D ~ 1, g0 ~ 1, sigma ~ 1))
+bear_0=secr.fit(bear.cap, model=list(D \(\sim\) 1, g0 \(\sim\) 1, sigma \(\sim\) 1))
 
 2. null model with an exponential encounter probability model
-bear_0exp=secr.fit(bear.cap, model=list(D ~ 1, g0 ~ 1, sigma ~ 1),
-          detectfn=2)
+bear_0exp=secr.fit(bear.cap, model=list(D \(\sim\) 1, g0 \(\sim\) 1, sigma \(\sim\) 1),
+                   detectfn=2)
 
 3. model with fixed time effects
-bear_t=secr.fit(bear.cap, model=list(D ~ 1, g0 ~ t, sigma ~ 1))
+bear_t=secr.fit(bear.cap, model=list(D \(\sim\) 1, g0 \(\sim\) t, sigma \(\sim\) 1))
 
 4. global behavioral model
-bear_B=secr.fit(bear.cap, model=list(D ~ 1, g0 ~ b, sigma ~ 1))
+bear_B=secr.fit(bear.cap, model=list(D \(\sim\) 1, g0 \(\sim\) b, sigma \(\sim\) 1))
 
 5. trap specific behavioral response
-bear_b=secr.fit(bear.cap, model=list(D ~ 1, g0 ~ bk, sigma ~ 1))
+bear_b=secr.fit(bear.cap, model=list(D \(\sim\) 1, g0 \(\sim\) bk, sigma \(\sim\) 1))
 
 6. global behavior model with fixed time effects
-bear_bt=secr.fit(bear.cap, model=list(D ~ 1, g0 ~ b+t, sigma ~ 1))
+bear_bt=secr.fit(bear.cap, model=list(D \(\sim\) 1, g0 \(\sim\) b+t, sigma \(\sim\) 1))
 
 7. sex-specific model
-bear_sex=secr.fit(bear.cap, model=list(D ~ session, g0 ~ session, 
-         sigma ~ session))
+bear_sex=secr.fit(bear.cap, model=list(D \(\sim\) session, g0 \(\sim\) session, 
+                  sigma \(\sim\) session))
 
 8. heterogeniety model
-bear_h2=secr.fit(bear.cap, model=list(D ~ 1, g0 ~ h2, sigma ~ h2))
-\end{verbatim}
+bear_h2=secr.fit(bear.cap, model=list(D \(\sim\) 1, g0 \(\sim\) h2, sigma \(\sim\) h2))
+\end{alltt}
 }
 
 \rule[-0.1in]{\textwidth}{.03in}
@@ -1330,7 +1319,7 @@ Models called from \mbox{\tt secr.bear} function. All models use \mbox{\tt buffe
 \end{panel}
 
 
-\subsection{Sex Effects}
+\subsection{Sex effects}
 \label{covariates.secr.sex}
 
 Incorporating sex effects into
@@ -1390,7 +1379,7 @@ Sec. \ref{covariates.sec.heterogeneity}).
 
 
 
-\subsection{Model selection in \secr~ with AIC}
+\subsection{Model selection in \secr~ using AIC}
 
 One practical advantage to using the \secr~ package, or likelihood
 inference in general, is the convenience of automatic model selection
