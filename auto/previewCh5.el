@@ -22,6 +22,7 @@
      "scrbook")
     (TeX-run-style-hooks
      "fancyvrb"
+     "alltt"
      "verbatim"
      "hyperref"
      "pdftex"
@@ -35,5 +36,6 @@
      "latex2e"
      "bk10"
      "book"
+     "Ch5-SCR0/Chapt-SCR0"
      "Ch5-PoisMn/Chapt-PoisMn")))
 
