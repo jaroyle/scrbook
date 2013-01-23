@@ -1435,6 +1435,34 @@ D[5] &    0.811 &  0.146 &  0.576 &  0.807 &  1.152 & 1.002  &  2000 \\
   \label{scrovenbird.results}
 \end {table}
 
+\begin{comment}
+new run with 200 m buffer
+
+Inference for Bugs model at "model.txt", fit using jags,
+ 3 chains, each with 2000 iterations (first 1000 discarded)
+ n.sims = 3000 iterations saved
+       mu.vect sd.vect   2.5%    25%    50%    75%  97.5%  Rhat n.eff
+D[1]     1.012   0.184  0.682  0.888  0.992  1.121  1.405 1.009   240
+D[2]     1.076   0.196  0.744  0.930  1.054  1.198  1.508 1.014   160
+D[3]     1.244   0.205  0.888  1.095  1.240  1.384  1.694 1.008   310
+D[4]     0.920   0.179  0.620  0.785  0.888  1.033  1.322 1.017   150
+D[5]     0.765   0.156  0.516  0.661  0.744  0.868  1.095 1.006   450
+N[1]    48.989   8.910 33.000 43.000 48.000 54.250 68.000 1.009   240
+N[2]    52.078   9.494 36.000 45.000 51.000 58.000 73.000 1.014   160
+N[3]    60.230   9.944 42.975 53.000 60.000 67.000 82.000 1.008   310
+N[4]    44.537   8.658 30.000 38.000 43.000 50.000 64.000 1.017   150
+N[5]    37.049   7.554 25.000 32.000 36.000 42.000 53.025 1.006   450
+alpha0  -3.485   0.149 -3.777 -3.587 -3.484 -3.386 -3.203 1.004   530
+alpha1   0.000   0.000  0.000  0.000  0.000  0.000  0.000 1.030   130
+psi[1]   0.490   0.100  0.308  0.420  0.486  0.552  0.702 1.008   310
+psi[2]   0.521   0.105  0.331  0.449  0.514  0.589  0.744 1.014   160
+psi[3]   0.601   0.107  0.402  0.524  0.596  0.674  0.827 1.006   390
+psi[4]   0.446   0.098  0.276  0.377  0.436  0.509  0.655 1.014   180
+psi[5]   0.373   0.088  0.219  0.309  0.368  0.426  0.564 1.006   460
+sigma   74.858   5.459 65.054 71.255 74.565 78.118 87.079 1.030   130
+
+\end{comment}
+
 
 \subsubsection{Analysis in \mbox{\tt secr} }
 
@@ -1467,38 +1495,40 @@ The re-analysis proceeds as follows:
 ## fit model with 2-class mixture for g0
 > ovenbird.model.h2 <- secr.fit(ovenCH, model =    list(g0 \(\sim\) h2))
 ## fit a model with session (year)-specific Density
-> ovenbird.model.DT <- secr.fit(ovenCH, model =    list(D \(\sim\) session))
+> ovenbird.model.D <- secr.fit(ovenCH, model =    list(D \(\sim\) session))
 \end{alltt}
 }
 All of these can be fitted easily in {\bf JAGS} but
 the model we fitted was roughly equivalent to the last model,
-\mbox{\tt ovenbird.model.DT}, because we allowed for year-specific
+\mbox{\tt ovenbird.model.D}, because we allowed for year-specific
 population sizes (and hence density). So, we'll
 compare our results from {\bf JAGS} to that
-model.
+model.  We ran that model with \mbox{\tt buffer=300}. For values of
+200 or less,  \mbox{\tt
+  secr} throws a bias warning message at us.
 The \mbox{\tt secr} 
 output is extensive 
 and so we
 do not reproduce it completely here. By default, it summarizes the
 trap information for each year, encounter information, and then output for
-each year. Here is an abbreviated version for the null model:
+each year. Here is an abbreviated version for \mbox{\tt ovenbird.model.D}:
 {\small
 \begin{verbatim}
-> ovenbird.model.1
 
-secr.fit( capthist = ovenCH )
-secr 2.3.1, 21:58:26 20 Sep 2012
+> print(ovenbird.model.D,digits=2)
+
+secr.fit( capthist = ovenCH, model = list(D ~ session), buffer = 300 )
+secr 2.3.1, 14:46:52 23 Jan 2013
 
 $`2005`
-Object class      traps
-Detector type     multi
-Detector number   44
-Average spacing   30.27273 m
-x-range           -50 49 m
-y-range           -285 285 m
+Object class      traps 
+Detector type     multi 
+Detector number   44 
+Average spacing   30.27273 m 
+x-range           -50 49 m 
+y-range           -285 285 m 
 
-[... deleted ....]
-
+[... deleted ...]
 
            2005 2006 2007 2008 2009
 Occasions     9   10   10   10   10
@@ -1506,13 +1536,14 @@ Detections   35   42   52   30   33
 Animals      20   22   26   19   16
 Detectors    44   44   44   44   44
 
-[... deleted ....]
-
- session = 2005
-       link    estimate SE.estimate         lcl        ucl
-D       log  1.25448819 0.137674225  1.01234988  1.5545422
-g0    logit  0.02384623 0.003647758  0.01765135  0.0321441
-sigma   log 76.58675001 5.911524450 65.84900819 89.0754536
+Model           :  D~session g0~1 sigma~1 
+Fixed (real)    :  none 
+Detection fn    :  halfnormal 
+Distribution    :  poisson 
+N parameters    :  7 
+Log likelihood  :  -1119.845 
+AIC             :  2253.689 
+AICc            :  2254.868 
 
 [... deleted ...]
 \end{verbatim}
@@ -1522,6 +1553,7 @@ To do model selection  we use the handy helper-function \mbox{\tt AIC}
 as follows (output edited to fit on the page):
 {\small
 \begin{verbatim}
+[trash these]
  AIC (ovenbird.model.1, ovenbird.model.1b, ovenbird.model.1T,
      ovenbird.model.h2,ovenbird.model.DT)
 
@@ -1531,6 +1563,20 @@ ovenbird.model.1b      ....         4 -1120.161 2248.323 2248.731 13.465
 ovenbird.model.h2      ....         5 -1119.337 2248.674 2249.293 14.027 
 ovenbird.model.1       ....         3 -1122.650 2251.299 2251.542 16.276 
 ovenbird.model.DT      ....         7 -1121.331 2256.662 2257.841 22.575 
+
+
+
+new results: 
+> ## compare & average pre-fitted models
+> AIC (ovenbird.model.1, ovenbird.model.1b, ovenbird.model.1T,
++     ovenbird.model.h2,ovenbird.model.D)
+                                      model   detectfn npar    logLik      AIC     AICc  dAICc AICwt
+ovenbird.model.1T          D~1 g0~T sigma~1 halfnormal    4 -1111.850 2231.700 2232.109  0.000     1
+ovenbird.model.1b          D~1 g0~b sigma~1 halfnormal    4 -1117.615 2243.229 2243.637 11.528     0
+ovenbird.model.1           D~1 g0~1 sigma~1 halfnormal    3 -1121.164 2248.327 2248.570 16.461     0
+ovenbird.model.h2 D~1 g0~h2 sigma~1 pmix~h2 halfnormal    5 -1119.762 2249.524 2250.143 18.034     0
+ovenbird.model.D     D~session g0~1 sigma~1 halfnormal    7 -1119.845 2253.689 2254.868 22.759     0
+> 
 
 \end{verbatim}
 }
@@ -1547,44 +1593,45 @@ We provide the summary results for the model having \mbox{\tt D $\sim$
 \begin{verbatim}
 Results for "D[session]" model:
 
-> print(ovenbird.model.DT,digits=2)
 
-secr.fit( capthist = ovenCH, model = list(D ~ session) )
-secr 2.3.1, 14:01:45 22 Jan 2013
+> print(ovenbird.model.D.300,digits=2)
 
-[.... output deleted ....]
+secr.fit( capthist = ovenCH, model = list(D ~ session), buffer = 300 )
+secr 2.3.1, 14:46:52 23 Jan 2013
+
+[...deleted....]
 
 Fitted (real) parameters evaluated at base levels of covariates 
 
  session = 2005 
        link estimate SE.estimate    lcl    ucl
-D       log    1.264      0.2935  0.806  1.980
-g0    logit    0.024      0.0036  0.018  0.032
-sigma   log   76.587      5.9115 65.849 89.075
+D       log    0.920       0.228  0.571  1.484
+g0    logit    0.028       0.004  0.021  0.037
+sigma   log   78.566       6.379 67.025 92.095
 
  session = 2006 
        link estimate SE.estimate    lcl    ucl
-D       log    1.328      0.3084  0.847  2.081
-g0    logit    0.024      0.0036  0.018  0.032
-sigma   log   76.587      5.9115 65.849 89.075
+D       log    0.963       0.238  0.598  1.553
+g0    logit    0.028       0.004  0.021  0.037
+sigma   log   78.566       6.379 67.025 92.095
 
  session = 2007 
        link estimate SE.estimate    lcl    ucl
-D       log    1.569      0.3645  1.001  2.459
-g0    logit    0.024      0.0036  0.018  0.032
-sigma   log   76.587      5.9115 65.849 89.075
+D       log    1.139       0.282  0.706  1.836
+g0    logit    0.028       0.004  0.021  0.037
+sigma   log   78.566       6.379 67.025 92.095
 
  session = 2008 
        link estimate SE.estimate    lcl    ucl
-D       log    1.147      0.2664  0.732  1.797
-g0    logit    0.024      0.0036  0.018  0.032
-sigma   log   76.587      5.9115 65.849 89.075
+D       log    0.832       0.206  0.516  1.341
+g0    logit    0.028       0.004  0.021  0.037
+sigma   log   78.566       6.379 67.025 92.095
 
  session = 2009 
        link estimate SE.estimate    lcl    ucl
-D       log    0.966      0.2243  0.616  1.513
-g0    logit    0.024      0.0036  0.018  0.032
-sigma   log   76.587      5.9115 65.849 89.075
+D       log    0.701       0.173  0.435  1.130
+g0    logit    0.028       0.004  0.021  0.037
+sigma   log   78.566       6.379 67.025 92.095
 \end{verbatim}
 }
 The point estimates (MLEs) of density are uniformly lower than the Bayesian estimates

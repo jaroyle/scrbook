@@ -30,17 +30,30 @@ spiderplot(y3d,traplocs)
 J. Andy Royle
 }
 \examples{
-data("scrbook")
+
+library("scrbook")
+
+# make spiderplot for the beardata the hard way:
 data(beardata)
-nind<-dim(beardata$bearArray)[1]
-K<-dim(beardata$bearArray)[3]
-ntraps<-dim(beardata$bearArray)[2]
-M=500
-nz<-M-nind
-Yaug <- array(0, dim=c(M,ntraps,K))
-Yaug[1:nind,,]<-beardata$bearArray
-toad<- spiderplot(beardata$bearArray,beardata$trapmat)
+X<-as.matrix(cbind(id=1:nrow(beardata$trapmat),beardata$trapmat))
+opps<-matrix(1,nrow=nrow(X),ncol=8)
+dimnames(opps)<-list(NULL,1:8)
+X<-cbind(X,opps)
+a<-SCR23darray(beardata$flat,X)
+toad<-spiderplot(a,beardata$trapmat)
 # now grab the distance from centroid variable
 xcent<-toad$xcent
 # see Chapter 3 of the book
+
+# the easy way
+spiderplot(beardata$bearArray,beardata$trapmat)
+
+# for the wolverine data:
+y3d <- SCR23darray(wolverine$wcaps,wolverine$wtraps)
+spiderplot(y3d,wolverine$wtraps[,2:3])
+
+
+
+
+
 }
