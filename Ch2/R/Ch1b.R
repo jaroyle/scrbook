@@ -64,7 +64,7 @@ plot(table(rbinom(1000, 20, 0.35))/1000)
 
 png("../figs/bin.png", width=7, height=7, units="in", res=400)
 plot(0:20, dbinom(0:20, 20, 0.35), type="h", ylab="Probability",
-     xlab=expression(paste("Number of shad caught (", italic(X), ") after 20 casts", sep="")), lwd=3, lend="butt",
+     xlab=expression(paste("Number of shad caught (", italic(x), ") after 20 casts", sep="")), lwd=3, lend="butt",
      cex.lab=1.3)
 abline(h=0, col=gray(0.8))
 dev.off()
@@ -132,6 +132,7 @@ caphist.probs <- c("11"=0.09, "10"=0.21, "01"=0.21, "00"=0.49)
 drop(rmultinom(1, 10, caphist.probs))
 
 
+which(rmultinom(1, 1, c(0.1, 0.7, 0.2)) == 1)
 
 
 
