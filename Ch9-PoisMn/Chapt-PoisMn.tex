@@ -8,7 +8,7 @@
 
 In previous chapters we considered 
 various models of {\it encounter probability}, both in terms of
-parametric functions of distance and also a myraid of covariate
+parametric functions of distance and also a myriad of covariate
 models (Chapt. \ref{chapt.covariates} and
 elsewhere).
 However, we have so far only considered
@@ -1327,16 +1327,7 @@ years (data augmented) ``stacked'' into a data set of dimension $(5*M)
 replicate sample occasions). Or, we could produce a 3-d array ($M \times J
 \times K$). We adopted the former approach, analyzing the data as a
 2-d array and creating an additional categorical  variable for ``year''
-to indicate which stratum (year) each record goes with.  There was a
-single loss-on-capture which we accounted for by fixing $p=0$ for all
-subsequent encounters of that individual (indicated by the binary
-variable \mbox{\tt dead}, as shown in Panel
-\ref{poisson-mn.panel.ovenbird}).  We have an {\bf R} script in
-\mbox{\tt scrbook} package called \mbox{\tt SCRovenbird}, so you can
-see how to set-up the data and run the model.  Executing the script
-\mbox{\tt SCRovenbird} produces the posterior summaries given in Table
-\ref{scrovenbird.results}. Here, density is in units of birds per ha.
-
+to indicate which stratum (year) each record goes with.  
 
 Data on individual sex is included
 with \mbox{\tt secr}, but  we provide an analysis of a single model
@@ -1345,9 +1336,22 @@ year-specific values of $N_{t}$ (and hence $D_{t}$).
  There is a habitat mask provided with the data but the mask
 appears to just be a modified rectangle around the net locations,
 clipped to have rounded corners, and so we don't use it here.
-
-
-
+Instead, we used a rectangular state-space buffer of 200 meters for our analysis.
+There was a
+single loss-on-capture which we accounted for by fixing $p=0$ for all
+subsequent encounters of that individual (indicated by the binary
+variable \mbox{\tt dead}, as shown in Panel
+\ref{poisson-mn.panel.ovenbird}).  
+We have an {\bf R} script in
+\mbox{\tt scrbook} package called \mbox{\tt SCRovenbird}, so you can
+see how to set-up the data and run the model.  Executing the script
+\mbox{\tt SCRovenbird} produces the posterior summaries given in Table
+\ref{scrovenbird.results}. Here, density is in units of birds per
+ha. The posterior mean of $\sigma$ is about 76 meters, and there is
+considerable variability in density over the 5 year period with
+density peaking  at 1.2 birds/ha in year 3, although there is
+considerable posterior uncertainty.  The R-hat's look a little bit
+peaked and so we might consider running the MCMC analysis longer.
 
 
 
@@ -1364,9 +1368,9 @@ model{
 
  A <- ((xlim[2]-xlim[1]))*((ylim[2]-ylim[1]))
  for(t in 1:5){
-  N[t] <- inprod(z[1:bigM],yrdummy[,t])
-  D[t] <- (N[t]/A)*10000  # put in units of per ha
-  psi[t] ~ dunif(0,1)
+   N[t] <- inprod(z[1:bigM],yrdummy[,t])
+   D[t] <- (N[t]/A)*10000  # put in units of per ha
+   psi[t] ~ dunif(0,1)
  }
 
  for(i in 1:bigM){  # bigM = total size of jointly augmented data set
@@ -1409,7 +1413,8 @@ To fit this model to the ovenbird data, see
   \caption{Posterior summary statistics
 for the ovenbird mist-netting data based on the
     independent multinomial (``multi-catch'') encounter process
-    model. Parameters $\psi$, $N$ and $D$ are indexed by year.
+    model. Parameters $\psi$, $N$ and $D$ are indexed by
+    year.
 MCMC was done using
     {\tt jags} with 3 chains, each with 5000 iterations, discarding
     the first 1000, for a total of 12000 posterior samples.}
@@ -1462,7 +1467,8 @@ of the habitat mask.
 To make the analyses consistent with our previous analysis in {\bf
   JAGS}, we 
 refit all of the models here without the habitat mask.
-The re-analysis proceeds as follows:
+The re-analysis proceeds as follows, changing the ``trend in density
+across years'' model to allow for year-specific density:
 {\small
 \begin{verbatim}
 ## fit constant-density model
@@ -1474,27 +1480,27 @@ The re-analysis proceeds as follows:
 ## fit model with 2-class mixture for g0
 > ovenbird.model.h2 <- secr.fit(ovenCH, model =    list(g0 ~ h2))
 ## fit a model with session (year)-specific Density
-> ovenbird.model.D <- secr.fit(ovenCH, model =    list(D ~ session))
+> ovenbird.model.DT <- secr.fit(ovenCH, model =    list(D ~ session))
 \end{verbatim}
 }
 All of these can be fitted easily in {\bf JAGS} but
-the model we fitted was roughly equivalent to the last model,
-\mbox{\tt ovenbird.model.D}, because we allowed for year-specific
+the model we fitted previously is roughly equivalent to the last model,
+\mbox{\tt ovenbird.model.DT}, because we allowed for year-specific
 population sizes (and hence density). So, we'll
 compare our results from {\bf JAGS} to that
-model.  We ran that model with \mbox{\tt buffer=300}. For values of
-200 or less,  \mbox{\tt
-  secr} throws a bias warning message at us.
+model.  
+%We ran that model with \mbox{\tt buffer=300}. For values of
+%200 or less,  \mbox{\tt
+%  secr} throws a bias warning message at us.
 The \mbox{\tt secr} 
 output is extensive 
 and so we
 do not reproduce it completely here. By default, it summarizes the
 trap information for each year, encounter information, and then output for
-each year. Here is an abbreviated version for \mbox{\tt ovenbird.model.D}:
+each year. Here is an abbreviated version for \mbox{\tt ovenbird.model.DT}:
 {\small
 \begin{verbatim}
-
-> print(ovenbird.model.D,digits=2)
+> print(ovenbird.model.DT,digits=2)
 
 secr.fit( capthist = ovenCH, model = list(D ~ session), buffer = 300 )
 secr 2.3.1, 14:46:52 23 Jan 2013
@@ -1537,31 +1543,15 @@ as follows (output edited to fit on the page):
      ovenbird.model.h2,ovenbird.model.DT)
 
                    model  detectfn npar logLik    AIC     AICc     dAICc 
-ovenbird.model.1T  [edited output]  4 -1113.429 2234.858 2235.266  0.000 
-ovenbird.model.1b      ....         4 -1120.161 2248.323 2248.731 13.465 
-ovenbird.model.h2      ....         5 -1119.337 2248.674 2249.293 14.027 
-ovenbird.model.1       ....         3 -1122.650 2251.299 2251.542 16.276 
-ovenbird.model.DT      ....         7 -1121.331 2256.662 2257.841 22.575 
-
-
-
-new results: 
-> ## compare & average pre-fitted models
-> AIC (ovenbird.model.1, ovenbird.model.1b, ovenbird.model.1T,
-+     ovenbird.model.h2,ovenbird.model.D)
-                                      model   detectfn npar    logLik      AIC     AICc  dAICc AICwt
-ovenbird.model.1T          D~1 g0~T sigma~1 halfnormal    4 -1111.850 2231.700 2232.109  0.000     1
-ovenbird.model.1b          D~1 g0~b sigma~1 halfnormal    4 -1117.615 2243.229 2243.637 11.528     0
-ovenbird.model.1           D~1 g0~1 sigma~1 halfnormal    3 -1121.164 2248.327 2248.570 16.461     0
-ovenbird.model.h2 D~1 g0~h2 sigma~1 pmix~h2 halfnormal    5 -1119.762 2249.524 2250.143 18.034     0
-ovenbird.model.D     D~session g0~1 sigma~1 halfnormal    7 -1119.845 2253.689 2254.868 22.759     0
-> 
-
+ovenbird.model.1T  [edited output]  4 -1111.850 2231.700 2232.109  0.000
+ovenbird.model.1b      ....         4 -1117.615 2243.229 2243.637 11.528
+ovenbird.model.h2      ....         3 -1121.164 2248.327 2248.570 16.461
+ovenbird.model.1       ....         5 -1119.762 2249.524 2250.143 18.034
+ovenbird.model.DT      ....         7 -1119.845 2253.689 2254.868 22.759
 \end{verbatim}
 }
-We see that the null model is way down at the bottom of the list, just
-ahead of the model 
-with year-specific density. Instead, 
+We see that our \mbox{\tt DT} model is way down at the bottom of the list.
+Instead, 
 the model with a time-trend (within-season) in detection probability
 is preferred, followed by a behavioral response. We encourage you to
 adapt the {\bf JAGS} model specification for such models which is easily
@@ -1570,10 +1560,7 @@ We provide the summary results for the model having \mbox{\tt D $\sim$
   session} as follows:
 {\small
 \begin{verbatim}
-Results for "D[session]" model:
-
-
-> print(ovenbird.model.D.300,digits=2)
+> print(ovenbird.model.DT,digits=2)
 
 secr.fit( capthist = ovenCH, model = list(D ~ session), buffer = 300 )
 secr 2.3.1, 14:46:52 23 Jan 2013
@@ -1617,23 +1604,23 @@ The point estimates (MLEs) of density are uniformly lower than the Bayesian esti
 (posterior means)
 shown in Table \ref{scrovenbird.results}.
 We expect some difference in this direction due to
-small-sample skew of the posterior, although for year 2 and 3 the
-difference is even in the opposite relative direction which is
-surprising\footnote{This difference between the \mbox{\tt secr} and \mbox{\bf
-  JAGS} results is possibly due to the fact that the \mbox{\tt secr}
+small-sample skew of the posterior.
+In addition, there may be slight differences due to the fact that 
+ \mbox{\tt secr}
 multi-session 
-model assumes that the $N_{t}$ have a Poisson distribution but the
+model assumes that the $N_{t}$ have a Poisson prior, but the
 implementation in {\bf JAGS} using data augmentation is based on a
-binomial model.}.
+binomial prior.
 The estimated $\sigma$ is very similar between the {\bf JAGS}
 analysis and \mbox{\tt secr}.
+\begin{comment}
 Finally, you will find that these estimates from \mbox{\tt secr}
  are a bit different from those obtained by
 using the habitat mask. This is surprising because the mask
 is a rectangle with the corners
 rounded which we would not imagine should influence the results\footnote{
 Possibly the habitat mask is not sufficiently extensive.}.
-
+\end{comment}
 
 \begin{comment}
 \section{SCR Models are Multi-State Models}
@@ -2015,7 +2002,7 @@ microphones or recording devices.  That is, instead of having cameras
 record encounters, or humans pick up scat, we can establish an array of
 (usually) electronic recording devices which, instead of establishing
 a visual identity of individuals, record a vocal expression of
-each individaul.  In this context, \citet{efford_etal:2009ecol}
+each individual.  In this context, \citet{efford_etal:2009ecol}
 referred to audio recorders as ``signal strength proximity detectors''
 to distinguish them from other types of proximity detections,
 including camera traps, which are {\it visual} proximity detector.
@@ -2033,7 +2020,7 @@ field study of birds by \citet{dawson_efford:2009}. In that study,
 recording devices were organized in groups of 4 (in a square pattern),
 % XXXX plot(signalCH) makes it look like a square pattern
 % ok
-with an array of $5 \times 15$ such clusters of 4, seperated by 100 m
+with an array of $5 \times 15$ such clusters of 4, separated by 100 m
 (300 total recorder locations).  This data set,
 called \verb+signalCH+, % XXXX
 is provided with the
@@ -2105,7 +2092,7 @@ Chapts.  \ref{chapt.search-encounter} and
 \subsection{The signal strength model}
 
 We assert that an individual is detected if $S$ exceeds a threshold,
-$c$. The reason for introducing this threshhold $c$ is that sound
+$c$. The reason for introducing this threshold $c$ is that sound
 recorders will always record some
 background 
 sound, and so effective use of the
@@ -2115,7 +2102,7 @@ occurs) because the recorded sound it assumed to be background noise.
 So we assert that an individual is detected if $S>c$ which occurs with
 probability $\Pr(S > c)$, the encounter probability.  To expand on and
 formalize this, let $S_{ij}$ be the observed value of $S$ for animal $i$ at
-detector $j$.  The encounter probabiliy is $\Pr(S_{ij}>c)$ which is
+detector $j$.  The encounter probability is $\Pr(S_{ij}>c)$ which is
 $\Pr(S_{ij}>c) = 1- \Pr(S_{ij} < c)$, so that, if we standardize the
 variate we have
 \[
@@ -2172,7 +2159,7 @@ together are a product of biological and environmental factors which
 could include time of day, wind direction and speed, or maybe rain,
 humidity and other things. The bottom line is a lot of factors are
 balled up in whether or not the microphone records a sound greater
-than the threshhold.  
+than the threshold.  
 
 The observations from an acoustic survey are the signal strength
 measurements, and
@@ -2298,8 +2285,8 @@ ovensong.model.2 <- secr.fit( signalCH.525, mask = omask,
 We don't know of any Bayesian applications of acoustic SCR models,
 although we imagine that implementation of such models in the {\bf
   BUGS} engines should be achievable.  It seems easy enough to write
-down a general hierarchical model that would accomomdate sampling on
-repeated occassions. Let ${\bf s}_{i}$ be the home range center, and
+down a general hierarchical model that would accommodate sampling on
+repeated occasions. Let ${\bf s}_{i}$ be the home range center, and
 let ${\bf u}_{ik}$ the instantaneous location of individual $i$ during
 sample occasion $k$ (see Chapt. \ref{chapt.search-encounter} for
 similar models). The model for ${\bf u}_{ik}$ can be specified
@@ -2366,7 +2353,7 @@ model {
   doesn't account for the probability that an individual vocalizes
   right? Don't we somehow need an estimate of that if we want
   animals/area instead of sounds/area? I don't think alpha0 can be
-  interpretted in this way, right?
+  interpreted in this way, right?
 
   I guess Dawson and Efford get at some of this in their abstract, where
   they say ``The method requires that
