@@ -132,6 +132,7 @@ caphist.probs <- c("11"=0.09, "10"=0.21, "01"=0.21, "00"=0.49)
 drop(rmultinom(1, 10, caphist.probs))
 
 
+which(rmultinom(1, 1, c(0.1, 0.7, 0.2)) == 1)
 
 
 

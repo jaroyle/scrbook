@@ -394,14 +394,10 @@ each of these individuals has a detection probability of $p=0.5$. The
 binomial distribution is the natural choice for describing the number
 of individuals that we would expect to detect ($n$) in this
 situation, and using our notation, we can write the model as: $n \sim
-\text{Binomial}(10, 0.5)$. Note that if $p \equiv 1$ and we visit the
-site on $K$ occasions, the observations $\{n_1, \ldots, n_K\}$
-would not be random outcomes---we would always observe
-$n_k=10$. That is, the observed data would exactly equal the expected
-value and the variance would be zero.
-However, when $p<1$, we can expect that we will observe
-a different number of warblers on each replicate visit. To see this,
-we can simulate data under this simple model with $K=3$ survey occasions
+\text{Bin}(10, 0.5)$. When $p<1$, we can expect that we will observe
+a different number of warblers on each of $K$ replicate survey
+occasions. To see this,
+we simulate data under this simple model with $K=3$.
 \begin{verbatim}
 > n <- rbinom(3, size=10, prob=0.5) # Generate 3 binomial outcomes
 > n                                 # Display the 3 values
@@ -412,33 +408,17 @@ command; however, we know the probability of observing any value of
 $n_k$ because it is defined by the binomial pmf. As we demonstrated
 earlier, in \R~this probability can be found using the \verb+dbinom+
 function. For example, the probability of observing $n_k=5$ is given by:
-\begin{comment}
-  Without knowing a thing about probability distributions, most people
-  would recognize that the expected value of $x_j$ is $10 \times 0.5 =
-  5$. That is, the most likely number of chestnut-sided warblers that
-  we would expect to detect is 5. In this case, however, we did not
-  observe a single 5, but rather observed counts of 6, 4, and 8
-  chestnut-sided warblers on the first, second, and third surveys
-  respectively. If 5 is the most likely outcome, how likely was it to
-  observe these data? And what is the actual probability of observing
-  a 5? These questions can all be answered by the probability mass
-  function (pmf) for the binomial distribution.
-
-  The probability of
-  observing a 5 (or any other number) when $N=10$ and $p=0.5$ can be
-  computed in \R~by issue the following command:
-\end{comment}
 \begin{verbatim}
-dbinom(5, 10, 0.5)
+> dbinom(5, 10, 0.5)
 \end{verbatim}
 This simply evaluates the function shown in
 Table~\ref{modeling.tab.pdfs}. We could do the same more transparently, but
 less efficiently, using any of the following:
 \begin{verbatim}
-n <- 5; N <- 10; p <- 0.5
-factorial(N)/(factorial(n)*factorial(N-n))*p^n*(1-p)^(N-n)
-exp(lgamma(N+1) - (lgamma(n+1) + lgamma(N-n+1)))*p^n*(1-p)^(N-n)
-choose(N, n)*p^n*(1-p)^(N-n)
+> n <- 5; N <- 10; p <- 0.5
+> factorial(N)/(factorial(n)*factorial(N-n))*p^n*(1-p)^(N-n)
+> exp(lgamma(N+1) - (lgamma(n+1) + lgamma(N-n+1)))*p^n*(1-p)^(N-n)
+> choose(N, n)*p^n*(1-p)^(N-n)
 \end{verbatim}
 Note that the last three lines of code differ only in how they compute the
 binomial coefficient $\binom{N}{n}$, which is the number of different ways
@@ -456,76 +436,50 @@ binomial distribution in spatial capture-recapture models. One
 important application of the binomial distribution is as a model encounter
 frequencies. Indeed, one of the most important encounter models in SCR
 will be referred to as the ``binomial encounter model'', in which
-% For example, suppose that we operate an array of hair snares for
-% $K=4$ survey occasions. In this case, an individual can be
-% encountered at most once at a snare during a single occasion (because
-% multiple distinct hair deposits cannot be distinguished), but the
-% individual can be encountered at multiple snares during an occasion as
-% it moves about its home range. If there are no time-varying, or
-% occasion-specific, covariates then a natural model for
 the number of times individual $i$ is captured at ``trap'' $j$ after
 $K$ survey occasions is
-modeled as $y_{ij} \sim \text{Binomial}(K, p_{ij})$. Here, $p_{ij}$ is the
+modeled as $y_{ij} \sim \text{Bin}(K, p_{ij})$. Here, $p_{ij}$ is the
 encounter probability determined, in part, by the distance between an
-animal's activity center and the trap location, as will be described
-more fully in subsequent chapters. The important point to note is
-that $y_{ij}=0$ if individual $i$ is never encountered at trap $j$,
-and $y_{ij}=4$ if it is encountered on all four occasions. This
-binomial encounter model is
+animal's activity center and the trap location.
+This binomial encounter model is
 described in detail in Sec.~\ref{scr0.sec.binomial}.
 Another important application of the binomial distribution is as a
 prior for the population size parameter in Bayesian analyses, as is
 discussed in Chapt.~\ref{chapt.closed}.
-% , is somewhat advanced, but
-% here we simply note that one must choose a prior distribution for $N$.
-% In likelihood analysis a Poisson prior is often used, but when
-% conducting a Bayesian analysis, we typically use a practice known as
-% data augmentation that results in the prior distribution: $N \sim
-% \text{Binomial}(M, \psi)$ where $M$ is an arbitrarily large integer,
-% and
 
 
 
 
 \subsection{The Bernoulli distribution}
 
-%{\bf XXXX Should this come before the binomial? XXXXX}
-% ANDY, I guess it could go either way, but I prefer going from
-% general to specific in this case. Same goes for multinomial -> categorical
-
-Above, we showed three alternatives to \verb+dbinom+ for evaluating the
+Above, we showed 3 alternatives to \verb+dbinom+ for evaluating the
 binomial pmf. These three commands differed only in how they computed
 the binomial coefficient, which we needed because of the numerous ways
 in which we could observe $n=5$ given $N=10$. To conceptualize
 this, let $y_i$ be a binary variable indicating if individual $i$
 was detected or not. Hence, given that 5 individuals were detected,
 the vector of individual detections could be something like
-$\mathbf{y}=(0,0,1,1,1,1,1,0,0,0)$, which would indicate
+$\mathbf{y}=(0,0,1,1,1,1,1,0,0,0)$, indicating
 that we detected individuals 3-7 but not 1-2 or 8-10. For $N=10$ and
 $n=5$, the binomial coefficient tells us that there
-are 252 possibilities of vectors $\mathbf{y}$ that have 5 ones. However, when $N \equiv 1$, this term
+are 252 possible vectors $\mathbf{y}$ with 5 ones. However, when $N \equiv 1$, this term
 drops from the pmf and the result is the pmf for the Bernoulli
 distribution. That is, the Bernoulli distribution is simply the
 binomial distribution when $N \equiv 1$. Alternatively, we could say that the binomial
 distribution is the outcome of $N$ $iid$ Bernoulli trials. We use the
-standard term ``$iid$'' to mean {\it independent, identicially distributed}.
-%% DEFINE iid here?
+standard abbreviation ``$iid$'' to mean {\it independent, identicially distributed}.
+
 
 The utility of the Bernoulli distribution is evident when we imagine
 that not all of the chestnut-sided warblers have the same detection
 probability. Thus, if some individuals can be detected with
 probability 0.3 and others have a 0.7 detection probability, then the
-model $n \sim \text{Binomial}(N, p)$ is no longer an accurate
+model $n \sim \text{Bin}(N, p)$ is no longer an accurate
 description of system since $p$ is no
-longer constant for all individuals. %%%%a scalar, i.e. a single value.
-
-%% FIXME: Need to clean up notation of $J$ visits
+longer constant for all individuals.
 
 To properly account for variation in $p$, we could redefine our model
-for the %our notation
-%describing how the
-counts of chestnut-sided warblers as
-%are generated. Our model now is
+for the counts of chestnut-sided warblers as
 \begin{gather}
 y_{ik} \sim \text{Bernoulli}(p_i) \nonumber \\% \;\; \text{for} \; i=1,2,\dots,N \\
 n_k = \sum_{i=1}^N y_{ik}
@@ -536,11 +490,8 @@ $p_i$, and the observed count is the sum of the $N$ Bernoulli
 outcomes.
 
 An important point is that the individual-specific data $y_{ik}$ can only be
-observed  {\it if} the individuals are uniquely distinguishable, such as when they
-are marked by biologists with color bands, or by boy-biologists with
-paint-ball guns.
-%Indeed, this is one of the important
-%motivations for capture-recapture studies.
+observed  if the individuals are uniquely distinguishable, such as when they
+are marked by biologists with color bands.
 In such cases, the Bernoulli distribution allows us to
 model variation in detection probability among individuals and thus
 would be preferable to the binomial distribution, which assumes that each
@@ -549,23 +500,23 @@ For this reason, the Bernoulli
 distribution, as simple as it is, is of paramount importance in
 capture-recapture models, including spatial capture-recapture models
 in which there is virtually always substantial and important variation in capture probability
-among individuals. Indeed, it could be said the Bernoulli model is the
+among individuals. Indeed, it could be said that the Bernoulli model is the
 canonical model in capture-recapture studies, and most of the
 different flavors of capture-recapture models differ primarily in how $p_i$ is
-specified. % and how $N$ is estimated.
+specified.
 
 The Bernoulli pmf is given by  $p^n(1-p)^{1-n}$ and hence we do not need canned
 functions to facilitate its evaluation. Of course, if you wanted to, you
 could always use \verb+dbinom+ with the \verb+size+ argument set to
-1, e.g. \verb+dbinom(1, 1, 0.3)+ returns the Bernoulli probability of
+1. For example, \verb+dbinom(1, 1, 0.3)+ returns the Bernoulli probability of
 observing $n=1$ given $p=0.3$.
 
 \subsection{The multinomial and categorical distributions}
 \label{modeling.sec.multinom}
 
 The binomial distribution is used
-when we are accumulating a binary response -- that is, one in which
-there are two possible categories, such as success/failure or
+when we are accumulating a binary response---that is, one in which
+there are two possible categories such as success/failure or
 captured/not-captured.
 The multinomial distribution is a multivariate extension of
 the binomial used when there are $G>2$ categories.
@@ -585,7 +536,7 @@ Earlier we let $y_{ik}$ denote a binary random variable indicating if
 warbler $i$ was detected on survey $k$. The vector of observations for an
 individual, $\mathbf{y}_i$, is often referred to as the individual's
 ``encounter history''. The number of possible encounter
-histories depends on the number of survey occasions. Specifically,
+histories depends on $K$, the number of survey occasions. Specifically,
 there are $2^K$
 possible encounter histories\footnote{When $N$ is unknown, we can
   never observe the ``all-0'' encounter history, corresponding
@@ -594,17 +545,17 @@ to an individual that is not
   is $2^{K-1}$}.
 If we tabulate the number of individuals with each encounter history,
 the frequencies can be modeled using the multinomial
-distribution. %, as we will soon explain.
+distribution.
 
-Going back to our
-chestnut-sided warbler example, suppose the 10 individuals are marked
-and we make $K=2$ visits to the site such that there are $2^K = 4$ possible encounter
-histories: $(11, 10, 01, 00)$, where, for example,  ``10'' is the
-encounter history for an individual detected on the first visit but not
-the second. If $p=1$, then the
+Going back to our chestnut-sided warbler example, suppose the 10
+individuals are marked and we make $K=2$ visits to the site such that
+there are $2^K = 4$ possible encounter histories: $(11, 10, 01, 00)$,
+where, for example,  ``10'' is the encounter history for an individual
+detected on the first visit but not the second. If $p=1$, then the
 encounter history for each of the 10 individuals must  be ``11''. That
 is, we would detect each individual on both occasions. In this case,
-we could format our data as $\mathbf{h} = (10, 0, 0, 0)$. The
+we the data would be: $\mathbf{h} = (10, 0, 0, 0)$, which indicates
+that all 10 warblers had the first encounter history. The
 corresponding cell probabilities would be $\bm{\pi} = (1, 0, 0,
 0)$. What about the situation where $p<1$, e.g. $p=0.3$? In this case, the
 probability of observing the capture history ``11'' (detected on both
@@ -618,16 +569,12 @@ simulate data under this model as follows:
 11 10 01 00
  0  3  2  5
 \end{verbatim}
-(the \verb+drop+ function simply converts the matrix to a vector).
 The
 result of our simulation is that zero individuals were observed with
 the capture history ``11'' and 5 individuals were observed with the
 capture history ``00''. The other 5 individuals were observed one out
 of the two occasions. This is not such a surprising outcome given
 $p=0.3$.
-%Note that the a single outcome of a multinomial distribution
-%is a vector, and hence it is a multivariate distribution in contrast
-%to the univariate distributions discussed so far.
 
 As in non-spatial capture-recapture studies, the multinomial
 distribution turns out to be very important in spatial
@@ -642,23 +589,24 @@ Chapt.~\ref{chapt.state-space} where we discuss how to model the
 probability that an individual's activity center is located in one of
 the cells of a raster defining the spatial region of interest.
 
-%It is worth noting that,
 Just as the Bernoulli distribution is the elemental form of the
- binomial distribution (being the case $N=1$), the
+binomial distribution (being the case $N=1$), the
 categorical distribution is essentially equivalent to
-%special case of
 the multinomial distribution with size parameter
 $N\equiv1$. The only difference is that, rather than returning a
-vector with a single element equal to 1, it returns the element number
+vector with a single element equal to 1, it returns the element {\it location}
 where the 1 occurs. For example, if $\mathbf{y}=(0,0,1,0)$ is an outcome of a
 multinomial distribution with $N=1$, then the categorical outcome
 would be 3 because the 1 is located in third position in the vector. Thus, in spatial
 capture-recapture models, we might use either the multinomial
-distribution with $N=1$ or %we can just as well use
-the categorical distribution. %They are equivalent.
+distribution with $N=1$ or the categorical distribution.
 The various {\bf BUGS} engines describe the categorical distribution
 by the declaration \mbox{\tt dcat} and, in {\bf R}, we can simulate
-categorical outcomes using the function \mbox{\tt sample}.
+categorical outcomes using the function \mbox{\tt sample} or as so:
+\begin{verbatim}
+> which(rmultinom(1, 1, c(0.1, 0.7, 0.2)) == 1)
+[1] 2
+\end{verbatim}
 
 
 \subsection{The Poisson distribution}
@@ -677,19 +625,19 @@ regression is the default GLM for modeling count data and variation in
 $\lambda$.
 
 The Poisson distribution is related to
-both the binomial and multinomial distributions, and the following two
+both the binomial and multinomial distributions, and the following three
 bits of trivia are occasionally worth knowing. First, it is the limit of the binomial
 distribution as $N \to \infty$ and $p \to 0$, which means that for
 high values of $N$ and low values
-of $p$, $\text{Poisson}(N\times p)$ is approximately equal to $\text{Binomial}(N,
-p)$. Second, if $\{n_1 \sim \text{Poisson}(\lambda_1),
-%n_k \sim \text{Poisson}(\lambda_k),
-\dots, n_K \sim \text{Poisson}(\lambda_K)\}$
+of $p$, $\text{Pois}(N\times p)$ is approximately equal to $\text{Bin}(N,
+p)$. Second, if $\{n_1 \sim \text{Pois}(\lambda_1),
+\dots, n_K \sim \text{Pois}(\lambda_K)\}$
 then the vector of counts is multinomial, $\{n_1, \dots, n_K\}
-\sim \text{Multinomial}(\sum_k n_k, \{\frac{\lambda_1}{\sum_k \lambda_k},
-%\frac{\lambda_k}{\sum_{n_k} \lambda_k},
-\dots, \frac{\lambda_K}{\sum_k \lambda_k}
-\})$.
+\sim \text{Multinom}(\sum_k n_k, \{\frac{\lambda_1}{\sum_k \lambda_k},
+\dots, \frac{\lambda_K}{\sum_k \lambda_k}\})$. Third, the sum of two
+Poisson random variables $x_1 \sim \mbox{Pois}(\lambda_1)$ and $x_2
+\sim \mbox{Pois}(\lambda_2)$ is also Poisson: $x_1+x_2 \sim
+\mbox{Pois}(\lambda_1+\lambda_2)$.
 
 The Poisson distribution has two important uses in spatial
 capture-recapture models: (1) as a prior distribution for the
@@ -697,30 +645,7 @@ population size parameter $N$, and (2) as a model for the frequency of
 captures in a trap. In the first context, the Poisson prior for $N$
 results in a Poisson point process for the location of the $N$
 activity centers in the region of interest. This topic is discussed
-in-depth in Chapt.~\ref{chapt.scr0} and Chapt~\ref{chapt.state-space}.
-% point process model, which is a
-% spatially-explicit extension of the simple Poisson model.
-% If $N$ individuals are uniformly distributed in some region
-% $\mathcal{S}$ with area $A$, and $N$ is a Poisson
-% random variable, we call this the homogeneous Poisson point process
-% whose intensity parameter is $\lambda = 1/A$. The intensity parameter
-% is defined as the expected number of points that one would find in an
-% infinitesimally small area. Often, the intensity parameter is not
-% constant, but rather it takes on different values for each location
-% $x$ in the region $\mathcal{S}$. The inhomogeneous Poisson point
-% process model can be useful in such cases, and typically, the
-% intensity is modeled as a log-linear function of spatially-referenced
-% environmental covariates. Thus, rather than $\lambda$, the intensity
-% parameter is now $\lambda(x)$. Inhomogeneous Poisson point process
-% models have a long history of applications in forestry, and are now
-% being increasingly used to model species distributions. They are also
-% extremely important in spatial capture-recapture as we will soon see.
-% Under the homogeneous Poisson point process model,
-% the number of individuals occurring in some
-% region $B \in A$ is Poisson distributed with expectation
-% $\lambda = N/A$. As before, $\lambda$ might vary among regions, which
-% might be distinct habitat patches or arbitrarily-defined survey plots or
-% quadrats and Poisson regression could be used for inference.
+in Chapt.~\ref{chapt.scr0} and Chapt~\ref{chapt.state-space}.
 The second use of the Poisson distribution in spatial capture-recapture is
 to describe data from sampling methods in which an
 individual can be detected multiple times at a trap during a single
@@ -732,8 +657,7 @@ expected number of detections or captures per occasion.
 
 \subsection{The uniform distribution}
 
-The %first continuous distribution we will describe is the
-lowly uniform distribution is a continuous distribution whose
+The lowly uniform distribution is a continuous distribution whose
 only two parameters are the lower and upper bounds that restrict the
 possible values of the random variable $x$. These bounds
 are almost always known, so there is typically nothing to
@@ -743,12 +667,12 @@ especially among Bayesians who frequently use it to as a ``non-informative''
 prior distribution for a parameter. For example, if we
 have a capture probability parameter $p$ that we wish to estimate, but
 we have no prior knowledge of what value it may take in the range
-[0,1], we will often use the prior $p \sim \text{Uniform}(0,1)$. This
+[0,1], we will often use the prior $p \sim \text{Unif}(0,1)$. This
 states that $p$ is equally likely to take on any value between
-zero and one.
+zero and one. Prior distributions are described in more detail in the
+next chapter.
 
 Another common usage of the uniform distribution is as a prior for the
-%x- and y-
 coordinates of points in the real plane, i.e. in two-dimensional
 space. Such a use of the uniform distribution implies that a point process is
 ``homogeneous'', meaning that the location of one point does not
@@ -782,31 +706,13 @@ cumbersome, so we will opt for the former expression.
 The other continuous distributions that are regularly encountered in SCR
 models are
 primarily used as priors in Bayesian analyses, and thus we will avoid
-a lengthy discussion of their properties. %The  we will briefly
-%cover here are the beta and gamma distributions, which are
-%particularly useful as priors for probabilities and positive-valued
-%parameters respectively. Although we will keep it very brief, note that
-%Table~\ref{modeling.tab.pdfs} includes
-%the pdfs, expected values, and variances of these distributions.
-%A more thorough treatment of
-%these distributions can be found in \citet{link_barker:2010}.
-%This might seem odd given that
-%standard statistics courses taken by ecologists focus heavily on the normal
-%distribution. However, in capture-recapture studies, we rarely observe
-%random variables that are continuous,
-%and hence, we will just briefly
-%mention the normal, beta, and gamma distributions.
-%Once upon a time, ecologists modeled just about everything as normally
-%distributed. One reason for this is that methods such a linear
-%regression and $t$-tests were all that were available in many
-%primitive stats software programs. Another reason why
+a lengthy discussion of their properties.
 The normal distribution, also called the Gaussian
 distribution, is perhaps the most widely recognized and applied probability model in
-statistics, but it plays only a minor role in SCR models although it
-has been used as a model for signal strength in acoustic SCR models
-\citep{efford_etal:2009ecol,dawson_efford:2009}, and see Sec. \ref{poisson-mn.sec.acoustic}. %The reason
-%being that many of the random variables in SCR models are discrete,
-%and distinctly not normally distributed.
+statistics, but it plays only a minor role in SCR models other than as
+a model for signal strength in acoustic SCR models
+\citep{efford_etal:2009ecol,dawson_efford:2009}, and see
+Sec. \ref{poisson-mn.sec.acoustic}.
 Nonetheless, it
 is the canonical prior for any continuous random variable with
 infinite support, and thus it is often used as a prior when applying Bayesian
@@ -817,7 +723,9 @@ cautionary note, is provided in Sec.~\ref{glms.sec.choice}.
 Be aware that although the normal distribution is typically
 parameterized in terms of the variance parameter $\sigma^2$, in
 the \bugs~language, the inverse of the variance, or precision, is used
-instead, $\tau = 1/\sigma^2$.
+instead, $\tau = 1/\sigma^2$. In ~\R, the \texttt{dnorm} function
+requires the standard deviation $\sigma$, rather than the variance
+$\sigma^2$.
 
 The bivariate normal distribution is a generalization of the
 normal distribution and a special case of the multivariate normal
@@ -828,10 +736,11 @@ denoted $\bm{\Sigma}$.
 %The parameter $\rho$ is two off-diagonals of this matrix are
 In SCR models, we most often use this model as
 a rudimentary description of movement outcomes about a home range
-center. If there is there is no correlation, then the model reduces to
-two independent normal draws along the coordinate axes. The following code generates bivariate normal
-outcomes with no correlation ($\rho=0$, the object \verb+X1+) and with
-$\rho=0.9$, the object \verb+X2+.
+center. If there is no correlation, then the model reduces to
+two independent normal draws along the coordinate axes. The following
+code generates bivariate normal
+outcomes with no correlation ($\rho=0$), as well
+as outcomes in which the correlation is $\rho=0.9$.
 \begin{verbatim}
 library(mvtnorm)
 set.seed(3)
@@ -850,7 +759,7 @@ Fig.~\ref{modeling.fig.bvn} shows the simulated points.
 \end{figure}
 
 Several of the parameters in capture-recapture models do not have
-infinite support, but are instead are
+infinite support, but instead are
 probabilities restricted to the range $[0,1]$, or are positive valued
 living between zero and $\infty$. The beta distribution is the
 standard prior used for probabilities because it can be used to express either a
@@ -873,15 +782,13 @@ positive-valued and can be modeled using the gamma distribution. As
 with the beta distribution, the gamma distribution is typically
 favored over the uniform distribution when one is interested in using
 an informative prior. It is also frequently used as a vague prior for
-the inverse of
-variance parameters, but it is wise to compare this prior to a uniform
-to assess its influence on the posterior.
+the inverse of variance parameters, but it is wise to compare this
+prior to a uniform to assess its influence on the posterior.
 
 \section{Statistical Inference and Parameter Estimation}
 
 If the parameters of a statistical model were known with absolute
 certainty, then it would be possible to
-%could ignore statistial inference a
 use pdfs and pmfs to make direct
 probability statements about unknowns such as future outcomes. However, we
 almost never know the actual values of parameters, and instead we have
