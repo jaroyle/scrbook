@@ -21,7 +21,8 @@ Throughout statistics, such models
 are routinely analyzed by
 likelihood methods. In particular, likelihood analysis is based on the
 integrated or marginal likelihood in which the random effects are removed, by
-integration, from the conditional-on-${\bf s}$ likelihood. 
+integration, from the conditional-on-${\bf s}$ likelihood (${\bf s}$
+being the individual activity center). 
 This has been the approach taken by
 \citet{borchers_efford:2008, dawson_efford:2009} and related papers.
 Therefore, in this chapter, we provide some conceptual and technical
@@ -35,9 +36,9 @@ likelihood estimates (MLE) for SCR models by integrated
 likelihood. We develop the MLE framework using {\bf R}, and we also
 provide a basic introduction to the {\bf R} package \mbox{\tt secr}
 \citep{efford:2011} which does likelihood analysis of SCR
-models (see also the the stand-alone package {\bf DENSITY}
+models (see also the the stand-alone program {\bf DENSITY}
 \citep{efford_etal:2004}).  To set the context for likelihood analysis
-of SCR models, we first analyze the SCR model here when $N$ is known
+of SCR models, we first analyze the SCR model  when $N$ is known
 because, in that case, analysis is no different at all than a standard
 GLMM.
 We generalize the model to allow for unknown $N$
@@ -85,7 +86,7 @@ specified conditional on ${\bf s}_{i}$, is
 y_{ij}| {\bf s}_{i} \sim \mbox{Binomial}(K, p_{\alpha}({\bf x}_{j},{\bf s}_{i}))
 \label{mle.eq.cond-on-s}
 \end{equation}
-where we have indicated the dependence of $p_{ij}$ on ${\bf s}$ and
+where we have indicated the dependence of encounter probability, $p_{ij}$, on ${\bf s}$ and
 parameters ${\bm \alpha}$
 explicitly. For example, $p_{ij}$ might be the Gaussian model given by
 \[
@@ -288,6 +289,11 @@ intlik1 <- function(parm,y=y,X=traplocs, delta=.2, ssbuffer=2){
 \end{verbatim}
 }
 
+We emphasize that this function (and subsequent) are not meant to be
+general-purpose routines for solving all of your SCR problems but,
+rather, they are meant for illustrative purposes -- so you can see how
+the integrated likelihood is constructed and how we connect it to data
+and other information that is needed.
 
 The function \mbox{\tt intlik1} accepts as input the encounter history
 matrix, \mbox{\tt y}, the
@@ -353,7 +359,12 @@ $iterations
 Details about this output can be found on the help page for
 \mbox{\tt nlm}. We note briefly that \mbox{\tt frog\$minimum} is the
 negative log-likelihood value at the MLEs, which are stored in the
-\mbox{\tt frog\$estimate} component of the list. The Hessian is the
+\mbox{\tt frog\$estimate} component of the list. The order of the
+parameters is as they are defined in the likelihood function so, in
+this case, the first element (value =  $-2.504824$) is the 
+logit transform of $p_0$ and the second element (value = $2.373343$)
+is the value of $\alpha_{1}$ the ``coefficient'' on distance-squared.  
+The Hessian is the
 observed Fisher information matrix, which can be inverted to obtain
 the variance-covariance matrix using the command:
 \begin{verbatim}
@@ -581,13 +592,15 @@ parameterization is used which produces evaluations of the objective
 function beyond the boundary of the parameter space (e.g., $n_{0} <
 0$). Such numerical warnings can often be minimized or avoided
 altogether by picking judicious starting values of parameters or
-properly transforming or scaling the parameters.
-You will see from the \mbox{\tt nlm} output that can be reproduced that the
+properly transforming or scaling the parameters but, in general, they
+can be ignored.
+You will see from the \mbox{\tt nlm} output that the
 algorithm performed satisfactory in minimizing the objective function.
-The estimate of population size for the state-space (using the default 
+The estimate of population size, $\hat{N}$,  for the state-space (using the default 
 state-space buffer) is
 \begin{verbatim}
-> nrow(y) + exp(4.2328)
+> Nhat <- nrow(y) + exp(4.2328)   ### This is n + MLE of n0
+> Nhat
 [1] 110.9099
 \end{verbatim}
 Which differs from the data-generating value ($N=100$), as we might
@@ -617,7 +630,11 @@ $110.91 \pm 1.96 \times 16.125 = (79.305, 142.515)$. To report this in
 terms of density, we scale appropriately by the area of the prescribed
 state-space which is $64$ units of area (i.e., an $8 \times 8$ square).
 Our MLE of $D$ is $\hat{D} = 110.91/64  = 1.733$ individuals per
-square unit.
+square unit. To get the standard error for $\hat{D}$ we need to divide
+the SE for $\hat{N}$ by the area of the state-space, and so
+$\mbox{SE}(\hat{D}) = (1/64)*16.12452 = 0.252$.
+
+
 
 
 
@@ -683,9 +700,9 @@ augmentation for Bayesian analysis.
 \subsection{Extensions}
 
 We have only considered basic SCR models with no additional
-covariates. However, in practice, we are interested in other types of
+covariates. However, in practice, we are interested in 
 covariate effects including ``behavioral response'', 
-sex-specificity of parameters, and potentially other effects. Some of
+sex-specificity of parameters, and potentially others. Some of
 these  can be added directly to the likelihood if the covariate is fixed
 and known for all individuals captured or not. An example is a
 behavioral response, which amounts to having a covariate $x_{ik}=1$ if
@@ -696,7 +713,7 @@ response because the covariate is defined for all traps, no matter the
 trap in which an individual was captured. We could also define a {\it
   local} behavioral response which occurs at the level of the trap,
 i.e., $x_{ijk}=1$ if individual $i$ was captured in trap $j$ prior to
-occasion $k$, etc.. 
+occasion $k$, etc... 
 Trap-specific covariates such as trap type or status, or
 time-specific covariates such as date, are easily accommodated as
 well. As an example, \citet{kery_etal:2010} develop a model for the
@@ -747,17 +764,16 @@ AIC is convenient for assessing the relative
 merits of these different models although if there are only a few
 models it is not objectionable to use hypothesis tests or confidence
 intervals to determine importance of effects. 
-%A second model
-%selection context has to do with choosing among various detection
-%models.
-%, although, as a general rule, we don't recommend this
-%application of model selection.  This is because there is hardly ever
-%(if at all) a rational subject-matter based reason motivating specific
-%distance functions. As a result, we believe that doing too much model
-%selection will invariably lead to over-fitting and thus over-statement
-%of precision. This is the main reason that we haven't loaded you down
-%with a basket of models for detection probability so far, although we
-%discuss many possibilities in Chapt. \ref{chapt.covariates}.
+A second model
+selection context has to do with choosing among various detection
+models, although, as a general rule, we don't recommend this
+application of model selection.  This is because there is hardly ever
+(if at all) a rational subject-matter based reason motivating specific
+distance functions. As a result, we believe that doing too much model
+selection will invariably lead to over-fitting and thus over-statement
+of precision. This is the main reason that we haven't loaded you down
+with a basket of models for detection probability so far, although we
+discuss many possibilities in Chapt. \ref{chapt.covariates}.
 
 
 {\bf Goodness-of-fit or model-checking} -- For many standard capture-recapture models,
@@ -865,7 +881,7 @@ To do all of that we need to manipulate the output of
 [1] 0.1087073
 \end{verbatim}
 } 
-So our estimate of density is $0.55$ individuals per ``standardized
+{\flushleft Our} estimate of density is $0.55$ individuals per ``standardized
 unit'' which is 100 km$^2$, because we divided UTM coordinates by
 10000.  So this is about 5.5 individuals per 1000 km$^2$,
 with a SE of around 1.09
@@ -1049,7 +1065,8 @@ with $2$ km $\times$ $2$ km pixels.  Finally, we compute
 a standard errors using the delta approximation: 
 \begin{verbatim}
 > area <- nrow(G)*4
-> Nhat <- 21+exp(wolv$estimate[3])
+# Nhat  = n (observed) + MLE of n0 (not observed)
+> Nhat <- 21 + exp(wolv$estimate[3])
 > SE <-  exp(wolv$estimate[3])*sqrt(solve(wolv$hessian)[3,3])
 > D <- (Nhat/(nrow(G)*area))*1000
 > SE.D <- (SE/(nrow(G)*area))*1000
@@ -1103,10 +1120,17 @@ maximum likelihood estimation and related inference methods.
 \mbox{\tt secr}, that contains much of the functionality of {\bf
   DENSITY} but also incorporates new models and features.  Here, we
 briefly introduce the \mbox{\tt secr} package which we prefer to use
-instead of {\bf DENSITY} because it allows us to remain in the {\bf R}
+over {\bf DENSITY}, because it allows us to remain in the {\bf R}
 environment for data processing and summarization. We provide a brief
 introduction to \mbox{\tt secr} and some of its capabilities here, and
-we also use it for doing some analysis in other parts of this book.
+we also use it for doing some analysis in other parts of this book. We
+believe that \mbox{\tt secr} will be sufficient for many (if not most) 
+of the SCR problems that one might encounter. It 
+provides a flexible analysis platform, with a large number of summary
+features, and ``publication ready'' output. Its user-interface is
+clean and intuitive to {\bf R} users, and it has been stable,
+efficient and reliable in the (fairly extensive) evaluations that we
+have done. 
 
 To install
 and run models in \mbox{\tt secr}, you must download the package and
@@ -1233,12 +1257,12 @@ the fitting of models using \mbox{\tt secr.fit}.
 The \mbox{\tt secr} package requires that you specify the type of
 encounter device.  Instead of describing models by their statistical
 distribution (Bernoulli, Poisson, etc..), \mbox{\tt secr} uses certain
-operational classifications of detector types including 'proximity',
-'multi', 'single', 'polygon' and 'signal'.  For camera trapping/hair
+operational classifications of detector types including `proximity',
+`multi', `single', `polygon' and `signal'.  For camera trapping/hair
 snares we might consider `proximity' detectors or `count' detectors.
 The `proximity' detector type allows, at most, one detection of each
 individual at a particular detector on any occasion (i.e., it is
-equivalent to the Bernoulli or binomial encounter process model, or
+equivalent to what we call the Bernoulli or binomial encounter process model, or
 model SCR0).  The `count' detector designation allows repeat
 encounters of each individual at a particular detector on any
 occasion.  There are other detector types that one can select such as:
@@ -1259,7 +1283,8 @@ than one animal at a time (multi-catch). These are both variations of
 the multinomial encounter models described in
 Chapt. \ref{chapt.poisson-mn}.
 
-As with all SCR models, \mbox{\tt secr} fits a ``detection function'' relating
+As with all SCR models, \mbox{\tt secr} fits an encounter probability
+model (``detection function'' in \mbox{\tt secr} terminology} relating
 the probability of encounter to the distance of a detector from an
 individual activity center. \mbox{\tt secr} allows the user to specify one of a
 variety of detection functions including the commonly used
@@ -1284,7 +1309,7 @@ units of this parameter default to meters in the \mbox{\tt secr}
 output.  We caution that the meaning of this parameter depends on the
 specific detection model being used, and it should not be directly compared as a
 measure of home-range size across models. Instead, as we noted in
-Sec. \ref{scr0.sec.implied} every encounter probability model implies
+Sec. \ref{scr0.sec.implied} most encounter probability models imply
 a model of space-usage and fitted encounter models should be converted
 to a common currency such as ``area used.''
 
@@ -1302,14 +1327,14 @@ For example, in Sec. \ref{scr0.sec.wolverine} we introduced a standard
 data format for the encounter data file (EDF) and trap deployment file
 (TDF). The EDF shares the same format as that used by the \mbox{\tt
   secr} package with 1 row for every encounter observation and 4
-columns representing trap session ('Session'), individual identity
-('ID'), sample occasion ('Occasion'), and trap identity ('trapID').
+columns representing trap session (`Session'), individual identity
+(`ID'), sample occasion (`Occasion'), and trap identity (`trapID').
 For a standard closed population study that takes place during a
-single season, the 'Session' column in our case is all 1's, to indicate
+single season, the `Session' column in our case is all 1's, to indicate
 a single primary sampling occasion.  In addition to providing the
 encounter data file (EDF), we must tell \mbox{\tt secr} information
 about the traps, which is formated as a matrix with column labels
-'trapID', 'x' and 'y', the last two being the coordinates of each
+`trapID', `x' and `y', the last two being the coordinates of each
 trap, with additional columns representing the operational state of
 each trap during each occasion (1=operational, 0=not).
 
@@ -1346,7 +1371,8 @@ wolverine study is that while the camera traps were operated over a
 that period. We need to provide the trap operation information which
 is contained in the columns to the right of the trap coordinates in
 our standard trap deployment file (TDF). Unfortunately, this is less easy to do in \mbox{\tt
-  secr}, which requires an external file with a single long string of
+  secr}\footnote{as of v. 2.3.1}, which 
+requires an external file with a single long string of
 1's and 0's indicating the days in which each trap was operational (1)
 or not (0). The \mbox{\tt read.traps} function will not allow for this
  information on trap operation if the data exists as an {\bf R} object
@@ -1614,7 +1640,7 @@ mist-netting of birds on $K$ consecutive days, repeated, say, $T$
 times during a year, or perhaps over $T$ years. Or we might collect
 data from $R$ distinct trapping grids.  In these cases, we have $T$ or
 $R$ groups which we might reasonably regard as being samples of
-indepdent populations.  While the groups might be distinct sites,
+independent populations.  While the groups might be distinct sites,
 year, or periods within years, they could also be other biological
 groups such as sex or age.  Conveniently, \mbox{\tt secr} fits a
 specific model for stratified populations -- referred to as {\it
@@ -1637,13 +1663,13 @@ Under this model,  we can marginalize {\it all} $N_{g}$ parameters out
 of the likelihood to concentrate the likelihood on the parameters
 $\beta_{0}$ and $\beta_{1}$ precisely as discussed in the previous
 section. This Poisson hierarchical model 
-is the basis of the multi-session models in \mbox{\tt secr}.
+is the basis of the multi-session models in \mbox{\tt  secr}.
 
 To implement a multi-session model (or stratified population model) in
 \mbox{\tt secr},
 we provide the relevant stratification information in the 
- 'Session' variable of the input encounter data file (EDF). If
- 'Session' has multiple values then a
+ `Session' variable of the input encounter data file (EDF). If
+ `Session' has multiple values then a
 ``multi-session'' object is created by default and session-specific variables can
 be described in the model. For example, if the session has 2 values
 for males and females then we have sex-specific densities , and
@@ -1749,23 +1775,20 @@ produces the
 \subsubsection{Density mapping and effective sample area}
 \mbox{\tt secr} produces likelihood versions of the various summaries
 of posterior density and effective sample area that we discussed in
-Chapt. \ref{chapt.scr0}. For example, while
-\mbox{\tt secr} reports estimates of the expected value of $N$ or density directly in the summary
-output from fitting a model, you can use 
-the function \mbox{\tt region.N} to produce estimates of $N$ for any
-given region.  In addition,
-\mbox{\tt secr} 
-has functions  for creating maps of detection contours for individuals
-traps, or for the entire trap array. See the 
-function \mbox{\tt pdot.contour}, and also
- \mbox{\tt fxi.contour} for computing the 2-dimensional pdf of 
- the locations of one or more individual activity centers (as in
- Sec. \ref{scr0.sec.post_s}). In the context of likelihood analysis, estimation of a
- random effect ${\bf s}$ is based on a plug-in application of
- Bayes' Rule.
-When ${\bf s}$ has a uniform distribution, and we use a
-discrete evaluation of the integral, can be computed
-simply by renormalizing the likelihood:
+Chapt. \ref{chapt.scr0}. For example, while \mbox{\tt secr} reports
+estimates of the expected value of $N$ or density directly in the
+summary output from fitting a model, you can use the function
+\mbox{\tt region.N} to produce estimates of $N$ for any given region.
+In addition, \mbox{\tt secr} has functions for creating maps of
+detection contours for individuals traps, or for the entire trap
+array. See the function \mbox{\tt pdot.contour}, and also \mbox{\tt
+  fxi.contour} for computing the 2-dimensional pdf of the locations of
+one or more individual activity centers (as in
+Sec. \ref{scr0.sec.post_s}). In the context of likelihood analysis,
+estimation of a random effect ${\bf s}$ is based on a plug-in
+application of Bayes' Rule.  When ${\bf s}$ has a uniform
+distribution, and we use a discrete evaluation of the integral, it can
+be computed simply by renormalizing the likelihood:
 \[
  [{\bf s}| {\bf y},\theta] = \frac{ [{\bf y} | {\bf s},\theta]  }{ \sum_{s} [{\bf y} | {\bf s},\theta]  }.
 \]
