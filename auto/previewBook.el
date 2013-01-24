@@ -14,6 +14,7 @@
      "url"
      "bm"
      "makeidx"
+     "rotating"
      "fancyvrb"
      "color"
      "soul"
