@@ -417,12 +417,12 @@ this function (called \mbox{\tt model.average2}) to do model averaging
 by either  AIC or AIC$_c$ as specified by the user. The model fitting
 commands look like this (for Model 0 and Model 1):
 {\small
-\begin{alltt}
-> model0 <- secr.fit(wolvcapt, model=list(D\(\sim\)1, g0\(\sim\)1, sigma\(\sim\)1), 
+\begin{verbatim}
+> model0 <- secr.fit(wolvcapt, model=list(D~1, g0~1, sigma~1), 
                   buffer=20000)
-> model1 <- secr.fit(wolvcapt, model=list(D\(\sim\)session, g0\(\sim\)1, sigma\(\sim\)1), 
+> model1 <- secr.fit(wolvcapt, model=list(D~session, g0~1, sigma~1), 
                   buffer=20000)
-\end{alltt}
+\end{verbatim}
 }
 Next we use the function \mbox{\tt AIC}, passing the fit objects from
 all 5 models, and that produces the following output (abbreviated
@@ -735,30 +735,30 @@ each of the 5 models: {\small
 \rule[0.15in]{\textwidth}{.03in}
 %\begin{minipage}{5in}
 {\small
-\begin{alltt}
-alpha.sex \(\sim\) dunif(-3,3)            ## Prior distributions 
-beta.sex  \(\sim\) dunif(-3,3)
-sigma0 \(\sim\) dunif(0,50)
-alpha0 \(\sim\) dnorm(0,.1)
-psi \(\sim\) dunif(0,1)                   ## Data augmentation parameter
-psi.sex  \(\sim\) dunif(0,1)              ## Probability of ``male''
+\begin{verbatim}
+alpha.sex ~ dunif(-3,3)            ## Prior distributions 
+beta.sex  ~ dunif(-3,3)
+sigma0 ~ dunif(0,50)
+alpha0 ~ dnorm(0,.1)
+psi ~ dunif(0,1)                   ## Data augmentation parameter
+psi.sex  ~ dunif(0,1)              ## Probability of ``male''
 
-for(i in 1:M)\{                      ## DA loop
-  wsex[i] \(\sim\) dbern(psi.sex)         ## Latent sex state (male = 1)
-  z[i] \(\sim\) dbern(psi)                ## DA variables
-  s[i,1] \(\sim\) dunif(Xl,Xu)
-  s[i,2] \(\sim\) dunif(Yl,Yu)
+for(i in 1:M){                      ## DA loop
+  wsex[i] ~ dbern(psi.sex)         ## Latent sex state (male = 1)
+  z[i] ~ dbern(psi)                ## DA variables
+  s[i,1] ~ dunif(Xl,Xu)
+  s[i,2] ~ dunif(Yl,Yu)
   logit(p0[i]) <- alpha0 + alpha.sex*wsex[i]
   log(sigma.vec[i]) <- log(sigma0) + beta.sex*wsex[i]
   alpha1[i] <- 1/(2*sigma.vec[i]*sigma.vec[i])
-  for(j in 1:ntraps)\{
+  for(j in 1:ntraps){
     mu[i,j] <- z[i]*p[i,j]
-    y[i,j] \(\sim\) dbin(mu[i,j],K[j])
+    y[i,j] ~ dbin(mu[i,j],K[j])
     dd[i,j] <- pow(s[i,1] - traplocs[j,1],2)  + pow(s[i,2] - traplocs[j,2],2)
     p[i,j]  <-  p0[i]*exp( - alpha1[i]*dd[i,j] )
-   \}
- \}
-\end{alltt}
+   }
+ }
+\end{verbatim}
 }
 %\end{minipage}
 \rule[-0.15in]{\textwidth}{.03in}
@@ -1083,7 +1083,6 @@ follows:
 The MCMC output for `mod' was post-processed to obtain the
 model-weights using the following  {\bf R} commands:
 \begin{verbatim}
-
 >  mod <- wolv5$BUGSoutput$sims.list$mod
 >  mod <- paste(mod[,1],mod[,2],mod[,3],sep="")
 >
@@ -1096,7 +1095,6 @@ mod
 mod
   000   001   010   011   100   101   110   111
 0.286 0.082 0.018 0.005 0.420 0.139 0.038 0.012
-
 \end{verbatim}
 This results in a comparison of all 8 possible models (based on $m=3$ covariates) instead 
 of just the 5 models we originally proposed. 
@@ -1191,18 +1189,18 @@ In particular, instead of a 2-dimensional array
  \mbox{\tt p[i,j]},  we build \mbox{\tt p[i,j,m]} for each of
 $m=1,2,\ldots,M$ models. An example with 3 distinct models is:
 {\small
-\begin{alltt}
-  mod  \(\sim\) dcat(probs[])
-\#\#
-\#\# Using a double loop construction fill-in p[,,] for each model:
-\#\#
+\begin{verbatim}
+  mod  ~ dcat(probs[])
+##
+## Using a double loop construction fill-in p[,,] for each model:
+##
   p[i,j,1] <-  p0[1]*exp( - alpha1[1]*dist2[i,j] )
   p[i,j,2] <-  1-exp(-p0[2]*exp( - alpha1[2]*dist2[i,j] ) )
   logit(p[i,j,3]) <- p0[3] - alpha1[3]*dist2[i,j]
 
   mu[i,j] <- z[i]*p[i,j,mod]
-  y[i,j] \(\sim\) dbin(mu[i,j],K[j])
-\end{alltt}
+  y[i,j] ~ dbin(mu[i,j],K[j])
+\end{verbatim}
 }
 % XXXX Should you show mod ~ dcat(probs[]) in the code above?
 % XXXX Isn't this reversible-jump MCMC? We should probably use that
@@ -1234,22 +1232,22 @@ parameter (either log or logit-scale of baseline encounter probability
 $p_{0}$) and a \mbox{\tt Uniform}(0,5) prior for one-half the inverse of the
 coefficient on distance-squared.
 In the {\bf BUGS} model specification the priors look like this:
-\begin{alltt}
- for(i in 1:3)\{
-   alpha0[i] \(\sim\) dnorm(0,.1)
-   sigma[i] \(\sim\) dunif(0,5)
+\begin{verbatim}
+ for(i in 1:3){
+   alpha0[i] ~ dnorm(0,.1)
+   sigma[i] ~ dunif(0,5)
    alpha1[i] <- 1/(2*sigma[i]*sigma[i])
- \}
-\end{alltt}
+ }
+\end{verbatim}
 Then,  we create a probability of encounter for each
 individual, trap {\it and} model so that the holder object ``\mbox{\tt p}'' in the
 model description is a 3-dimensional array (sometimes this would have to be a 4
 or 5-d array in more complex models with time effects, etc..), so that
 construction of the encounter probability models look like this:
 \begin{verbatim}
- p[i,j,1]       <-  p0[1]*exp( - alpha1[1]*dist2[i,j] )
- p[i,j,2]       <-  1-exp(-p0[2]*exp( - alpha1[2]*dist2[i,j] ) )
- logit(p[i,j,3])<- p0[3] - alpha1[3]*dist2[i,j]
+ p[i,j,1] <-  p0[1]*exp( - alpha1[1]*dist2[i,j] )
+ p[i,j,2] <-  1-exp(-p0[2]*exp( - alpha1[2]*dist2[i,j] ) )
+ logit(p[i,j,3]) <- p0[3] - alpha1[3]*dist2[i,j]
 \end{verbatim}
 where
 \begin{verbatim}
@@ -1571,9 +1569,9 @@ and we tabulate $N_{g} \equiv N({\bf
   x}_{g})$ the number of activity centers in bin $g$, centered at
 coordinate ${\bf x}_{g}$.
 Specifically, let $B({\bf x})$ indicate a bin centered at
-coordinate ${\bf x}$, then\footnote{$1(arg)$ is the indicator function
+coordinate ${\bf x}$, then\footnote{$I(arg)$ is the indicator function
   which evaluates to 1 if $arg$
-  is true, otherwise 0} $N({\bf x})=\sum_{i=1}^{N} 1({\bf s}_{i} \in
+  is true, otherwise 0} $N({\bf x})=\sum_{i=1}^{N} I({\bf s}_{i} \in
 B({\bf x}))$ is the population size of bin $B({\bf x})$.
 In
 Sec. \ref{scr0.sec.mapping}, we used the summaries $N({\bf x})$
@@ -1617,7 +1615,7 @@ value of the data augmentation variables $z_{i}$, and so we can obtain
 a posterior sample of $N({\bf x})$ by taking all of the output for
 MCMC iterations $m=1,2,\ldots,$ and doing this:
 \[
-   N({\bf x})^{(m)} = \sum_{z_{i}^{(m)}=1} 1({\bf s}_{i}^{(m)} \in B({\bf x}))
+   N({\bf x})^{(m)} = \sum_{z_{i}^{(m)}=1} I({\bf s}_{i}^{(m)} \in B({\bf x}))
 \]
 Thus, $N({\bf x})^{(1)}, N({\bf x})^{(2)}, \ldots,$ is the Markov
 chain for the derived parameter $N({\bf x})$.
@@ -1926,22 +1924,22 @@ calculations.  For example, to compute fit statistic 1, we have to add
 some commands to the {\bf
   BUGS} model specification such as this (note: this is only a
 fraction of the model specification):
-\begin{alltt}
+\begin{verbatim}
 .......
-for(j in 1:ntraps)\{
+for(j in 1:ntraps){
  mu[i,j] <- w[i]*p[i,j]
 
- y[i,j] \(\sim\) dbin(mu[i,j],K[j])
-ynew[i,j] \(\sim\) dbin(mu[i,j],K[j])
+ y[i,j] ~ dbin(mu[i,j],K[j])
+ynew[i,j] ~ dbin(mu[i,j],K[j])
 
 err[i,j] <-  pow(pow(y[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
 errnew[i,j] <- pow(pow(ynew[i,j],.5) - pow(K[j]*mu[i,j],.5),2)
-\}
+}
 
 T1obs <- sum(err[,])
 T1new <- sum(errnew[,])
 .......
-\end{alltt}
+\end{verbatim}
 Similar calculations are carried out to obtain the posterior samples
 of test statistics 2 (individual totals) and 3 (trap totals). For the
 wolverine data, the Bayesian p-value calculations produce:
