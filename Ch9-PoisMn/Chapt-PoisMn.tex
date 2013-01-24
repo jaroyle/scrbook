@@ -549,28 +549,28 @@ are shown in the help file for \mbox{\tt simPoissonSCR}):
 }
 Next, we write the {\bf BUGS} model to an external file:
 {\small
-\begin{alltt}
+\begin{verbatim}
 > cat("
-model \{
- alpha0 \(\sim\) dnorm(0,.1)
- alpha1 \(\sim\) dnorm(0,.1)
- psi \(\sim\) dunif(0,1)
+model{
+ alpha0 ~ dnorm(0,.1)
+ alpha1 ~ dnorm(0,.1)
+ psi ~ dunif(0,1)
 
- for(i in 1:M)\{
-   z[i] \(\sim\) dbern(psi)
-   s[i,1] \(\sim\) dunif(xlim[1],xlim[2])
-   s[i,2] \(\sim\) dunif(ylim[1],ylim[2])
-   for(j in 1:J)\{
+ for(i in 1:M){
+   z[i] ~ dbern(psi)
+   s[i,1] ~ dunif(xlim[1],xlim[2])
+   s[i,2] ~ dunif(ylim[1],ylim[2])
+   for(j in 1:J){
       d[i,j] <- pow(pow(s[i,1]-X[j,1],2) + pow(s[i,2]-X[j,2],2),0.5)
-      y[i,j] \(\sim\) dpois(lam[i,j])
+      y[i,j] ~ dpois(lam[i,j])
       lam[i,j] <- z[i]*K*exp(alpha0)*exp(- alpha1*d[i,j]*d[i,j])
-   \}
-  \}
+   }
+  }
  N <- sum(z[])
  D <- N/64
-\}
+}
 ",file = "SCR-Poisson.txt")
-\end{alltt}
+\end{verbatim}
 }
 To fit the model we execute \mbox{\tt bugs} in the usual way:
 {\small
@@ -1351,38 +1351,38 @@ clipped to have rounded corners, and so we don't use it here.
 \rule[0.15in]{\textwidth}{.03in}
 %\begin{minipage}{2.5in}
 {\small
-\begin{alltt}
-model \{
- alpha0 \(\sim\) dnorm(0,.1)
- sigma \(\sim\) dunif(0,200)
+\begin{verbatim}
+model{
+ alpha0 ~ dnorm(0,.1)
+ sigma ~ dunif(0,200)
  alpha1 <- 1/(2*sigma*sigma)
 
  A <- ((xlim[2]-xlim[1]))*((ylim[2]-ylim[1]))
- for(t in 1:5)\{
+ for(t in 1:5){
   N[t] <- inprod(z[1:bigM],yrdummy[,t])
   D[t] <- (N[t]/A)*10000  # put in units of per ha
-  psi[t] \(\sim\) dunif(0,1)
- \}
+  psi[t] ~ dunif(0,1)
+ }
 
- for(i in 1:bigM)\{  # bigM = total size of jointly augmented data set
-   z[i] \(\sim\) dbern(psi[year[i]])
-   S[i,1] \(\sim\) dunif(xlim[1],xlim[2])
-   S[i,2] \(\sim\) dunif(ylim[1],ylim[2])
+ for(i in 1:bigM){  # bigM = total size of jointly augmented data set
+   z[i] ~ dbern(psi[year[i]])
+   S[i,1] ~ dunif(xlim[1],xlim[2])
+   S[i,2] ~ dunif(ylim[1],ylim[2])
 
- for(j in 1:ntraps)\{  # X = trap locations, S = activity centers
+ for(j in 1:ntraps){  # X = trap locations, S = activity centers
     d2[i,j] <- pow(pow(S[i,1]-X[j,1],2) + pow(S[i,2]-X[j,2],2),1)
-  \}
- for(k in 1:K)\{
-   Ycat[i,k] \(\sim\) dcat(cp[i,k,])
-   for(j in 1:ntraps)\{
+  }
+ for(k in 1:K){
+   Ycat[i,k] ~ dcat(cp[i,k,])
+   for(j in 1:ntraps){
      lp[i,k,j] <- exp(alpha0 - alpha1*d2[i,j])*z[i]*(1-dead[i,k])
      cp[i,k,j] <- lp[i,k,j]/(1+sum(lp[i,k,1:ntraps]))
-   \}
+   }
    cp[i,k,ntraps+1] <- 1-sum(cp[i,k,1:ntraps])  # last cell = not captured
-  \} 
- \}  
-\}
-\end{alltt}
+  } 
+ }  
+}
+\end{verbatim}
 }
 %\end{minipage}
 \rule[-0.15in]{\textwidth}{.03in}
@@ -1485,18 +1485,18 @@ To make the analyses consistent with our previous analysis in {\bf
 refit all of the models here without the habitat mask.
 The re-analysis proceeds as follows:
 {\small
-\begin{alltt}
+\begin{verbatim}
 ## fit constant-density model
 > ovenbird.model.1 <- secr.fit(ovenCH)
 ## fit net avoidance model
-> ovenbird.model.1b <- secr.fit(ovenCH, model =   list(g0 \(\sim\) b))
+> ovenbird.model.1b <- secr.fit(ovenCH, model =   list(g0 ~ b))
 ## fit model with time trend in detection
-> ovenbird.model.1T <- secr.fit(ovenCH, model =    list(g0 \(\sim\) T))
+> ovenbird.model.1T <- secr.fit(ovenCH, model =    list(g0 ~ T))
 ## fit model with 2-class mixture for g0
-> ovenbird.model.h2 <- secr.fit(ovenCH, model =    list(g0 \(\sim\) h2))
+> ovenbird.model.h2 <- secr.fit(ovenCH, model =    list(g0 ~ h2))
 ## fit a model with session (year)-specific Density
-> ovenbird.model.D <- secr.fit(ovenCH, model =    list(D \(\sim\) session))
-\end{alltt}
+> ovenbird.model.D <- secr.fit(ovenCH, model =    list(D ~ session))
+\end{verbatim}
 }
 All of these can be fitted easily in {\bf JAGS} but
 the model we fitted was roughly equivalent to the last model,
@@ -2355,21 +2355,21 @@ uniformly without dealing with ${\bf s}$ in the model.
 The kernel of the {\bf BUGS} model specification 
 should resemble the following snippet:
 {\small
-\begin{alltt}
-model \{
+\begin{verbatim}
+model {
   # ignoring loops and data augmentation
-  u[i,1] \(\sim\) dunif(xlim[1], xlim[2])
-  u[i,2] \(\sim\) dunif(ylim[1], ylim[2])
+  u[i,1] ~ dunif(xlim[1], xlim[2])
+  u[i,2] ~ dunif(ylim[1], ylim[2])
   mu[i,j] <- alpha0 + alpha1*d[i,j]
   ###
   ###  JAGS has this T() truncation feature
-  S[i,j] \(\sim\) dnorm(mu[i,j], 1/sigma^2)T(c,Inf) 
+  S[i,j] ~ dnorm(mu[i,j], 1/sigma^2)T(c,Inf) 
   ###
   gamma[i,j] <- (c - mu[i,j])/sigma
   p[i,j] <- 1 - pnorm(gamma[i,j], 0, 1) # JAGS has pnorm() function
-  y[i,j] \(\sim\) dbern(p[i,j])
-\}
-\end{alltt}
+  y[i,j] ~ dbern(p[i,j])
+}
+\end{verbatim}
 }
 
 
