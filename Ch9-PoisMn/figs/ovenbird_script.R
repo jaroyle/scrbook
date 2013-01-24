@@ -14,14 +14,14 @@ dev.off()
 
 ## extract the trap locations and create a state-space by adding 150 m
 X<-traps<-traps(ovenCH)
-xlim<-c(min(X[[1]][,1])-200,max(X[[1]][,1])+200)
-ylim<-c(min(X[[1]][,2])-200,max(X[[1]][,2])+200)
+xlim<-c(min(X[[1]][,1])-300,max(X[[1]][,1])+300)
+ylim<-c(min(X[[1]][,2])-300,max(X[[1]][,2])+300)
 ntraps<- nrow(traps[[1]])
 
 ## Y are the encounter history data
 Y<-ovenCH
 K<-10  # number of samples in each year
-M<-100 # do constant data augmentation to all years
+M<-200 # do constant data augmentation to all years
 
 ## starting values for each individual's activity centers
 Sst0<-cbind(runif(M,xlim[1],xlim[2]),runif(M,ylim[1],ylim[2]))
