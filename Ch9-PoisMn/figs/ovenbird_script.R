@@ -129,8 +129,8 @@ data <- list (died=died,yrdummy=yrdummy,year=yrid,X=as.matrix(X[[1]]),K=10,Ycat=
 ### This takes ~1 hour or so to run
 ##
 library("R2jags")
-out.200 <- jags(data, inits, parameters, "model.txt", n.thin=1,n.chains=3, 
-n.burnin=1000,n.iter=5000,DIC=FALSE)
+out.300 <- jags(data, inits, parameters, "model.txt", n.thin=1,n.chains=3, 
+n.burnin=1000,n.iter=11000,DIC=FALSE)
 
 
 
