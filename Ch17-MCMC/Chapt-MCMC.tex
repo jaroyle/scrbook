@@ -1764,192 +1764,6 @@ remember that each command has to executed at each iteration of the Markov chain
 
 
 
-% \begin{panel}[ht]
-% \centering
-% \rule[0.15in]{\textwidth}{.03in}
-% \begin{minipage}{2.5in}
-% {\small
-% XXXX This is C code XXXX
-% \begin{verbatim}
-% #write C++ code to .c file
-% cat("
-% #include <stdio.h>
-% #include <R.h>
-% #include <Rmath.h>
-% #include <math.h>
-% #include <Rinternals.h>
-
-% void Dfun_C(int *M, int *J, double *Sx, double *Sy, double *Xx,
-% 			double *Xy, double *D2out) {
-
-% /* variables using different names than pointers in function */
-% /* always declare type: integer, double, boolean... */
-% int Ntot, ntraps;
-
-% Ntot=*M;
-% ntraps=*J;
-
-% /*Set up vectors for trap coordinates*/
-% double X_x[ntraps], X_y[ntraps];
-
-% for (int j=0;j<ntraps;j++){
-% X_x[j]=Xx[j];
-% X_y[j]=Xy[j];
-% }
-
-% /*set up vectors for activity center coordinates*/
-% double S_x[Ntot], S_y[Ntot];
-
-% for (int i=0;i<Ntot;i++){
-% S_x[i]=Sx[i];
-% S_y[i]=Sy[i];
-% }
-
-% for (int i=0; i<Ntot; i++) {
-% int ic=i+1;
-% 	for (int j=ic*ntraps-ntraps; j<ic*ntraps; j++) {
-% 	D2out[j]=pow((S_x[i] - X_x[(j-i*ntraps)]  ),2) +
-% 			 pow((S_y[i] - X_y[(j-i*ntraps)]  ),2);
-% 	}
-% }
-% }  /*end function*/
-% ",file = "Dfun_C.c")
-
-% ## compile .c function adn load resulting .dll library
-% system(paste("Rcmd SHLIB Dfun_C.c"))
-% dyn.load("Dfun_C.dll")
-
-% ##prepare input as vectors and set output vector
-% Sx<-S[,1]
-% Sy<-S[,2]
-% Xx<-as.vector(X[,1])
-% Xy<-as.vector(X[,2])
-% D2out<-rep(0, M*J)
-
-% system.time(
-% (Dvector<-.C("Dfun_C",as.integer(M), as.integer(J), as.double(Sx),
-% 			as.double(Sy), as.double(Xx),as.double(Xy),
-% 			as.double(D2out) ))
-% )
-% #system.time: 0
-
-% #reformat output vector to matrix
-% D2<-matrix(Dvector[[7]], nrow=M, ncol=J, byrow=T)
-% \end{verbatim}
-% }
-% \rule[-0.15in]{\textwidth}{.03in}
-% \caption{
-% Code to compute squared distance between individual activity centers and traps in {\bf C++} from within {\bf R}.
-% }
-% \label{mcmc.panel.C1}
-% \end{panel}
-
-
-
-% \section{MCMC software packages}
-
-% Throughout most of this book we  use {\bf WinBUGS} and {\bf JAGS} to run MCMC analyses.
-% Here, we will briefly discuss the main pros and cons of these two programs
-% as well as {\bf WinBUGS} successor {\bf OpenBUGS}.
-
-% \subsection{WinBUGS}
-
-% In a nutshell, {\bf WinBUGS} (and the other programs) do everything that we
-% just went through in this chapter (and quite a bit more). Looking through
-% your model, {\bf WinBUGS} determines which parameters it can use standard
-% Gibbs sampling for (i.e. for conjugate full conditional distributions).
-% Then, it determines, in the following hierarchy, whether to use adaptive
-% rejection sampling, slice sampling or -- in the `worst' case --
-% Metropolis-Hastings sampling for the other full conditionals
-% \citep{spiegelhalter_etal:2003}. If it uses MH sampling, it will
-% automatically tune the updater so that it works efficiently.
-
-% While {\bf WinBUGS} is a convenient piece of software that is still
-% widely used, its major drawback is that it is no longer being developed,
-% i.e. no new functions or distributions are added and no bugs are fixed.
-
-% \subsection{OpenBUGS}
-% {\bf OpenBUGS} \citep{lunn_etal:2009} is essentially the successor of {\bf WinBUGS}. While the
-% latter is
-% no longer actively developed, {\bf OpenBUGS} continues to be
-% developed. The
-% name '{\bf OpenBUGS}' refers to the software being open source, so users
-% do
-% not need to download a license key, like they have to for {\bf WinBUGS}
-% (although the license key for {\bf WinBUGS} is free and valid for life).
-
-% Compared to {\bf WinBUGS}, {\bf OpenBUGS}
-% has  more built-in functions. The
-% method of how to determine the right updater for each model parameter
-% has changed and the user can manually control the MCMC algorithm used
-% to update model parameters.  Several other changes have been
-% implemented in {\bf OpenBUGS} and a detailed list of differences between the
-% two {\bf BUGS} versions, can be found at
-% \url{http://www.openbugs.info/w/OpenVsWin}.
-
-% While {\bf OpenBUGS} is a useful program for a lot of MCMC sampling
-% applications, for reasons we do not understand, simple SCR models do
-% not converge sometimes in {\bf OpenBUGS}. It is therefore advisable that
-% you check any
-% {\bf OpenBUGS} SCR model results against result from {\bf WinBUGS}. Also,
-%  the {\bf R} package \mbox{\tt BRugs} \citep{thomas_etal:2006} that allows you to access{\bf OpenBUGS} through {\bf R}, used to have problems with 64-bit
-% machines. These seem to have been fixed but we have not done extensive testing, so
-% you may have to use the 32-bit version of {\bf R} and {\bf OpenBUGS}
-% in order to
-% make it work. Alternatively, the package \mbox{\tt R2OpenBUGS} \citep{sturtz_etal:2005} and even \mbox{\tt R2WinBUGS} allow {\bf R} to interface with {\bf OpenBUGS}. The {\bf BUGS} project site at
-% \url{http://www.openbugs.info}
-% provides a lot of information on and download links for {\bf OpenBUGS}.
-
-% There is an extensive help archive for both {\bf WinBUGS} and {\bf OpenBUGS}
-%  and you can subscribe to a mailing list, where people pose and answer
-%  questions of how to use these programs at
-%  \url{http://www.mrc-bsu.cam.ac.uk/bugs/overview/list.shtml}
-
-% \subsection{JAGS -- Just Another Gibbs Sampler}
-
-% {\bf JAGS} is another free program for analysis
-% of Bayesian hierarchical models using MCMC simulation.
-% Originally, {\bf JAGS}
-%  was the only program using the {\bf BUGS} language that would run on
-%  operating systems other than the 32 bit Windows platforms. By now, there
-%  are {\bf OpenBUGS} versions for Linux or Macintosh machines.
-
-% {\bf JAGS} 'only' generates samples from the posterior distribution;
-% analysis of the output is done in {\bf R}, either by running {\bf JAGS}
-% through {\bf R} using either the packages \mbox{\tt rjags}
-% \citep{plummer:2011} or \mbox{\tt R2jags} \citep{su_yajima:2011}, or by
-% using coda on your {\bf JAGS} output.
-
-% The program, manuals and \mbox{\tt rjags}
-% can be downloaded at \url{http://sourceforge.net/projects/mcmc-jags/files/}
-% When run from within {\bf R} using the package \mbox{\tt rjags} or \mbox{R2jags},
-% writing a \mbox{\bf JAGS} model is virtually identical to writing a {\bf WinBUGS}
-%  model. However, some functions may have slightly different names and you
-%  can look up available functions and their use in the {\bf JAGS}
-%  manual. One potential downside is that {\bf JAGS} can be very particular
-%  when it comes to initial values. These may have to be set as close to
-%  truth as possible for the model to start. Although {\bf JAGS} lets
-%  you run several parallel Markov chains, this characteristic interferes
-%  with the idea of using overdispersed initial values for the different
-%  chains. Also, we have occasionally experienced {\bf JAGS} to crash and
-%  take the {\bf R} GUI with it. Only re-installing both {\bf JAGS} and
-%  {\tt rjags} seemed to solve this problem.
-% On the plus side, {\bf JAGS} usually runs a little faster than {\bf WinBUGS},
-%  sometimes considerably faster (see sec. \ref {scr0.sec.discrete}), is constantly
-%  being developed and improved and it has a variety of functions that are
-%  not available in {\bf WinBUGS}. For example, {\bf JAGS} allows you to
-%  supply observed data for some deterministic functions of unobserved
-%  variables. In {\bf BUGS} we cannot supply data to logical nodes.
-%  Another useful feature is that the adaptive phase of the model
-%  (the burn-in) is run separately from the sampling from the stationary
-%  Markov chains. This allows you to easily add more iterations to the
-%  adaptive phase if necessary without the need to start from 0. There
-%  are other, more subtle differences and there is an entire manual section
-%  on differences between {\bf JAGS} and {\bf OpenBUGS}.
-% For questions and problems there is a {\bf JAGS} forum online at
-% \url{http://sourceforge.net/projects/mcmc-jags/forums/forum/610037}.
-% \begin{comment}As we make progress on the book, lets be sure  to add
-% linkages to places where we use JAGS in examples.\end{comment}
 
 \section{Summary and Outlook}
 
@@ -1976,7 +1790,7 @@ existing software packages, especially when it comes to handling the
  state-space: In {\bf BUGS} (and {\bf JAGS} for that matter) we define
   a continuous rectangular state-space using the corner coordinates to
   constrain the Uniform priors on the activity centers ${\bf s}$.
-   But what if a continuous rectangle isn't an adequate description of
+   But what if a continuous rectangle is an inadequate description of
    the state-space? In this chapter we saw that in {\bf R} it only takes
    a few lines of code to use any arbitrary polygon shapefile as the
    state-space, which is especially useful when you are dealing with
@@ -1988,13 +1802,12 @@ existing software packages, especially when it comes to handling the
 Another situations in which using {\bf BUGS}/{\bf JAGS} becomes
 increasingly
 complicated or inefficient is when using point processes other
-than the
- Binomial point process (''uniformity'') which underlies the basic
+than the homogeneous Binomial point process (``uniformity of density'') which underlies the basic
  SCR model (see sec. \ref{scr0.sec.discrete} in Chapt. \ref {chapt.scr0}). In Chapt.
- \ref {chapt.state-space} and XXXX BETHS PP CHAPTER XXXX you will see examples of different point processes,
-  implemented using custom-made MCMC algorithms.
+ \ref {chapt.state-space} you already saw an example of an inhomogeneous point process model -- one implementable in {\bf JAGS} -- and we briefly introduce a different point processes,
+  implemented using custom-made MCMC algorithms, in Chapt. \ref{chapt.final}.
 
-Finally, the Chapt. \ref {chapt.scr-unmarked} and \ref {chapt.partialID} deal with unmarked or
+Finally, as mentioned in early on in this chapter, the Chapt. \ref {chapt.scr-unmarked} and \ref {chapt.partialID} deal with unmarked or
 partially marked populations using hand-made MCMC algorithms to
 handle the (partially) latent individual encounter histories.
 While some of these models can be written in {\bf BUGS}/{\bf JAGS}, they are painstakingly slow; others cannot be implemented in
