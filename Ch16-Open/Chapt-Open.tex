@@ -61,12 +61,12 @@ to make inference about survival and recruitment without having
 to physically capture individuals.
 Additionally, another reason
 extending our SCR models to open populations arises purely from a
-sampling perspective.  We often need longer time periods to sample
+sampling perspective.  Longer time periods are often needed to sample
 rare or elusive species to ensure that enough captures and recaptures
 are produced.  This extended time frame can quickly lead to violations
 in the assumption of population closure.  For example, the European
 wildcat study that was mentioned in Chapt \ref{chapt.covariates} (see
-\citet{kery_etal:2010} for details) was
+\citet{kery_etal:2011} for details) was
 conducted over a year long period.  While the researchers in that
 study used a closed population, they did model variation in detection
 as a function of time.  Another approach would have been to use an
@@ -652,7 +652,7 @@ impact of movement.
 % people do use multi-state models to get at movement
 
 
-\subsection{Spatial Jolly-Seber Models}
+\subsection{Spatial Jolly-Seber models}
 
 To parameterize the spatial JS models, we essentially follow all of the same steps
 as the non-spatial model but we also include the trap location information into our
@@ -726,7 +726,6 @@ phi ~ dunif(0,1)
 alpha0 ~ dnorm(0,10)
 sigma ~dunif(0,200)
 alpha1<- 1/(2*sigma*sigma)
-
 A <- ((xlim[2]-xlim[1]))*((ylim[2]-ylim[1]))  #area
 
 for(t in 1:T){
@@ -738,14 +737,12 @@ gamma[t] ~ dunif(0,1)   #prior for time specific recruitment parameter
 
 for(i in 1:M){
   z[i,1] ~ dbern(psi)
-
-  #to estimate the number of recruits
-  R[i,1]<- z[i,1]
+  
+  R[i,1]<- z[i,1]       #to estimate the number of recruits
   R[i,2]<-(1-z[i,1])*z[i,2]
   R[i,3]<- (1-z[i,1])*(1-z[i,2])*z[i,3]
   R[i,4] <-(1-z[i,1])*(1-z[i,2])*(1-z[i,3])*z[i,4]
   R[i,5] <-(1-z[i,1])*(1-z[i,2])*(1-z[i,3])*(1-z[i,4])*z[i,5]
-
 
   for(t in 1:T){
   S[i,1,t] ~ dunif(xlim[1],xlim[2]) # independent activity centers for each year
@@ -754,7 +751,6 @@ for(i in 1:M){
   for(j in 1:ntraps){
     d[i,j,t] <- pow(pow(S[i,1,t]-X[j,1],2) + pow(S[i,2,t]-X[j,2],2),1)
      }
-
   for(k in 1:K){
     for(j in 1:ntraps){
       lp[i,k,j,t] <- exp(alpha0 - alpha1*d[i,j,t])*z[i,t]
@@ -764,13 +760,11 @@ for(i in 1:M){
     Ycat[i,k,t] ~ dcat(cp[i,k,,t])
   }
 }
-
 a[i,1]<-(1-z[i,1])
 for(t in 2:T){                         #for loop for years 2 to T
       a1[i,t] <- sum(z[i, 1:t])        #sum across the alive states from 1 to t
        A[i,t] <- 1-step(a1[i,t] - 1)   #A is the indicator if an individual 
-									   #is available to be recruited
-
+									   #is available to be recruited at time t
        mu[i,t]<- (phi*z[i,t-1]) + (gamma[t]*A[i,t-1])
         z[i,t]~dbern(mu[i,t])
           }
@@ -798,18 +792,19 @@ by $T=5$ primary occasions.  In the non-spatial version, we reduced the data to 
 not-captured; however, the encounter history array \mbox{\tt Yarr}) contains the number of the net that
 each individual was captured in and contains a $45$ if the individual was not captured.  The 
 encounter history array, \mbox{\tt Yarr}), was created above in the code, so we do not
-reproduce the code here.
+reproduce the code here. To call the model, use the following \R~ code which sets the initial
+values for $z[i,t]$, the parameters to monitor, and calls \jags.
 
 
 
+\begin{verbatim}
 
-
-
-zst<-c(rep(1,M/2),rep(0,M/2))
+zst<-c(rep(1,n),rep(0,M-n))
 zst<-cbind(zst,zst,zst,zst,zst)
 
-inits <- function(){list (z=zst,sigma=runif(1,25,100), gamma=runif(5,0,1) ,S=Sst,alpha0=runif(1,-2,-1) ) }
-parameters <- c("psi","alpha0","alpha1","sigma","N","D", "phi", "gamma", "R2", "R3", "R4", "R5")
+inits <- function(){list (z=zst,sigma=runif(1,25,100), gamma=runif(5,0,1),
+         S=Sst,alpha0=runif(1,-2,-1) ) }
+parameters <- c("psi","alpha0","alpha1","sigma","N","D", "phi", "gamma", "R")
 data <- list (X=as.matrix(X[[1]]),K=10,Ycat=Yarr,M=M,ntraps=ntraps,ylim=ylim,xlim=xlim)
 
 library("rjags")
@@ -817,7 +812,6 @@ out1 <- jags.model("modelJS.txt", data, inits, n.chains=3, n.adapt=500)
 out2JS <- coda.samples(out1,parameters,n.iter=10000)
 
 \end{verbatim}
-}
 
 
 
@@ -955,17 +949,16 @@ where $f_i$ indicates the primary occasion in which individual $i$ is first capt
 can vary from $1 \dots T$.
 This ensures that each individual is alive upon entering the model.
 
-We can
-describe the ''alive state" at time $t$ for each individual as a
+The ''alive state" at time $t$ for each individual is a
 function of the state at the previous time step $t-1$.   Because
 we condition on the first capture, the initial
 state is set to one:
 \[
  z_{i f_i} = 1
 \]
-% XXXXX Need to clearly define f_i
-and to model the transition of individual states from $t$ to $t+1$ for
-all $t > f_i$ we have
+where $f_i$ indicates the primary occasion in which individual $i$ is 
+captured and the model for the transition of individual states from $t$ to $t+1$ for
+all $t > f_i$ is
 \[
  z_{i t} \sim \mbox{Bernoulli}( \phi z_{i,t-1}).
 \]
@@ -977,7 +970,7 @@ individual to return.
 % isn't possible, so phi=survival
 This means that under this specification individuals cannot
 temporarily emigrate.  In the CJS model we are not estimating $N$, so we do not incorporate
-any data augmentation here.  This version of the model is easy to construct in the \bugs~(or \jags)
+any data augmentation here.  This version of the model is easy to construct in the \bugs~ (or \jags)
 language which is shown in Panel \ref{open.panel.nsCJS}.  Variations on this basic model and associated code for
 fitting the model in \bugs~ are described in detail in \citet[][Chapts. 7-9]{kery_schaub:2011}.
 
@@ -1033,8 +1026,12 @@ river mouth, 315 fish
 were tagged with passive integrated transponders (PIT) in the spring
 of 2010. An array of 7 upstream PIT antennas passively recaptured
 individuals during upstream and downstream migrations.  Each time a fish passed
-over the antenna, it was recorded and summarized weekly for 12 weeks.
-% XXXX This sounds like p should be 1 XXXX
+over the antenna, it was recorded and summarized weekly for 12 weeks. The
+fish do not necessarily move past all antenna and may remain in the river between 
+antenna for more than a week, thus they are not all detected at each time period.
+The antenna do always operate perfectly either and fish that pass may not be recorded
+at some times.
+
 To apply the basic CJS model, we create the
 encounter history for each individual for the 12 weeks and we also create
 a vector to indicate the period of first capture.
@@ -1070,13 +1067,11 @@ in the study.  The posterior mean for detection probability ranges from 0.126 to
 be due to variation in water flow, stream depth, storms, etc$\dots$  The weekly survival probability, $\phi$ had a
 posterior mean estimate of 0.824.  This estimate could be considered low for a weekly probability, but
 is likely due to the fact
-that the migration upstream can be quite energetically taxing.
-% XXXX citations? It's hard for me to imagine that they are dying due
-% to the energetic costs of swimming upstream. What about fishing? Are
-% people catching them?
+that the migration upstream can be quite energetically taxing and the fish are likely to only feed minimally
+in rivers(\citep{leggett_carscadden:1978, leonard_mccormick:1999}).
 Additionally, the CJS model is only estimating apparent survival
-and some fish may have left the stream temporally or permanently.
-% XXXX Where would they go? Are there tributaries that aren't being monitored?
+and some fish may have left the stream temporally or permanently heading back to the ocean
+or possibly to other tributaries that are not monitored.
 We demonstrate in panel \ref{open.panel.nsCJS}
 how to allow $p$ to vary by time, but we could also allow survival, $\phi$ to vary by time by
 implementing it exactly as
