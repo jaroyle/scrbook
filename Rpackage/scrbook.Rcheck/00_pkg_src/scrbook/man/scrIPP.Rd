@@ -131,7 +131,6 @@ yz[1:nrow(y),,] <- y # Fill data augmentation array
 # Fit the model using MCMC
 # Sample the parameters: "sigma", "lam0", "beta0", "beta1", "N", "EN"
 
-\dontrun{
 set.seed(3434)
 system.time({
 fm1 <- scrIPP(yz, X, M, 10000, xlims=c(0,100), ylims=c(0,100),
@@ -147,7 +146,7 @@ mc1 <- mcmc(fm1$out)
 plot(mc1)
 summary(mc1)
 rejectionRate(mc1)
-}
+
 
 
 }
