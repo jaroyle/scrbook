@@ -105,18 +105,19 @@ The distinction is illustrated by this simple \R~code that generates
 realizations from Poisson and binomial point processes in the unit
 square ($\mathcal{S} = [0,1]\times[0,1]$):
 
-\begin{samepage}
+%\begin{samepage}
+\begin{small}
 \begin{verbatim}
 Area <- 1                          # Area of unit square
 muP <- 4                           # intensity
 nP <- rpois(1, muP*Area)           # number of points: random
 PPP <- cbind(runif(nP), runif(nP)) # Poisson point pattern
-
 nB <- 4                            # number of points: fixed
 muB <- nB/Area                     # intensity
 BPP <- cbind(runif(nB), runif(nB)) # binomial point pattern
 \end{verbatim}
-\end{samepage}
+\end{small}
+%\end{samepage}
 
 {\flushleft Both of these models are homogeneous because the intensity parameter
 is constant ($\mu=4$ in both cases) and the $N$ points do not interact
@@ -519,15 +520,31 @@ centers, perhaps as the result of an extensive telemetry study. %To
 %model.
 If we assume $N$ is Poisson distributed and the points are
 mutually independent of one another, we can fit the
-inhomogeneous Poisson point process model whose likelihood is
-the product of $N$ densities given by
-Eq.~\ref{state-space.eq.pdf.hetero} \citep[pg. 104]{diggle:2003}. The
-log-likelihood is thus:
+inhomogeneous Poisson point process model. The likelihood of this
+model has two compoents: $[\{\mathbf{s}_1, \ldots, \mathbf{s}_N\}|N]$
+and $[N]$. The pdf of the first part is given by
+%Eq.~\ref{eq.pdf.ipp}
+Eq.~\ref{state-space.eq.pdf.hetero},
+and with the Poisson assumption we have:
+\begin{align*}
+\mathcal{L}({\bm \beta} | \{{\bf s}_1, \ldots, \mathbf{s}_N\})
+&= [\{s_1, \ldots, \mathbf{s}_N\}|N][N] \\
+&= \left\{\prod_{i=1}^N
+  \frac{\mu(\mathbf{s}_i,\bm{\beta})}{\int_{\mathcal{S}}\mu(\mathbf{s},\bm{\beta})\mathrm{d}\mathbf{s}} \right\}
+  \frac{e^{-\int_{\mathcal{S}}\mu(\mathbf{s},\bm{\beta})\mathrm{d}\mathbf{s}}
+    \int_{\mathcal{S}}\mu(\mathbf{s},\bm{\beta})\mathrm{d}\mathbf{s}^N}{N!}.
+\end{align*}
+This can be simplified by noting that the denominator in the first
+component of the model cancels with the corresponding piece in the
+numerator of the second component. And, since $N$ is observed and
+thus does not depend on the parameters, $N!$ can be omitted as
+well. After log-transforming the remaining bits, we have the
+log-likelihood often seen in textbooks, such as \citet[pg. 104]{diggle:2003}:
 \[
 \ell({\bm \beta} | \{{\bf s}_i\}) = \sum_{i=1}^N
 \log(\mu(\mathbf{s}_i, \bm{\beta})) - \int_{\mathcal{S}} \mu(\mathbf{s}, \bm{\beta}) \, \mathrm{d} \mathbf{s} .
 \]
-Having defined the likelihood we could choose a prior distribution for
+Having arrived at the likelihood we could choose a prior distribution for
 $\bm \beta$ and obtain the posterior distribution %of $\bm \beta$
 using Bayesian methods, or we can find the maximum likelihood
 estimates (MLEs) using standard numerical methods as is demonstrated
@@ -536,9 +553,9 @@ below.
 First, we simulate some data under the model $\mu(\mathbf{s},
 \bm{\beta}) = \beta_0 + \beta_1\mathrm{ELEV}(\mathbf{s})$, where
 $\mathrm{ELEV}(\mathbf{s})$ is a spatial covariate, say
-elevation, and $\beta_0=5$ and $\beta_1=2$. It is worth emphasizing
-that a spatial covariate must be defined at any location $\bf s$,
-which is demonstrated by the following \R~code.
+elevation, and $\beta_0=-6$ and $\beta_1=1$. It is worth emphasizing
+that a spatial covariate must be defined at any location in the
+state-space, as is true of the following covariate \verb+elev.fn+:
 %\begin{samepage}
   \begin{small}
 \begin{verbatim}
@@ -554,12 +571,10 @@ beta1 <- 1  # effect of elevation on intensity
 EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1,
             lower=c(0,0), upper=c(100,100))$value
 \end{verbatim}
-  \end{small}
+\end{small}
 %\end{samepage}
 The function \texttt{elev.fn} returns the value of elevation at any
-location, which can be either a two-dimensional vector for the
-coordinates of a single point, or it can be matrix with two columns
-for a collection of points. The standardization bit is not necessary,
+location \verb+s+. The standardization bit is not necessary,
 but helps with the model fitting below. The next lines of the code define the
 intensity function $\mu(\mathbf{s}, \bm{\beta})$ in terms of elevation
 and the regression coefficients. The last line uses the \verb+cuhre+ function in
@@ -637,7 +652,7 @@ Given these points, we will now estimate $\beta_0$ and $\beta_1$ by
 minimizing the negative-log-likelihood using \R's \verb+optim+
 function.
 
-\begin{samepage}
+%\begin{samepage}
 \begin{small}
 \begin{verbatim}
 nll <- function(beta) { # negative log-likelihood
@@ -646,15 +661,16 @@ nll <- function(beta) { # negative log-likelihood
     EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1)$value
     -(sum(beta0 + beta1*elev.fn(s)) - EN)
 }
-starting.values <- c(0, 0)
+starting.values <- c(-10, 0)
 fm <- optim(starting.values, nll, hessian=TRUE)
 cbind(Est=fm$par, SE=sqrt(diag(solve(fm$hessian)))) # estimates and SEs
 \end{verbatim}
 \end{small}
-\end{samepage}
-Maximizing the likelihood took a fraction of a second, and we
+%\end{samepage}
+
+Maximizing the Poisson likelihood took a fraction of a second, and we
 obtained estimates of $\hat{\beta}_0=-5.93$ and $\hat{\beta}_1=0.95$,
-which are very close to the data generating values. The 95\% confidence
+which are very close to the data-generating values. The 95\% confidence
 interval for $\hat{\beta}_1$ is [0.61, 1.3] and since it does not
 include zero, the null hypothesis that $\beta_1=0$, i.e. that there is
 no effect of elevation on density, can be rejected. In addition to testing
@@ -662,16 +678,41 @@ hypotheses, these results can be used to predict population size in
 new regions or create predicted density surface maps by plugging the
 parameter estimates into Eqs.~\ref{state-space.eq.loglin} and~\ref{state-space.eq.EN}.
 
+You might wonder if the results would differ if we assumed a binomial
+rather than a Poisson distribution for $N$. This can be checked
+using the following code:
+\begin{small}
+\begin{verbatim}
+nllBin <- function(beta, M=100) { # Try different values of M!
+    beta0 <- beta[1]
+    beta1 <- beta[2]
+    EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1,
+                lower=c(0,0), upper=c(100,100))$value
+    N <- nrow(s) # Number of points, which is known in this case
+    psi <- EN/M  # Remember, E(N)=M*psi
+    -(sum(beta0 + beta1*elev.fn(s) - log(EN)) + # ln[s1, ..., sN|N]
+      dbinom(N, M, psi, log=TRUE))              # ln[N]
+}
+starting.values <- c(-10, 0)
+fmBin <- optim(starting.values, nllBin, hessian=TRUE)
+cbind(Est=fmBin$par, SE=sqrt(diag(solve(fmBin$hessian)))) # est and SE
+\end{verbatim}
+\end{small}
+Execute this and you will see that the results are almost identical,
+which supports the claim that the prior
+on $N$ has little influence in SCR models.
+
 This example demonstrates
 that if we had the data we wish we had, i.e. if we knew the
 coordinates of the activity centers, we could easily estimate the
 parameters governing the underlying point process and make inferences
 about spatial variation in density and abundance. Unfortunately, in
-virtually all animal ecology studies, including
-SCR, the locations of the $N$ animals, or the $N$ activity centers,
+virtually all animal ecology studies,
+%including in SCR studies,
+the locations of the $N$ animals, or the $N$ activity centers,
 cannot be directly observed. Thus we need
 extra information to estimate the locations of these unobserved
-points. In SCR, this information comes from the locations where each
+points, which in the case of SCR, comes from the locations where each
 animal is captured.
 
 \section{Fitting inhomogeneous point process SCR models}
