@@ -37,7 +37,7 @@ Yobs<-Y[iobs,,]
 Yobs<-Yknown }
 
 YknownR<-Yobs
-counter<-0
+counter<-array(0, c(dim(Yobs)[1],dim(X)[1],K ))
 for (i in 1:dim(Yobs)[1]){
 for (j in 1: dim(X)[1]){
 for (k in 1:K){
@@ -47,7 +47,7 @@ if (YknownR[i,j,k] ==1 ) {
 IDed<-rbinom(1,1,rat)
 if (IDed ==0) { 
 YknownR[i,j,k]<-0
-counter<-counter+1} #counter is the number of marked records that cannot be identified to individual level
+counter[i,j,k]<-1} #counter is the number of marked records that cannot be identified to individual level
 }
 } else if (identical(obsmod, "pois")) {
 if (Yobs[i,j,k] > 0 ) {
@@ -56,13 +56,14 @@ IDed<-sum(rbinom(Yobs[i,j,k] ,1,rat))
 YknownR[i,j,k]<-IDed
 
 if (IDed!=Yobs[i,j,k] ) { 
-counter<-counter+(Yobs[i,j,k]-IDed)}
+counter[i,j,k]<-Yobs[i,j,k]-IDed}
 }
 }
 
 
 }}}
 
+n<-n-apply(counter, 2:3, sum) #subtract unidentified pictures from n
 
 #generate telemetry locations if tel>0
 if (tel>0) {
@@ -79,7 +80,7 @@ locs[[i]]<-cbind(lx, ly)
 locs<-NULL
 itel<-NULL}
 
-    list(n=n,Y=Y, Yknown=Yknown, Yobs=Yobs, YknownR=YknownR, counter=counter, locs=locs,telID=itel)
+    list(n=n,Y=Y, Yknown=Yknown, Yobs=Yobs, YknownR=YknownR, counter=sum(counter), locs=locs,telID=itel)
 
 }
 
