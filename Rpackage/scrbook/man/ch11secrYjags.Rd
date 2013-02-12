@@ -1,5 +1,5 @@
-\name{ch11secrYjags}
-\alias{ch11secrYjags}
+\name{ch11secr-jags}
+\alias{ch11secr-jags}
 \title{
   Fit IPP using secr and JAGS
 }
@@ -135,7 +135,8 @@ data.frame(Par=rep(c("$\\lambda_0$", "$\\sigma$", "$\\beta_1$", "$N$",
 format(jagsVsecr, digits=2, nsmall=2, scientific=FALSE)
 
 write.table(format(jagsVsecr, digits=2, nsmall=2, scientific=FALSE),
-            file="jagsVsecr2.txt", row.names=FALSE,
+            file="../../../Ch11-Statespace/R/jagsVsecr2.txt",
+            row.names=FALSE,
             quote=FALSE, sep=" \t& ", eol=" \\\\\n ")
 
 
