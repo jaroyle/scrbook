@@ -166,10 +166,11 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, space.cov,
                          upper=c(xlims[2], ylims[2]),
                          beta0 = beta0.cand, beta1=beta1,
                          flags=list(verbose=0))$value
-        ll.beta <- sum((beta0 + beta1*space.cov(S))*w) - EN
+        ll.beta <- sum(((beta0 + beta1*space.cov(S)) - log(EN))*w) +
+            dbinom(sum(w), M, EN/M, log=TRUE)
         if(EN.cand < M) {
-            ll.beta.cand <- sum((beta0.cand + beta1*space.cov(S))*w) -
-                EN.cand
+            ll.beta.cand <- sum(((beta0.cand + beta1*space.cov(S)) -
+                log(EN.cand))*w) + dbinom(sum(w), M, EN.cand/M, log=TRUE)
             if(runif(1) < exp(ll.beta.cand - ll.beta) )  {
                 beta0 <- beta0.cand
                 EN <- EN.cand
@@ -184,8 +185,8 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, space.cov,
                          beta0 = beta0, beta1=beta1.cand,
                          flags=list(verbose=0))$value
         if(EN.cand < M) {
-            ll.beta.cand <- sum((beta0 + beta1.cand*space.cov(S))*w) -
-                EN.cand
+            ll.beta.cand <- sum(((beta0 + beta1.cand*space.cov(S)) -
+                log(EN.cand))*w) + dbinom(sum(w), M, EN.cand/M, log=TRUE)
             if(runif(1) < exp(ll.beta.cand - ll.beta) )  {
                 beta1 <- beta1.cand
                 EN <- EN.cand
@@ -215,8 +216,8 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, space.cov,
                 ll.S.cand <- sum(dpois(Z[i,,], lam.cand[i,], log=TRUE) )
             }
             #ln(prior), denominator is constant
-            prior.S <- beta0 + beta1*space.cov(S[i,])  - log(EN)
-            prior.S.cand <- beta0 + beta1*space.cov(Scand)  - log(EN)
+            prior.S <- beta0 + beta1*space.cov(S[i,])
+            prior.S.cand <- beta0 + beta1*space.cov(Scand)
 
            if(runif(1)< exp((ll.S.cand+prior.S.cand) - (ll.S+prior.S))) {
                 S[i,] <- Scand
