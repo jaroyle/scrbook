@@ -12,10 +12,14 @@ centers within the state-space ($\cal{S}$).
 %, which is
 %typically a two-dimensional polygon defining the study area.
 A spatial point process is characterized by %$\mathcal{S}$ and by
-an intensity parameter defined at each location in $\mathcal{S}$; and
-in the case of SCR models, this intensity parameter is population
-density. If the intensity is constant, density is constant throughout
-$\mathcal{S}$ and the point process is said to be homogeneous.
+an intensity function which defines the density of points at
+%parameter defined
+all locations in $\mathcal{S}$. %; and
+%in the case of SCR models, this intensity parameter is population
+%density.
+If the intensity is constant throughout $\mathcal{S}$,
+%density is constant throughout $\mathcal{S}$ and
+the point process is said to be homogeneous.
 Thus far we have focused our attention on homogeneous %binomial
 point processes whose realized values are the locations of the $N$
 activity centers within the state-space. When a Poisson prior is
@@ -52,7 +56,7 @@ is allowed to vary spatially.
 
 In this chapter, we cover methods % we present a method
 for fitting inhomogeneous Poisson and binomial
-spatial point process models by treating the intensity parameter as a
+point process models by density as a
 function of covariates, in much the same way as is done in generalized linear
 models. The covariates we consider differ
 from those covered in previous chapters, which were typically
@@ -146,8 +150,8 @@ homogeneous binomial point process with $N=50$. The right panel shows
 the same realization, except that the state-space has been discretized
 into 25 equally-sized disjunct regions, or pixels, and the counts in each pixel
 are shown. Since the pixels are the same
-size, $\pi(B_k) = 1/25$, the expected number of point in each
-pixel is 2: $\mathbb{E}(n(B_k)) = N\pi(B_k) = 50/25$, which
+size, we have that $\pi(B_k) = 1/25$, and the expected number of point in each
+pixel is $\mathbb{E}(n(B_k)) = N\pi(B_k) = 50/25 = 2$, which
 happens to be the empirical mean in this instance. However, as
 previously stated, these counts are not
 independent realizations from a binomial distribution since $\sum_k
@@ -199,8 +203,8 @@ to the inhomogeneous models. %Much of this has already been in previous
 %chapters, but we feel it is important enough to review here.
 In a SCR model with a homogeneous point process, the intensity
 parameter $\mu$ is interpreted as population density, and $N$ is
-interpreted as population size\footnote{Strictly speaking, $N$ is the
-  number of activity centers in $\mathcal{S}$}. These interpretations
+interpreted as population size (i.e. the
+  number of activity centers in $\mathcal{S}$). These interpretations
 are true regardless of whether we consider the
 Poisson model or the binomial model, but since $N$ is always unknown, one
 might wonder why we are discussing the binomial model at all. %Indeed,
@@ -212,13 +216,11 @@ might wonder why we are discussing the binomial model at all. %Indeed,
 In our work, we typically adopt the binomial model simply
 because it is easy to implement using MCMC and data
 augmentation. And while $N$ is truly unknown, we use an upper bound $M$
-which is fixed. Thus, the standard point process we use Bayesian in
+which is fixed. Thus, the standard point process we use in Bayesian
 analyses can be
 regarded in two ways. First, it is a binomial point process with $M$
 points. Second, in terms of $N$, it is a thinned binomial point
 process, where $\psi$ is the thinning parameter.
-\hl{XXXX Is this thinned point process also binomial, even though N is
-  no longer fixed? XXXX}.
 With this in mind,
 the only real difference between the Poisson and binomial models, as
 implemented in SCR contexts, is that in the former, we have
@@ -307,12 +309,12 @@ intensity must be positive, and because the natural logarithm is the
 canonical link function of the Poisson generalized linear model
 \citep{mccullagh_nelder:1989}, it is natural to consider the following model:
 \begin{equation}
-  \log(\mu(\mathbf{s}, {\bm \beta})) = \beta_0 + \sum_{v=1}^V \beta_v z_v(\mathbf{s})%, \quad  \mathbf{s} \in \cal{S}
+  \log(\mu(\mathbf{s}, {\bm \beta})) = \beta_0 + \sum_{v=1}^V \beta_v C_v(\mathbf{s})%, \quad  \mathbf{s} \in \cal{S}
   \label{state-space.eq.loglin}
 \end{equation}
 which says that there are $V$ covariates and $\beta_v$ is the
-regression coefficient for covariate $z_v(\mathbf{s})$. This
-covariate, $z_v(\mathbf{s})$, could be any variable defined at all points
+regression coefficient for covariate $C_v(\mathbf{s})$. This
+covariate, $C_v(\mathbf{s})$, could be any variable defined at all points
 in the state-space, such as habitat type or elevation.
 Eq.~\ref{state-space.eq.loglin} should look familiar because it is the
 standard linear predictor used in Poisson regression. As with other
@@ -320,10 +322,10 @@ GLMs, one could consider alternative link functions.
 
 Recall from the previous section that for a homogeneous point process,
 the expected number of points in the state-space was simply the
-intensity parameter multiplied by area: $\mathbb{E}[N] =
+intensity parameter multiplied by area: $\mathbb{E}(N) =
 \mu|\mathcal{S}|$. But now that we are regarding the intensity as a
 function, rather than a scalar, this equation is not very useful. So
-what is $\mathbb{E}[N]$ for an inhomogeneous point process?
+what is $\mathbb{E}(N)$ for an inhomogeneous point process?
 %And why do
 %we care? Well, hopefully you remember that the reason we need a
 %the reason we care is that we want a model that
@@ -332,7 +334,7 @@ out. Imagine that the state-space is represented as a raster with many
 tiny pixels. In this case, we will associate
 $\bf s$ with pixel ID, i.e. $\bf s$ just references some pixel with
 $V$ covariates values associated with it. The expected number of
-individuals in this pixel, say $\mathbb{E}[n(\mathbf{s})]$, can intuitively be
+individuals in this pixel, say $\mathbb{E}(n(\mathbf{s}))$, can intuitively be
 found by evaluating the intensity function
 (Eq.~\ref{state-space.eq.loglin}) and multiplying it by the area of
 the pixel. In other words, we compute the expected number of
@@ -340,13 +342,13 @@ individuals in a pixel by multiplying the expected value of density
 for that pixel by the area of the pixel. If we do this for each pixel in the state-space, then
 summing up these values gives us what we are after, the expected value
 of $N$. Specifically,
-$\mathbb{E}[N] = \sum_{\mathbf{s} \in \mathcal{S}}
-\mathbb{E}[n(\mathbf{s})]$.
+$\mathbb{E}(N) = \sum_{\mathbf{s} \in \mathcal{S}}
+\mathbb{E}(n(\mathbf{s}))$.
 As the area of the pixels approaches zero, such that we move from discrete
 space back to continuous space, the summation must be replaced
 with an integration of the form:
 \begin{equation}
-\mathbb{E}[N] = \int_{\mathcal{S}} \mu(\mathbf{s}, {\bm \beta}) \mathrm{d}\mathbf{s}.
+\mathbb{E}(N) = \int_{\mathcal{S}} \mu(\mathbf{s}, {\bm \beta}) \mathrm{d}\mathbf{s}.
 \label{state-space.eq.EN}
 \end{equation}
 Together, Eqs.~\ref{state-space.eq.loglin} and \ref{state-space.eq.EN}
@@ -445,7 +447,7 @@ model that we favor when conducting Bayesian inference. In the
 previous section we noted that the data augmentation parameter $\psi$
 can be expressed in terms of the intensity parameter $\mu$. The same
 is true for inhomogeneous models. Specifically, rather than
-$\mathbb{E}[N] = \psi M$ as before, we use the expected value of $N$ shown
+$\mathbb{E}(N) = \psi M$ as before, we use the expected value of $N$ shown
 in Eq.~\ref{state-space.eq.EN} which results in
 \begin{equation}
 \psi = \frac{\int_{\mathcal{S}} \mu(\mathbf{s},
@@ -460,10 +462,10 @@ If we refer to the distribution $[\mathbf{s}_i | \bm{\beta}]$ as
 ``IPP'', we can write a hierarchical description of a SCR model with a
 Binomial encounter process and a half-normal, or Gaussian, detection function as
 \begin{gather*}
-w_i \sim \mbox{Bernoulli}(\psi) \\
+z_i \sim \mbox{Bernoulli}(\psi) \\
 {\bf s_i} \sim \mbox{IPP}(\mu(\mathbf{s},\beta)) \\
 p_{ij} = p_0 \exp(-\|{\bf s_i} - {\bf x_{j}}\|^2/(2\sigma^2)) \\
-y_{ij} \sim \mbox{Binomial}(K, p_{ij} w_i)
+y_{ij} \sim \mbox{Binomial}(K, p_{ij} z_i)
 \end{gather*}
 The new prior for $\mathbf{s}_i$ and Eq.~\ref{state-space.eq.psimu}
 %use of $\mbox{IPP}(\mu(s, \beta))$ instead of
@@ -788,7 +790,7 @@ Parameter 	 	& Mean  	& SD    	& 2.5\% 	& 97.5\% \\
  $\beta_0=-6$ 	 	& -5.856        & 0.2542        & -6.376        & -5.393 \\
  $\beta_1=1$ 	 	&  0.985 	&  0.209 	&  0.575 	&  1.378 \\
  $N=41$ 	 	& 47.615 	&  8.041 	& 35.000 	& 66.000 \\
- $\mathbb{E}[N]=39.9$ 	& 47.551 	& 10.992 	& 29.837 	& 71.332 \\
+ $\mathbb{E}(N)=39.9$ 	& 47.551 	& 10.992 	& 29.837 	& 71.332 \\
 \hline
 \end{tabular}
 \label{state-space.tab.simIPP}
@@ -957,7 +959,7 @@ Parameter 	& Truth 	& Software 	& Mean 	& SD 	& 2.5\% & 97.5\% \\
   	&  1.00 	& \texttt{secr} 	&  1.09 	& 0.316 	&  0.47 	&  1.71 \\
  $N$ 	& 30.00 	& \textbf{JAGS} 	& 26.63 	& 2.585 	& 23.00 	& 33.00 \\
   	& 30.00 	& \texttt{secr} 	& 28.19 	& 3.037 	& 24.49 	& 37.39 \\
- $\mathbb{E}[N]$ 	& 32.30 	& \textbf{JAGS} 	& 26.39 	& 5.048 	& 17.25 	& 36.96 \\
+ $\mathbb{E}(N)$ 	& 32.30 	& \textbf{JAGS} 	& 26.39 	& 5.048 	& 17.25 	& 36.96 \\
   	& 32.30 	& \texttt{secr} 	& 28.19 	& 6.117 	& 18.52 	& 42.93 \\
 \hline
 \end{tabular}
