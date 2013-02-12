@@ -32,7 +32,7 @@ if (identical(obsmod, "bern")){
 
 if (identical(nmarked, "unknown")){
 iobs<-which(apply(Yknown>0,1,any))
-Yobs<-Y[iobs,,]
+Yobs<-Yknown[iobs,,]
 } else if (identical(nmarked, "known")){
 Yobs<-Yknown }
 
