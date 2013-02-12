@@ -526,11 +526,11 @@ covariates(msk) <- data.frame(canht=dat$CANHT[order(dat$y, dat$x)])
 
 
 
-ch9simData <- list(ch.secr=ch, ch.jags=yz, spcov.jags=dat, spcov.secr=msk,
-                   traps=X)
+ch11simData <- list(ch.secr=ch, ch.jags=yz, spcov.jags=dat, spcov.secr=msk,
+                    traps=X)
 
 
-#save(ch9simData, file="../Rpackage/scrbook/data/ch9simData.rda")
+# save(ch11simData, file="../../Rpackage/scrbook/data/ch11simData.rda")
 #promptData(ch9simData, filename="../Rpackage/scrbook/man/ch9simData.Rd")
 
 
