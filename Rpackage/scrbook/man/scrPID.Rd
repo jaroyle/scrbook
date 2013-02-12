@@ -53,7 +53,7 @@ scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unk
 
 }
 \value{
-  A matrix with one row per iteration and fsix columns, for sigma female, sigma male, lam0, psi, phi and N.
+  A matrix with one row per iteration and five columns, for sigma, lam0, c, psi and N.
 }
 
 \author{
