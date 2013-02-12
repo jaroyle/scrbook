@@ -1,5 +1,5 @@
-\name{ch9simData}
-\alias{ch9simData}
+\name{ch11simData}
+\alias{ch11simData}
 \docType{data}
 \title{
   Simulated data from an inhomogeneous point process model
