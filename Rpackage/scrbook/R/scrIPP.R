@@ -107,7 +107,6 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, space.cov,
             cat("  Acceptance rates\n")
             cat("    S =", Sups/M, "\n")
             cat("    w =", wUps/M, "\n")
-            cat("    EN =", EN, "\n")
         }
 
         ll <- sum(dpois(Z, lam*w, log=TRUE))

@@ -140,9 +140,12 @@ fm1 <- scrIPP(yz, X, M, 10000, xlims=c(0,100), ylims=c(0,100),
 
 
 
+library(coda)
 
-plot(mcmc(fm1$out))
-rejectionRate(mcmc(fm1$out))
+mc1 <- mcmc(fm1$out)
+plot(mc1)
+summary(mc1)
+rejectionRate(mc1)
 
 
 

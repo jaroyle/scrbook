@@ -778,48 +778,70 @@ augmented it to create the new data object \texttt{yz}, we can
 estimate the parameters using MCMC.  A commented Gibbs sampler written
 in \R~is available in the accompanying \R~package \scrbook~(see
 \texttt{?scrIPP}). This function is not meant to be an all purpose
-tool for fitting SCR models using MCMC---instead, it is presented so
+tool for fitting SCR models using MCMC. Instead, it is presented so
 that interested readers can better understand the computational
 aspects of the problem and can modify it for their purposes.
 The function can be used as so:
 %\begin{samepage}
 \begin{small}
 \begin{verbatim}
-set.seed(3434)
 fm1 <- scrIPP(yz, X, M, 10000, xlims=c(0,100), ylims=c(0,100),
-              space.cov=elev.fn,
-              tune=c(0.4, 0.2, 0.3, 0.3, 7))
+              space.cov=elev.fn, tune=c(0.4, 0.2, 0.3, 0.3, 7))
 plot(mcmc(fm1$out))
 \end{verbatim}
 \end{small}
 %\end{samepage}
-% XXXX Show secr code too.
 which requests 10000 posterior samples and estimates the effect of the
-spatial covariate, elevation, on density. Currently, the function
-places uniform priors on the parameters $\sigma$, $\lambda_0$,
-$\beta_0$ and $\beta_1$, although this could easily be modified. Note that any spatial
+spatial covariate, elevation, on density.
+The argument \verb+space.cov+ accepts any spatial
 covariate that returns a real value for any location in the
-state-space can be supplied using the \texttt{space.cov} argument. The resulting
-trace plots of the Markov chains and the posterior distributions for
-three parameters are
-shown in Fig.~\ref{state-space.fig.fm1post}. The chains appear to
+rectangular state-space defined by the \verb+xlims+ and \verb+ylims+
+arguments. Currently, the function
+places uniform priors on the parameters $\sigma$, $\lambda_0$,
+$\beta_0$ and $\beta_1$, although this could easily be modified.
+
+Results of the analysis are shown in
+Fig.~\ref{state-space.fig.fm1post} and
+Table~\ref{state-space.tab.simIPP}.
+Fig.~\ref{state-space.fig.fm1post}
+displays the trace plots of the Markov chains as well as the posterior
+distributions for three parameters. The chains appear to
 converge rapidly but may need to be run longer to reduce Monte Carlo
-error.
+error. Summaries of the posterior distributions are presented in
+Table~\ref{state-space.tab.simIPP}. The posterior means for $\beta_0$
+and $\beta_1$ are quite similar to MLEs from the analysis in the
+previous section in which we assumed no observation error. However, we
+see that the confidence intervals are wider. With respect to the other
+parameters in the model, we see that all of the data
+generating parameter fall within the 95\% credible intervals. One
+interesting thing to note is that, although the point estimates for
+the expected and realized values of $N$ are quite similar, the
+estimate is more precise for the realized value. This is to be
+expected because the uncertainty associated with the realized value of
+$N$ is entirely determined by the sampling error. That is,
+if we could perfectly detect all of the individuals in $\cal S$, there
+would be no uncertainty about $N$. In contrast, the variance for
+expected value of $N$ is composed both process error and sampling
+error. See Chapt.~\ref{chapt-scr0} and
+\citet{efford_fewster:2012} for additional discussion on the
+difference between realized and expected values of abundance.
 
-\begin{figure}
-  \centering
-  \includegraphics[width=0.8\textwidth]{Ch11-Statespace/figs/fm1p}
-  \caption{Trace plots and posterior distributions from MCMC analysis
-    of SCR model with inhomogeneous point process. Analysis was
-    conducted using the \texttt{scrIPP} function in the accompanying
-    \R~package \scrbook.}
-  \label{state-space.fig.fm1post}
-\end{figure}
-%For comparison, we also fit this model using $\texttt{secr}$. See the
-%help file \texttt{Ch-IPP} in \scrbook~ for \R~commands necessary to
-%prepare the data for \secr.
 
-\begin{table}%[b]
+Fitting continuous space inhomogenous point process models is somewhat
+difficult in \bugs~because the ``IPP'' prior $[\mathbf{s}_i | \bm
+\beta]$, unlike the uniform prior, is not one of the
+available distributions that comes with the software. It is
+possible to add new distributions in \bugs, but it is somewhat
+cumbersome.  \secr~allows
+users to fit continuous space models using linear or polynomial functions of the x- and y-
+coordinates, but it does not accept truly continuous covariates that
+are functions of space. However, these
+are not really important limitations because discrete
+space versions of the model are straight-forward, and virtually all spatial
+covariates are, or can be, defined as such.
+
+
+\begin{table}[h!]
 \centering
 \caption{Summary of posterior distributions from SCR model with
   inhomogeneous point process. }
@@ -838,46 +860,17 @@ Parameter 	 	& Mean  	& SD    	& 2.5\% 	& 97.5\% \\
 \label{state-space.tab.simIPP}
 \end{table}
 
-Summaries of the posterior distributions are presented in
-Table~\ref{state-space.tab.simIPP}. The posterior means for $\beta_0$
-and $\beta_1$ are quite similar to MLEs from the analysis in the
-previous section in which we assumed no observation error. However, we
-see that the confidence intervals are wider. With respect to the other
-parameters in the model, we see that all of the data
-generating parameter fall within the 95\% credible intervals. One
-interesting thing to note is that, although the point estimates for
-the expected and realized values of $N$ are quite similar, the
-estimate is more precise for the realized value. This is to be
-expected because the uncertainty associated with the realized value of
-$N$ is entirely determined by the encounter rate parameters---the
-sampling error. That is,
-if we could perfectly detect all of the individuals in $\cal S$, there
-would be no uncertainty about $N$. In contrast, the variance for
-expected value of $N$ is composed both process error and sampling
-error. See Chapt.~\ref{chapt-scr0} and
-\citet{efford_fewster:2012} for additional discussion on the
-difference between realized and expected values of abundance.
-%, and we see that the point
-%estimates and confidence/credible intervals are quite similar from the
-%MCMC and maximum likelihood (ML) analyses. One exception is that the
-%confidence intervals for $N$ and the expected value of $N$ are
-%somewhat different. This may result from the fact that the MCMC
-%analysis assumed a binomial prior for $N$, whereas the ML analysis
-%assumed a Poisson prior.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.8\textwidth]{Ch11-Statespace/figs/fm1p}
+  \caption{Trace plots and posterior distributions from MCMC analysis
+    of SCR model with inhomogeneous point process. Analysis was
+    conducted using the \texttt{scrIPP} function in the accompanying
+    \R~package \scrbook.}
+  \label{state-space.fig.fm1post}
+\end{figure}
 
 
-Fitting continuous space inhomogenous point process models is somewhat
-difficult in \bugs~because the ``IPP'' prior $[\mathbf{s}_i | \bm
-\beta]$, unlike the uniform prior, is not one of the
-available distributions that comes with the software. It is
-possible to add new distributions in \bugs, but it is somewhat
-cumbersome.  \secr~allows
-users to fit continuous space models using linear or polynomial functions of the x- and y-
-coordinates, but it does not accept truly continuous covariates that
-are functions of space. However, these
-are not really important limitations because discrete
-space versions of the model are straight-forward, and virtually all spatial
-covariates are, or can be, defined as such.
 
 \subsection{Discrete space}
 \label{modeling.sec.discrete}
@@ -900,7 +893,7 @@ the inhomogeneous point process model with intensity
 $\mu(\mathbf{s}, \bm{\beta}) = \exp(\beta_0 + \beta_1
 \text{CANHT}({\bf s}))\times\text{pixelArea}$,
 where $\beta_0 = -6$ and $\beta_1 = 1$.
-\begin{figure}[ht]
+\begin{figure}%[ht]
 \centering
 \includegraphics[width=0.6\textwidth]{Ch11-Statespace/figs/discrete}
 \label{state-space.fig.discrete}
@@ -935,17 +928,17 @@ for(j in 1:nPix) {
 EN <- sum(mu[]) # Expected value of N, E[N]
 psi <- EN/M
 for(i in 1:M) {
-  w[i] ~ dbern(psi)
+  z[i] ~ dbern(psi)
   s[i] ~ dcat(probs[])
   x0g[i] <- Sgrid[s[i],1]
   y0g[i] <- Sgrid[s[i],2]
   for(j in 1:ntraps) {
     dist[i,j] <- sqrt(pow(x0g[i]-traps[j,1],2) + pow(y0g[i]-traps[j,2],2))
-    lambda[i,j] <- lam0*exp(-dist[i,j]*dist[i,j]/(2*sigma*sigma)) * w[i]
+    lambda[i,j] <- lam0*exp(-dist[i,j]*dist[i,j]/(2*sigma*sigma)) * z[i]
     y[i,j] ~ dpois(lambda[i,j])
     }
   }
-N <- sum(w[]) # Realized value of N
+N <- sum(z[]) # Realized value of N
 }
 \end{verbatim}
 \end{small}
@@ -973,7 +966,7 @@ secr1 <- secr.fit(ch, model=D~canht, mask=msk)
 where \verb+D~canht+ indicates that we want to model density as a
 function of canopy height, which is defined in the \verb+msk+ object.
 \R~code to format the data and fit the models using \secr~and \jags~is
-available in \scrbook---see \verb#help(ch11secr-jags)#.
+available in \scrbook, found by issuing the command: \verb#help(ch11secr-jags)#.
 
 Results of fitting the model in \jags~and \secr~are shown in Table
 \ref{state-space.tab.jagsVsecr} and are
