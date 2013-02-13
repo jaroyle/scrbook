@@ -1,5 +1,5 @@
-\name{jaguarDataCh9}
-\alias{jaguarDataCh9}
+\name{jaguarDataCh11}
+\alias{jaguarDataCh11}
 \docType{data}
 \title{
   Jaguar data used in Chapter 9
@@ -7,7 +7,7 @@
 \description{
   Data collected by Agustin and colleagues in Argentina.
 }
-\usage{data(jaguarDataCh9)}
+\usage{data(jaguarDataCh11)}
 \format{
   The format is:
 List of 4
@@ -23,6 +23,6 @@ List of 4
   Cite one of Agustin's papers
 }
 \examples{
-data(jaguarDataCh9)
+data(jaguarDataCh11)
 }
 \keyword{datasets}
