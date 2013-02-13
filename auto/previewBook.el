@@ -21,7 +21,6 @@
      "verbatim"
      "hyperref"
      "pdftex"
-     "hidelinks"
      "natbib"
      "lineno"
      "graphicx"
