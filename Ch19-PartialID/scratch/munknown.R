@@ -136,7 +136,7 @@ str(init1())
 
 pars1 <- c("N", "m", "U", "sigma", "lam0")
 
-jm1 <- jags.model("munknown.jag", dat1, init1, n.chains=1,
+jm1 <- jags.model("munknown2.jag", dat1, init1, n.chains=1,
                   n.adapt=100)
 
 mc1 <- coda.samples(jm1, pars1, n.iter=500)
@@ -153,3 +153,65 @@ summary(mc2)
 N
 m
 
+
+
+
+
+# Try again with different state-space
+
+
+# Augment data
+
+nz <- 150
+
+yz <- array(0, c(nind+nz, J, K))
+yz[1:nind,,] <- y
+
+
+dat2 <- dat1
+dat2$xlim=c(-1, 2)
+dat2$ylim=c(-1, 2)
+dat2$y <- yz
+dat2$M <- nrow(dat2$y)
+str(dat2)
+
+
+yui <- array(0, c(dat2$M, J, K))
+for(j in 1:J) {
+    for(k in 1:K) {
+        yui[sample((nind+1):dat2$M, dat2$nU[j,k]),j,k] <- 1
+    }
+}
+yui[1:nind,,] <- 0
+
+wi <- ifelse(rowSums(dat2$y)>0, 1, 0)
+ui <- 1-wi
+hi <- cbind(wi, ui, 0)
+
+init2 <- function() list(omega=0.2,
+#                         h=hi,
+                         H=apply(hi==1, 1, which),
+                         yu=yui,
+                         psi=0.3)
+
+str(dat2)
+str(init2())
+
+
+
+paste("yu[", (nind+1):(nind+nz), ",j,k]",
+      sep="", collapse=",")
+
+
+
+jm2 <- jags.model("munknown2.jag", dat2, init2, n.chains=1,
+                  n.adapt=100)
+
+mc2.1 <- coda.samples(jm2, pars1, n.iter=500)
+mc2.2 <- coda.samples(jm2, pars1, n.iter=500)
+
+
+plot(mc2.1, ask=TRUE)
+summary(mc2.1)
+
+plot(mc2.1)
