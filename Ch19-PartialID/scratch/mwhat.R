@@ -90,22 +90,42 @@ nind <- dim(y)[1]
 # Augment data
 
 nz <- 100
+
 yz <- array(NA, c(nind+nz, J, K))
 yz[1:nind,,] <- y
-wz <- c(w, nz)
+
+wz <- c(w, rep(NA,nz))
 
 
 
 # JAGS
 
-paste("yz[", (nind+1):M, ",j,k]*w[", (nind+1):M, "]", sep="",
-      collapse=",")
+paste("yw[", (nind+1):(nind+nz), ",j,k]",
+      sep="", collapse=",")
 
 library(rjags)
 
 
-dat1 <- list(y=yz, w=wz, nU=nU, M=nind+nz, J=J, K=K)
-init1 <- function() list(z=rep(1, dat1$M), w=rep(1, dat1$M))
+dat1 <- list(y=yz, w=wz, nU=nU, X=X, M=nind+nz, J=J, K=K,
+             xlim=c(0, 1), ylim=c(0,1))
+
+yui <- array(0, c(dat1$M, J, K))
+for(j in 1:J) {
+    for(k in 1:K) {
+        yui[sample(1:M, dat1$nU[j,k]),j,k] <- 1
+    }
+}
+ywi[1:nind,,] <- NA
+init1 <- function() list(z=rep(1, dat1$M),
+                         yu=yui,
+                         w=c(rep(NA, nind), rep(0, nz)))
+
+
+
+str(dat1)
+str(init1())
+
+
 
 jm1 <- jags.model("munknown.jag", dat1, init1, n.chains=1, n.adapt=100)
 
