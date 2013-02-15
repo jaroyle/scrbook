@@ -379,7 +379,7 @@ str(dat1)
 str(init1())
 
 
-pars1 <- c("N", "m", "U", "sigma", "lam0")
+pars1 <- c("N", "m", "U", "sigma", "lam0", "D")
 
 jm1 <- jags.model("mknown.jag", dat1, init1, n.chains=1,
                   n.adapt=100)
@@ -396,3 +396,4 @@ summary(mc2)
 
 
 N
+m
