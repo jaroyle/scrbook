@@ -140,10 +140,14 @@ jm1 <- jags.model("munknown.jag", dat1, init1, n.chains=1,
                   n.adapt=100)
 
 mc1 <- coda.samples(jm1, pars1, n.iter=500)
+mc2 <- coda.samples(jm1, pars1, n.iter=500)
 
 
 plot(mc1, ask=TRUE)
 summary(mc1)
+
+plot(mc2, ask=TRUE)
+summary(mc2)
 
 
 N
