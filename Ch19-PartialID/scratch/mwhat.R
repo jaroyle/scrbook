@@ -3,7 +3,7 @@
 
 M <- 100
 N <- 50
-m <- 15
+m <- 35
 
 (psi <- N/M)      # Pr(z=1)
 (omega <- m/N)    # Pr(marked)
@@ -39,14 +39,16 @@ K <- 5
 lam0 <- 0.5
 sigma <- 0.1
 
-yM <- array(NA, c(M, J, K))
+
+yM <- yU <- array(NA, c(M, J, K)) # Capture data
 lambda <- dist <- matrix(NA, M, J)
 q <- matrix(NA, M, K)
 for(i in 1:M) {
     for(j in 1:J) {
         dist[i,j] <- sqrt((s[i,1]-X[j,1])^2 + (s[i,2]-X[j,2])^2)
-        lambda[i,j] <- lam0*exp(-dist[i,j]^2/(2*sigma^2)) * z[i]
-        yM[i,j,] <- rpois(K, lambda[i,j])
+        lambda[i,j] <- lam0*exp(-dist[i,j]^2/(2*sigma^2))
+        yM[i,j,] <- rpois(K, lambda[i,j] * w[i])
+        yU[i,j,] <- rpois(K, lambda[i,j] * z[i]*(1-w[i]))
     }
 }
 
@@ -89,7 +91,7 @@ nind <- dim(y)[1]
 
 # Augment data
 
-nz <- 100
+nz <- 50
 
 yz <- array(NA, c(nind+nz, J, K))
 yz[1:nind,,] <- y
@@ -100,7 +102,7 @@ wz <- c(w, rep(NA,nz))
 
 # JAGS
 
-paste("yw[", (nind+1):(nind+nz), ",j,k]",
+paste("yu[", (nind+1):(nind+nz), ",j,k]",
       sep="", collapse=",")
 
 library(rjags)
@@ -112,10 +114,11 @@ dat1 <- list(y=yz, w=wz, nU=nU, X=X, M=nind+nz, J=J, K=K,
 yui <- array(0, c(dat1$M, J, K))
 for(j in 1:J) {
     for(k in 1:K) {
-        yui[sample(1:M, dat1$nU[j,k]),j,k] <- 1
+        yui[sample((nind+1):dat1$M, dat1$nU[j,k]),j,k] <- 1
     }
 }
-ywi[1:nind,,] <- NA
+yui[1:nind,,] <- 0
+
 init1 <- function() list(z=rep(1, dat1$M),
                          yu=yui,
                          w=c(rep(NA, nind), rep(0, nz)))
@@ -126,6 +129,18 @@ str(dat1)
 str(init1())
 
 
+pars1 <- c("N", "m", "U", "sigma", "lam0")
 
-jm1 <- jags.model("munknown.jag", dat1, init1, n.chains=1, n.adapt=100)
+jm1 <- jags.model("munknown.jag", dat1, init1, n.chains=1,
+                  n.adapt=500)
+
+mc1 <- coda.samples(jm1, pars1, n.iter=500)
+
+
+plot(mc1, ask=TRUE)
+
+
+
+N
+m
 
