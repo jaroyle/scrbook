@@ -1,13 +1,15 @@
 
 # Simulate data for "m unknown" case
-M <- 200
-N <- 100
-m <- 50
+
+M <- 100
+N <- 50
+m <- 15
 
 (psi <- N/M)      # Pr(z=1)
 (omega <- m/N)    # Pr(marked)
 (pi <- omega*psi) #
 
+# set.seed(5459)
 z <- w <- rep(0, M)
 z1 <- sample(1:M, N)
 z[z1] <- 1
@@ -25,9 +27,9 @@ s <- cbind(runif(M), runif(M))
 co <- seq(0.3, 0.7, len=5)
 X <- cbind(rep(co, each=5), rep(co, times=5))
 
-plot(s, xlim=c(0,1), ylim=c(0,1))
-points(s[z==1,], col="grey", pch=16)
-points(s[q==1,], col="blue", pch=16)
+plot(s, xlim=c(0,1), ylim=c(0,1), cex=1.3)
+points(s[z==1,], col="grey", pch=16, cex=1.3)
+points(s[w==1,], col="blue", pch=16, cex=0.8)
 points(X, pch="+", cex=2)
 
 
@@ -51,7 +53,7 @@ for(i in 1:M) {
 # Matrix indicating if a guy is known to be marked
 qM <- apply(yM, c(1,3), sum)
 qM[qM>0] <- 1
-qM <- qM*w
+qM <- qM*w   # These guys are marked
 for(i in 1:M) {
     if(all(qM[i,]==0))
         next
@@ -64,6 +66,46 @@ colSums(qM)
 y1 <- apply(yM>0, 1, any)
 sum(y1)
 
+# This would be data if everyone was marked
+yL <- yM[y1,,]  # All capture histories (observed and latent)
+qL <- qM[y1,]   # Marked status (some of this is latent too)
+
+# Sort so marked guys are first 1:nMarked rows
+markedfirst <- order(rowSums(qL), decreasing=TRUE)
+
+yL <- yL[markedfirst,,]
+qL <- qL[markedfirst,]
+
 # Observed data
-y <- yM[y1,,]
-q <- qM[y1,]
+y <- yL[rowSums(qL)>0,,]
+q <- qL[rowSums(qL)>0,]
+w <- ifelse(rowSums(q)>0, 1, 0)
+n <- apply(yL, c(2,3), sum)
+nU <- apply(yL[rowSums(qL)==0,,], c(2,3), sum)  # Counts of unmarked guys
+
+dim(y)
+dim(q)
+nind <- dim(y)[1]
+
+# Augment data
+
+nz <- 100
+yz <- array(NA, c(nind+nz, J, K))
+yz[1:nind,,] <- y
+wz <- c(w, nz)
+
+
+
+# JAGS
+
+paste("yz[", (nind+1):M, ",j,k]*w[", (nind+1):M, "]", sep="",
+      collapse=",")
+
+library(rjags)
+
+
+dat1 <- list(y=yz, w=wz, nU=nU, M=nind+nz, J=J, K=K)
+init1 <- function() list(z=rep(1, dat1$M), w=rep(1, dat1$M))
+
+jm1 <- jags.model("munknown.jag", dat1, init1, n.chains=1, n.adapt=100)
+
