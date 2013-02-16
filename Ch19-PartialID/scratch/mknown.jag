@@ -1,24 +1,18 @@
 model{
 
-psi ~ dbeta(1,1)
-omega <- (psi*M-m)/M
+psi ~ dbeta(1,1)        # Pr(z=1), marginal prob
+#omega <- psi*((M-m)/M)  # Pr(z=1|w=0) i.e. given guy is unmarked
+omega <- (psi*M-m)/M  # Pr(z=1|w=0) i.e. given guy is unmarked
+#omega ~ dbeta(1,1)
+#psi <- (omega*(M-m)+m)/M
+#psi <- (omega*M+m)/M
 lam0 ~ dunif(0, 5)
 sigma ~ dunif(0, 5)
 
-
-# 3 states: marked, unmarked, faker
-#pi[1] <- m/M
-#pi[2] <- (psi*M - m)/M
-#pi[3] <- (M - psi*M)/M
-#pis <- sum(pi[])
-
 for(i in 1:M) {
-#  h[i] ~ dcat(pi[])
-#  z[i] <- (h[i]==2)
-  z[i] ~ dbern(psi*((M-m)/M)*(1-w[i]) + w[i])
-#  z[i] <- w[i] + u[i]
-#  u[i] ~ dbern(omega*z[i]*(1-w[i]))
-#  u[i] <- (1-w[i])   # is guy real and unmarked?
+  z[i] ~ dbern(omega*(1-w[i]) + w[i])
+#  z[i] ~ dbern(psi)
+  u[i] ~ dbern(omega*(1-w[i])*z[i])
   s[i,1] ~ dunif(xlim[1], xlim[2])
   s[i,2] ~ dunif(ylim[1], ylim[2])
   for(j in 1:J) {
@@ -28,7 +22,7 @@ for(i in 1:M) {
       # Model for (augmented) capture hist data for marked guys
       y[i,j,k] ~ dpois(lambda[i,j]*w[i])
       # These are the latent cap histories for unmarked guys
-      yu[i,j,k] ~ dpois(lambda[i,j]*z[i])#u[i])
+      yu[i,j,k] ~ dpois(lambda[i,j]*z[i])#*u[i])
       }
     }
   }
@@ -41,10 +35,10 @@ for(j in 1:J) {
 
 N <- sum(z[])
 #N <- m + sum(z[])
-#EN ~ dbin(psi, M)
+EN ~ dbin(psi, M)
 A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1])
 D <- N/A
-ED <- psi*M
+ED <- psi*M/A
 m <- sum(w[])
 #U <- sum(u[])
 #N <- m + U

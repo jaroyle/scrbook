@@ -114,9 +114,9 @@ yui[1:nind,,] <- 0
 init1 <- function() list(#omega=0.2,
                          z=c(rep(NA, nind), rep(1, nz)),
 #                         h=c(rep(NA, nind), rep(2, nz)),
-#                         u=c(rep(NA, nind), rep(1, nz)),
-                         yu=yui,
-                         psi=0.5)
+                         u=c(rep(NA, nind), rep(1, nz)),
+                         yu=yui)#,
+#                         psi=0.5)
 
 
 
@@ -126,7 +126,7 @@ str(init1())
 
 
 pars1 <- c("N", "m", #"U",
-           "sigma", "lam0", "D", "ED")
+           "sigma", "lam0", "D", "ED", "EN")
 
 jm1 <- jags.model("mknown.jag", dat1, init1, n.chains=1,
                   n.adapt=100)
@@ -212,7 +212,7 @@ jm2 <- jags.model("mknown.jag", dat2, init1, n.chains=1,
                   n.adapt=100)
 
 mc2.1 <- coda.samples(jm2, pars1, n.iter=100)
-mc2.2 <- coda.samples(jm2, pars1, n.iter=500)
+mc2.2 <- coda.samples(jm2, pars1, n.iter=10000)
 
 
 plot(mc2.1, ask=TRUE)
