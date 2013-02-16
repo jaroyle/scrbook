@@ -2,14 +2,13 @@ model{
 
 psi ~ dbeta(1,1)
 omega ~ dbeta(1,1)
-
 lam0 ~ dunif(0, 5)
 sigma ~ dunif(0, 5)
 
 for(i in 1:M) {
-#  w[i] <- H[i]==1   # guy is marked. Data when m is known
   z[i] ~ dbern(psi)
-  u[i] <- z[i]-w[i]   # guy is unmarked
+  u[i] <- (1-w[i])   # is guy is unmarked?
+  ur[i] <- z[i]*u[i] # unmarked and real
   s[i,1] ~ dunif(xlim[1], xlim[2])
   s[i,2] ~ dunif(ylim[1], ylim[2])
   for(j in 1:J) {
@@ -17,9 +16,9 @@ for(i in 1:M) {
     lambda[i,j] <- lam0*exp(-dist[i,j]^2/(2*sigma^2))
     for(k in 1:K) {
       # Model for (augmented) capture hist data for marked guys
-      y[i,j,k] ~ dpois(lambda[i,j]*w[i]*z[i])
+      y[i,j,k] ~ dpois(lambda[i,j]*w[i])
       # These are the latent cap histories for unmarked guys
-      yu[i,j,k] ~ dpois(lambda[i,j]*u[i])
+      yu[i,j,k] ~ dpois(lambda[i,j]*u[i]*z[i])
       }
     }
   }
@@ -30,10 +29,11 @@ for(j in 1:J) {
     }
   }
 
-N <- sum(z[])
+#N <- sum(z[])
+N <- m + sum(z[])
 A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1])
 D <- N/A
 m <- sum(w[])
-U <- sum(u[])
+U <- sum(ur[])
 
 }

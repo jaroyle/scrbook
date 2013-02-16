@@ -97,6 +97,7 @@ library(rjags)
 
 
 dat1 <- list(y=yz, nU=nU, X=X, M=nind+nz, J=J, K=K,
+             z=c(rep(0, nind), rep(NA, nz)),
              w=c(rep(1, nind), rep(0, nz)),
              xlim=c(0, 1), ylim=c(0,1))
 
@@ -109,7 +110,89 @@ for(j in 1:J) {
 yui[1:nind,,] <- 0
 
 init1 <- function() list(omega=0.2,
-                         z=rep(1, dat1$M),
+#                         z=rep(1, dat1$M),
+                         z=c(rep(NA, nind), rep(1, nz)),
+#                         u=c(rep(NA, nind), rep(1, nz)),
+                         yu=yui,
+                         psi=0.3)
+
+
+
+
+str(dat1)
+str(init1())
+
+
+pars1 <- c("N", "m", "U", "sigma", "lam0", "D")
+
+jm1 <- jags.model("mknown.jag", dat1, init1, n.chains=1,
+                  n.adapt=100)
+
+mc1 <- coda.samples(jm1, pars1, n.iter=100)
+mc2 <- coda.samples(jm1, pars1, n.iter=500)
+
+
+plot(mc1, ask=TRUE)
+summary(mc1)
+
+tail(mc1)
+
+plot(mc2, ask=TRUE)
+summary(mc2)
+
+
+N
+m
+sum(u)
+
+
+
+
+
+
+
+
+
+
+
+
+# Try again with larger state-space
+
+nz <- 200
+
+A2 <- 4  # [-0.5,1.5]x[-0.5,1.5] square
+D*A2
+
+yz <- array(0, c(nind+nz, J, K))
+yz[1:nind,,] <- y
+
+rowSums(yz)
+
+
+
+paste("yu[", (nind+1):(nind+nz), ",j,k]",
+      sep="", collapse=",")
+
+library(rjags)
+
+
+dat1 <- list(y=yz, nU=nU, X=X, M=nind+nz, J=J, K=K,
+#             z=c(rep(1, nind), rep(NA, nz)),
+             u=c(rep(0, nind), rep(NA, nz)),
+             w=c(rep(1, nind), rep(0, nz)),
+             xlim=c(-0.5, 1.5), ylim=c(-0.5,1.5))
+
+yui <- array(0, c(dat1$M, J, K))
+for(j in 1:J) {
+    for(k in 1:K) {
+        yui[sample((nind+1):dat1$M, dat1$nU[j,k]),j,k] <- 1
+    }
+}
+yui[1:nind,,] <- 0
+
+init1 <- function() list(omega=0.2,
+#                         z=c(rep(NA, nind), rep(1, nz)),
+                         u=c(rep(NA, nind), rep(1, nz)),
                          yu=yui,
                          psi=0.3)
 
@@ -135,6 +218,3 @@ summary(mc1)
 plot(mc2, ask=TRUE)
 summary(mc2)
 
-
-N
-m
