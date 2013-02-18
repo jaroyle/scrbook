@@ -3,78 +3,73 @@
 \usepackage[pdftex]{hyperref}
 \usepackage{parskip}
 \usepackage{amsmath}
+\usepackage{bm}
 
 \begin{document}
 
-A (possibly bad) idea for modeling data when the number of marks, $m$, is
-unknown. %This assumes that there are no all-zero encounter histories.
+Spatial mark-resight models with $m$ unknown.
 
-\vspace{1cm}
+\vspace{0.5cm}
 
-Model:
+
+
+Case 1: marked guys are sampled randomly in the polygon
+$\mathcal{B}$.
+
+The population in $\mathcal{S}$ is $N$. $N_1$ is
+population in $\mathcal{B}$. The key idea is to recognize that if the
+$N$ activity centers are uniformly distributed in $\mathcal{S}$, then
+neither the marked or unmarked guys are not uniformly distributed in
+$\mathcal{B}$.
+
+The random sampling assumption leads to this model:
 \begin{align*}
-  N \sim \text{DUnif}(0, M) \\
-  m \sim \text{DUnif}(0, M) \\
+  {\bf s}_i &\sim \text{Unif}(\mathcal{S}) \\
+  \{N_1, N_2\} &\sim \text{MN}(N, \{A1/A, A2/A\}) \\
+  m &\sim \text{Bin}(N1, \theta) \\
 \end{align*}
 
 
-$E(m) = M\psi$ \\
-$E(u) = M\omega$ \\
-$E(N) = M - M\psi + M\omega$ \\
-psi = 1 - (omega+psi)
+To implement it using DA, you can do this:
+\begin{align*}
+  {\bf s}_i &\sim \text{Unif}(\mathcal{S}) \\
+  \phi_1 &= I({\bf s}_i \in \mathcal{B}) \theta \psi \\
+  \phi_2 &= I({\bf s}_i \in \mathcal{B}) (1-\theta) \psi \\
+  \phi_3 &= I({\bf s}_i \notin \mathcal{B}) \psi \\
+  \phi_4 &= 1 - \psi \\
+  \text{h}_i &\sim \text{Cat}(\bm{\phi}) \\
+\end{align*}
 
 Definitions: \\
-$M$ = Data-augmentation size \\
-$\psi = \Pr(z_i=1)$ \\ %for $i=1,\ldots,M$ \par
-$\omega = \Pr(q_i=1)$ \\
-$N = \sum_{i=1}^M z_i$ = Number of real individuals in $\mathcal{S}$ \\
-$m = \sum_{i=1}^M q_i$ = unknown number of marked guys \\
-$u = N - m$ = number of unmarked guys
-
-\vspace{1cm}
-
-The following contraint is important:
-\[
-M = m + u + fakers
-\]
+$\psi$ = Pr(guy is real) \\
+$\theta$ = Pr(guy in B is marked) \\
+$h$ = indicator of a guy's state: (1)marked in B, (2) unmarked in B,
+(3) unmarked outside B, and (4) fake guy
 
 
 \newpage
 
-Let $v_j$ be the number of \textit{known} guys known to be marked on
-occasion $j$. Let $q_{ij}$ be a binary indicator of whether or not individual $i$
-($i=1,\ldots,M$) is marked. The reason why it has $J$ columns is that
-the number of \textit{known} marked guys changes over time. So part of
-$q_{ij}$ is observed data, but the observed part changes over time.
-However, once a
-guy is known to be marked, his $q$ is always 1 in subsecquent occasions.
 
-Here is the model:
+Case 2: The density of marked guy's decreases smoothly with distance
+from traps.
 
+
+To implement it using DA, you can do this:
 \begin{align*}
-q_{ij} &\sim \text{Bern}(\omega_j) \\
-q_{i.} &= I((\sum_j q_{ij})>0) \quad \text{Was guy marked?}\\
-m &= \sum_i q_{i.} \\
-z_i &\sim \text{Bern}(\psi) \\
-y_{ijk} &\sim
-\text{Pois}(\lambda_{ij}z_{i}q_{ij} + \lambda_{ij}z_i(1-q_{ij})) \quad
-\text{For marked guys, no like. contrib. until first obs}\\
-n_{jk} &= \sum_i y_{ijk} \\
-N &= \sum_i z_i
+  {\bf s}_i &\sim \text{Unif}(\mathcal{S}) \\
+  \phi_1 &= \theta \psi \\
+  \phi_2 &= (1-\theta) \psi \\
+  \phi_4 &= 1 - \psi \\
+  \text{h}_i &\sim \text{Cat}(\bm{\phi}) \\
 \end{align*}
 
-With a Beta(1,1) prior, the full conditional of $\omega_j$ is:
-\[
-\Pr(\omega_j|\cdot) = \text{Beta}(1+\sum_i^{M-m-v_j} q_{ij}, 1+M-m-v_j-\sum_i^{M-m-v_j}q_{ij})
-\]
 
-With a Beta(1,1) prior, the full conditional of $\psi$ is:
-\[
-\Pr(\psi|\cdot) = \text{Beta}(1+\sum_i^{M-m} z_{i}, 1+M-m-\sum_i^{M-m}z_i)
-\]
+Definitions: \\
+$\theta = \exp(\tau d)$ = Pr(guy is marked, given his distance from
+trap array centroid??) \\
+$h$ = indicator of a guy's state: (1)marked, (2) unmarked, and (3)
+fake guy
 
-NOTE: Need to make sure that if $q_{ij}=1$ then all subsequent
-$q_{i.}=1$.
 
 
 \end{document}
