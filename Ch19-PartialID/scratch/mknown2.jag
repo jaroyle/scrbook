@@ -1,7 +1,8 @@
 model{
 
 psi ~ dbeta(1,1)        # Pr(z=1), marginal prob
-theta ~ dbeta(1,1)      # Pr(guy is marked, given that he is in B
+theta ~ dbeta(1,1)     # Pr(guy is marked, given that he is in B
+#theta <- m/N1          # Defined below
 lam0 ~ dunif(0, 5)
 sigma ~ dunif(0, 5)
 
@@ -16,21 +17,28 @@ for(i in 1:M) {
   s[i,2] ~ dunif(ylimS[1], ylimS[2])
   inB[i] <- (s[i,1] > xlimB[1]) && (s[i,1] < xlimB[2]) &&
             (s[i,2] > ylimB[1]) && (s[i,2] < ylimB[2])
-  # Modify cell probs depending on location of s
-  cpi[i,1] <- cp[1]*inB[i]     # Zero prob if s is outside B
-  cpi[i,2] <- cp[2]*inB[i]     # ditto
-  cpi[i,3] <- cp[3]*(1-inB[i]) # Zero prob if s is inside B
+  inBreal[i] <- inB[i]*(h != 4) # is in B and real guy
+  # Modify cell probs depending on location of s and *known* marked status
+  # Pr=0 if guy is marked and in B, 0 otherwise
+  cpi[i,1] <- (ism[i]*inB[i])
+  # Pr=0 if guy is marked or out of B
+#  cpi[i,2] <- cp[2]*inB[i]*(1-ism[i])
+#  cpi[i,2] <- inB[i]*(1-ism[i])*pi[1]*(1-theta)*psi
+  cpi[i,2] <- inB[i]*(1-ism[i])*pi[1]*(sum(h==1)/sum(inBreal))*psi
+#  cpi[i,3] <- cp[3]*(1-inB[i])*(1-ism[i])
+  cpi[i,3] <- (1-inB[i])*(1-ism[i])*pi[2]*psi
+  # Zero prob if s is inside B
   cpi[i,4] <- 1 - sum(cpi[i,1:3])
-  h[i] ~ dcat(cpi[i,1:4])
-  w[i] <- h[i] == 1
-  z[i] <- h[2] != 4
+  h[i] ~ dcat(cpi[i,1:4]) # h=1 is data for marked guys
+  w[i] <- h[i] == 1 # guy is marked
+  z[i] <- h[i] != 4 # guy is real if in states 1-3
   for(j in 1:J) {
     dist[i,j] <- sqrt((s[i,1]-X[j,1])^2 + (s[i,2]-X[j,2])^2)
     lambda[i,j] <- lam0*exp(-dist[i,j]^2/(2*sigma^2))
     for(k in 1:K) {
       # Model for (augmented) capture hist data for marked guys
       y[i,j,k] ~ dpois(lambda[i,j]*w[i]*z[i])
-      # These are the latent cap histories for unmarked guys
+      # Latent capture histories for unmarked guys
       yu[i,j,k] ~ dpois(lambda[i,j]*(1-w[i])*z[i])
       }
     }
@@ -47,5 +55,11 @@ A <- (xlimS[2]-xlimS[1])*(ylimS[2]-ylimS[1])
 D <- N/A
 EN <- psi*M
 ED <- EN/A
+
+m <- sum(w[])
+N1 <- sum(inBreal[])
+#theta <- m/N1
+uInB <- sum(h==2)
+uOutB <- sum(h==3)
 
 }

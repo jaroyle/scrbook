@@ -127,7 +127,9 @@ pi <- c(A1/AS, A2/AS)
 
 
 dat1 <- list(y=yz, nU=nU, X=X, M=nrow(yz), J=J, K=K,
+#             m=m,
              h=c(rep(1, m), rep(NA, nz)),
+             ism=c(rep(1, m), rep(0, nz)), # Is marked? Data in this case.
              pi=pi,
              xlimB=c(xlimB[1], xlimB[2]), ylimB=c(ylimB[1], ylimB[2]),
              xlimS=c(xlimS[1], xlimS[2]), ylimS=c(xlimS[1],xlimS[2]))
@@ -140,7 +142,10 @@ for(j in 1:J) {
 }
 yui[1:nind,,] <- 0
 
-init1 <- function() list(h=c(rep(NA, m), rep(2, nz)),
+init1 <- function() list(h=c(rep(NA, m), rep(2, nz)), # start all guys in B
+                         # need to start all guys in B!
+                         s=cbind(runif(dat1$M, xlimB[1], ylimB[2]),
+                                 runif(dat1$M, ylimB[1], ylimB[2])),
                          yu=yui)
 
 
@@ -150,7 +155,7 @@ str(dat1)
 str(init1())
 
 
-pars1 <- c("N", "sigma", "lam0", "D", "ED", "EN")
+pars1 <- c("N", "sigma", "lam0", "D", "ED", "EN", "uInB", "uOutB")
 
 jm1 <- jags.model("mknown2.jag", dat1, init1, n.chains=1,
                   n.adapt=100)
