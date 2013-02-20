@@ -383,8 +383,7 @@ open population models, including the non-spatial JS and robust
 design models. 
 
 To begin, let's consider the role of recruitment, $\gamma$, in the
-model. 
-
+model when we use data augmentation to estimate $N$. 
 Data augmentation formally reparameterizes the model, replacing $N$,
 the number of individuals ever alive with $M$, where we
 assume $N \sim \mbox {Bin}(M, \psi)$.  This is the same as having
@@ -543,11 +542,13 @@ array represents just one individual across all primary periods.
 For the ovenbird dataset, we
 can organize the data by creating a master list of all individuals
 captured during the entire study.  From this list, we can assign each
-individual a unique row in our dataset (in the following \R~commands,
+individual a unique row in our dataset (in the \R~ commands,
 we do this by using the \mbox{\tt unique}() function 
 on the row names
 for each year of our 3-D array and use \mbox{\tt pmatch}()
-to associate the data to the correct column).  Additionally, in
+to associate the data to the correct column).  The code to carry out
+this data organization are included in the \scrbook~ package and are not
+shown here.  Additionally, in
 Chapt. \ref{chapt.poisson-mn} we carried out data augmentation for each year separately;
 however, we must consider for example that individuals captured in
 year $t$ could have been alive in year $t-1$.  Our data
@@ -558,64 +559,22 @@ we hold survival constant but allow recruitment to be time dependent
 process as described above, it does not make sense to hold recruitment constant and we
 therefore make it time specific).
 
-% XXXX Need to say something like: "here comes some R code".
-% And actually, since this is rather long, I think it might be better
-% to put it in the R package and just reference it here. XXXX
+To implement the model in Panel \ref{open.panel.nsJS}, the following commands 
+are used:
+
 {\small
 \begin{verbatim}
-library("secr")
-library(scrbook)
-data(ovenbird)
+ #set initial values for the alive state, z
+>zst<-c(rep(1,M/2),rep(0,M/2))
+>zst<-cbind(zst,zst,zst,zst,zst)
 
-X<-traps<-traps(ovenCH)
-xlim<-c(min(X[[1]][,1])-150,max(X[[1]][,1])+150)
-ylim<-c(min(X[[1]][,2])-150,max(X[[1]][,2])+150)
-ntraps<- nrow(traps[[1]])
-Y<-ovenCH
-K<-10
-M<-200 # do constant data augmentation to all years
-Sst<-cbind(runif(M,xlim[1],xlim[2]),runif(M,ylim[1],ylim[2]))
-Sst<-array(Sst,dim=c(M,2,5))
+>inits <- function(){list (z=zst,sigma=runif(1,25,100), gamma=runif(5,0,1)) }
+>parameters <- c("psi","N","phi", "p.mean", "gamma")
+>data <- list (K=10,Y=Ybin,M=M)
 
-
-hold<- unique(c(unlist(dimnames(Y[[1]])[1]), unlist(dimnames(Y[[2]])[1]),
-       unlist(dimnames(Y[[3]])[1]), unlist(dimnames(Y[[4]])[1]),
-       unlist(dimnames(Y[[5]])[1])))
-
-Yarr<-array(ntraps+1,dim=c(M,K,5))
-for(i in 1:5){
-tmp<-Y[[i]]
-tmp[tmp<0]<-tmp[tmp<0]*(-1) ## one guy died, we ignore that here
-tmp[tmp==0]<-ntraps+1
-nind<-nrow(tmp)
-nrep<-ncol(tmp)
-tmp2<-matrix(ntraps+1,nrow=M,ncol=10)  # pad last col with NA for year 1
-tmp2[pmatch(unlist(dimnames(Y[[i]])[1]), hold),1:nrep]<-tmp
-Stmp<-Sst[,,i]
-Stmp[pmatch(unlist(dimnames(Y[[i]])[1]), hold),1:2]<-
-        spiderplot(tmp2[pmatch(unlist(dimnames(Y[[i]])[1]), hold),1:nrep],
-        as.matrix(X[[i]]))$avg.s   #$
-Sst[,,i]<-Stmp
-Yarr[,,i]<-tmp2
-}
-
-Yarr[Yarr < 45] <- 1
-Yarr[Yarr == 45] <- 0
-Ybin=matrix(NA, M, 5)
-for(t in 1:5){
-Ybin[,t] <- rowSums(Yarr[,,t])
-}
-
-zst<-c(rep(1,M/2),rep(0,M/2))
-zst<-cbind(zst,zst,zst,zst,zst)
-
-inits <- function(){list (z=zst,sigma=runif(1,25,100), gamma=runif(5,0,1)) }
-parameters <- c("psi","N","phi", "p.mean", "gamma")
-data <- list (K=10,Y=Ybin,M=M)
-
-library("rjags")
-out1 <- jags.model("modelNSJS.txt", data, inits, n.chains=3, n.adapt=500)
-out2NSJS <- coda.samples(out1,parameters,n.iter=20000)
+>library("rjags")
+>out1 <- jags.model("modelNSJS.txt", data, inits, n.chains=3, n.adapt=500)
+>out2NSJS <- coda.samples(out1,parameters,n.iter=20000)
 \end{verbatim}
 }
 
@@ -1522,7 +1481,7 @@ about the linear distance fish are moving.   One final note about this example, 
 dataset for analysis here and some parameter estimates are different than found in
 \cite{raabe_diss:2012}.
 
-\section{Moving Activity Centers}
+\section{Activity Center Dynamics}
 
 We extend the model of individual encounter histories by specifying an
 additional model component that describes the spatial distribution of
