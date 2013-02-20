@@ -62,7 +62,7 @@ tau.dist <- 1/(sigma.dist*sigma.dist)
 #LIKELIHOOD
 #abundance model
 for(j in 1:n.groups){
-  log(lam[j]) <- b.site[site[j]] + b.season[season[j]] + b.thin*thin[j] + b.fire*fire[j]
+  log(lam[j]) <- int.lam + b.season[season[j]] + b.thin*thin[j] + b.fire*fire[j]
   gprobs[j] <- lam[j]/sum(lam[1:n.groups])
 }
 #observation model
@@ -74,7 +74,7 @@ for(i in 1:M){
   # assumes traplocs are the SAME for all groups 
   for(k in 1:last.cap[i]){
     for(j in 1:n.traps){
-      lp[i,k,j] <- (exp(bgroup.p[group.mem[i]] + bcap.p*reencounter[i,k] + 
+      lp[i,k,j] <- (exp(int.p + bcap.p*reencounter[i,k] + 
                     b.dist[group.mem[i]]*d[i,j])*traps.avail[j,group.mem[i]])*z[i]            
       cp[i,k,j] <- lp[i,k,j]/(1+sum(lp[i,k,]))
     }

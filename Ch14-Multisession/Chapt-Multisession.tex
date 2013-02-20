@@ -148,7 +148,7 @@ One of the key ideas to Bayesian analysis of multi-session models is
 that we make use of multinomial models for allocating individuals into
 strata or sessions. We do this because it allows us to analyze the
 models by data augmentation \citep{converse_royle:2012,
-  royle_coverse:2013}, and it has a natural linkage to the Poisson
+  royle_converse:2013}, and it has a natural linkage to the Poisson
 model, which is commonly used throughout ecology to model variation
 in abundance. We demonstrate the formlation of multi-session models
 using data augmentation here using ordinary closed population models
@@ -361,9 +361,9 @@ model {
   beta0 ~ dnorm(0,.1)
   beta1 ~ dnorm(0,.1)
   psi ~ dunif(0,1)
-  for(s in 1:S){
-    log(lam[s]) <- beta0 + beta1*x[s]
-    gprobs[s] <- lam[s]/sum(lam[1:S])
+  for(j in 1:G){
+    log(lam[j]) <- beta0 + beta1*x[j]
+    gprobs[j] <- lam[j]/sum(lam[1:G])
   }
   for(i in 1:M){
     g[i] ~ dcat(gprobs[])
@@ -387,9 +387,9 @@ model {
   beta0 ~ dnorm(0,.1)
   beta1 ~ dnorm(0,.1)
   psi <- sum(lam[])/M
-  for(j in 1:K){
+  for(j in 1:G){
     log(lam[j]) <- beta0 + beta1*x[j]
-    gprobs[j] <- lam[j]/sum(lam[1:K])
+    gprobs[j] <- lam[j]/sum(lam[1:G])
   }
   for(i in 1:M){  
     g[i] ~ dcat(gprobs[])
@@ -459,13 +459,12 @@ y<-y[y>0]
 \end{verbatim}
 Thats it,
 we just simulated population structure for $G=20$ populations, and
-capture-recapture data for all individuals in the population. 
-
-Now we can fit the model using either of the formulations 
-of the model described in Panel \ref{panel.wbcode}.  We have a script,
-lets call it \mbox{\tt multisession\_sim}
-??????????
-{\bf FIT THIS .... PUT in repo ................ }
+capture-recapture data for all individuals in the population. To fit
+this model, we need to augment the \mbox{\tt g} and \mbox{\tt y} data
+objects, and then we can run the model in {\bf JAGS} or {\bf WinBUGS}
+using either specification given in Panel \ref{panel.wbcode}.
+We have a script (see the help file \mbox{\tt ?multisession\_sim})
+that does this.
 
 
 
@@ -478,7 +477,8 @@ demonstrated in Sec. \ref{poisson-mn.sec.ovenbird}, we can anlyze the models by 
 independent binomial priors on each $N_{g}$ and doing the data
 augmentation independently for each population by itself. 
 This is not any more or less difficult than the multinomial
-formulation but, we imagine, it could be slightly less efficient computationally.
+formulation but, we imagine, it could be slightly less efficient
+computationally. 
 In this case we could build in amoung-group structure by modeling 
 the DA parameter $\psi$ as being
 variable for each subject,  as a function of group-specific variables
@@ -508,7 +508,13 @@ Poisson prior for $N_{g}$, and then among group structure is modeled in
 the parameter $\Lambda_{g}$. In our view, either model is (binomial
 based on data augmentation, or Poisson) is satisfactory for any
 application of capture-recapture to stratified populations.  
-
+The main advantage of the formulation we provided here over that
+implemented in \mbox{\tt secr} is we have quite a bit more flexibility
+in specifying models of all sorts, either in the population size model
+for $N_{g}$, or for the capture-recapture model. For example,
+\citet{royle_converse:2013} fitted a model having random group effects
+on encounter probability and abundance (i.e., extra-Poisson
+variation). 
 
 \section{Spatial Capture-Recapture}
 
@@ -545,7 +551,7 @@ model (multi-catch) to little ill-effect, as long as typical encounter
 probabilities are low. The error due to misspecification of the model
 can also be alleviated by using multiple traps at each point, which is
 what was done in the study from which these data were obtained
-\citep{converse_etal:2006ecol, converse_etal:2006jwm}.
+\citep{converse_etal:2006ea, converse_etal:2006jwm}.
 
 For the multinomial model, the encounter probability vector is a
 function of distance between trap locations and individual activity
@@ -802,19 +808,72 @@ Results?
 
 
 
-\section{Topics in Multi-Session models}
+\section{Summary and Outlook}
+
+Capture-recapture data are not usually collected as single isolated
+studies but, instead, data are grouped or stratified in some natural
+way, either because a number of distinct trap arrays are used, or
+sampling occurs in several forest patches, or over time. Often this is
+motivated by specific objectives, e.g., the trap arrays or units
+represent experimental replicates, or sometimes just to obtain more
+valid estimates of density by obtaining a representative (ideally,
+random) sample of space within some region.  The fact that data are
+grouped in such a way raises the obvious technical problem of having
+to combine data from multiple arrays or sites in a single unified
+model that accommodates explicit sources of variation in density among
+sites.  This is naturally accomplished by developing an explicit model
+for variation in $N$, e.g., a Poisson GLM or similar
+\citep{converse_royle:2012, royle_etal:2012arXiv}. The ``design'', and
+the resulting class of models, are also called multi-session models in
+the package \mbox{\tt secr}, and in our analyses of
+Chapt. \ref{chapt.poisson-mn} and elsewhere.
+
+In this chapter, we outlined an approach to Bayesian analysis of
+multi-session models using data augmentation, from
+\citet{converse_royle:2012} and \citet{royle_converse:2013}.  This
+approach allows us to build explicit models for $N$, and also gives us
+great flexibility in specifying the encounter model using standard or
+novel capture-recapture modeling considerations. Certain types of
+multi-session models can be fitted easily in \mbox{\tt secr} and we
+suspect that platform will be satisfactory for many problems you
+encounter.
+
+A common applied context of these multi-session models is when
+replicate arrays are used to address explicit hypotheses about
+landscape variation or modification. For example, in studies of
+forestry practices, small mammal grids are used as experimental units,
+and the ``dependent variable'' is $N$ (or density) for each trap
+array, which is not observable.  Thus, hierarchical models are needed
+to directly address the basic hypotheses of such studies.  Another
+distinct context for the application of multi-session models is when
+the populations are temporally structured. In these applications, we
+view multi-session models as a simplified type of open population
+model, an open model {\it without} explicit Markovian dynamics. They
+are analogous to what are usually referred to as models of random
+temporary emigration \citep{kendall_etal:1997, chandler_etal:2011}.
+The models are not incorrect, just simplified, reduced versions of
+more general Markovian models, and with fewer parameters to estimate.
+We cover general Markovian models in Chapt. \ref{chapt.open}
 
 
-\subsection{Temporal models }
 
-The case here is we have $g=1,\ldots,G$ samples over time but
-individuals are coming and going.
-We might capture some individuals over time but we ignore the
-individual recaptures across primary periods. (See chapter
-\ref{chapt.open}). So instead of modeling the dynamics at the individual
-level we just model net change in $N_{g}$.
+
+
+
+
 
 \subsection{Dependence -- is it a problem?}
+
+A standard multi-session data (e.g., the ovenbird data) is that in
+which the session variable indexes time events, such as sampling in
+distinct seasons or years. 
+In this case, the population being sampled is the same population each
+time, but subject to dynamics and movement. 
+
+We might capture some individuals over time but we ignore the
+individual recaptures across primary periods. (See Chapt. 
+\ref{chapt.open}). So instead of modeling the dynamics at the individual
+level we just model net change in $N_{g}$.
 
 In time -- ignoring the dependence of $N_{g}$ probably entails a
 little {\it loss} of efficiency but should have no effect on anything.
@@ -833,96 +892,6 @@ Conceptually we can apply models like this which assume Ng are
 independent even if they're not... as long as we dont cear about the
 underlying dynamics explictly and also possibly with some loss of
 eficiency. 
-
-GROUPS, STRATA, POPULATIONS, ETC...????
-
-\subsection{Multi-session models in \mbox{\tt secr}  }
-
-We talked about this back in sec. xxx and also in sec. xxxxx....
-
-The {\bf R} package \mbox{\tt secr} (Efford 2011) implements an
-estimator for ``multiple sessions'' that could be applied to data from
-multiple trap arrays or other meaningfully grouped data.
- The multi-session
-model in \mbox{\tt secr} 
-arises by an explicit Poisson assumption on $N$, but uses
- a classical likelihood analysis in which the parameters $N_{g}$
-are removed from the likelihood by marginalizing the
-conditional-on-$N$ likelihood over a Poisson prior.  One advantage of
-our Bayesian formulation based on data augmentation which enables
-direct implementation in widely available software (WinBUGS, JAGS,
-OpenBUGS) is that it is more versatile in terms of the model
-specification. For example, here we allowed for multiple
-group-specific random effects in the detection model, which is not
-accommodated in the \mbox{\tt secr}
-package. As another (potential) example, we believe the model could be
-extended to open populations (Gardner et al. 2010) without much
-difficulty.
-
-
-\section{Summary and Outlook}
-
-
-The other context is temporally indexed data -- multi-session or
-group-structured models are a simplified type of open model, one
-without explicit Markovian dynamics. The models are not incorrect per
-se, but just simpler, reduced versions of the more general Markovian
-models. We do cover the Markovian models in Chapt. \ref{chapt.open}
-
-
-SCR data are not
-always collected as single isolated studies but, rather, usually a number of
-replicate trap arrays are used. Often this is motivated by specific
-objectives, e.g., the trap arrays represent experimental replicates,
-and oftentimes just to obtain more valid estimates of density by
-obtaining a representative sample of space within some region.  Thus
-there is a need to combine data from multiple arrays or sites in a
-single unified model that accommodates explicit sources of variation
-in density among sites.  This is naturally accomplished by developing
-an explicit model for variation in $N$, e.g., a Poisson GLM or
-similar.
-
-In this paper we extended SCR models to allow for modeling variation
-in $N$ with explicit assumptions on $N$. We adopt the data
-augmentation strategy from Converse and Royle (2012), and Royle et
-al. (2012) and extended this to the spatial capture-recapture
-observation model, and applied that model to data from a study of
-forest disturbance effects on small mammal populations.  
-The framework for combining multiple sites is general and will
-work for any kind of SCR observation model.
-We demonstrated a multi-catch (ovenbird), single-catch (microtus)
-and a bernoulli (simulated data) model.......
-Implementation in a Bayesian framework allows for modeling
-of individual effects (and hence makes SCR possible) but also
-facilitates efficient modeling of nuisance variation via hierarchical
-structures (for example, on detection parameters, block effects, or
-time effects). However, certain types of models can be fitted in secr
-easily, and ...............
-
-
-Previously people always did ad hoc shit when confronted with
-multi-session types of capture-recapture data. They would get Nhats
-and do regression on this. For example, 
-our small-mammal trapping case study comes from 
-Converse et al (2006), who used
-a 3 step process to complete the analysis of these data: first a
-closed capture-recapture analysis to estimate abundance, second an
-analysis of mean maximum distance moved (Wilson and Anderson 1985) to
-allow conversion of abundance to density, and third a weighted
-regression analysis of the  resulting density estimates. The
-weighted analysis was necessary to accomodate the non-zero sampling
-covariances resulting from the first 2 steps. The analysis shown
-herein is both more streamlined and also integrates the improvements
-that spatial capture-recapture methods bring to the estimation of
-capture-recapture data. In addition, the Bayesian analysis we present
-makes the use of hierarchical structures simple, such as the random effects
-for modeling variation in components of detection. Converse
-and Royle (2012) showed that the use of random effects for modeling
-variation in components of detection provides a good compromise
-between model complexity and parsimony, and can result in the lowest root
-mean square error in analyses of replicated capture-recapture data.
-
-
 
 
 
