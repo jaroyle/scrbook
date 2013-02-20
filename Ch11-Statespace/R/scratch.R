@@ -117,9 +117,26 @@ nll <- function(beta) {
                 lower=c(0,0), upper=c(100,100))$value
     -(sum(beta0 + beta1*elev.fn(s)) - EN)
 }
-starting.values <- c(0, 0)
+starting.values <- c(-10, 0)
 fm <- optim(starting.values, nll, hessian=TRUE)
 cbind(Est=fm$par, SE=sqrt(diag(solve(fm$hessian)))) # estimates and SEs
+
+
+# Now with binomial instead of Poisson prior
+nllBin <- function(beta, M=100) {
+    beta0 <- beta[1]
+    beta1 <- beta[2]
+    EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1,
+                flags=list(verbose=0),
+                lower=c(0,0), upper=c(100,100))$value
+    N <- nrow(s)
+    psi <- EN/M
+    -(sum(beta0 + beta1*elev.fn(s) - log(EN)) +
+      dbinom(N, M, psi, log=TRUE))
+}
+starting.values <- c(-10, 0)
+fmBin <- optim(starting.values, nllBin, hessian=TRUE)
+cbind(Est=fmBin$par, SE=sqrt(diag(solve(fmBin$hessian)))) # est and SE
 
 
 

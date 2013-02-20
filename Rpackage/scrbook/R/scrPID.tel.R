@@ -11,7 +11,7 @@ library(mvtnorm)
     R <- nrow(n)
     T <- ncol(n)
     S <- inits$S
-    Sin<-t(sapply(locss, colMeans))
+    Sin<-t(sapply(locs, colMeans))
     S[telID,]<-Sin
     D <- e2dist(S, X)
     ntot<-length(locs)

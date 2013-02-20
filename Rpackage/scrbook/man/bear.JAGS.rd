@@ -11,13 +11,15 @@ bear.JAGS(model=c('SCR0', 'SCR0exp', 'SCRt','SCRB','SCRb', 'SCRsex', 'SCRh'), n.
 }
 \details{
 bear.JAGS allows you to run a spatial the null model (SCR0), the null model with negative exponential detection function (SCR0exp),
-time as factor on detection (SCRt), a global and a local trap response model (SCRB and SCRb, respectively), 
-a model with sex specific detection and movement (SCRsex) 
-and a heterogeneity model with 2-class mixtureswith a logit-normal mixture on detection (SCRh). 
+time as factor on detection (SCRt), a global and a local trap response model (SCRB and SCRb, respectively),
+a model with sex specific detection and movement (SCRsex)
+and a heterogeneity model with 2-class mixtureswith a logit-normal mixture on detection (SCRh).
 Model results are displayed and discussed in Ch9 of Royle et al. 2013. Spatial capture Recapture.
 }
 \value{
-JAGS model output (for details, see the rjags manual, under coda.samples())
+JAGS model output (for details, see the rjags manual, under
+coda.samples())
+}
 \references{
 %% ~put references to the literature/web site here ~
 }
@@ -38,9 +40,9 @@ summary(out)
 
 ## returns:
 Iterations = 501:2500
-Thinning interval = 1 
-Number of chains = 3 
-Sample size per chain = 2000 
+Thinning interval = 1
+Number of chains = 3
+Sample size per chain = 2000
 
 1. Empirical mean and standard deviation for each variable,
    plus standard error of the mean:

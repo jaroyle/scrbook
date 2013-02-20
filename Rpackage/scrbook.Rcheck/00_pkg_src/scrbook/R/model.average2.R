@@ -1,0 +1,184 @@
+model.average2 <-
+function (..., realnames = NULL, betanames = NULL, newdata = NULL, 
+    alpha = 0.05, dmax = 10, covar = FALSE, average = "link",use="AIC") 
+{
+    object <- list(...)
+    if (inherits(object[[1]], "list") & !(inherits(object[[1]], 
+        "secr"))) {
+        if (length(object) > 1) 
+            warning("using first argument (list) and discarding others")
+        object <- object[[1]]
+    }
+    if (any(!sapply(object, function(x) inherits(x, "secr")))) 
+        stop("require fitted 'secr' objects")
+    if (length(object) < 2) 
+        warning("only one model")
+    if (!is.list(object) | !inherits(object[[1]], "secr")) 
+        stop("object must be secr or list of secr")
+    type <- "real"
+    parnames <- object[[1]]$realnames
+    links <- object[[1]]$link
+    if (!is.null(realnames)) 
+        parnames <- realnames
+    else if (!is.null(betanames)) {
+        type <- "beta"
+        average <- "beta"
+        parnames <- betanames
+    }
+    np <- length(parnames)
+    nsecr <- length(object)
+    if (nsecr > 1) {
+        objnames <- function(i) switch(type, real = object[[i]]$realnames, 
+            beta = object[[i]]$betanames)
+        test <- sapply(2:nsecr, function(i) sum(match(parnames, 
+            objnames(i), nomatch = 0) > 0) == np)
+        if (!all(test)) 
+            stop("requested parameters not found in all models, ", 
+                "or models incompatible")
+    }
+    if (is.null(newdata)) {
+        tempnewdata <- lapply(object, secr.make.newdata)
+        column.list <- list(0)
+        for (i in 1:nsecr) column.list[[i]] <- as.list(tempnewdata[[i]])
+        column.list <- unlist(column.list, recursive = FALSE)
+        column.list <- column.list[unique(names(column.list))]
+        column.list <- lapply(column.list, unique)
+        common <- names(column.list)[names(column.list) %in% 
+            names(newdata)]
+        column.list[common] <- newdata[common]
+        sessioncovs <- lapply(object, function(x) if (!is.null(x$sessioncov)) 
+            data.frame(session = session(x$capthist), x$sessioncov)
+        else NULL)
+        sessioncovs <- sessioncovs[!sapply(sessioncovs, is.null)]
+        scn <- as.vector(sapply(sessioncovs, names))
+        scn <- match(unique(scn), scn)
+        sessioncovs <- as.data.frame(sessioncovs)[, scn]
+        sessioncovs <- as.data.frame(sessioncovs[!sapply(sessioncovs, 
+            is.null)])
+        sessioncovnames <- unlist(lapply(object, function(x) names(x$sessioncov)))
+        sessioncovariate <- names(column.list) %in% sessioncovnames
+        newdata <- expand.grid(column.list[!sessioncovariate])
+        if (nrow(sessioncovs) > 0) {
+            for (i in names(sessioncovs)) {
+                if (i != "session") 
+                  newdata[, i] <- sessioncovs[newdata$session, 
+                    i]
+            }
+        }
+    }
+    nr <- nrow(newdata)
+    rownames <- apply(newdata, 1, function(x) paste(names(newdata), "=", x, sep = "", collapse = ","))
+    ### Andy edited the next line to set AICc = AIC
+    if(use=="AIC")
+    AICc <- sapply(object, function(x) AIC(x)$AIC)
+    else
+    AICc <- sapply(object, function(x) AIC(x)$AICc)
+    
+    dAICc <- AICc - min(AICc)
+    OK <- abs(dAICc) < abs(dmax)
+    sumdAICc <- sum(exp(-dAICc[OK]/2))
+    AICwt <- ifelse(OK, exp(-dAICc/2)/sumdAICc, 0)
+    if (type == "beta") {
+        nr <- 1
+        ests <- lapply(object, function(x) coef(x)[parnames, 
+            "beta"])
+        ests <- array(unlist(ests), dim = c(nr, np, nsecr))
+        wtd <- sweep(ests, MARGIN = 3, STATS = AICwt, FUN = "*")
+        wtd <- apply(wtd, 1:2, sum)
+        vcvs <- lapply(object, function(x) {
+            vcov(x)[parnames, parnames]
+        })
+        vcv1 <- array(unlist(vcvs), dim = c(np, np, nsecr))
+        vcv <- sweep(vcv1, MARGIN = 3, STATS = AICwt, FUN = "*")
+        vcv <- apply(vcv, 1:2, sum)
+        sewtd <- diag(vcv)^0.5
+    }
+    else {
+        getLP <- function(object1) {
+            getfield <- function(x) {
+                secr.lpredictor(newdata = newdata, model = object1$model[[x]], 
+                  indx = object1$parindx[[x]], beta = object1$fit$par, 
+                  beta.vcv = object1$beta.vcv, field = x)
+            }
+            sapply(names(object1$model), getfield, simplify = FALSE)
+        }
+        predicted <- lapply(object, getLP)
+        ests <- lapply(predicted, function(x) lapply(x[parnames], 
+            function(y) y[, "estimate"]))
+        if (average == "real") {
+            ests <- lapply(ests, function(x) Xuntransform(unlist(x), 
+                varnames = rep(parnames, rep(nr, np)), linkfn = links))
+            vcvs <- lapply(object, vcov, realnames = parnames, 
+                newdata = newdata)
+        }
+        else {
+            vcvs <- lapply(predicted, function(x) lapply(x[parnames], 
+                function(y) attr(y, "vcv")))
+        }
+        ests <- array(unlist(ests), dim = c(nr, np, nsecr))
+        wtd <- sweep(ests, MARGIN = 3, STATS = AICwt, FUN = "*")
+        wtd <- apply(wtd, 1:2, sum)
+        vcv1 <- array(unlist(vcvs), dim = c(nr, nr, np, nsecr))
+        betak <- sweep(ests, MARGIN = 1:2, STATS = wtd, FUN = "-")
+        vcv2 <- array(apply(betak, 2:3, function(x) outer(x, 
+            x)), dim = c(nr, nr, np, nsecr))
+        vcv <- sweep(vcv1 + vcv2, MARGIN = 4, STATS = AICwt, 
+            FUN = "*")
+        vcv <- apply(vcv, 1:3, sum)
+        sewtd <- apply(vcv, 3, function(x) diag(x)^0.5)
+    }
+    sewtd <- array(sewtd, dim = c(nr, np))
+    z <- abs(qnorm(1 - alpha/2))
+    output <- array(dim = c(nr, 4, np))
+    if (type == "beta") {
+        output[1, 1, ] <- wtd
+        output[1, 2, ] <- sewtd
+        output[1, 3, ] <- wtd - z * sewtd
+        output[1, 4, ] <- wtd + z * sewtd
+        dimnames(output) <- list(NULL, c("beta", "SE.beta", "lcl", 
+            "ucl"), parnames)
+    }
+    else {
+        for (m in 1:length(object)) if (object[[m]]$details$scalesigma | 
+            object[[m]]$details$scaleg0) {
+            stop("'model.average' cannot handle scaled detection parameters")
+        }
+        for (i in 1:nr) {
+            if (average == "real") {
+                output[i, 1, ] <- wtd[i, ]
+                output[i, 2, ] <- sewtd[i, ]
+                lpwtd <- Xtransform(wtd[i, ], links, parnames)
+                selpwtd <- se.Xtransform(wtd[i, ], sewtd[i, ], 
+                  links, parnames)
+                output[i, 3, ] <- Xuntransform(lpwtd - z * selpwtd, 
+                  links, parnames)
+                output[i, 4, ] <- Xuntransform(lpwtd + z * selpwtd, 
+                  links, parnames)
+            }
+            else {
+                output[i, 1, ] <- Xuntransform(wtd[i, ], links, 
+                  parnames)
+                output[i, 2, ] <- se.Xuntransform(wtd[i, ], sewtd[i, 
+                  ], links, parnames)
+                output[i, 3, ] <- Xuntransform(wtd[i, ] - z * 
+                  sewtd[i, ], links, parnames)
+                output[i, 4, ] <- Xuntransform(wtd[i, ] + z * 
+                  sewtd[i, ], links, parnames)
+            }
+        }
+        dimnames(output) <- list(rownames, c("estimate", "SE.estimate", 
+            "lcl", "ucl"), parnames)
+    }
+    if (dim(output)[1] == 1) {
+        if (np == 1) 
+            output <- output[1, , ]
+        else output <- t(output[1, , ])
+    }
+    else if (np == 1) 
+        output <- output[, , 1]
+    if (covar) {
+        dimnames(vcv) <- list(parnames, parnames)
+        output <- list(ma = output, linkvcv = vcv)
+    }
+    return(output)
+}
