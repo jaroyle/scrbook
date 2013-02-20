@@ -34,14 +34,14 @@ birds \citep{desante_etal:1995} (XXXX BETTER REF HERE WOULD BE NICE
 XXXX), but there are examples of large-scale monitoring of carnivores
 and other species too, e.g., tigers \citep{jhala_etal:2011}.
 
-In the stratified population models we consider here, an individual is assumed
-to be a member of a single strata, so that the population sizes
-$N_{g}$ for stratum $g$ are independent of one another. However, 
+In the stratified population models we consider here, an individual is
+assumed to be a member of a single strata, so that the population
+sizes $N_{g}$ for stratum $g$ are independent of one another. However,
 stratifed or multi-session SCR models are also directly relevant when
 the grouping is based on distinct time samples, either periods within
 a biological season, or even across years. In this case, individuals
-might belong to multiple of the strata, but, the models discussed
-in this chapter  we  not acknowledge that explicitly.
+might belong to multiple of the strata, but, the models discussed in
+this chapter we not acknowledge that explicitly.
 %Even with a single study
 %area or trap array, it would be common to conduct multiple samples
 %over short intervals, but then repeat sampling again some weeks or
@@ -63,7 +63,7 @@ model only requires 1 additional parameter.
 
 In previous chapters, we've analyzed data for a number of examples
 that fall into this kind of stratified situation. In
-Chapt. \ref{chapt.mn-poisson}, we analyzed the ovenbird data as an
+Chapt. \ref{chapt.poisson-mn}, we analyzed the ovenbird data as an
 example of a multi-catch (independent multinomial) model, where we
 used year as the stratification variable, and the possum data set
 (illustrating the single-catch situation). In
@@ -126,7 +126,7 @@ the collection of abundance variables $N_{g}$ {\it implies} a specific
 model for the population membership variable $g_{i}$.  Then, the data
 from all populations can essentially be pooled, and analyzed as data
 from a single population with the appropriate model on $g_{i}$,
-without having to model the $N_{g}$ parameters {\it directly}. In this
+without having to deal with  the $N_{g}$ parameters in the model {\it directly}. In this
 way, we can easily build hierarchical models for stratified
 populations, using an {\it individual} level parameterization of the
 model. Obviously this is important for SCR models as they all possess
@@ -134,7 +134,11 @@ at least onee random effect in the form of the activity center ${\bf
   s}$. Moreover, in the context of stratified or multi-session type
 models, the ``population membership'' variable $g_{i}$ is a {\it
   categorical} type of individual covariate (Huggins 1989; Alho 1990;
-Royle 2009).
+Royle 2009).  Before considering SCR models specifically, in the next
+section we talk a
+little bit about the technical formulation of data augmentation for
+stratified populations in the context of ordinary closed population
+models. 
 
 
 \section{Multinomial Abundance Models}
@@ -163,7 +167,11 @@ with
 \log( \lambda_{g} ) = \beta_{0} + \beta_{1} x_{g}
 \label{eq.poisson2}
 \end{equation}
-where $x_{g}$ is some measured attribute for population $g$. 
+where $x_{g}$ is some measured attribute for population $g$.   We
+could generalize this a bit by considering a random effecct in
+Eq. \ref{eq.poisson2}, producing over-dispersed population
+sizes $N_{g}$. For the special case of adding log-gamma noise, this
+results in negative binomial models for $N_{g}$.
 
 \begin{comment}
 Under this
@@ -205,9 +213,9 @@ of Bernoulli variables:
 for $i=1,2,\ldots,M_{T}$.
 \end{comment}
 
-
-Think about doing data augmentaiton on each
-population individually, by assuming that 
+To develop a data augmentation scheme for this population size model, 
+think about doing data augmentaiton on each
+population {\it individually}, by assuming that 
 \[
  N_{g} \sim \mbox{Binomial}(M_{g} , \psi)
 \]
@@ -220,37 +228,54 @@ be some large integer (as we always do). However, we want to pick
 $M_{g}$ in a way that imposes the correct structure on $N_{g}$. If
 we want to enforce our Poisson model on $N_{g}$ from above, we
 naturally choose
-$M_{g}$ to be Poisson also, in which case, maginally, $N_{g}$ is also
-Poisson, but with mean $\psi \exp(\beta_{0})$.  Clearly $\psi$ and $\beta_{0}$
-are confounded (See below for more discussion).
+$M_{g}$ to be Poisson also, in which case the marginal distribution
+of $N_{g}$ is also
+Poisson, but with mean $\psi \exp(\beta_{0} + \beta_{1}x_{g})$.  Clearly $\psi$ and $\beta_{0}$
+are confounded (See below for more discussion)
+%, and to preserve the
+%meaning of $\beta_{0}$ (as the intercept in the model for $N_{g}$ we
+%should define $\beta_{0}^{*} = (1/\psi)*\beta_{0}.
 In any case, for a collection of populations we want to model jointly,
-we impose the structure that we desire for N_{g} on the
-super-population parameters M_{g}, Poiusson in this case.
-But to implement this model at the individual level we need to get rid
-of the M_{g} parameters (the whole motivation of data augmentation in
-the first place). So we condition on the total $M_{T}$ which has that
-M_{g}|M_{t} is multinomial with probabilities $pi_{g}$ given by
-Eq. xxx above.  This is really great because we can implement this
-model by introducing a variable $g_{i}$ for each $i=1,2,\ldots, M_{T}$
+we impose the structure that we desire for $N_{g}$ on the
+super-population parameters $M_{g}$.
+To implement this model at the individual level we need to get rid
+of the $M_{g}$ parameters (the whole motivation of data augmentation in
+the first place). So we condition on the total super-population size
+$M_{T}= \sum_{g} M_{g}$ which is multinomial:
+\begin{equation}
+{\bf M}|M_{T} \sim \mbox{Multinom}(M_{T};  {\bm \pi} ) 
+\label{eq.mn1}
+\end{equation}
+where ${\bf M}$ is the vector $(M_{1}, M_{2},\ldots,M_{G})$, and
+ $\pi_{g} = \lambda_{g}/\sum_{g} \lambda_{g}$.
+This is handy because we can implement this
+model, e.g., in {\bf BUGS}, by introducing a variable $g_{i}$ for each $i=1,2,\ldots, M_{T}$
 which is the ``group membership'' of each individual in the
 super-population.   Then, conditional on $g_{i}$, a guy is either a
 real guy, or a pseudo-guy, according to the binary data augmentation
-variable $z_{i}$.  
-
-
-
-
-
+variable $z_{i}$.  In other words, the following model, in {\bf BUGS} pseudo-code:
+\begin{verbatim}
+psi ~ dunif(0,1)
+for(g in 1:G){
+  pi[g] <- lambda[g]/sum(lambda[])
+}
+g[i] ~ dcat(pi[1:G])
+z[i] ~ dbern(psi)
+\end{verbatim}
+produces a vector of population size parameters ${\bf N} = (N_{1},\ldots,N_{G})$
+which are approximately, for large $M_{T}$, independent Poisson random variables. 
 
 
 When we do data augmentation to the multinomial joint distribution,
 the $\psi$ parameter takes the place of $N_{T}$, the total population
 size (across all strata). And thus it is clear that $\psi$ is
-confounded with $\exp(\beta_{0})$. In other words, by constructing the
-model conditional on the total, $N_{T}$, we lose information about the
-intercept $\beta_{0}$, but this is recovered in the data augmentation
-parameter $\psi$.  One of these parameters has to be fixed. We can set
-$\beta_0 = 0$ or else we can fix $\psi$.  The constraint can be
+confounded with $\exp(\beta_{0})$. 
+%In other words, by constructing the
+%model conditional on the total, $N_{T}$, we lose information about the
+%intercept $\beta_{0}$, but this is recovered in the data augmentation
+%parameter $\psi$.  
+One of these parameters has to be fixed. We can set
+$\beta_0 = 0$ or else we can fix $\psi$ (see Chapt. \ref{chapt.state-space}).  The constraint can be
 specified by noting that, under the binomial data augmentation model
 $\mathbb{E}(N_{T}) = \psi M_{T}$ and, under the Poisson model,
 $\mathbb{E}(N_{T}) = \sum_{g} \exp(\beta_{0} + \beta_{1} x_{g})$ and
@@ -264,6 +289,7 @@ models for density. In that case, $\beta_0$ was the intercept of the
 intensity function and one could choose to estimate either $\beta_0$
 or the data agmentation parameter $\psi$.
 
+\begin{comment}
 {\bf XXXXXX this is kind of important but its not obvious why! XXXXXX}
 The equivalence of $\psi$ and $\beta_{0}$ can be thought of in terms
 of pooling data from the different sub-populations. In a model with
@@ -272,7 +298,7 @@ single parameter $\psi$ or $\beta_0$ but not both. In this sense,
 pooling data from multiple spatial samples is justifiable (in terms of
 sufficiency arguments) under a Poisson assumption on local abundance
 (which was noted by Royle 2004b; Royle and Dorazio 2008, sec. 5.5.1).
-
+\end{comment}
 
 \subsection{Implementation in BUGS}
 
@@ -287,15 +313,15 @@ and the binomial sampling of those super-population sizes is
 equivalently represented by the latent variable pair $(g_{i},z_{i})$
 where $g_{i}$ is categorical with prior probabilities $\pi_{s}$ and
 $z_{i} \sim \mbox{Bernoulli}(\psi)$.  In particular, the multinomial assumption
-for the latent variables $G_{g}$ is formulated in terms of ``group
-membership'' for each individual in the super-population of size $M$
+for the latent variables $M_{g}$ is formulated in terms of ``group
+membership'' for each individual in the super-population of size $M_{T}$
 according to:
 \[
  g_{i} \sim \mbox{Categorical}\left( {\bm \pi} \right)
 \]
 with ${\bm \pi} = (\pi_{1}, \ldots, \pi_{G})$ and $\pi_{g} =
 \lambda_{g}/(\sum_{g} \lambda_{g})$.  The binomial sampling is
-described by the binary variables $z_{1},\ldots,z_{M}$ such that
+described by the binary variables $z_{1},\ldots,z_{M_{T}}$ such that
 \[
  z_{i} \sim \mbox{Bernoulli}(\psi)
 \]
@@ -324,6 +350,7 @@ for an ordinary closed population model (model $M_{0}$).
 \centering
 \rule[0.15in]{\textwidth}{.03in}
 \begin{tabular}{cc}
+Implementation 1 & Implementation 2 \\
 \begin{minipage}{2.75in}
 {\small
 \begin{verbatim}
@@ -331,17 +358,17 @@ model {
 # This will show that psi and b0 
 #   are confounded. 
   p ~ dunif(0,1)
-  b0 ~ dnorm(0,.1)
-  b1 ~ dnorm(0,.1)
+  beta0 ~ dnorm(0,.1)
+  beta1 ~ dnorm(0,.1)
   psi ~ dunif(0,1)
   for(s in 1:S){
-    log(lam[s]) <- b0 + b1*x[s]
+    log(lam[s]) <- beta0 + beta1*x[s]
     gprobs[s] <- lam[s]/sum(lam[1:S])
   }
   for(i in 1:M){
     g[i] ~ dcat(gprobs[])
     z[i] ~ dbern(psi)
-   y[i] ~ dbin(mu[i],J)
+   y[i] ~ dbin(mu[i],K)
    mu[i] <- z[i]*p
   }
   N <- sum(z[1:M]) 
@@ -357,17 +384,17 @@ model {
 # This version constrains psi with 
 #   the intercept parameter
   p ~ dunif(0,1)
-  b0 ~ dnorm(0,.1)
-  b1 ~ dnorm(0,.1)
+  beta0 ~ dnorm(0,.1)
+  beta1 ~ dnorm(0,.1)
   psi <- sum(lam[])/M
   for(j in 1:K){
-    log(lam[j]) <- b0 + b1*x[j]
+    log(lam[j]) <- beta0 + beta1*x[j]
     gprobs[j] <- lam[j]/sum(lam[1:K])
   }
-  for(i in 1:M){
+  for(i in 1:M){  
     g[i] ~ dcat(gprobs[])
     z[i] ~ dbern(psi)
-   y[i] ~ dbin(mu[i],J)
+   y[i] ~ dbin(mu[i],K)
    mu[i] <- z[i]*p
   }
   N <- sum(z[1:M]) 
@@ -379,7 +406,7 @@ model {
 \rule[-0.15in]{\textwidth}{.03in}
 \caption{BUGS model specification for a capture-recapture model with
   constant encounter probability and Poisson subpopulation sizes,
-  $N_{k}$, with mean depending on a single covariate \mbox{\tt x[j]}. 
+  $N_{g}$, with mean depending on a single covariate \mbox{\tt x[j]}. 
 Two version of the model: The first one describes the model in terms
 of the intercept $\beta_0$ and DA parameter $\psi$, which are
 confounded. The required constraint is indicated in the specification
@@ -409,32 +436,36 @@ We simulate some population sizes and encounter data  as
 follows.
 \begin{verbatim}
 set.seed(2013)
-G<- 20
+G<- 20                          # G = 20 groups or strata
 beta0<- 3
 beta1<- .6
 p<- .3
-K<- 5 # sample occasions for capture-recapture
-Dist<- rnorm(G)
-lambda<- exp(beta0+beta1*Dist)
+K<- 5                           # Sample occasions for capture-recapture
+Dist<- rnorm(G)                 # Simulate covariate
+lambda<- exp(beta0+beta1*Dist)  # Simulate poplation sizes 
 N<-rpois(G,lambda=lambda)
-y<-NULL
+
+y<-NULL                         # Simulate model M0 data
 for(g in 1:G){
 if(N[g]>0)
  y<-c(y,  rbinom(N[g],K,p))
 }
 g<- rep(1:G,N)
+
 ## Now keep the group id and encounter frequency only for
-## individuals that are captured 
+##   individuals that are captured 
 g<-g[y>0]
 y<-y[y>0]
 \end{verbatim}
-Thats it, we sampled population structure for $G=20$ populations, and
+Thats it,
+we just simulated population structure for $G=20$ populations, and
 capture-recapture data for all individuals in the population. 
 
 Now we can fit the model using either of the formulations 
 of the model described in Panel \ref{panel.wbcode}.  We have a script,
 lets call it \mbox{\tt multisession\_sim}
 ??????????
+{\bf FIT THIS .... PUT in repo ................ }
 
 
 
@@ -443,8 +474,8 @@ lets call it \mbox{\tt multisession\_sim}
 
 The multinomial allows for the joint modeling of a collection of
 population sizes using data augmentation.  However, as we 
-demonstrated in Sec. XXX, we can anlyze the models by putting
-independent binomial priors on each $N_{t}$ and doing the data
+demonstrated in Sec. \ref{poisson-mn.sec.ovenbird}, we can anlyze the models by putting
+independent binomial priors on each $N_{g}$ and doing the data
 augmentation independently for each population by itself. 
 This is not any more or less difficult than the multinomial
 formulation but, we imagine, it could be slightly less efficient computationally.
@@ -461,33 +492,40 @@ with
 This implies a binomial model for the stratum population sizes:
 \[
 N_{g} \sim \mbox{Binomial}(M, \psi_{g})
-\]  {\bf XXXX one M here or one M for each group ??? XXXXX}
-and also a multinomial for the vector 
-$N_{1}, \ldots, N_{G}, M-\sum_{g} N$ with probabilities
-$\psi_{g}$ and, for the last cell, $1-\sum_{g} \psi_{g}$. This is
-almost the same multinomial as produced by the other approach.
-Also, if $M$ is sufficiently large then the N(g) are approximately
+\]  
+(we suppose here that the population of pseudo-individuals for data
+augmentation is distinct for each stratum, but constant).
+%and also a multinomial for the vector 
+%$N_{1}, \ldots, N_{G}, M-\sum_{g} N$ with probabilities
+%$\psi_{g}$ and, for the last cell, $1-\sum_{g} \psi_{g}$. This is
+%almost the same multinomial as produced by the other approach.
+If $M$ is large then the $N_{g}$ are approximately
 independent Poisson random variables with means $\psi_{g} M$.
 
-The multi-session models in \mbox{\tt secr}  are based on independent
-Poisson priors on $N$, and then among group structure is modeled in
-the parameter $\Lambda_{t}$. 
+As we noted in Chapt. \ref{chapt.mle}, 
+the multi-session models in \mbox{\tt secr}  are based on a
+Poisson prior for $N_{g}$, and then among group structure is modeled in
+the parameter $\Lambda_{g}$. In our view, either model is (binomial
+based on data augmentation, or Poisson) is satisfactory for any
+application of capture-recapture to stratified populations.  
 
 
 \section{Spatial Capture-Recapture}
 
 
 The ideas described above for implementing Bayesian multi-session
-models were completely general, and can be applied equally to ordinary
+models are completely general, and can be applied equally to ordinary
 closed models of any sort, or spatial capture-recapture models without
 any novel considerations.  \citet{royle_converse:2013} applied the
 model to a small-mammal trapping problem which involved replicate
-``single-catch'' arrays of traps. We review their application here.
+``single-catch'' arrays of traps. We review their application here,
+using a simplified version of the model that can be fitted efficiently
+in {\bf JAGS}.
 
 To refresh your memory about the multinomial model, let ${\bf y}_{ik}
-= (y_{i1k},y_{i2k},\ldots,y_{iJk})$ be the spatial encounter history
-for individual $i$, during sample occassion $k$.  {\bf XXXX Check
-  notation consistent with ch. 9 XXXXX}.  For standard live traps (aka
+= (y_{i1k},y_{i2k},\ldots,y_{iJk},y_{i,J+1,k})$ be the spatial encounter history
+for individual $i$, during sample occassion $k$.  
+ For standard live traps (aka
 ``single catch'' traps), an individual can be captured in at most one
 trap. Then, the vector $(y_{i1k},y_{i2k},\ldots,y_{iJk},y_{i,J+1,k})$,
 where the last element $y_{i,J+1,k}$ corresponds to ``not captured'',
@@ -501,7 +539,7 @@ represents the probability of being encountered in a trap (for
 elements $1,\ldots,J$) or not captured at all (element $J+1$). Of
 course, standard small-mammal traps ``fill up'' and, strictly
 speaking, the multinomial distribution changes as individuals are
-captured. But, as noted in Chapt. \ref{chapt.mn-poisson}, we
+captured. But, as noted in Chapt. \ref{chapt.poisson-mn}, we
 approximate the single catch model with the independent multinomial
 model (multi-catch) to little ill-effect, as long as typical encounter
 probabilities are low. The error due to misspecification of the model
@@ -518,7 +556,7 @@ equivalent half-normal model is:
 \label{hscr.eq.mlogit}
 \end{equation}
 where $\alpha_{1} = 1/(2\sigma^2)$ and $\sigma$ is the scale
-parameter of the half-normal detection model.  Then
+parameter of the Gaussian encounter probability model. Then, 
 \[
 {\bm \pi}_{ij} = \exp(\eta_{ij})/[ 1 + \sum_{j} \exp(\eta_{ij}) ]
 \]
@@ -528,10 +566,10 @@ event ``not captured'' is:
 \pi_{i,J+1} = 1- \sum_{j=1}^{J} \pi_{ij}
 \]
 
-We can extend this to accommodate explicit 
-covariates of any type.
-For example, to model a behavioral
-effect (which we do in the example below), let 
+There are no novel technical considerations in order to model
+covariates of any time. 
+For example, we usually would model a behavioral
+effect in small mammal studies. For this, let
 $C_{ik}$ be a covariate of previous encounter
 (i.e., $C_{ik} = 0$ before the occasion of first capture, and $C_{ik}
 = 1$ thereafter), then
@@ -541,18 +579,20 @@ $C_{ik}$ be a covariate of previous encounter
 We note, in this case, the multinomial probabilities depend not only
 on individual and trap, but also on sample occasion.
 
-\subsection{Small-mamml trapping study}
+\subsection{Small-mammal trapping study}
 
-
-We applied this model to data described by Converse et al. (2006). The
-data were collected as part of an effort to understand the impacts of
+We analyze data from
+\citet{converse_etal:2006jwm}, from a study of the impact of
 fuel reduction treatments on small mammal populations at 2 replicate
-study sites in northern New Mexico (Fig. \ref{fig.studyarea}; 
-the Jemez Mountains Study area of
-the National Fire and Fire Surrogate Study; McIver et al. 2008), with
+study sites in northern New Mexico (Fig. \ref{fig.studyarea}).
+The data were collected 
+with 
 trapping over 3 years (2001-2003) in each of 4 replicate experimental
-units per study site (i.e., number of groups $G = 24$, 8 units by 3
-years, in this example).  The experimental design included plans for
+units per study site. We consider all 3 years $\times$ 4 units
+$\times$ 2 sites to be model groups  (i.e., number of groups $G = 24$)
+for our purposes here.
+
+  The experimental design included plans for
 thinning, burning, and thinning/burning combination treatments, as
 well as a control, at each study site. However, during the period when
 these data were collected, the thinning only treatment was completed
@@ -562,10 +602,8 @@ units were burned in a wildfire. Both the thinning treatment and the
 wildfire took place between the 2002 and 2003 study seasons.
 
 Trapping was conducted over 10 occasions (2 per day) at each
-experimental unit, with half the units at each site randomly selected
-in the first year for trapping in trapping session 1, which lasted 5
-days, and half in session 2, an additional 5 days. The assignment to
-session then alternated over years.  In 2001, the traps in each
+experimental unit.
+In 2001, the traps in each
 experimental unit were configured in a 6 by 6 grid, with 50 m between
 each trap. After a pilot project to assess the effects of trap spacing
 (Converse et al. 2004) the trap density was increased such that there
@@ -715,14 +753,12 @@ Density (c)&2.54x10-4&2.41x10-4&	2.71x10-4 \\ \hline
 
 
 
-
-
 \begin{figure}[ht]
 \begin{center}
 \includegraphics[height=4in,width=5.2in]{Ch14-Multisession/figs/converse_NM_Overview_4.jpg}
 \end{center}
 \caption{
-Central New Mexico Study Area from Converse et al. (2006).
+Central New Mexico Study Area from \citet{converse_etal:2006jwm}.
 }
 \label{fig.studyarea}
 \end{figure}
@@ -738,7 +774,8 @@ Abundance estimates for Peromyscus spp. per experimental unit
 (with area = 5.0625 ha) for each of 24 groups composed of 8
 experimental units in year 1 (groups 1:8), and the same 8
 experimental units in year 2 (groups 9:16) and year 3 (groups 17:24)
-at the Jemez Mountains Study Area, New Mexico.  Point estimates
+(from \citet{royle_converse:2013}).
+ Point estimates
 (filled circles) are posterior modes, and error bars reflect 95\%
 credible intervals. Also shown are the number of individuals
 captured per group (open circles).  }
@@ -767,13 +804,6 @@ Results?
 
 \section{Topics in Multi-Session models}
 
-The thing is this induces a slight bit of {\it dependence} among the
-counts but, for even a smallish number of populations , and of
-moderate size, the dependence is imperciptable and we think basically
-irrelevant from an inference standpoint. 
-
-Over-dispersion. Everyone loves it. Could have normal random effect or
-Gamma distribution. 
 
 \subsection{Temporal models }
 
@@ -785,8 +815,6 @@ individual recaptures across primary periods. (See chapter
 level we just model net change in $N_{g}$.
 
 \subsection{Dependence -- is it a problem?}
-
-{\bf XXX This should probably go in the body of the text or something XXXX}
 
 In time -- ignoring the dependence of $N_{g}$ probably entails a
 little {\it loss} of efficiency but should have no effect on anything.
@@ -808,7 +836,7 @@ eficiency.
 
 GROUPS, STRATA, POPULATIONS, ETC...????
 
-\section{Multi-session models in \mbox{\tt secr}  }
+\subsection{Multi-session models in \mbox{\tt secr}  }
 
 We talked about this back in sec. xxx and also in sec. xxxxx....
 
@@ -830,8 +858,6 @@ accommodated in the \mbox{\tt secr}
 package. As another (potential) example, we believe the model could be
 extended to open populations (Gardner et al. 2010) without much
 difficulty.
-
-
 
 
 \section{Summary and Outlook}
