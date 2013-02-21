@@ -58,7 +58,7 @@ model {
   }
   N <- sum(z[1:M]) 
 }
-",file="model1.txt")
+",file="model1a.txt")
 cat("
 model {
 # This version constrains psi with 
@@ -79,16 +79,43 @@ model {
   }
   N <- sum(z[1:M]) 
 }
-",file="model2.txt")
+",file="model1b.txt")
+cat("
+model {
+# This version constrains psi with 
+#   the intercept parameter
+  p ~ dunif(0,1)
+  beta0 ~ dnorm(0,.1)
+  beta1 ~ dnorm(0,.1)
+  psi<- sum(lam[])/M
+  for(j in 1:G){
+    log(lam[j]) <- beta0+ beta1*x[j]
+    gprobs[j]<- psi*lam[j]/sum(lam[1:G])
+  }
+  gprobs[G+1]<- (1-psi)
 
+  for(i in 1:M){
+    g[i] ~ dcat(gprobs[])
+    z[i] <- 1 - (g[i] == (G+1))
+    y[i] ~ dbin(mu[i],K)
+    mu[i] <- z[i]*p
+  }
+  N <- sum(z[1:M]) 
+}
+",file="model2.txt")
 data1 <- list(y = y, g=g,M=M,K=K,G=G,x=x)
 params1 = c("p", "beta0","beta1","psi","N")
 inits = function() {
-list(z = as.numeric(y >= 1), psi = 0.6, p = runif(1), b0=rnorm(1),b1=rnorm(1) )  }
+list(z = as.numeric(y >= 1), p = runif(1), beta0=rnorm(1),beta1=rnorm(1) )  }
 library("R2jags")
-out = jags(data1, inits, params1, model.file = "model1.txt", 
-            working.directory = getwd(), n.chains = 3, n.iter = 2000, n.burnin = 1000, n.thin = 1)
+out1 = jags(data1, inits, params1, model.file = "model1b.txt", 
+            working.directory = getwd(), n.chains = 3, n.iter = 12000, n.burnin = 1000, n.thin = 1)
 
+inits = function() {
+list(p = runif(1), beta0=rnorm(1),beta1=rnorm(1) )  }
+
+out2 = jags(data1, inits, params1, model.file = "model2.txt", 
+            working.directory = getwd(), n.chains = 3, n.iter = 12000, n.burnin = 1000, n.thin = 1)
 return(out)
 }
 
