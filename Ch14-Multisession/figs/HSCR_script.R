@@ -82,8 +82,10 @@ model {
 ",file="model1b.txt")
 cat("
 model {
-# This version constrains psi with 
-#   the intercept parameter
+# This version absorbs psi into the multinomial probabilities
+# it produces a different answer because the unif(0,1) prior on psi
+# is highly informative in this case (see Ch 10 of Royle and Dorazio 2008
+# for an explanation)
   p ~ dunif(0,1)
   beta0 ~ dnorm(0,.1)
   beta1 ~ dnorm(0,.1)
@@ -108,14 +110,15 @@ params1 = c("p", "beta0","beta1","psi","N")
 inits = function() {
 list(z = as.numeric(y >= 1), p = runif(1), beta0=rnorm(1),beta1=rnorm(1) )  }
 library("R2jags")
-out1 = jags(data1, inits, params1, model.file = "model1b.txt", 
-            working.directory = getwd(), n.chains = 3, n.iter = 12000, n.burnin = 1000, n.thin = 1)
+out1a = jags(data1, inits, params1, model.file = "model1a.txt", 
+            working.directory = getwd(), n.chains = 3, n.iter = 2000, n.burnin = 1000, n.thin = 1)
+out1b = jags(data1, inits, params1, model.file = "model1b.txt", 
+            working.directory = getwd(), n.chains = 3, n.iter = 2000, n.burnin = 1000, n.thin = 1)
 
-inits = function() {
-list(p = runif(1), beta0=rnorm(1),beta1=rnorm(1) )  }
-
-out2 = jags(data1, inits, params1, model.file = "model2.txt", 
-            working.directory = getwd(), n.chains = 3, n.iter = 12000, n.burnin = 1000, n.thin = 1)
+#inits = function() {
+#list(p = runif(1), beta0=rnorm(1),beta1=rnorm(1) )  }
+#out2 = jags(data1, inits, params1, model.file = "model2.txt", 
+#            working.directory = getwd(), n.chains = 3, n.iter = 12000, n.burnin = 1000, n.thin = 1)
 return(out)
 }
 
