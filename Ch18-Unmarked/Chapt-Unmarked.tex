@@ -254,19 +254,20 @@ be possible to fit inhomogeneous point process models using the
 methods described in Chapt.~\ref{chapt.state-space}, we doubt it given
 the simplicity of the data. Thus, we assume a homogeneous point process
 $\{{\bf s}_i, \ldots, {\bf s}_N\} \sim \text{Uniform}(\mathcal{S})$
-where ${\bf s}_i$ is the activity center of individual $i$.
-The observation model is once again
-conditional on the state model and describes the encounter rate as a
-function of the distance between activity centers and traps.
+where ${\bf s}_i$ is the activity center of individual $i$ in the
+population of size $N$. For the moment, we will assume that $N$ is
+known.
 
-As with all SCR models, the encounter process is specific to the
+The observation model is also the same as in other SCR models covered
+in this book. It describes the probability of encountering individual
+$i$ at trap $j$, conditional on the location of the individual's
+activity center. The encounter process is specific to the
 sampling method, and here we consider the standard camera trapping
 situation in which an individual can be encountered at multiple traps
 during a single time period, say one night during a camera-trapping
 study, and it can be detected multiple times at a single trap during
 an occasion. This is the Poisson encounter model described in
-Chapt.~\ref{chapt.poisson-mn}. The model for the capture histories can
-be described by
+Chapt.~\ref{chapt.poisson-mn}:
 \begin{equation}
  y_{ijk} \sim \mbox{Poisson}(\lambda_{ij})
 \label{eq.latentPoisson}
@@ -278,7 +279,7 @@ Gaussian, or half-normal, model:
 \lambda_{ij} = \lambda_0 \exp(\| {\bf x_j - s_i} \| / 2\sigma^2)
 \]
 where $\lambda_0$ is the baseline encounter rate, $\| {\bf x_j - s_i}
-\|$ is the Euclidean distance between the trap and activity center,  and $\sigma$ is the
+\|$ is the Euclidean distance between the trap and activity center, and $\sigma$ is the
 scale parameter determining the degree to which encounter rate decreases with
 distance.
 
@@ -295,8 +296,15 @@ n_{jk} = \sum_{i=1}^{N} y_{ijk}.
 \]
 This data structure, a matrix of counts made at a collection of
 sampling locations on one or more occasions is extremely common in
-ecology. Note also that we can get by with a single
-occasion of data ($J \equiv 1$) because under the Poisson model,
+ecology. For example, think of avian point count data or camera
+trapping data from studies of unmarked animals.
+
+Under this Poisson model, we can condense the count data even
+further to reduce the computational time required to fit the
+model. Specifically, as discussed in
+Chapt~\ref{chapt.modeling}, the sum of two or more Poisson random
+variables is also Poisson, with expected value equal to the sum of the
+individual expected values.  Thus, we can define:
 \begin{equation}
 n_{jk} \sim \mbox{Poisson}( \Lambda_{j} )
 \label{eq:nagg}
@@ -312,16 +320,15 @@ $n_{j.} = \sum_{k} n_{jk}$ and then
  n_{j.} \sim \mbox{Poisson}( K \Lambda_{j} ).
 \]
 As such, $K$ and $\lambda_{0}$ serve equivalent roles as affecting
-baseline encounter rate, as has been noted elsewhere
-\citep{efford_etal:2009ecol}.
-
+baseline encounter rate. This also demonstrates that this model can be
+applied to data from a single sampling occassion $J \equiv 1$, as has
+been noted elsewhere \citep{efford_etal:2009ecol}.
 
 This formulation of the model in terms of the aggregate count
 simplifies computations as the latent variables
 $y_{ijk}$ do not need to be updated in the MCMC estimation
 scheme; however, retaining $y_{ijk}$ in the formulation of the model
-is important if some individuals are uniquely marked.
-%(Chapt.~\ref{chapt.partialID}).
+is important if some individuals are uniquely marked. %(Chapt.~\ref{chapt.partialID}).
 This is because
 uniquely identifiable individuals produce
 observations of some of the $y_{ijk}$ variables, which we elaborate
@@ -330,13 +337,81 @@ on in the subsequent chapter.
 \subsection{On $N$ being unknown}
 
 In practice, population size, $N$, is never known. Estimating this %important
-parameter requires that we put a prior on it. The two common priors,
-used in the case of a homogeneous point process,
-are $N \sim \text{Poisson}(\mu|\mathcal{S}|)$ and
-$N \sim \text{Binomial}(M, \psi$. In
+parameter requires that we put a prior on it, and the priors commonly
+used in inhomogeneous point process models are
+$N \sim \text{Poisson}(\mu|\mathcal{S}|)$ and
+$N \sim \text{Binomial}(M, \psi)$, the latter of which is equivalent
+to a discrete uniform prior if $\psi \sim \text{Unif}(0,1)$. In
 Chapt.~\ref{chapt.statespace} and elsewhere, we demonstrated that
 the choice of prior has very little influence on parameter estimates,
-and so we favor the binomial prior because of its convienence.
+and so we favor the binomial prior because of its convienence when
+estimation is based on MCMC. That is, it allows us to fix the
+dimensions of the parameter space by setting $M$ to some arbitrarily
+large integer.
+
+Recall from Chapt.~\ref{chapt-modeling} that a binomial model is
+equivalent to a series of $M$ independent Bernoulli trials. As such,
+we can rewrite the $N \sim \text{Binomial}(M, \psi)$ as $w_i \sim
+\text{Bernoulli}(\psi)$ where $w_i$ is an auxilliary variable
+indicicating if individual $i$ is a member of the population, i.e. $N =
+\sum_i w_i$. Having expanded the model to include a prior on $N$, we
+can summarize the SC model, with a Gaussian observation model, as follows:
+\begin{align*}
+  w_i &\sim \text{Bern}(\psi) \\
+  y_{ijk} &\sim \text{Poisson}(\lambda_{ijk} w_i) \\
+  \lambda_{ijk} &= \lambda_0\exp(-\|{\bf x}_j - {\bf s}_i\|^2)/(2\sigma^2) \\
+  n_{jk} &= \sum_i y_{ijk}
+\end{align*}
+
+\subsection{Similarity to other data augmentation schemes}
+
+By including the $w$ variables in the model, we have made use of the
+data augmentation technique introduced by \citet{royle_etal:2007} and
+developed by \citep{royle:2009} and
+\citep{royle_dorazio:2010}. However, including the latent encounter
+histories in the model can also be viewed as another form of data
+augmentation, which was in fact, first proposed as a general model of
+spatial dependence in count data
+\citep{wolpert_ickstadt:1998}.
+
+The model of
+\citet{wolpert_ickstadt:1998} is slighly different than the SC model
+in that they defined $\{{\bf s}_1, \ldots, {\bf s}_N\}$ not as a
+realization from a spatial point process, but rather as locations of a
+dense array of points, typically a fine grid covering the $J$ survey
+locations. The purpose of this grid is to introduce random spatial noise into the system,
+which is then smoothed using what, in our case, is the encounter
+model. In their case, the encounter model is simply a smoothing
+kernel that determines the spatial covariance structure -- if $\sigma$
+is high relative to the ``trap'' spacing, the counts will be highly
+correlated, and vice versa. Similar ideas have been used to model
+spatial dependence in temperature data \citep{higdon:1998}. In the SC
+model, $\sigma$ and the encounter model also determine the spatial
+correlation, but it has an explicit connection to
+correlation as information about the number and location of the
+activity centers.
+
+In addition to the fact that they fixed
+the locations of the $\bf s$'s, their model also differs from the SC
+model in that they also fix $N$, it being chosen to create a suitably
+fine grid for generating the white noise.
+
+
+
+\subsection{Inference}
+
+Bayesian analysis can proceed once suitable priors have been put on
+the hyperparamters $\psi$, $\sigma$, and $\lambda_0$, as is
+demonstrated in the next section. How ab
+
+A likelihood analysis of this model is
+
+The process of augmenting data with pseudo-data in order to simplify
+computation is aptly known as data augmentation. In this case, we
+actually are using two forms of data augmentation. The first
+
+The conviencence of the binomial prior come
+
 
 
 \section{Northern Parula Example}
