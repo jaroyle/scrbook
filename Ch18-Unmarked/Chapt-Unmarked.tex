@@ -233,7 +233,7 @@ can be applied to data collected using many different survey
 methods. Whereas traditional SCR models require spatially-referenced
 encounter histories, this model requires simple count data.
 Let $n_{jk}$ be the observed count data at sampling location $j;
-j=1,\ldotsJ$ on occasion $k; k=1,\ldots,K$. The duration of sampling
+j=1,\ldots J$ on occasion $k; k=1,\ldots,K$. The duration of sampling
 is assumed to be short enough such that the number of individuals
 exposed to sampling does not change over time. Any device capable of
 recording count data could be used, including human observers or
@@ -311,9 +311,9 @@ n_{jk} \sim \mbox{Poisson}( \Lambda_{j} )
 \end{equation}
 where
 \[
- \Lambda_{j} = \lambda_0 \sum_{i} k_{ij},
+ \Lambda_{j} = \lambda_0 \sum_{i} \lambda_{ij},
 \]
-and because $\Lambda_r$ does not depend on $t$, we can
+and because $\Lambda_j$ does not depend on $k$, we can
 aggregate the replicated counts, defining
 $n_{j.} = \sum_{k} n_{jk}$ and then
 \[
@@ -351,60 +351,51 @@ large integer.
 
 Recall from Chapt.~\ref{chapt-modeling} that a binomial model is
 equivalent to a series of $M$ independent Bernoulli trials. As such,
-we can rewrite the $N \sim \text{Binomial}(M, \psi)$ as $w_i \sim
-\text{Bernoulli}(\psi)$ where $w_i$ is an auxilliary variable
+we can rewrite $N \sim \text{Binomial}(M, \psi)$ as $z_i \sim
+\text{Bernoulli}(\psi)$ where $z_i$ is an auxilliary variable
 indicicating if individual $i$ is a member of the population, i.e. $N =
-\sum_i w_i$. Having expanded the model to include a prior on $N$, we
+\sum_{i=1}^M z_i$. Having expanded the model to include a prior on $N$, we
 can summarize the SC model, with a Gaussian observation model, as follows:
 \begin{align*}
-  w_i &\sim \text{Bern}(\psi) \\
-  y_{ijk} &\sim \text{Poisson}(\lambda_{ijk} w_i) \\
+  z_i &\sim \text{Bern}(\psi) \\
+  y_{ijk} &\sim \text{Poisson}(\lambda_{ijk} z_i) \\
   \lambda_{ijk} &= \lambda_0\exp(-\|{\bf x}_j - {\bf s}_i\|^2)/(2\sigma^2) \\
-  n_{jk} &= \sum_i y_{ijk}
+  n_{jk} &= \sum_{i=1}^M y_{ijk} %\\
+%  N &= \sum_{i=1}^M z_i
 \end{align*}
-
-\subsection{Similarity to other data augmentation schemes}
-
-By including the $w$ variables in the model, we have made use of the
-data augmentation technique introduced by \citet{royle_etal:2007} and
-developed by \citep{royle:2009} and
-\citep{royle_dorazio:2010}. However, including the latent encounter
-histories in the model can also be viewed as another form of data
-augmentation, which was in fact, first proposed as a general model of
-spatial dependence in count data
-\citep{wolpert_ickstadt:1998}.
-
-The model of
-\citet{wolpert_ickstadt:1998} is slighly different than the SC model
-in that they defined $\{{\bf s}_1, \ldots, {\bf s}_N\}$ not as a
-realization from a spatial point process, but rather as locations of a
-dense array of points, typically a fine grid covering the $J$ survey
-locations. The purpose of this grid is to introduce random spatial noise into the system,
-which is then smoothed using what, in our case, is the encounter
-model. In their case, the encounter model is simply a smoothing
-kernel that determines the spatial covariance structure -- if $\sigma$
-is high relative to the ``trap'' spacing, the counts will be highly
-correlated, and vice versa. Similar ideas have been used to model
-spatial dependence in temperature data \citep{higdon:1998}. In the SC
-model, $\sigma$ and the encounter model also determine the spatial
-correlation, but it has an explicit connection to
-correlation as information about the number and location of the
-activity centers.
-
-In addition to the fact that they fixed
-the locations of the $\bf s$'s, their model also differs from the SC
-model in that they also fix $N$, it being chosen to create a suitably
-fine grid for generating the white noise.
 
 
 
 \subsection{Inference}
 
 Bayesian analysis can proceed once suitable priors have been put on
-the hyperparamters $\psi$, $\sigma$, and $\lambda_0$, as is
-demonstrated in the next section. How ab
+the hyperparamters $\psi$, $\sigma$, and
+$\lambda_0$. \citet{chandler_royle:2013} provided \R~code for fitting
+the model using MCMC, and demonstrated the model performance with
+uniform priors on the three hyperparameters. They also discussed the
+possibilities and effects of including prior knowledge about $\sigma$
+into the model. In the next section, we explain how the model can be
+fit using \jags, but first we contemplate the viability of classical
+analysis of this model.
 
-A likelihood analysis of this model is
+The obvious challenge faced when conducting a classical analysis of
+this model is that the number of latent variables in the
+model is very high. In all SCR models, the activity centers are
+latent, but now even the encounter histories are latent too -- and
+maximizing likelihood with latent variables (random effects) involves
+integrating (or summing) over all possible values of the latent
+variables. For the activity centers, this is typically accomplished by
+integrating the conditional-on-$\bf s$ over the two-dimensional
+state-space $\mathcal{S}$.
+
+\begin{equation}
+  \mathcal{L}(n|\lambda_0, \sigma) = \int_{\mathcal{S}} \sum_{y \in \mathcal{H}} [n|y][y|s][s] \mathrm{d}{\bf s}
+  \label{eq:1}
+\end{equation}
+
+
+
+
 
 The process of augmenting data with pseudo-data in order to simplify
 computation is aptly known as data augmentation. In this case, we
@@ -623,6 +614,41 @@ informative set of priors. Specifically, the use of prior information
 reduced posterior density at high, biologically implausible,
 values of $\sigma$, and hence decreased the posterior mass for
 low values of $N$ (Fig.~\ref{fig:prior}).
+
+
+\subsection{Similarity to other data augmentation schemes}
+
+By including the $w$ variables in the model, we have made use of the
+data augmentation technique introduced by \citet{royle_etal:2007} and
+developed by \citep{royle:2009} and
+\citep{royle_dorazio:2010}. However, including the latent encounter
+histories in the model can also be viewed as another form of data
+augmentation, which was in fact, first proposed as a general model of
+spatial dependence in count data
+\citep{wolpert_ickstadt:1998}.
+
+The model of
+\citet{wolpert_ickstadt:1998} is slighly different than the SC model
+in that they defined $\{{\bf s}_1, \ldots, {\bf s}_N\}$ not as a
+realization from a spatial point process, but rather as locations of a
+dense array of points, typically a fine grid covering the $J$ survey
+locations. The purpose of this grid is to introduce random spatial noise into the system,
+which is then smoothed using what, in our case, is the encounter
+model. In their case, the encounter model is simply a smoothing
+kernel that determines the spatial covariance structure -- if $\sigma$
+is high relative to the ``trap'' spacing, the counts will be highly
+correlated, and vice versa. Similar ideas have been used to model
+spatial dependence in temperature data \citep{higdon:1998}. In the SC
+model, $\sigma$ and the encounter model also determine the spatial
+correlation, but it has an explicit connection to
+correlation as information about the number and location of the
+activity centers.
+
+In addition to the fact that they fixed
+the locations of the $\bf s$'s, their model also differs from the SC
+model in that they also fix $N$, it being chosen to create a suitably
+fine grid for generating the white noise.
+
 
 
 \section{Design issues}
