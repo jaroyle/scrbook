@@ -401,7 +401,8 @@ likelihood is this:
 Although it might be possible to maximized this likelhiood for some
 values of $N$ and $n$, it seems likely that this is one of the rare
 cases in which computation time could actually be longer than is
-required to simulate the posterior distributions using MCMC.
+required to simulate the posterior distributions using MCMC. Thus, we
+refrain from presenting code to maximize this likelihood.
 
 
 
@@ -412,12 +413,10 @@ described in \citet{chandler_royle:2012}. The data were collected at
 105 points located on a 50-m grid at the Patuxent Wildlife Research
 Center. Each point was surveyed 3 times during June 2006, and
 Fig.~\ref{fig:nopaDat} depicts the resulting spatially-correlated
-counts ($n_{r.}$).
-A total of 226 detections were made with a maximum count of 4 during a
-single survey. At 38 points, no warblers were detected. All but one of
-the detections were of singing males, and this one observation was
-not included in the analysis.
-
+counts ($n_{j.}$). A total of 226 detections were made with a maximum
+count of 4 during a single survey. At 38 points, no warblers were
+detected. All but one of the detections were of singing males, and
+this one observation was not included in the analysis.
 
 \begin{figure}
   \centering
@@ -428,29 +427,31 @@ not included in the analysis.
   \label{fig:nopaDat}
 \end{figure}
 
-
-
 In our analysis of the parula data, we defined the point process
 state-space by buffering the grid of point
 count locations by 250 m and used $M=300$.
 
-At this point in time there is no canned software to fit this model,
+At this point in time there are few software options available to fit this model,
 and it is actually not straight-forward to use \bugs~because of the
 constraints in the model\footnote{Although it can be done using the
-  so-called ``ones-trick''}. However, \jags~has a neat distribution
-called the \verb+dsum+ distribution, which was designed for this type
+  so-called ``ones-trick''}. However, \jags~has a distribution
+called \verb+dsum+, which was designed for this type
 of situation where the observed data are a sum of random
 variables. Remember, if we have 3 detections at a point, we assume
-that these results as $\sum_i z_{ijk}$. Thus, we are summing up random
+that these result as $\sum_i y_{ijk}$. Thus, we are summing up random
 variables. \jags~actually works rather well for this situation
-although it is quite slow. Another limitation of using \jags~is that
-we can't mix data from marked and unmarked individuals because
-\verb+dsum+ requires that we sum over unobserved quantities, not a mix
-of observed and unobserved nodes. Thus, we can't use \jags~for the
-situations considered in the next chapter, and thus we wrote our own
-MCMC algorithm which overcomes these limitations, and it is somewhat
-faster. Nonetheless, here is the \jags~code to analyze the NOPA data.
+although it is slow. %Another limitation of using \jags~is that
+%we can't mix data from marked and unmarked individuals because
+%\verb+dsum+ requires that we sum over unobserved quantities, not a mix
+%of observed and unobserved nodes. Thus, we can't use \jags~for the
+%situations considered in the next chapter, and thus we wrote our own
+%MCMC algorithm which overcomes these limitations, and it is somewhat
+%faster. Nonetheless,
+Here is the \jags~code to analyze the NOPA data.
 
+\begin{panel}
+\centering
+\rule[0.05in]{\textwidth}{.03in}
 \begin{small}
 \begin{verbatim}
 model{
@@ -459,37 +460,40 @@ lam0 ~ dunif(0, 5)
 psi ~ dunif(0, 1)
 for(i in 1:M) {
    # Indicator of occurrence
-   w[i] ~ dbern(psi)
+   z[i] ~ dbern(psi)
    # Animal activity centers
-   sx[i] ~ dunif(0, xSide)
-   sy[i] ~ dunif(0, ySide)
-   for(r in 1:nTraps) {
+   sx[i] ~ dunif(xlim[1], xlim[2])
+   sy[i] ~ dunif(ylim[1], ylim[2])
+   for(j in 1:nTraps) {
        # distance from plot center
-       d[i, r] <- sqrt(pow(sx[i] - X[r, 1], 2) + pow(sy[i] - X[r, 2], 2))
+       dist[i, j] <- sqrt((sx[i] - X[j, 1])^2 + (sy[i] - X[j, 2])^2)
        # encounter rate
-       lam[i, r] <- lam0 * exp(-1*pow(d[i, r],2) / (2*pow(sigma,2))) * w[i]
-       for(t in 1:nReps) {
-           z[i, r, t] ~ dpois(lam[i, r])
+       lam[i, j] <- lam0 * exp(-d[i, r]^2 / (2*sigma^2))
+       for(k in 1:nOccasions) {
+           y[i, j, k] ~ dpois(lam[i, j]*z[i])
            }
        }
    }
-for(r in 1:nTraps) {
-   for(t in 1:nReps) {
-       y[r, t] ~ dsum(z[1,r,t],z[2,r,t], ... ,z[100,r,t]) # code abbreviated
+for(j in 1:nTraps) {
+   for(k in 1:nOccasions) {
+       n[j, k] ~ dsum(y[1,j,k],z[2,j,k], ... ,z[100,j,k]) # code abbreviated
        }
    }
-N <- sum(w[])
+N <- sum(z[])
 }
 \end{verbatim}
 \end{small}
+\rule[0.15in]{\textwidth}{.03in}
+\caption{\jags~code to fit the spatial count model.}
+\end{panel}
 
 Note that this code will not run as shown because we abbreviated the
-arguments to \verb+dsum+. In practice, you need to provide all 100 of
-them, if $M=100$! This is kind of a drag, but you can easily create
-the text using \verb+paste+ in \R. Maybe Martyn Plummer will throw us
-a bone and allow for a vector as an argument. Anyhow, the entire
-analysis is shown on the ???XX help page in \scrbook.
-
+arguments to \verb+dsum+. In practice, you need to provide all $M$ of
+them. If, $M=100$ this is kind of a drag, but you can easily create
+the text using \verb+paste+ in \R. %Maybe Martyn Plummer will throw us
+%a bone and allow for a vector as an argument. Anyhow,
+% XXXX
+The entire analysis is shown on the ???XX help page in \scrbook.
 
 We simulated posterior
 distributions using three Markov chains,
@@ -504,7 +508,6 @@ credible interval (Table \ref{t:nopaPosts}). Nonetheless, the interval
 for density, $D$, includes estimates reported from more intensive field
 studies \citep{moldenhaer_regelski:1996}. As with any SCR model,
 we can produce a density surface map, as shown in Fig.~\ref{fig:nopaDen}
-
 
 \begin{table}%[t]
   \caption{Posterior summary statistics for spatial Poisson-count
@@ -528,7 +531,6 @@ we can produce a density surface map, as shown in Fig.~\ref{fig:nopaDen}
     \hline
   \end{tabular}
   \label{t:nopaPosts}
-\vspace{0.5cm}
 \end{table}
 
 

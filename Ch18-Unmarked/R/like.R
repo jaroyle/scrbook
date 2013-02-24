@@ -65,6 +65,53 @@ int2d <- function(delta=0.05) {
                                             (X[j,2]-s[2])^2))
     p <- p0*exp(-dist^2/(2*sigma^2))
     mean(dbinom(H[i,h]), 1, p)
+}
+
+
+nll <- function(pars, n) {
+    sigma <- pars[1]
+    p0 <- pars[2]
+    density <- pars[3]
+    A <- 1 # area of unit square
+    J <- nrow(n)
+    K <- ncol(n)
+    L <- matrix(NA, J, K)
+    LN <- rep(NA, Nmax)
+    for(N in 0:Nmax) {
+        LI <- rep(NA, N)
+        for(i in 1:N) {
+            LIJK <- matrix(NA, J, K)
+            for(j in 1:J) {
+                for(k in 1:K) {
+
+            LI[i] <- 1
+        }
+    }
+}
+
+
+    for(j in 1:J) {
+        for(k in 1:K) {
+            LcN <- rep(1, Nmax)
+            for(N in max(n):Nmax) {
+                H <- allH(N, n[j,k])
+                nH <- ncol(H)
+                LcH <- rep(NA, nrow(H), nH)
+                for(h in 1:ncol(H)) {
+                    for(i in 1:nrow(H)) {
+                        LcH[i,h] <- cuhre(2, 1, cond.like,
+#                                         p0=p0, sigma=sigma,
+#                                          y.ijk=H[i,h], A=A,
+                                         lower=c(0,0), upper=c(1,1))$value
+                    }
+                }
+                LcN[N+1] <- sum(log(LcH))
+            }
+            L[j,k] <- sum(exp(LcN + dpois(0:N, density*A, log=TRUE)))
+        }
+    }
+    -sum(log(L))
+}
 
 
 nll <- function(pars, n) {
@@ -104,3 +151,10 @@ fm <- optim(c(0.1,0.5,5), nll, n=n, control=list(trace=TRUE, REPORT=1))
 
 
 debugonce(nll)
+
+
+
+
+
+
+
