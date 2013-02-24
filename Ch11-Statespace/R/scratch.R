@@ -1032,10 +1032,8 @@ fm.test <- scrDED(y=y.i, traplocs=X, ~1, ~elev, rasters=elev,
 
 
 
+combn(4,2)
 
-
-
-
-
-
+choose(4,2)
+choose(100, 3)
 
