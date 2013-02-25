@@ -325,9 +325,10 @@ definition, the count data are simply a
 reduced-information summary of the latent encounter histories. That
 is, they are the sample- and trap-specific totals, aggregated over all
 individuals:
-\[
+\begin{equation}
 n_{jk} = \sum_{i=1}^{N} y_{ijk}.
-\]
+\label{chapt.unmarked.eq.ny}
+\end{equation}
 So, unlike most model-development problems faced in this book, we
 don't have to consider competing probability models for
 $[{\bf n}|{\bf y}]$, but instead, we honor the fact that the
@@ -392,7 +393,7 @@ closely-spaced traps.
 \subsection{On $N$ being unknown}
 
 Population size, $N$, is never known in practice, and to estimate it,
-we need a model for it, $[N]$. The homogeneous point process models,
+we need a model for it. For homogeneous point process models,
 $N$ is typically modeled as
 $N \sim \text{Poisson}(\mu|\mathcal{S}|)$ or
 $N \sim \text{Binomial}(M, \psi)$, the latter of which is equivalent
@@ -400,12 +401,12 @@ to a discrete uniform prior if $\psi \sim \text{Unif}(0,1)$. In
 Chapt.~\ref{chapt.statespace} and elsewhere, we demonstrated that
 the choice of prior has very little influence on parameter estimates,
 and so we favor the binomial prior because of its convienence when
-using MCMC. That is, it allows us to fix the
+using MCMC -- it allows us to fix the
 dimensions of the parameter space by setting $M$ to some arbitrarily
 large integer.
 
-Recall from Chapt.~\ref{chapt-modeling} that a binomial model is
-equivalent to a series of $M$ independent Bernoulli trials. As such,
+A binomial model is
+equivalent to a series of $M$ independent Bernoulli trials, and so
 we can rewrite $N \sim \text{Binomial}(M, \psi)$ as $z_i \sim
 \text{Bernoulli}(\psi)$ where $z_i$ is an auxilliary variable
 indicicating if individual $i$ is a member of the population, i.e. $N =
@@ -419,14 +420,18 @@ can summarize the SC model, with a Gaussian observation model, as follows:
 %  N &= \sum_{i=1}^M z_i
 \end{align*}
 
+%We note that there are actually two forms of data augmentation going
+%on here: (1) we have our usual $M$ instead of $N$ model, and (2) from
+%the perspective of modeling count data, we have augmented the model
+%with
 
 
-\subsection{Inference}
+%\subsection{Inference}
 
 Bayesian analysis can proceed once suitable priors have been put on
 the hyperparamters $\psi$, $\sigma$, and
 $\lambda_0$. \citet{chandler_royle:2012} provided \R~code for fitting
-the model using MCMC, and demonstrated the model performance with
+the model using MCMC, and they evaluated the model's performance with
 uniform priors on the three hyperparameters. They also discussed the
 possibilities and effects of including prior knowledge about $\sigma$
 into the model. In the next section, we explain how the model can be
@@ -434,30 +439,26 @@ fit using \jags, but first we contemplate the viability of classical
 analysis of this model.
 
 The obvious challenge faced when conducting a classical analysis of
-this model is that the number of latent variables in the
-model is very high. In all SCR models, the activity centers are
-latent, but now even the encounter histories are latent too -- and
-maximizing likelihoods with latent variables (random effects) involves
+this model is that the number of latent variables in huge. In all SCR models, the activity centers are
+latent, but now even the encounter histories are latent.
+Maximizing likelihoods with latent variables (random effects) involves
 integrating (or summing) over all possible values of the latent
 variables. For the activity centers, this is typically accomplished by
-integrating the conditional-on-$\bf s$ likelihood $[y|s]$ over the two-dimensional
-state-space $\mathcal{S}$ (Chapt.~\ref{chapt.mle}). However, the
-encounter histories $y$ are now latent too, so we have to sum $[n|y]$
-over all possible encounter histories $\mathcal{H}$. The number of
-possible encounter histories is $(N,n)$ and so, for every
-possible value of $N$, we have to sum over a large number of encounter
-histories$\dots$ and then integrate out $s$. The full integrated
-likelihood is this:
-\begin{equation}
-  \mathcal{L}(n|\lambda_0, \sigma, N) = \int_{\mathcal{S}} \sum_{y \in \mathcal{H}} [n|y][y|s][s|N][N] \mathrm{d}{\bf s}
-  \label{eq:1}
-\end{equation}
+integrating the conditional-on-$\bf s$ likelihood $[{\bf y}_i|{\bf s}_i]$ over the two-dimensional
+state-space $\mathcal{S}$ (Chapt.~\ref{chapt.mle}). However, with
+the SC model, we have to sum
+over all possible encounter histories $\mathcal{H}$ meeting the
+constraint of Eq.~\ref{chapt.unmarked.eq.ny}. The
+number of possible encounter histories that could give rise to the count
+data will, in general, be too high to make the likelihood tractible,
+and thus we do not think that maximum likelihood is a viable option
+for analyzing this model. However, one might be able to obtain maximum
+likelihood estimates using simulation-based methods
+%\citep{doucet_etal:2002,lele_etal:2010},
+\citep{lele_etal:2010},
+which will typically be more computationally
+challenging than the MCMC-based Bayesian analysis.
 
-Although it might be possible to maximized this likelhiood for some
-values of $N$ and $n$, it seems likely that this is one of the rare
-cases in which computation time could actually be longer than is
-required to simulate the posterior distributions using MCMC. Thus, we
-refrain from presenting code to maximize this likelihood.
 
 
 
