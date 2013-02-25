@@ -113,6 +113,7 @@ mc2 <- mcmc.list(out2)
 plot(mc2)
 summary(mc2)
 
+sort(table(as.matrix(mc2)[,"N"]))
 
 
 stopCluster(cl2)
