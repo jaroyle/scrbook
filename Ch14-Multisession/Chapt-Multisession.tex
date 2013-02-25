@@ -174,6 +174,7 @@ sizes $N_{g}$. For the special case of adding log-gamma noise, this
 results in negative binomial models for $N_{g}$.
 
 \begin{comment}
+{\bf XXXXXX THIS IS COMMENTED OUT XXXXXXXXXXXXXX}
 Under this
 Poisson model, by conditioning on the total population size over all
 $G$ populations, the $N_{g}$ variables have a multinomial distribution:
@@ -219,19 +220,16 @@ population {\it individually}, by assuming that
 \[
  N_{g} \sim \mbox{Binomial}(M_{g} , \psi)
 \]
-where $\psi \sim \mbox{Uniform}(0,1)$ as usual. 
-A kep point is that  
-we allow $M_{g}$ to be population specific but
-$\psi$ is constant.
-We could do this multi-population data augmentation by just picking each $M_{g}$ to
-be some large integer (as we always do). However, we want to pick
-$M_{g}$ in a way that imposes the correct structure on $N_{g}$. If
-we want to enforce our Poisson model on $N_{g}$ from above, we
-naturally choose
-$M_{g}$ to be Poisson also, in which case the marginal distribution
-of $N_{g}$ is also
-Poisson, but with mean $\psi \exp(\beta_{0} + \beta_{1}x_{g})$.  Clearly $\psi$ and $\beta_{0}$
-are confounded (See below for more discussion)
+where $\psi \sim \mbox{Uniform}(0,1)$ as usual.  A kep point is that
+we allow $M_{g}$ to be population specific but $\psi$ is constant.  We
+could do this multi-population data augmentation by just picking each
+$M_{g}$ to be some large integer (as we always do). However, we want
+to pick $M_{g}$ in a way that imposes the correct structure on
+$N_{g}$. If we want to enforce our Poisson model on $N_{g}$ from
+above, we naturally choose $M_{g}$ to be Poisson also, in which case
+the marginal distribution of $N_{g}$ is also Poisson, but with mean
+$\psi \exp(\beta_{0} + \beta_{1}x_{g})$.  Clearly $\psi$ and
+$\beta_{0}$ are confounded (See below for more discussion)
 %, and to preserve the
 %meaning of $\beta_{0}$ (as the intercept in the model for $N_{g}$ we
 %should define $\beta_{0}^{*} = (1/\psi)*\beta_{0}.
@@ -274,12 +272,12 @@ confounded with $\exp(\beta_{0})$.
 %model conditional on the total, $N_{T}$, we lose information about the
 %intercept $\beta_{0}$, but this is recovered in the data augmentation
 %parameter $\psi$.  
-One of these parameters has to be fixed. We can set
-$\beta_0 = 0$ or else we can fix $\psi$ (see Chapt. \ref{chapt.state-space}).  The constraint can be
-specified by noting that, under the binomial data augmentation model
-$\mathbb{E}(N_{T}) = \psi M_{T}$ and, under the Poisson model,
-$\mathbb{E}(N_{T}) = \sum_{g} \exp(\beta_{0} + \beta_{1} x_{g})$ and
-so we can set
+One of these parameters has to be fixed. We can set $\beta_0 = 0$ or
+else we can fix $\psi$ (see Chapt. \ref{chapt.state-space}).  The
+constraint can be specified by noting that, under the binomial data
+augmentation model $\mathbb{E}(N_{T}) = \psi M_{T}$ and, under the
+Poisson model, $\mathbb{E}(N_{T}) = \sum_{g} \exp(\beta_{0} +
+\beta_{1} x_{g})$ and so we can set
 \[
  \psi = \frac{1}{M_{T}} \sum_{g} \exp(\beta_{0} + \beta_{1} x_{g}).
 \]
@@ -325,21 +323,18 @@ described by the binary variables $z_{1},\ldots,z_{M_{T}}$ such that
 \[
  z_{i} \sim \mbox{Bernoulli}(\psi)
 \]
-where $\psi$ is constrained as noted in the previous section.  
-The {\bf BUGS} model specification for this individual-level
-formulation of the model 
-is shown in Panel \ref{panel.wbcode}
-for an ordinary closed population model (model $M_{0}$).
-This actually shows two equivalent formulations. In the left panel we
-have $\psi$ and $\beta_{0}$ as free parameters.
-The right panel shows the equivalent
-model but recognizing the constraint between $\psi$ and $\beta_{0}$. 
- Running these models
-using the \mbox{\tt multisession$\_$sim} function, you 
-can verify that
-they are not uniquely estimable. In particular, draws of $\beta_{0}$
-using the formulation in the left-hand panel appear to be draws from
-the prior distribution, uninformed by the data.
+where $\psi$ is constrained as noted in the previous section.  The
+{\bf BUGS} model specification for this individual-level formulation
+of the model is shown in Panel \ref{panel.wbcode} for an ordinary
+closed population model (model $M_{0}$).  This actually shows two
+equivalent formulations. In the left panel we have $\psi$ and
+$\beta_{0}$ as free parameters.  The right panel shows the equivalent
+model but recognizing the constraint between $\psi$ and $\beta_{0}$.
+Running these models using the \mbox{\tt multisession$\_$sim}
+function, you can verify that they are not uniquely estimable. In
+particular, draws of $\beta_{0}$ using the formulation in the
+left-hand panel appear to be draws from the prior distribution,
+uninformed by the data.
 
 \begin{comment}
 A second implementation of the model is suggested by combing the two
@@ -430,6 +425,38 @@ on the RHS.
 }
 \label{panel.wbcode}
 \end{panel}
+
+\subsection{The group-means model}
+
+Note that under this model, even with a constant mean $\lambda$, each
+stratum or group may have a different realized population size. In
+addition to modeling group-specific covariates, for
+more flexibility, we could allow the mean to be group specific such as:
+$N_g \sim Poisson(\lambda_{g})$ where each $\lambda_{g}$ is its own
+free parameter, independent of each others.  This effectively renders
+the Poisson assumption irrelevant as it doesn't ``shrink'' the
+population sizes $N_{g}$ and should provide estimates that are
+effectively the same as analyzing each data set independently, or
+using the independent binomial prior that we introduced in
+Chapt. \ref{chapt.poisson-mn}, where some information might be
+borrowed from the different groups for estimating the encounter
+probability parameters.
+Under this model, we constraint one of the $\lambda_{g}$ parameters
+to be 0, and $N_{g}$ for that group is taken-up by the data 
+augmentation parameter $\psi$.
+
+A flexible model that provides something of an intermediate model,
+between that of a constant $\lambda$ and independent group-specific
+$\lambda$'s, is that in which we put a prior on $\lambda$. For
+example, if we assume
+\[
+ \lambda_{g} \mbox{Gamma}(a,b)
+\]
+then this corresponds to imposing a Dirichlet Compound Multinomial
+model on the population size vector, or, marginally, a negative
+binomial model on $N_{g}$. See \citet{takemura:1999} for some
+discussion of such models relevant to data augmentation. 
+
 
 \subsection{
 Simulating group structured 
