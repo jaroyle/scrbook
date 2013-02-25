@@ -116,6 +116,26 @@ summary(mc2)
 sort(table(as.matrix(mc2)[,"N"]))
 
 
+
+system.time({
+out2.2 <- clusterEvalQ(cl2, {
+    jc <- coda.samples(jm, pars1, n.iter=7000)
+    return(as.mcmc(jc))
+})
+})
+
+
+mc2.2 <- mcmc.list(out2.2)
+
+
+
+
+
+
+
+
+
+
 stopCluster(cl2)
 
 

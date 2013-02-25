@@ -12,7 +12,6 @@
 #A <- 1
 #N <- D*1
 N <- 80  # Guys in S
-m <- 20   # Marked guys
 
 
 
@@ -23,12 +22,12 @@ ylimS <- c(0, 4)
 cen <- c(mean(xlimS), mean(ylimS))
 
 # Activity centers in S
-set.seed(43)
+set.seed(4830)
 s <- cbind(runif(N, xlimS[1], xlimS[2]),
            runif(N, ylimS[1], ylimS[2]))
 
 dc <- apply(s, 1, function(x) sqrt((x[1]-cen[1])^2 + (x[2]-cen[2])^2))
-tau <- 0.6
+tau <- 0.45
 w0 <- 0.9
 PrMark <- w0*exp(-dc^2/(2*tau^2)) # Change this to "net capture" prob
 hist(PrMark)
@@ -136,8 +135,8 @@ pars1 <- c("N", "sigma", "lam0", "D", "ED", "EN",
 jm1 <- jags.model("mknown3.jag", dat1, init1, n.chains=1,
                   n.adapt=100)
 
-mc1 <- coda.samples(jm1, pars1, n.iter=100)
-mc2 <- coda.samples(jm1, pars1, n.iter=500)
+mc1 <- coda.samples(jm1, pars1, n.iter=1000)
+mc2 <- coda.samples(jm1, pars1, n.iter=1000)
 
 
 plot(mc1, ask=TRUE)
