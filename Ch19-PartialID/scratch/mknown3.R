@@ -12,7 +12,7 @@
 #A <- 1
 #N <- D*1
 N <- 80  # Guys in S
-
+m <- 20
 
 
 
@@ -27,12 +27,14 @@ s <- cbind(runif(N, xlimS[1], xlimS[2]),
            runif(N, ylimS[1], ylimS[2]))
 
 dc <- apply(s, 1, function(x) sqrt((x[1]-cen[1])^2 + (x[2]-cen[2])^2))
-tau <- 0.45
-w0 <- 0.9
-PrMark <- w0*exp(-dc^2/(2*tau^2)) # Change this to "net capture" prob
+tau <- 0.6
+#w0 <- 0.9
+PrMark <- exp(-dc^2/(2*tau^2)) # Change this to "net capture" prob
 hist(PrMark)
-w <- rbinom(N, 1, PrMark)
-(m <- sum(w))
+w <- rep(0, N)
+w[sample(1:N, m, prob=PrMark)] <- 1
+#w <- rbinom(N, 1, PrMark)
+
 
 # Randomly sample m guys in B
 
@@ -120,6 +122,7 @@ for(j in 1:J) {
 yui[1:m,,] <- 0
 
 init1 <- function() list(h=c(rep(NA, m), rep(2, nz)),
+                         tau=3,
                          yu=yui)
 
 
@@ -135,8 +138,8 @@ pars1 <- c("N", "sigma", "lam0", "D", "ED", "EN",
 jm1 <- jags.model("mknown3.jag", dat1, init1, n.chains=1,
                   n.adapt=100)
 
-mc1 <- coda.samples(jm1, pars1, n.iter=1000)
-mc2 <- coda.samples(jm1, pars1, n.iter=1000)
+mc1 <- coda.samples(jm1, pars1, n.iter=500)
+mc2 <- coda.samples(jm1, pars1, n.iter=500)
 
 
 plot(mc1, ask=TRUE)

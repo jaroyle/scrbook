@@ -90,19 +90,26 @@ stopCluster(cl1)
 
 # Fit the model without the latent encounter histories
 
+
+dat2 <- list(n = nopa$n, X = nopa$X, M=300, J=nrow(nopa$n), K=ncol(nopa$n),
+             epsilon=1, # For psi ~ Beta(epsilon, 1) prior
+#             epsilon=0.0001, # For psi ~ Beta(epsilon, 1) prior
+             xlim=c(-600, 600), ylim=c(-400, 400))
+
+
 init2 <- function() {
-    list(sigma=rnorm(1, 100), lam0=0.5, z=rep(1, dat1$M))
+    list(sigma=rnorm(1, 100), lam0=0.5, z=rep(1, dat2$M))
 }
 
 cl2 <- makeCluster(3) # Open 3 parallel R instances
 
-clusterExport(cl2, c("dat1", "init2", "pars1"))
+clusterExport(cl2, c("dat2", "init2", "pars1"))
 
 system.time({
 out2 <- clusterEvalQ(cl2, {
     library(rjags)
-    jm <- jags.model("nopa2.jag", dat1, init2, n.chains=1, n.adapt=500)
-    jc <- coda.samples(jm, pars1, n.iter=2500)
+    jm <- jags.model("nopa2.jag", dat2, init2, n.chains=1, n.adapt=500)
+    jc <- coda.samples(jm, pars1, n.iter=55500)
     return(as.mcmc(jc))
 })
 })
@@ -127,8 +134,8 @@ out2.2 <- clusterEvalQ(cl2, {
 
 mc2.2 <- mcmc.list(out2.2)
 
-
-
+plot(mc2.2, ask=TRUE)
+summary(mc2.2)
 
 
 

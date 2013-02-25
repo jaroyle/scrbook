@@ -565,11 +565,9 @@ in the MCMC algorithm. This formulation is nice because it shows how
 closely this model is related to standard SCR models, and it provides
 the basis for including data on both marked and unmarked individuals,
 as will be discussed in the next chapter. However, this model runs
-very slowly, even when using 64-bit \jags~on a fast machine. The code
+very slowly, even when using a fast 64-bit machine with chains run in parallel. The code
 in Panel~\ref{chapt.unmarked.panel.jags2} runs much faster because it
 does not include the latent encounter histories.
-
-
 
 
 \begin{panel}
@@ -616,8 +614,46 @@ model to the parula data. In our analyses, we defined the point process
 state-space by buffering the grid of point count locations by 250 m,
 and we set $M=200$. For inference, we generated three Markov chains,
 each consisting of 300000 iterations after discarding the initial 10000
-draws. Convergence was satisfactory, as indicated by an $\hat{R}$
-statistic of $<$ 1.02 \citep{gelman_rubin:1992}.
+draws. %Convergence was satisfactory, as indicated by an $\hat{R}$
+%statistic of $<$ 1.02 \citep{gelman_rubin:1992}.
+\begin{small}
+\begin{verbatim}
+library(scrbook)
+library(rjags)
+data(nopa)
+dat1 <- list(n = nopa$n, X = nopa$X, M=200, J=nrow(nopa$n), K=ncol(nopa$n),
+             xlim=c(-600, 600), ylim=c(-400, 400))
+init1 <- function() {
+    n <- dat1$n
+    J <- nrow(n); K <- ncol(n); M <- dat1$M
+    y <- array(0L, c(M, J, K))
+    for(j in 1:J) {
+        for(k in 1:K) {
+            y[sample(1:M, n[j,k]),j,k] <- 1
+        }
+    }
+    list(y = y, sigma=rnorm(1, 100), lam0=0.5, z=rep(1, M))
+}
+pars1 <- c("sigma", "lam0", "N", "ED")
+jm1 <- jags.model("nopa1.jag", dat1, init1, n.chains=3, n.adapt=500)
+jc1 <- coda.samples(jm1, pars1, n.iter=31000)
+\end{verbatim}
+\end{small}
+
+
+
+
+Because these models can take so long to run, we show \R~commands for
+fitting the model using a single processor, and code for parallel
+processing, which allows us to run 1 chain on each core. Obviously
+your computer must have $>1$ core to do this, and you must have a
+relatively recent version of \R~so that you can use the {\tt parallel}
+package. First, the simple single-core code:
+
+
+
+
+XXXX THE RESULTS OF THE TWO ANALYSES LOOK VERY SIMILAR AS EXPECTED XXXX
 
 The posterior distribution for
 $N$ was highly skewed with a long right tail resulting in a wide 95\%
@@ -632,7 +668,7 @@ we can produce a density surface map, as shown in Fig.~\ref{fig:nopaDen}
 \begin{table}%[t]
   \caption{Posterior summary statistics for spatial Poisson-count
     model applied to the northern parula data. Two sets of priors were
-    considered. $M=300$ was used in both cases. Parulas/ha, $D$, is a
+    considered. $M=200$ was used in both cases. Parulas/ha, $D$, is a
     derived parameter.}
   \scriptsize
   \begin{tabular}{l l rrrrrr}
@@ -654,7 +690,7 @@ we can produce a density surface map, as shown in Fig.~\ref{fig:nopaDen}
 \end{table}
 
 
-%\begin{comment}
+\begin{comment}
 
 \begin{figure}
   \centering
@@ -668,7 +704,7 @@ we can produce a density surface map, as shown in Fig.~\ref{fig:nopaDen}
   \label{fig:prior}
 \end{figure}
 
-
+\end{comment}
 
 
 \begin{figure}
