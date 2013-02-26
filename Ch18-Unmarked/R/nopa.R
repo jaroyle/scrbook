@@ -92,8 +92,6 @@ stopCluster(cl1)
 
 
 dat2 <- list(n = nopa$n, X = nopa$X, M=300, J=nrow(nopa$n), K=ncol(nopa$n),
-             epsilon=1, # For psi ~ Beta(epsilon, 1) prior
-#             epsilon=0.0001, # For psi ~ Beta(epsilon, 1) prior
              xlim=c(-600, 600), ylim=c(-400, 400))
 
 
@@ -144,5 +142,40 @@ summary(mc2.2)
 
 
 stopCluster(cl2)
+
+
+
+
+
+
+
+
+
+
+
+
+dat2 <- list(n = nopa$n, X = nopa$X, M=300, J=nrow(nopa$n), K=ncol(nopa$n),
+             xlim=c(-600, 600), ylim=c(-400, 400))
+
+
+init2 <- function() {
+    list(sigma=rnorm(1, 100), lam0=runif(1), z=rep(1, dat2$M))
+}
+
+cl2 <- makeCluster(3) # Open 3 parallel R instances
+
+clusterExport(cl2, c("dat2", "init2", "pars1"))
+
+system.time({
+out2 <- clusterEvalQ(cl2, {
+    library(rjags)
+    jm <- jags.model("nopa2i.jag", dat2, init2, n.chains=1, n.adapt=500)
+    jc <- coda.samples(jm, pars1, n.iter=2500)
+    return(as.mcmc(jc))
+})
+})
+
+
+mc2 <- mcmc.list(out2)
 
 

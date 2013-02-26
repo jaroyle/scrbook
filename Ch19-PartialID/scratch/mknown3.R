@@ -54,7 +54,7 @@ points(X, pch="+", cex=2)
 
 J <- nrow(X)
 K <- 5
-lam0 <- 0.2
+lam0 <- 0.5
 sigma <- 0.25
 
 set.seed(5060)
@@ -75,6 +75,8 @@ rowSums(y>0)
 # Observed data
 y <- yM[w==1,,]
 dim(y)
+
+sum(y)
 
 rowSums(y>0)
 apply(y>0, c(1,2), sum)
@@ -122,7 +124,7 @@ for(j in 1:J) {
 yui[1:m,,] <- 0
 
 init1 <- function() list(h=c(rep(NA, m), rep(2, nz)),
-                         tau=3,
+                         tau=0.5,
                          yu=yui)
 
 
@@ -138,9 +140,10 @@ pars1 <- c("N", "sigma", "lam0", "D", "ED", "EN",
 jm1 <- jags.model("mknown3.jag", dat1, init1, n.chains=1,
                   n.adapt=100)
 
-mc1 <- coda.samples(jm1, pars1, n.iter=500)
-mc2 <- coda.samples(jm1, pars1, n.iter=500)
-
+system.time({
+mc1 <- coda.samples(jm1, pars1, n.iter=10000)
+mc2 <- coda.samples(jm1, pars1, n.iter=10000)
+})
 
 plot(mc1, ask=TRUE)
 summary(mc1)
