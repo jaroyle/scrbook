@@ -173,9 +173,52 @@ out2 <- clusterEvalQ(cl2, {
     jc <- coda.samples(jm, pars1, n.iter=2500)
     return(as.mcmc(jc))
 })
+}) # 6242
+
+
+mc2i <- mcmc.list(out2)
+
+plot(mc2i)
+summary(mc2i)
+HPDinterval(mc2i)
+
+summary(mc2)
+
+autocorr.plot(mc2i)
+crosscorr.plot(mc2i)
+
+system.time({
+out2 <- clusterEvalQ(cl2, {
+    jc <- coda.samples(jm, pars1, n.iter=7500)
+    return(as.mcmc(jc))
+})
 })
 
 
-mc2 <- mcmc.list(out2)
 
 
+round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 0.001, 0.001), 3)
+round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 0.01, 0.01), 3)
+round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 0.1, 0.1), 3)
+round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 1, 1), 3)
+round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 10, 10), 3)
+
+
+round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 1, 10), 3)
+round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 1, 1), 3)
+round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 1, 0.1), 3)
+round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 1, 0.01), 3)
+
+
+round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 10, 1), 3)
+round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 1, 1), 3)
+round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 0.1, 1), 3)
+round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 0.01, 0.01), 3)
+
+
+
+round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), .01, 100), 3)
+round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), .1, 10), 3)
+round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 1, 1), 3)
+round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 10, 0.1), 3)
+round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 100, 0.01), 3)
