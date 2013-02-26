@@ -7,9 +7,9 @@ Multi-session and Multi-site Data}
 
 
 In this chapter, we describe SCR models for situations when we have
-multiple, distinct groups, strata or ``sessions'' (multi-session
+multiple, distinct sample groups, strata or ``sessions'' (multi-session
 models using the \mbox{\tt secr} terminology) indexed by a
-stratum-specific population size parameter $N_{g}$. The models are
+ population size parameters $N_{g}$ for group $g$. The models are
 extremely general and provide a flexible hierarchical modeling
 framework for modeling abundance \citep{converse_royle:2012,
   royle_etal:2012arXiv} whether with spatial or ordinary
@@ -19,7 +19,7 @@ been based on models that are distinctly single-population
 models. This is done either by analyzing seperate data sets
 one-at-a-time, producing many, if not dozens, of independent estimates
 of abndance, or by pooling data from multiple study areas.  A standard
-example that arises frequently is that in which multiple distinct
+example that arises frequently is that in which multiple habitat 
 patches (often refuges, parks or reserves) are sampled independently
 with the goal of estimating the population size in each reserve. It
 makes sense to combine the data together into a single model that
@@ -479,19 +479,19 @@ We simulate some population sizes and encounter data  as
 follows.
 \begin{verbatim}
 set.seed(2013)
-G<- 20                          # G = 20 groups or strata
-beta0<- 3
-beta1<- .6
-p<- .3
-K<- 5                           # Sample occasions for capture-recapture
-Dist<- rnorm(G)                 # Simulate covariate
-lambda<- exp(beta0+beta1*Dist)  # Simulate poplation sizes 
-N<-rpois(G,lambda=lambda)
+G <- 20                          # G = 20 groups or strata
+beta0 <- 3
+beta1 <- .6
+p <- .3
+K <- 5                           # Sample occasions for capture-recapture
+Dist <- rnorm(G)                 # Simulate covariate
+lambda <- exp(beta0+beta1*Dist)  # Simulate poplation sizes 
+N <- rpois(G,lambda=lambda)
 
-y<-NULL                         # Simulate model M0 data
+y <- NULL                        # Simulate model M0 data
 for(g in 1:G){
 if(N[g]>0)
- y<-c(y,  rbinom(N[g],K,p))
+ y <- c(y,  rbinom(N[g],K,p))
 }
 g<- rep(1:G,N)
 
@@ -515,20 +515,18 @@ that does this.
 
 
 The multinomial allows for the joint modeling of a collection of
-population sizes using data augmentation.  However, as we 
-demonstrated in Sec. \ref{poisson-mn.sec.ovenbird}, we can anlyze the models by putting
-independent binomial priors on each $N_{g}$ and doing the data
-augmentation independently for each population by itself. 
-This is not any more or less difficult than the multinomial
-formulation but, we imagine, it could be slightly less efficient
-computationally. 
-In this case we could build in amoung-group structure by modeling 
-the DA parameter $\psi$ as being
-variable for each subject,  as a function of group-specific variables
-\citep[see][for an example]{hendriks_etal:2013}.
-For example, if $C_{g}$ is the value of some stratum
-covariate, then we could have $z_{i} \sim \mbox{Bernoulli}( \psi_{i})$
-with
+population sizes using data augmentation.  However, as we demonstrated
+in Sec. \ref{poisson-mn.sec.ovenbird}, we can anlyze the models by
+putting independent binomial priors on each $N_{g}$ and doing the data
+augmentation independently for each population by itself.  This is not
+any more or less difficult than the multinomial formulation but, we
+imagine, it could be slightly less efficient computationally.  In this
+case we could build in amoung-group structure by modeling the DA
+parameter $\psi$ as being variable for each subject, as a function of
+group-specific variables \citep[see][for an
+example]{hendriks_etal:2013}.  For example, if $C_{g}$ is the value of
+some stratum covariate, then we could have $z_{i} \sim
+\mbox{Bernoulli}( \psi_{i})$ with
 \[
  \mbox{logit}(\psi_{i}) = \beta_0 + \beta_1  C_{g_{i}}
 \]
@@ -567,9 +565,17 @@ models are completely general, and can be applied equally to ordinary
 closed models of any sort, or spatial capture-recapture models without
 any novel considerations.  \citet{royle_converse:2013} applied the
 model to a small-mammal trapping problem which involved replicate
-``single-catch'' arrays of traps. We review their application here,
-using a simplified version of the model that can be fitted efficiently
-in {\bf JAGS}.
+``single-catch'' arrays of traps. For our example here, we return to
+the ovenbird data set, from the {\bf R} package \mbox{\tt secr}, which
+we introduced in Chapt. \ref{chapt.poisson-mn}. This example is a type
+of multi-catch situation where the 
+stratification variable is ``year'' and, in our earlier analyses, we 
+analyzed the data set using independent binomial priors for $N_{g}$
+using data augmentation in {\bf JAGS} and also using a Poisson prior
+in \mbox{\tt secr} using the multi-session models.
+We mirror the \mbox{\tt secr} analysis here using the data
+augmentation formulation we introduced above.  
+
 
 To refresh your memory about the multinomial model, let ${\bf y}_{ik}
 = (y_{i1k},y_{i2k},\ldots,y_{iJk},y_{i,J+1,k})$ be the spatial encounter history
@@ -628,6 +634,11 @@ $C_{ik}$ be a covariate of previous encounter
 We note, in this case, the multinomial probabilities depend not only
 on individual and trap, but also on sample occasion.
 
+
+
+
+
+\begin{comment}
 \subsection{Small-mammal trapping study}
 
 We analyze data from
@@ -695,17 +706,16 @@ For the abundance model, we assume that $N_{g}$ is Poisson with mean
 \lambda_{g} = \exp( \beta_{0,g} +  {\bf x}'_{g} {\bm \beta} )
 \]
 where $\beta_{0,g}$ is a group-specific random effect (see below),
- ${\bf x}'_{g}$ is a vector of population-specific covariates,
-and including an intercept.  In our analysis here, ${\bf x}_{g} = 
+${\bf x}'_{g}$ is a vector of population-specific covariates, and
+including an intercept.  In our analysis here, ${\bf x}_{g} =
 (\mbox{\tt year1}_{g}, \mbox{\tt year2}_{g}, \mbox{\tt thin}_{g},
 \mbox{\tt fire}_{g})$ where $\mbox{\tt year1}$ and $\mbox{\tt year2}$
 are dummy variables indicating years 2001 and 2002) i.e., $\mbox{\tt
   year1}_{g} = 1$ if group $g$ occurred in 2001, $\mbox{\tt
   season2}_{g} = 1$ if group $g$ occurred in 2002; \mbox{\tt thin} and
-\mbox{\tt fire}
-are binary treatment effects being $\mbox{\tt thin}_{g}=1$ if group $g$ was a
-thinned experimental unit, and $\mbox{\tt fire}_{g} = 1$ if group $g$ was a
-burned experimental unit.
+\mbox{\tt fire} are binary treatment effects being $\mbox{\tt
+  thin}_{g}=1$ if group $g$ was a thinned experimental unit, and
+$\mbox{\tt fire}_{g} = 1$ if group $g$ was a burned experimental unit.
 
 We used proper uniform prior distributions for each of the regression
 coefficients: $\beta_{m} \sim \mbox{Unif}(-10,10)$ for $m=1,2,3,4$,
@@ -831,12 +841,12 @@ captured per group (open circles).  }
 \label{fig.fig1}
 \end{figure}
 
+\end{comment}
+
 
 \subsection{Reanalysis of the Ovenbird data, but using WinBUGS}
 
-We reanalyze the ovenbird data that we analyzed in Sec. XXXX. These
-data are availabiing in secr and come from this study discussed by
-Dawson XXXXXX.
+
 The analysis before used a secr multi-session model in which $N_{t}$
 was Poisson($\Lambda_{t}$) We also fitted a model in which we applied
 data augmentation to {\it each} year, so that we didn't have a prior
@@ -845,9 +855,80 @@ fitted in secr except a binomial( $\psi_{t}$M ) prior instead of
 Poisson $\Lambda_{t}$.
 
 To fit the precise Bayesian equivalent we just have to apply the DA
-approach described above..................... the model is:
+approach described above, and the {\bf R} script in \mbox{\tt scrbook}
+is called XXXXXX which you can run to reproduce the results in Table. XXXXX.
+In terms of comparison with the previous results of Sec. XXXX, they
+look about the same as they should. 
 
-Results?
+Provide a panel here where the model is implemented ??????
+
+\begin{comment}
+NOTE: these include z=0 guys!
+
+Inference for Bugs model at "model.txt", fit using jags,
+ 3 chains, each with 2000 iterations (first 1000 discarded)
+ n.sims = 3000 iterations saved
+       mu.vect sd.vect   2.5%     25%     50%     75%   97.5%  Rhat n.eff
+D[1]     2.770   0.509  1.872   2.420   2.737   3.111   3.860 1.001  3000
+D[2]     3.088   0.510  2.189   2.737   3.054   3.428   4.148 1.001  3000
+D[3]     3.633   0.538  2.621   3.255   3.630   3.975   4.753 1.002  1400
+D[4]     2.665   0.490  1.786   2.305   2.650   2.996   3.687 1.001  3000
+D[5]     2.247   0.448  1.440   1.930   2.218   2.535   3.169 1.003   900
+N[1]    96.166  17.658 65.000  84.000  95.000 108.000 134.000 1.001  3000
+N[2]   107.200  17.696 75.975  95.000 106.000 119.000 144.000 1.001  3000
+N[3]   126.120  18.676 91.000 113.000 126.000 138.000 165.000 1.002  1400
+N[4]    92.503  16.999 62.000  80.000  92.000 104.000 128.000 1.001  3000
+N[5]    78.011  15.535 50.000  67.000  77.000  88.000 110.000 1.003   900
+alpha0  -3.515   0.167 -3.845  -3.628  -3.513  -3.399  -3.195 1.010   210
+alpha1   0.000   0.000  0.000   0.000   0.000   0.000   0.000 1.003   700
+psi      0.354   0.039  0.281   0.326   0.352   0.379   0.435 1.005   420
+sigma   76.617   5.938 66.549  72.414  76.244  80.203  89.266 1.003   700
+\end{comment}
+
+\section{Spatial or Temporal Dependence}
+
+The models described here, including the multi-session formulation
+used in \mbox{\tt secr}, assume that the population sizes $N_{g}$ are
+{\it independent}. As a practical matter, this precludes the sharing
+of individuals among populations (i.e., the same individual cannot be
+captured in multiple groups) which can be violated in a number of situations.
+First, when the groups represent distinct time periods (seasons,
+years) but the same functional population, it is possible that some
+individuals remain in the population during the distinct sampling events.
+In this situation, by disregarding individual identity across groups, the models ignore
+a slight bit of 
+dependence of $N_{g}$ which may entail some incremental 
+ loss of efficiency. We imgaine this should
+ have little practical  effect unless survival probability is
+ extremely high between the periods.  Estimators of parameters obtained
+ by assuming independence should be conservative in their statement of
+ precision, but they should be unbiased (or, rather, 
+ ignoring the dependence should not affect the bias of the estimator
+ much if at all).
+
+A second distinct situation is that in which the sample groups are in 
+relatively close spatial proximity to one another (e.g., the possum
+data, see Fig. XXXX). This case is somewhat easier to deal with in the
+analysis because we can build a model in which the state-space is the
+joint state-space enclosing all of the trapping arrays, and we
+preserve individual identity in an ordinary SCR model, just with
+a larger array of traps that is the union of the trap arrays of all
+sample groups. This may be impractical when the trap arrays are far
+apart creating only a slight bit of overlap of populations, because,
+in that case, the combined state-space may contain a huge population
+that one has to deal with in the MCMC.  \citep{royle_etal:2011mee} had
+this problem in an analysis of data from a sample of 1 km quadrats
+using a search-encounter type model (discussed in the following
+chapter).
+Even in this case the independent $N_{g}$ model is probably not too
+detrimental to inferences that apply to marginal variation in $N_{g}$,
+such as habitat or landscape effects. 
+
+
+
+
+
+
 
 
 
@@ -866,20 +947,24 @@ to combine data from multiple arrays or sites in a single unified
 model that accommodates explicit sources of variation in density among
 sites.  This is naturally accomplished by developing an explicit model
 for variation in $N$, e.g., a Poisson GLM or similar
-\citep{converse_royle:2012, royle_etal:2012arXiv}. The ``design'', and
-the resulting class of models, are also called multi-session models in
-the package \mbox{\tt secr}, and in our analyses of
+\citep{converse_royle:2012, royle_etal:2012arXiv}. This type of ``design'', and
+the resulting class of models, which we also called multi-session
+models (the terminology used by
+the package \mbox{\tt secr}), in our analyses of
 Chapt. \ref{chapt.poisson-mn} and elsewhere.
 
 In this chapter, we outlined an approach to Bayesian analysis of
-multi-session models using data augmentation, from
-\citet{converse_royle:2012} and \citet{royle_converse:2013}.  This
-approach allows us to build explicit models for $N$, and also gives us
+multi-session models using data augmentation
+\citet{converse_royle:2012, royle_converse:2013}.  This
+approach gives us one method for building explicit models for $N$
+and also gives us
 great flexibility in specifying the encounter model using standard or
 novel capture-recapture modeling considerations. Certain types of
 multi-session models can be fitted easily in \mbox{\tt secr} and we
 suspect that platform will be satisfactory for many problems you
-encounter.
+encounter. However, as always, we believe the flexible model-building
+platform of the {\bf BUGS} language can be beneficial in many
+situations. 
 
 A common applied context of these multi-session models is when
 replicate arrays are used to address explicit hypotheses about
@@ -887,58 +972,23 @@ landscape variation or modification. For example, in studies of
 forestry practices, small mammal grids are used as experimental units,
 and the ``dependent variable'' is $N$ (or density) for each trap
 array, which is not observable.  Thus, hierarchical models are needed
-to directly address the basic hypotheses of such studies.  Another
+to directly address the basic hypotheses of such studies.  
+
+Another
 distinct context for the application of multi-session models is when
-the populations are temporally structured. In these applications, we
+the populations are temporally structured (e.g., the ovenbird data),
+such as when sampling occurs in distinct seasons or years. 
+In these applications, we
 view multi-session models as a simplified type of open population
 model, an open model {\it without} explicit Markovian dynamics. They
 are analogous to what are usually referred to as models of random
 temporary emigration \citep{kendall_etal:1997, chandler_etal:2011}.
 The models are not incorrect, just simplified, reduced versions of
 more general Markovian models, and with fewer parameters to estimate.
-We cover general Markovian models in Chapt. \ref{chapt.open}
+We cover general Markovian models in Chapt. \ref{chapt.open}.
 
-
-
-
-
-
-
-
-\subsection{Dependence -- is it a problem?}
-
-A standard multi-session data (e.g., the ovenbird data) is that in
-which the session variable indexes time events, such as sampling in
-distinct seasons or years. 
-In this case, the population being sampled is the same population each
-time, but subject to dynamics and movement. 
-
-We might capture some individuals over time but we ignore the
-individual recaptures across primary periods. (See Chapt. 
-\ref{chapt.open}). So instead of modeling the dynamics at the individual
-level we just model net change in $N_{g}$.
-
-In time -- ignoring the dependence of $N_{g}$ probably entails a
-little {\it loss} of efficiency but should have no effect on anything.
-In space, there might be some individuals shared by multiple groups
-and we don't think that should cause any bias or anything, even in
-statement of uncertainty. So we view these models as pretty generally
-useful and relevant.
-A few points worht discussing: If you have grids that are in
-relatively close proximity you might want to build a model in which
-the total state-space is used in the model. i.e., form the union of
-the state-spaces and model that. That will be more computationally
-tedious but on the other hand it preserves the real landscape and any
-interactions that might be affecting grids simultaneously. 
-
-Conceptually we can apply models like this which assume Ng are
-independent even if they're not... as long as we dont cear about the
-underlying dynamics explictly and also possibly with some loss of
-eficiency. 
-
-
-
-
-
-
-
+ As a result, we cannot
+model explicit among-group dynamics
+(but see Chapt. 
+\ref{chapt.open}). Instead, the models of this chapter essentially
+just model net change in $N_{g}$.
