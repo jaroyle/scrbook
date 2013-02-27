@@ -34,3 +34,20 @@ n
 # Analyze in JAGS
 
 
+library(rjags)
+dat1 <- list(n=n, X=X, J=J, K=K, M=200, xlim=xlim, ylim=ylim)
+init1 <- function() {
+    yi <- array(0, c(dat1$M, dat1$J, dat1$K))
+    for(j in 1:dat1$J) {
+        for(k in 1:dat1$K) {
+            yi[sample(1:dat1$M, dat1$n[j,k]),j,k] <- 1
+        }
+    }
+    list(sigma=runif(1, 1, 2), lam0=runif(1),
+         y=yi, z=rep(1, dat1$M))
+}
+pars1 <- c("lam0", "sigma", "N", "mu")
+
+jm <- jags.model("SCmod1.jag", data=dat1, inits=init1, n.chain=1,
+                 n.adapt=100)
+samples1 <- coda.samples(jm, pars1, n.iter=1000)

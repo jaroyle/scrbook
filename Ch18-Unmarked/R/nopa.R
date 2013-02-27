@@ -364,6 +364,15 @@ summary(mcD2)
 
 
 
+system.time({
+outD2.2 <- clusterEvalQ(clD2, {
+    jc <- coda.samples(jm, parsD1, n.iter=5000)
+    return(as.mcmc(jc))
+})
+}) # 1000it/hr
+
+
+
 
 
 
@@ -393,6 +402,8 @@ edr(77)
 curve(dnorm(x, 75, 9), 50, 100, ylim=c(0, 0.04))
 
 curve(dgamma(x, 50, 4), 50, 100)
+
+curve(dgamma(x, 30, 3), 0, 100)
 
 
 

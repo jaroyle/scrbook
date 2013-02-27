@@ -516,6 +516,7 @@ The object \verb+y+ is the $N \times J \times K$ array of encounter
 data, which cannot be directly observed if the animals are unmarked.
 Converting the encounter data to count data can be accomplished using a single
 \verb+apply+ command.
+\begin{small}
 \begin{verbatim}
 > n <- apply(y, c(2,3), sum)
 > dimnames(n) <- list(paste("trap", 1:J, sep=""),
@@ -548,17 +549,46 @@ trap23      4      5      1      0      0
 trap24      2      2      5      1      3
 trap25      2      1      3      2      0
 \end{verbatim}
+\end{small}
 This object \verb+n+ is the $J \times K$ matrix of counts that we call
 $\bf n$. It is worth comtemplaing how common such count data is in
 ecology and how many different mechanisms might generate it. Although
-the list of possibilites is immense, the SC model is likely a good
-approximation to reality in many cases in that it includes an explicit
+the list of possibilites is immense, the SC model has advantages over
+some alternatives
+%approximation to reality in many cases
+in that it includes an explicit
 model for the distribution of individuals in space \textit{and} it
 includes a model describing how detections are generated given the
 distance between traps and individual activity centers. It also
 provides a foundation for extending the model in many ways as we
 discuss in Sec.~\ref{chapt.unmarked.ext} and in the next chapter.
 
+The question now is: Is it possible to estimate the parameters? In our
+simulated dataset we $J \times K = 125$ data points, but how many
+parameters do we need to estimate with this rather small set of data?
+A frequentist might say that there are only 3 parameters: $\lambda_0$,
+$\sigma$, and $N$ (or density $\mu$) because inference about the
+latent parameters is carried out using prediction methods after the 3
+hyperparameters have been estimated. However, a Bayesian would
+probably say that each $\bf s$ and each element of the latent
+encounter array $\bf y$ is a parameter in need of a posterior. From
+this perspective there are far more parameters than data points, and
+thus it would appear as though the situation is dire. Whether or not
+the parameters are actually estimable is a rather difficult question
+to answer. One simplistic, but not definitive, approach for addressing
+the question is to conduct a simulation study and evaluate the
+frequentist performance of the model by asking how often the
+data-generating values are included in confidence/credible intervals,
+and how biased are point estimates. \citet{chandler_royle:2012}
+conducted such a simulation study and found that, while the variance
+of the posterior distributions was high by most standards, the bias of
+the posterior mode of $N$ was small and the coverage of the credible
+intervals was close to nominal. Moreover, they found no evidence that the
+posterior distributions were dominated by the priors, further
+supporting the conclusion that spatial correlation in the count data
+is sufficient for estimating density and encounter probability
+parameters. %Rather than repeating their simulation study, we present
+%a few options for fitting the model.
 
 At this point in time the SC model can only be fit using one of the
 \bugs~engines, or using custom software like the \R~code accompanying
@@ -566,8 +596,9 @@ At this point in time the SC model can only be fit using one of the
 flexible platform for fitting the model, it is not
 straight-forward because of
 constraints in the model. In \textbf{WinBUGS}, the contraints can be
-enforced using the so-called ``ones-trick'', whereas \jags~has a distribution
-called \verb+dsum+, which was designed for this type
+enforced using the so-called ``ones-trick'', but we prefer
+\jags~because it has a distribution
+called \verb+dsum+ that was designed for this type
 of situation where the observed data are a sum of random
 variables. %Aside from being slow, \jags~works rather well for this
 %situation. %Another limitation of using \jags~is that
@@ -577,11 +608,12 @@ variables. %Aside from being slow, \jags~works rather well for this
 %situations considered in the next chapter, and thus we wrote our own
 %MCMC algorithm which overcomes these limitations, and it is somewhat
 %faster. Nonetheless,
-Panel~\ref{chapt.unmarked.panel.jags1} shows the implementation in \jags.
+Panel~\ref{chapt.unmarked.panel.jags1} shows an implementation in \jags.
 Note that this code will not run as shown because we abbreviated the
 arguments to \verb+dsum+. In practice, you need to provide all $M$ of
-them. If, $M$ is large, this can be a drag, but you can easily create
-the text using \verb+paste+ in \R. Here is an example, with an
+them, where $M \gg N$ is the size of augmented latent encounter
+array. The code looks slightly unwieldy if $M$ is large, but you can easily create
+it using the \verb+paste+ function in \R. Here is an example, with an
 unrealistically small value of $M=10$:
 \begin{small}
 \begin{verbatim}
@@ -602,17 +634,17 @@ This output can be pasted directly into a \jags~model file.
 \begin{small}
 \begin{verbatim}
 model{
-sigma ~ dunif(0, 200)
-lam0 ~ dunif(0, 5)
+sigma ~ dunif(0, 200) # Tailor this to your state-space
+lam0 ~ dunif(0, 5)    # consider dgamma() as an alternative
 psi ~ dbeta(1,1)
 for(i in 1:M) {
    z[i] ~ dbern(psi)
    s[i,1] ~ dunif(xlim[1], xlim[2])
    s[i,2] ~ dunif(ylim[1], ylim[2])
-   for(j in 1:J) { # Number of point count locations (J=105)
+   for(j in 1:J) { # Number of point count locations
        distsq[i,j] <- (s[i,1] - X[j,1])^2 + (s[i,2] - X[j,2])^2
        lam[i,j] <- lam0 * exp(-distsq[i,j] / (2*sigma^2))
-       for(k in 1:K) { # Number of occasions (K=3)
+       for(k in 1:K) { # Number of occasions
            y[i,j,k] ~ dpois(lam[i,j]*z[i])
            }
        }
@@ -623,7 +655,7 @@ for(j in 1:J) {
        }
    }
 N <- sum(z[])   # Realized population size
-A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1]) * 1000 # Area of state-space (ha)
+A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1]) # Area of state-space
 D <- N / A      # Realized density
 ED <- (M*psi)/A # Expected density
 }
@@ -635,6 +667,56 @@ ED <- (M*psi)/A # Expected density
   includes the latent encounter histories.}
 \label{chapt.unmarked.panel.jags1}
 \end{panel}
+
+We used the \jags~model in Panel~\ref{chapt.unmarked.panel.jags1} to
+fit the model to the simulated data. One challenge faced during the
+implenetation is that \jags~cannot auto-generate good initial values
+that honor the contraints in the model, so it is necesssary to provide
+them. The following code presents one fairly general way of creating
+acceptable starting values and formatting the data for analysis using
+the \texttt{rjags} package:
+\begin{small}
+\begin{verbatim}
+library(rjags)
+dat1 <- list(n=n, X=X, J=J, K=K, M=200, xlim=xlim, ylim=ylim)
+init1 <- function() {
+    yi <- array(0, c(dat1$M, dat1$J, dat1$K))
+    for(j in 1:dat1$J) {
+        for(k in 1:dat1$K) {
+            yi[sample(1:dat1$M, dat1$n[j,k]),j,k] <- 1
+        }
+    }
+    list(sigma=runif(1, 1, 2), lam0=runif(1),
+         y=yi, z=rep(1, dat1$M))
+}
+pars1 <- c("lam0", "sigma", "N", "mu")
+\end{verbatim}
+\end{small}
+To actually fit the model, we use two functions. The first
+\verb+jags.model+ compiles the code and runs an adaptive phase to
+increase the efficency of the MCMC samplers. The second function
+\verb+coda.samples+ is one of several options for generating posterior
+samples. We like it because it returns the samples in the format
+required by the \texttt{coda} package. Be aware that the following
+model runs very slowly.
+\begin{verbatim}
+> jm <- jags.model("SCmod1.jag", data=dat1, inits=init1, n.chain=1,
++                  n.adapt=100)
+Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+   Graph Size: 59799
+
+Initializing model
+
+  |++++++++++++++++++++++++++++++++++++++++++++++++++| 100%
+> samples <- coda.samples(jm, pars1, n.iter=1000)
+  |**************************************************|  100%
+\end{verbatim}
+
+Results of this small set of posterior samples is shown in TableXXXX.
+Also shown are results from fitting the model using the function
+\verb+scrUN+ in our \R~package \texttt{scrbook} XXXXX.
 
 The code in Panel~\ref{chapt.unmarked.panel.jags1} represents the full
 model in which the latent encounter histories are updated at each step
@@ -1038,7 +1120,19 @@ effectively surveyed using methods such as hair snares and camera
 traps that do not produce distance data \citep{oconnell_etal:2010}.
 
 
-\section{Conclusion}
+\section{Summary and Outlook}
+
+The SC model is a conceptually simple extension of standard SCR
+models, but in terms of computational requirements and latent
+structure, it is perhaps at the extreme end of what is possible to do
+with count data. As is always true, we must recognize that
+our models can never exactly depict the complexities of natural
+systems, and so we must decide how what level of complexity is
+sufficient for our purposes...
+
+At the other end of the spectrum is perhaps a simple Poisson
+regression. We sum up the counts at each trap and fit a model using a
+function like \verb+glm+. But what would be estimating?
 
 Concerns about ``statistical independence'' have prompted
 ecologists to design count-based studies such that observed
