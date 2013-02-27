@@ -329,6 +329,54 @@ stopCluster(clD1)
 
 
 
+
+
+
+
+
+
+
+
+
+
+library(parallel)
+
+
+
+clD2 <- makeCluster(3) # Open 3 parallel R instances
+
+clusterExport(clD2, c("datD1", "initD1", "parsD1"))
+
+system.time({
+outD2 <- clusterEvalQ(clD2, {
+    library(rjags)
+    jm <- jags.model("nopaD2.jag", datD1, initD1, n.chains=1, n.adapt=500)
+    jc <- coda.samples(jm, parsD1, n.iter=2500)
+    return(as.mcmc(jc))
+})
+}) # 1000it/hr
+
+
+mcD2 <- mcmc.list(outD2)
+
+plot(mcD2)
+summary(mcD2)
+
+
+
+
+
+
+stopCluster(clD2)
+
+
+
+
+
+
+
+
+
 edr <- function(sigma, r=150) {
     ea <- 2 * pi * integrate(function(x, sig=sigma)
                     exp(-x^2/(2*sig^2))*x, 0, r)$value
