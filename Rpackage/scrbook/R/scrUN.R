@@ -4,51 +4,59 @@
 
 # MCMC with y partially observed
 # Need to allow for different observation models
-scrUN <- function(n, X, M, obsmod=c("pois", "bern"),
-                  niters, xlims, ylims, a, b, tune=c(0.2, 0.1, 2),
+scrUN <- function(n, X, M, #obsmod=c("pois", "bern"),
+                  niters, xlims, ylims,
+                  inits=NULL,
+                  a, b, tune=c(0.2, 0.1, 2),
                   zGibbs=FALSE) {
 
-    obsmod <- match.arg(obsmod)
+#    obsmod <- match.arg(obsmod)
+    obsmod <- "pois"
     J <- nrow(n)
     K <- ncol(n)
-    s <- cbind(runif(M, xlims[1], xlims[2]),
-               runif(M, ylims[1], ylims[2]))
-    D <- e2dist(s, X)
-    sigma <- runif(1, 0, 0.2)
-    lam0 <- runif(1, 0.1, 0.8) # This is p0 when obsmod="bern"
-    lam <- lam0*exp(-(D*D)/(2*sigma*sigma))
-    psi <- runif(1, 0.9, 0.99)
-    w <- rbinom(M, 1, psi)
-    N0 <- sum(w)
-    nmx <- max(n, na.rm=TRUE)
-    if(N0 < nmx) {
-        is0 <- which(w==0)
-        w[sample(is0, nmx-N0)] <- 1
+    if(!is.null(inits)) {
+        for(i in 1:length(inits))
+            assign(names(inits)[i], inits[[i]])
+        pn <- c("sigma", "lam0", "s", "w", "y")
+        noi <- !(pn %in% ls())
+        if(any(noi)) {
+            warning("Generating initial values for ", pn[noi])
+        }
     }
+    if(!("s" %in% ls()))
+        s <- cbind(runif(M, xlims[1], xlims[2]),
+                   runif(M, ylims[1], ylims[2]))
+    if(!("sigma" %in% ls()))
+        sigma <- runif(1, min(abs(diff(X[,1]))), max(abs(diff(X[,1]))))
+    if(!("lam0" %in% ls()))
+        lam0 <- runif(1, 0.1, 0.5) # This is p0 when obsmod="bern"
+    if(!("psi" %in% ls()))
+       psi <- runif(1, 0.9, 0.99)
 
-    y <- array(0, c(M,J,K))
-    up <- 0
-    for(j in 1:J) {
-        for(k in 1:K) {
-            if(n[j,k]==0) {
-                y[,j,k] <- 0
-                up <- up+1
-                next
-            }
-            probs <- lam[,j]*w
-            if(identical(obsmod, "pois")) {
-                probs <- probs/sum(probs)
-                y[,j,k] <- rmultinom(1, n[j,k], probs)
-            }
-            else if(identical(obsmod, "bern")) {
-                y[,j,k] <- 0
-                guys <- sample(1:M, n[j,k], prob=probs/sum(probs))
-                y[guys,j,k] <- 1
+    D <- e2dist(s, X)
+    lam <- lam0*exp(-(D*D)/(2*sigma*sigma))
+
+    if(!("y" %in% ls())) {
+        y <- array(0L, c(M, J, K))
+        for(j in 1:J) {
+            for(k in 1:K) {
+                y[sample(1:M, n[j,k], replace=TRUE,
+                         lam[,j]/sum(lam[,j])), j,k] <- 1
             }
         }
     }
+    if(!("w" %in% ls()))
+       w <- ifelse(rowSums(y)>0, 1L, 0L)
 
-    out <- matrix(NA,nrow=niters,ncol=4)
+    if(!all(dim(s) == c(M, 2)))
+        stop("The dimensions of 2 should be ", c(M, 2))
+    if(!all(dim(y) == c(M, J, K)))
+        stop("The dimensions of y should be ", c(M, J, K))
+    if(length(w) != M)
+        stop("length(w) should be ", M)
+
+
+    out <- matrix(NA, nrow=niters, ncol=4)
     nought <- ifelse(obsmod=="pois", "lam0", "p0")
     colnames(out) <- c("sigma", nought, "psi", "N")
 

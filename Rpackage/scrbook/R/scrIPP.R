@@ -73,7 +73,7 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, space.cov,
     pn <- c("beta0", "beta1", "sigma", "lam0", "S")
     noi <- !(pn %in% ls())
     if(any(noi)) {
-        stop("Need initial values for", pn[noi])
+        stop("Need initial values for ", pn[noi])
     }
 
     D <- e2dist(S, X)

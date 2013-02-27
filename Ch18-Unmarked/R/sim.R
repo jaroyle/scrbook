@@ -1,5 +1,5 @@
 
-tr <- seq(0.3, 0.7, length=5)
+tr <- seq(0.3, 0.7, length=10)
 X <- cbind(rep(tr, each=length(tr)),
            rep(tr, times=length(tr)))    # trap coords
 set.seed(10)
@@ -11,8 +11,8 @@ s <- cbind(runif(N, xlim[1], xlim[2]), runif(N, ylim[1], ylim[2]))
 plot(X, xlim=xlim, ylim=ylim, pch="+")
 points(s, col=gray(0.5), pch=16)
 
-sigma <- 0.1
-lam0 <- 0.5
+sigma <- 0.05
+lam0 <- 0.3
 J <- nrow(X)
 K <- 5
 y <- array(NA, c(N, J, K))
@@ -28,7 +28,7 @@ table(y)
 n <- apply(y, c(2,3), sum)
 dimnames(n) <- list(paste("trap", 1:J, sep=""),
                     paste("night", 1:K, sep=""))
-n
+n[1:5,]
 
 
 # Analyze in JAGS
@@ -68,10 +68,13 @@ library(coda)
 
 source("../../Rpackage/scrbook/R/scrUN.R")
 
-fm1 <- scrUN(n=n, X=X, M=200, niter=10000, xlims=xlim, ylims=ylim,
-             tune=c(0.01, 0.05, 0.2))
+fm1 <- scrUN(n=n, X=X, M=150, niter=10000, xlims=xlim, ylims=ylim,
+             inits=list(lam0=0.3, sigma=0.01),
+             tune=c(0.005, 0.07, 0.2))
 
 mc1 <- mcmc(fm1)
 plot(mc1)
+summary(window(mc1, start=5001))
 
 rejectionRate(mc1)
+rejectionRate(window(mc1, start=5001))
