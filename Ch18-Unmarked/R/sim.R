@@ -68,13 +68,14 @@ library(coda)
 
 source("../../Rpackage/scrbook/R/scrUN.R")
 
-fm1 <- scrUN(n=n, X=X, M=150, niter=10000, xlims=xlim, ylims=ylim,
+fm1 <- scrUN(n=n, X=X, M=200, niter=20000, xlims=xlim, ylims=ylim,
              inits=list(lam0=0.3, sigma=0.01),
-             tune=c(0.005, 0.07, 0.2))
+             updateY=FALSE,
+             tune=c(0.004, 0.07, 0.3))
 
 mc1 <- mcmc(fm1)
 plot(mc1)
-summary(window(mc1, start=5001))
+summary(window(mc1, start=8001))
 
 rejectionRate(mc1)
 rejectionRate(window(mc1, start=5001))
