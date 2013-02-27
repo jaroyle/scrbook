@@ -464,19 +464,100 @@ challenging than the MCMC-based Bayesian analysis.
 
 \section{Simulation Example}
 
-Simulating data under the SC model is easy. All that is required is to
-simulate standard SCR encounter data and then collapse it into count
-data. The following \R~code generates the encounter history data from
+Simulating data under the SC model proceeds by first simulating
+standard SCR encounter history data and then collapsing it into count
+data. The following blocks of \R~code generate data from
 the model shown in Sec.~\ref{chapt.unmarked.sec.N}, with parameters
-$\sigma=0.1$, $\lambda_0=0.3$, and $N=$
+$\sigma=0.1$, $\lambda_0=0.5$, and $N=50$. The state-space is the unit
+square and a grid of 25 traps
+is centered in the middle. These simulated data might resemble actual
+data from a camera trap study in which an individual can be detected multiple
+times at a trap during a single occasion, and at multiple traps during
+an occasion. The first block of code generates the trap coordinates
+$X$ and the $N=50$ activity centers:
 \begin{verbatim}
-R code
+> tr <- seq(0.3, 0.7, length=5)
+> X <- cbind(rep(tr, each=length(tr)),
++            rep(tr, times=length(tr)))    # trap coords
+> set.seed(10)
+> xlim <- c(0, 1); ylim <- c(0, 1)         # S is the unit square
+> A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1]) # area of S
+> mu <- 50                                 # density (animals/unit area)
+> (N <- rpois(1, mu*A))                    # Generate N=50 as Poisson deviate
+[1] 50
+> s <- cbind(runif(N, xlim[1], xlim[2]), runif(N, ylim[1], ylim[2]))
+> plot(X, xlim=xlim, ylim=ylim, pch="+")
+> points(s, col=gray(0.5), pch=16)
 \end{verbatim}
-Converting this to the requiste count data is done using a single
-\verb+apply+ command. You could also do it using a loop, or any other
-way you like, but this is perhaps the easiest:
+We could have just set $N=50$ directly, but instead we treated density
+as a fixed parameter ($\mu=50$) and generated $N$ as a random
+variable -- it just so happens that with the specified random seed,
+$N$ equals 50.
 
+Now we can generate the encounter histories under the
+Poisson observation model. Let's suppose that sampling is conducted
+over $K=5$ nights.
+\begin{verbatim}
+> sigma <- 0.1
+> lam0 <- 0.5
+> J <- nrow(X)
+> K <- 5
+> y <- array(NA, c(N, J, K))
+> for(j in 1:J) {
++     dist <- sqrt((X[j,1]-s[,1])^2 + (X[j,2] - s[,2])^2)
++     lambda <- lam0*exp(-dist^2/(2*sigma^2))
++     for(k in 1:K) {
++         y[,j,k] <- rpois(N, lambda)
++     }
++ }
+\end{verbatim}
 
+The object \verb+y+ is the $N \times J \times K$ array of encounter
+data, which cannot be directly observed if the animals are unmarked.
+Converting the encounter data to count data can be accomplished using a single
+\verb+apply+ command.
+\begin{verbatim}
+> n <- apply(y, c(2,3), sum)
+> dimnames(n) <- list(paste("trap", 1:J, sep=""),
++                     paste("night", 1:K, sep=""))
+> n
+       night1 night2 night3 night4 night5
+trap1       3      2      2      1      3
+trap2       3      4      4      7      5
+trap3       3      2      6      4      3
+trap4       2      2      2      0      3
+trap5       2      1      0      2      2
+trap6       2      1      0      3      2
+trap7       2      1      2      4      2
+trap8       2      4      0      3      1
+trap9       2      2      2      4      2
+trap10      0      2      3      1      0
+trap11      2      2      1      2      5
+trap12      2      1      0      3      3
+trap13      3      2      0      1      0
+trap14      0      3      0      2      4
+trap15      3      1      0      2      0
+trap16      2      2      2      2      0
+trap17      3      1      1      1      2
+trap18      3      1      2      4      2
+trap19      0      0      2      2      1
+trap20      0      1      1      2      0
+trap21      5      3      0      0      1
+trap22      2      1      3      2      3
+trap23      4      5      1      0      0
+trap24      2      2      5      1      3
+trap25      2      1      3      2      0
+\end{verbatim}
+This object \verb+n+ is the $J \times K$ matrix of counts that we call
+$\bf n$. It is worth comtemplaing how common such count data is in
+ecology and how many different mechanisms might generate it. Although
+the list of possibilites is immense, the SC model is likely a good
+approximation to reality in many cases in that it includes an explicit
+model for the distribution of individuals in space \textit{and} it
+includes a model describing how detections are generated given the
+distance between traps and individual activity centers. It also
+provides a foundation for extending the model in many ways as we
+discuss in Sec.~\ref{chapt.unmarked.ext} and in the next chapter.
 
 
 At this point in time the SC model can only be fit using one of the
@@ -604,6 +685,10 @@ ED <- (M*psi)/A # Expected density
 \label{chapt.unmarked.panel.jags2}
 \end{panel}
 
+
+
+\section{Extensions of the Model}
+\label{chapt.unmarked.ext}
 
 
 
