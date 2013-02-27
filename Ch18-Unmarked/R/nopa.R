@@ -222,3 +222,141 @@ round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), .1, 10), 3)
 round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 1, 1), 3)
 round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 10, 0.1), 3)
 round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 100, 0.01), 3)
+
+
+
+
+
+stopCluster(cl2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# New analysis with Pr(y=1|x)=HN and x~Norm(s, tau)
+
+datD1 <- list(n = nopa$n, X = nopa$X, M=200,
+              J=nrow(nopa$n), K=ncol(nopa$n),
+             xlim=c(-600, 600), ylim=c(-400, 400))
+
+
+initD1 <- function() {
+    n <- datD1$n
+    J <- nrow(n)
+    K <- ncol(n)
+    M <- datD1$M
+    y <- array(0L, c(M, J, K))
+    s <- cbind(rnorm(M), rnorm(M))
+    for(j in 1:J) {
+        for(k in 1:K) {
+            y[sample(1:M, n[j,k]),j,k] <- 1
+        }
+    }
+    list(y = y, sigma=rnorm(1, 500), tau=rnorm(1, 1),
+         s=s, z=rep(1, M))
+}
+
+
+parsD1 <- c("sigma", "tau", "N", "ED")
+
+
+
+clD1 <- makeCluster(3) # Open 3 parallel R instances
+
+clusterExport(clD1, c("datD1", "initD1", "parsD1"))
+
+system.time({
+outD1 <- clusterEvalQ(clD1, {
+    library(rjags)
+    jm <- jags.model("nopaD1.jag", datD1, initD1, n.chains=1, n.adapt=500)
+    jc <- coda.samples(jm, parsD1, n.iter=2500)
+    return(as.mcmc(jc))
+})
+}) # 1000it/hr
+
+
+mcD1 <- mcmc.list(outD1)
+
+plot(mcD1)
+summary(mcD1)
+
+
+
+
+
+
+
+system.time({
+outD1.2 <- clusterEvalQ(clD1, {
+    jc <- coda.samples(jm, parsD1, n.iter=7000)
+    return(as.mcmc(jc))
+})
+}) # 1000it/hr
+
+
+mcD1.2 <- mcmc.list(outD1.2)
+
+
+
+
+
+
+
+
+
+
+stopCluster(clD1)
+
+
+
+
+
+
+
+
+
+
+edr <- function(sigma, r=150) {
+    ea <- 2 * pi * integrate(function(x, sig=sigma)
+                    exp(-x^2/(2*sig^2))*x, 0, r)$value
+#    a <- ea/(pi*r^2)
+    sqrt(ea/pi)
+#    a
+}
+
+# NOPA EDR between 50 and 100, so sigma between 14 and 77
+
+edr(14)
+edr(77)
+
+curve(dnorm(x, 75, 9), 50, 100, ylim=c(0, 0.04))
+
+curve(dgamma(x, 50, 4), 50, 100)
+
+
+
+bigN7510 <- rnorm(10000, 75, 10)
+
+nll <- function(pars) {
+    a <- pars[1]
+    b <- pars[2]
+    -sum(dgamma(bigN7510, a, b, log=TRUE))
+}
+
+optim(c(5, 5), nll)
+
+
+curve(dgamma(x, 55, 0.75), 50, 100)
