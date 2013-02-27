@@ -11,7 +11,7 @@ s <- cbind(runif(N, xlim[1], xlim[2]), runif(N, ylim[1], ylim[2]))
 plot(X, xlim=xlim, ylim=ylim, pch="+")
 points(s, col=gray(0.5), pch=16)
 
-sigma <- 0.05
+sigma <- 0.04
 lam0 <- 0.3
 J <- nrow(X)
 K <- 5
@@ -25,11 +25,16 @@ for(j in 1:J) {
 }
 table(y)
 
+table(apply(apply(y, c(1,2), sum)>0, 1, sum))
+
+
 n <- apply(y, c(2,3), sum)
 dimnames(n) <- list(paste("trap", 1:J, sep=""),
                     paste("night", 1:K, sep=""))
 n[1:5,]
 
+
+plot(X, cex=rowSums(n), asp=1, xlim=c(0,1))
 
 # Analyze in JAGS
 
@@ -70,7 +75,7 @@ source("../../Rpackage/scrbook/R/scrUN.R")
 
 fm1 <- scrUN(n=n, X=X, M=200, niter=20000, xlims=xlim, ylims=ylim,
              inits=list(lam0=0.3, sigma=0.01),
-             updateY=FALSE,
+             updateY=TRUE,
              tune=c(0.004, 0.07, 0.3))
 
 mc1 <- mcmc(fm1)

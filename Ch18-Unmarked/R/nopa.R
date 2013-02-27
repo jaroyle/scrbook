@@ -372,8 +372,21 @@ outD2.2 <- clusterEvalQ(clD2, {
 }) # 1000it/hr
 
 
+mcD2.2 <- mcmc.list(outD2.2)
+plot(mcD2.2)
 
 
+
+system.time({
+outD2.3 <- clusterEvalQ(clD2, {
+    jc <- coda.samples(jm, parsD1, n.iter=15000)
+    return(as.mcmc(jc))
+})
+}) # 1000it/hr
+
+
+mcD2.3 <- mcmc.list(outD2.3)
+plot(mcD2.3)
 
 
 stopCluster(clD2)
