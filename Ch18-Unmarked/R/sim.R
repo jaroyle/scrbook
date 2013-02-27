@@ -51,3 +51,27 @@ pars1 <- c("lam0", "sigma", "N", "mu")
 jm <- jags.model("SCmod1.jag", data=dat1, inits=init1, n.chain=1,
                  n.adapt=100)
 samples1 <- coda.samples(jm, pars1, n.iter=1000)
+samples2 <- coda.samples(jm, pars1, n.iter=5000)
+
+plot(samples1)
+
+
+
+
+
+
+
+# Analyze using scrUN()
+
+library(scrbook)
+library(coda)
+
+source("../../Rpackage/scrbook/R/scrUN.R")
+
+fm1 <- scrUN(n=n, X=X, M=200, niter=10000, xlims=xlim, ylims=ylim,
+             tune=c(0.01, 0.05, 0.2))
+
+mc1 <- mcmc(fm1)
+plot(mc1)
+
+rejectionRate(mc1)

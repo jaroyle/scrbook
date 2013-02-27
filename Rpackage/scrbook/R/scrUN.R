@@ -2,53 +2,48 @@
 
 
 
-# MCMC with Z partially observed
+# MCMC with y partially observed
 # Need to allow for different observation models
-scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
+scrUN <- function(n, X, M, obsmod=c("pois", "bern"),
                   niters, xlims, ylims, a, b, tune=c(0.2, 0.1, 2),
                   zGibbs=FALSE) {
 
     obsmod <- match.arg(obsmod)
-    J <- nrow(y)
-    K <- ncol(y)
-    S <- cbind(runif(M, xlims[1], xlims[2]),
+    J <- nrow(n)
+    K <- ncol(n)
+    s <- cbind(runif(M, xlims[1], xlims[2]),
                runif(M, ylims[1], ylims[2]))
-    D <- e2dist(S, X)
-    sigma <- runif(1, 0.5, 1.5)
-    lam0 <- runif(1, 0.7, 0.9) # This is p0 when obsmod="bern"
+    D <- e2dist(s, X)
+    sigma <- runif(1, 0, 0.2)
+    lam0 <- runif(1, 0.1, 0.8) # This is p0 when obsmod="bern"
     lam <- lam0*exp(-(D*D)/(2*sigma*sigma))
     psi <- runif(1, 0.9, 0.99)
     w <- rbinom(M, 1, psi)
     N0 <- sum(w)
-    ymx <- max(y, na.rm=TRUE)
-    if(N0 < ymx) {
+    nmx <- max(n, na.rm=TRUE)
+    if(N0 < nmx) {
         is0 <- which(w==0)
-        w[sample(is0, ymx-N0)] <- 1
+        w[sample(is0, nmx-N0)] <- 1
     }
 
-    Z <- array(0, c(M,J,K))
+    y <- array(0, c(M,J,K))
     up <- 0
     for(j in 1:J) {
         for(k in 1:K) {
-            if(y[j,k]==0) {
-                Z[,j,k] <- 0
+            if(n[j,k]==0) {
+                y[,j,k] <- 0
                 up <- up+1
                 next
             }
             probs <- lam[,j]*w
             if(identical(obsmod, "pois")) {
                 probs <- probs/sum(probs)
-                Z[,j,k] <- rmultinom(1, y[j,k], probs)
+                y[,j,k] <- rmultinom(1, n[j,k], probs)
             }
             else if(identical(obsmod, "bern")) {
-                Z[,j,k] <- 0
-                guys <- sample(1:M, y[j,k], prob=probs/sum(probs))
-                Z[guys,j,k] <- 1
-#                while(sum(Z[,j,k]) != y[j,k]) {
-#                    Z[,j,k] <- rbinom(M, 1, probs)
-#                    }
-#                up <- up+1
-#                cat("  z init", up, "of", J*K, "\n")
+                y[,j,k] <- 0
+                guys <- sample(1:M, n[j,k], prob=probs/sum(probs))
+                y[guys,j,k] <- 1
             }
         }
     }
@@ -68,9 +63,9 @@ scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
 
 
         if(identical(obsmod, "pois")) {
-            ll <- sum(dpois(Z, lam*w, log=TRUE))
+            ll <- sum(dpois(y, lam*w, log=TRUE))
         } else if(identical(obsmod, "bern")) {
-            ll <- sum(dbinom(Z, 1, lam*w, log=TRUE))
+            ll <- sum(dbinom(y, 1, lam*w, log=TRUE))
         }
 
         # update sigma
@@ -84,11 +79,11 @@ scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
             }
             lam.cand <- lam0*exp(-(D*D)/(2*sigma.cand*sigma.cand))
             # w is recycled over lam, R times
-            # lam*w is recycled over Z, T times
+            # lam*w is recycled over y, T times
             if(identical(obsmod, "pois")) {
-                llcand <- sum(dpois(Z, lam.cand*w, log=TRUE))
+                llcand <- sum(dpois(y, lam.cand*w, log=TRUE))
             } else if(identical(obsmod, "bern")) {
-                llcand <- sum(dbinom(Z, 1, lam.cand*w, log=TRUE))
+                llcand <- sum(dbinom(y, 1, lam.cand*w, log=TRUE))
             }
             if(runif(1) < exp((llcand + prior.cand) -
                               (ll + prior))) {
@@ -106,9 +101,9 @@ scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
         if(lam0.cand >= 0 & test2) {
             lam.cand <- lam0.cand*exp(-(D*D)/(2*sigma*sigma))
             if(identical(obsmod, "pois"))
-                llcand <- sum(dpois(Z, lam.cand*w, log=TRUE))
+                llcand <- sum(dpois(y, lam.cand*w, log=TRUE))
             else if(identical(obsmod, "bern"))
-                llcand <- sum(dbinom(Z, 1, lam.cand*w, log=TRUE))
+                llcand <- sum(dbinom(y, 1, lam.cand*w, log=TRUE))
             if(runif(1) < exp((llcand) - (ll))) {
                 ll <- llcand
                 lam0 <- lam0.cand
@@ -118,17 +113,17 @@ scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
 
         # update w
         wUps <- 0
-        seen <- apply(Z>0, 1, any)
+        seen <- apply(y>0, 1, any)
         for(i in 1:M) {
             if(seen[i])
                 next
             wcand <- ifelse(w[i]==0, 1, 0)
             if(identical(obsmod, "pois")) {
-                ll <- sum(dpois(Z[i,,], lam[i,]*w[i], log=TRUE))
-                llcand <- sum(dpois(Z[i,,], lam[i,]*wcand, log=TRUE))
+                ll <- sum(dpois(y[i,,], lam[i,]*w[i], log=TRUE))
+                llcand <- sum(dpois(y[i,,], lam[i,]*wcand, log=TRUE))
             } else if(identical(obsmod, "bern")) {
-                ll <- sum(dbinom(Z[i,,], 1, lam[i,]*w[i], log=TRUE))
-                llcand <- sum(dbinom(Z[i,,], 1, lam[i,]*wcand, log=TRUE))
+                ll <- sum(dbinom(y[i,,], 1, lam[i,]*w[i], log=TRUE))
+                llcand <- sum(dbinom(y[i,,], 1, lam[i,]*wcand, log=TRUE))
             }
 
             prior <- dbinom(w[i], 1, psi, log=TRUE)
@@ -139,39 +134,39 @@ scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
             }
         }
 
-        # update Z
-        Zups <- 0
+        # update y
+        yups <- 0
         for(j in 1:J) {
             probs <- lam[,j]*w
             for(k in 1:K) {
-                if(y[j,k]==0) {
-                    Z[,j,k] <- 0
-#                    Zups <- Zups+1
+                if(n[j,k]==0) {
+                    y[,j,k] <- 0
+#                    yups <- yups+1
                     next
                 }
 #                probs <- probs/sum(probs)
                 if(identical(obsmod, "pois")) {
                     probs <- probs/sum(probs)
-                    Z[,j,k] <- rmultinom(1, y[j,k], probs)
-                    Zups <- Zups+1
+                    y[,j,k] <- rmultinom(1, n[j,k], probs)
+                    yups <- yups+1
                 }
                 else if(identical(obsmod, "bern")) {
                     if(zGibbs) {
-                        Z[,j,k] <- 0
+                        y[,j,k] <- 0
                         probs <- probs/sum(probs)
-                        guy <- sample(1:M, y[j,k], prob=probs)
-                        Z[guy,j,k] <- 1
-                        Zups <- 1
+                        guy <- sample(1:M, n[j,k], prob=probs)
+                        y[guy,j,k] <- 1
+                        yups <- 1
                     } else {
 #                    zcand <- rbinom(M, 1, probs)
-#                    if(sum(zcand) != y[j,k])
+#                    if(sum(zcand) != n[j,k])
 #                        next
-#                    Z[,j,k] <- zcand
-#                    Zups <- Zups+1
+#                    y[,j,k] <- zcand
+#                    yups <- yups+1
 
-#                    z.cand <- sample(Z[,j,k]) # random permutation
+#                    z.cand <- sample(y[,j,k]) # random permutation
                         # alternative: just move one 1
-                        z.cand <- Z[,j,k]
+                        z.cand <- y[,j,k]
                         w1 <- w==1
                         z1w1 <- which(z.cand==1 & w1)
                         to0 <- sample(z1w1, 1)
@@ -181,13 +176,13 @@ scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
                         if(identical(to0, to1))
                             next
                         z.cand[to1] <- 1
-                        prior <- sum(dbinom(Z[,j,k], 1, probs, log=TRUE))
+                        prior <- sum(dbinom(y[,j,k], 1, probs, log=TRUE))
                         prior.cand <- sum(dbinom(z.cand, 1, probs,
                                                  log=TRUE))
                         # no likelihood contribution
                         if(runif(1) < exp(prior.cand - prior)) {
-                            Z[,j,k] <- z.cand
-                            Zups <- Zups+1
+                            y[,j,k] <- z.cand
+                            yups <- yups+1
                         }
                     }
                 }
@@ -197,41 +192,41 @@ scrUN <- function(y, X, M, obsmod=c("pois", "bern"),
         # update psi
         psi <- rbeta(1, 1+sum(w), 1+M-sum(w))
 
-        # update S
-        Sups <- 0
+        # update s
+        sups <- 0
         for(i in 1:M) {   # note this is "M" in general
-            Scand <- c(rnorm(1, S[i,1], tune[3]),
-                       rnorm(1, S[i,2], tune[3]))
-            inbox <- Scand[1]>=xlims[1] & Scand[1]<=xlims[2] &
-            Scand[2]>=ylims[1] & Scand[2]<=ylims[2]
+            scand <- c(rnorm(1, s[i,1], tune[3]),
+                       rnorm(1, s[i,2], tune[3]))
+            inbox <- scand[1]>=xlims[1] & scand[1]<=xlims[2] &
+            scand[2]>=ylims[1] & scand[2]<=ylims[2]
             if(!inbox)
                 next
-            dtmp <- sqrt((Scand[1] - X[,1])^2 + (Scand[2] - X[,2])^2)
+            dtmp <- sqrt((scand[1] - X[,1])^2 + (scand[2] - X[,2])^2)
             lam.cand <- lam0*exp(-(dtmp*dtmp)/(2*sigma*sigma) )
 
-            # recycle lam over Z
+            # recycle lam over y
             if(identical(obsmod, "pois")) {
-                ll <- sum(dpois(Z[i,,], lam[i,]*w[i], log=TRUE))
-                llcand <- sum(dpois(Z[i,,], lam.cand*w[i], log=TRUE))
+                ll <- sum(dpois(y[i,,], lam[i,]*w[i], log=TRUE))
+                llcand <- sum(dpois(y[i,,], lam.cand*w[i], log=TRUE))
             } else if(identical(obsmod, "bern")) {
-                ll <- sum(dbinom(Z[i,,], 1, lam[i,]*w[i], log=TRUE))
-                llcand <- sum(dbinom(Z[i,,],1,lam.cand*w[i], log=TRUE))
+                ll <- sum(dbinom(y[i,,], 1, lam[i,]*w[i], log=TRUE))
+                llcand <- sum(dbinom(y[i,,],1,lam.cand*w[i], log=TRUE))
             }
 
             if(runif(1) < exp(llcand - ll)) {
                 ll <- llcand
-                S[i,] <- Scand
+                s[i,] <- scand
                 lam[i,] <- lam.cand
                 D[i,] <- dtmp
-                Sups <- Sups+1
+                sups <- sups+1
             }
         }
 
         if(iter %% 100 == 0) {
             cat("   Acceptance rates\n")
             cat("     w =", wUps/M, "\n")
-            cat("     Z =", round(Zups/(J*K), 2), "\n")
-            cat("     S =", Sups/M, "\n")
+            cat("     y =", round(yups/(J*K), 2), "\n")
+            cat("     s =", sups/M, "\n")
         }
 
         out[iter,] <- c(sigma,lam0,psi,sum(w) )
