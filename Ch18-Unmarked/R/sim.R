@@ -53,9 +53,12 @@ init1 <- function() {
 }
 pars1 <- c("lam0", "sigma", "N", "mu")
 
+system.time({
 jm <- jags.model("SCmod1.jag", data=dat1, inits=init1, n.chain=1,
-                 n.adapt=100)
-samples1 <- coda.samples(jm, pars1, n.iter=1000)
+                 n.adapt=1000)
+samples1 <- coda.samples(jm, pars1, n.iter=10000)
+})
+
 samples2 <- coda.samples(jm, pars1, n.iter=5000)
 
 plot(samples1)
@@ -73,14 +76,16 @@ library(coda)
 
 source("../../Rpackage/scrbook/R/scrUN.R")
 
-fm1 <- scrUN(n=n, X=X, M=200, niter=20000, xlims=xlim, ylims=ylim,
+fm1 <- scrUN(n=n, X=X, M=200, niter=50000, xlims=xlim, ylims=ylim,
              inits=list(lam0=0.3, sigma=0.01),
              updateY=TRUE,
              tune=c(0.004, 0.07, 0.3))
 
 mc1 <- mcmc(fm1)
 plot(mc1)
-summary(window(mc1, start=8001))
+summary(window(mc1, start=10001))
 
 rejectionRate(mc1)
-rejectionRate(window(mc1, start=5001))
+rejectionRate(window(mc1, start=10001))
+
+save(mc1, file="scrUNmc1.gzip")

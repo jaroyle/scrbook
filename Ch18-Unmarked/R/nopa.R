@@ -314,6 +314,38 @@ mcD1.2 <- mcmc.list(outD1.2)
 
 
 
+system.time({
+outD1.3 <- clusterEvalQ(clD1, {
+    jc <- coda.samples(jm, parsD1, n.iter=15000)
+    return(as.mcmc(jc))
+})
+}) # 1000it/hr
+
+
+mcD1.3 <- mcmc.list(outD1.3)
+plot(mcD1.3)
+summary(mcD1.3)
+
+
+
+
+
+
+system.time({
+outD1.4 <- clusterEvalQ(clD1, {
+    jc <- coda.samples(jm, parsD1, n.iter=15000)
+    return(as.mcmc(jc))
+})
+}) # 1000it/hr
+
+
+mcD1.3 <- mcmc.list(outD1.3)
+plot(mcD1.3)
+summary(mcD1.3)
+
+
+
+
 
 
 
@@ -387,6 +419,29 @@ outD2.3 <- clusterEvalQ(clD2, {
 
 mcD2.3 <- mcmc.list(outD2.3)
 plot(mcD2.3)
+
+
+
+
+
+
+system.time({
+outD2.4 <- clusterEvalQ(clD2, {
+    jc <- coda.samples(jm, parsD1, n.iter=100000)
+    return(as.mcmc(jc))
+})
+}) # 1000it/hr
+
+
+mcD2.4 <- mcmc.list(outD2.4)
+plot(mcD2.4)
+
+
+
+
+
+
+
 
 
 stopCluster(clD2)
