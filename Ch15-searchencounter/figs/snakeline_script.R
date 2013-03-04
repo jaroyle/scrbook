@@ -81,7 +81,7 @@ points(sx,sy,pch=20,col="red")
 
 sigma<-.3
 alpha0<- -.5
-alpha1<- -1/(2*(.2^2))
+alpha1<- -1/(2*(.3^2))
 X<-regpoints@coords
 J<-nrow(X)
 
@@ -194,7 +194,7 @@ parameters <- c("alpha0","alpha1", "N", "psi", "sigma")
 nthin<-1
 nc<-3
 nb<-1000
-ni<-2000
+ni<-4000
 
 # Load interface package and start WinBUGS (note: this takes about 4.5 h)
 library("R2jags")
