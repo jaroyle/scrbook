@@ -67,10 +67,8 @@ points(regpoints,col="red",pch=20,lwd=2)
 
 perbox<- 4
 N<- 30*perbox
-Xl<- -1
-Xu<- 4
-Yl<-  -1
-Yu<- 5
+xlim<-c(-1,4)
+ylim<-c(-1,5)
 
 
 set.seed(2013)
@@ -122,7 +120,7 @@ Uy<-Uy[ncap>0,]
 
 
 
-M<-100
+M<-200
 nind<-nrow(y)
 y<-rbind(y,matrix(0,nrow=(M-nrow(y)),ncol=ncol(y)))
 Namat<-matrix(NA,nrow=(M-nind),ncol=ncol(y))
@@ -158,7 +156,7 @@ psi~dunif(0,1)
 
 # Likelihood
 for(i in 1:M){ # Loop over individuals
- w[i]~dbern(psi)
+ z[i]~dbern(psi)
  s[i,1]~dunif(xlim[1],xlim[2])
  s[i,2]~dunif(ylim[1],ylim[2])
  for(k in 1:K){ # Loop over temporal replicates
@@ -169,41 +167,36 @@ for(i in 1:M){ # Loop over individuals
       h[i,k,j]<-exp(alpha0+alpha1*d[i,k,j])
    }
    H[i,k]<-sum(h[i,k,1:J])
-   p[i,k]<- w[i]*(1-exp(-H[i,k]))
+   p[i,k]<- z[i]*(1-exp(-H[i,k]))
    y[i,k] ~ dbern(p[i,k])
  }
 }
 
 # Derived quantity
-N<-sum(w[])
+N<-sum(z[])
 }
 ",file="model0.txt")
 
-
 ## Prepare objects to run WinBUGS from R
-
-
 # Data 
-data <- list (y=y, u=Ux,  v=Uy, X=X, K=K, M=M, J=J,xlim=xlim,ylim=ylim)
+data <- list(y=y, u=Ux,  v=Uy, X=X, K=K, M=M, J=J,xlim=xlim,ylim=ylim)
 
 #Define function to generate initial values
-
 inits <- function(){
-  list("alpha0"=alpha0-.1,"alpha1"=alpha1-3,"lsigma"=log(.5),
-       "s"=S,w=c(rep(1,nind),rep(0,M-nind)) ,u=Ux.st,v=Uy.st)
+  list(alpha0=alpha0-.1,alpha1=alpha1-3,lsigma=log(.5),
+       s=S,z=c(rep(1,nind),rep(0,M-nind)) ,u=Ux.st,v=Uy.st)
 }
 
 # List parameters to be estimated
-parameters <- c("beta1", "N", "psi", "sigma", "beta0")
+parameters <- c("alpha0","alpha1", "N", "psi", "sigma")
 
 # Set MCMC settings
 nthin<-1
 nc<-3
 nb<-1000
-ni<-5000
+ni<-2000
 
 # Load interface package and start WinBUGS (note: this takes about 4.5 h)
-library("R2WinBUGS")
 library("R2jags")
 wbout <- jags(data, inits, parameters, "model0.txt", n.thin=nthin, n.chains=nc,
 n.burnin=nb, n.iter=ni, working.dir=getwd())

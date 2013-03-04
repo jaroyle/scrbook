@@ -391,7 +391,7 @@ to restrict the potential locations of ${\bf s}$.
 
 
 
-\subsection{Simulation and Analysis in {\bf BUGS}} 
+\subsection{Simulation and analysis in {\bf JAGS}}
 
 Here we will simulate a sample data set that goes with the situation
 desccribed in Fig. \ref{fig.snakeline} and then analyze the ddata in
@@ -401,10 +401,10 @@ boxes in Fig. \ref{fig.snakeline} and a total population size which here which i
 to be 4 individuals per unit quadrat ($1 \times 1$). We use a reguarly
 square state-space here for convenience:
 \begin{verbatim}
-perbox<- 4
-N<- 30*perbox   # total of 30 1x1 quadrats
-xlim<- c(-1, 4)
-ylim<- c(-1, 5)
+> xlim <- c(-1, 4)
+> ylim <- c(-1, 5)
+> perbox <- 4
+> N <- 30*perbox   # Total of 30 1x1 quadrats
 \end{verbatim}
 The line in Fig. \ref{fig.snakeline}  is an irregular mesh of points
 obtained by an imperfect manual point-and-clicking operation, which
@@ -415,20 +415,15 @@ mesh by using
 some functions in the packages \mbox{\tt regos}
 and \mbox{\tt sp}, especially the function \mbox{\tt sample.Line}, as follows:
 \begin{verbatim}
-library(rgeos)
-library(sp)
-line1<-source("line1.R")
+> library(rgeos)
+> library(sp)
+> line1<-source("line1.R")
 
-x<-line1$value$x
-y<-line1$value$y
+> line1<-as.matrix(cbind(line1$value$x,line1$value$y))
+> points<-SpatialPoints(line1)
 
-line1<-cbind(x,y)
-
-line1<- as.matrix(line1)
-points<-SpatialPoints(line1)
-
-sLine<-Line(points)
-regpoints<-sample.Line(sLine,250,type="regular")
+> sLine<-Line(points)
+> regpoints<-sample.Line(sLine,250,type="regular")  # Key step! 
 \end{verbatim}
 Next we set a random number seed and simulate activity centers and set
 some model parameters required to simulate encounter history data. 
@@ -540,36 +535,64 @@ DIC is an estimate of expected predictive error (lower deviance is better).
 
 \subsection{Hard plot boundaries}
 
-The previous development assumed that
-encounters can be made anywhere in space but that the encounter
-probability decreases with distance from the survey path. In practice,
-as in the MHB, we might delineate a plot which restricts where
-individuals might be observed (as in the situation considered by Royle
-\& Young (2008)). For such cases we truncate the encounter
-probability function such as
+The previous development assumed that encounters can be made anywhere
+in space, but that the encounter probability decreases with a summary
+of distance from the survey path. In practice, we might delineate a
+plot which restricts where individuals might be observed (as in the
+situation considered by \citet{royle_young:2008}).  For such cases we
+truncate the encounter probability function at the plot boundary,
+according to:
 \begin{equation}
 p({\bf u}_{it}) = (1- \exp(-H({\bf u}_{it}))) \mbox{I}({\bf u}_{it} \in {\cal X})
-\label{eq.hardplot}
+\label{search-encounter.eq.hardplot}
 \end{equation}
-where ${\cal X}$ is the surveyed polygon
-and the indicator function
-$\mbox{I}({\bf u}_{it} \in {\cal X}) = 1$ if
-${\bf u}_{it} \in {\cal X}$ and 0 otherwise.
-That is, the probability of
-encounter is identically 0 if an individual is located {\it outside}
-the plot at sample period $t$.
+where ${\cal X}$ is the surveyed polygon and the indicator function
+$\mbox{I}({\bf u}_{it} \in {\cal X}) = 1$ if ${\bf u}_{it} \in {\cal
+  X}$ and 0 otherwise.  That is, the probability of encounter is
+identically 0 if an individual is located {\it outside} the plot at
+sample period $t$.  We demonstrated how to do this in the {\bf BUGS}
+language below for a model of uniform search intensity.
+
 
 
 \subsection{Analysis of other protocols}
 
-Analysis of 1b is a distance-sampling like model but with an additional hierarchical structure the describes the individual location scatter about the home range center. This is precisely a type of DS with measurement error. Analysis of 1c is a similar idea except it represents an explicit model misspecification since one is approximating the observation process by the nearest perpendicular to the line.  Analysis of 1d is the ``unstructured survey data'' like from Thompson et al. or Russell et al.  Note also that the capcrap paper is a version of this - grids or polygons were sampled but no information on the search path is available. This could be a Design 3 problem but that is excess computation I think. 
 
-Protocol (1b) has us record location of individuals AND location on the transect where we observed the individual. This is an easier problem I think, but you have to account for ``not seen'' prior  to x0 so maybe some kind of a cumulative hazard model or something. 
+We think there are a number of variations of this basic design that
+might arise in practice. 
+In the situation elaborated on above, 
+the sample path is used to locate individuals and, whether or not an
+individual is encountered, is a function of the total hazard to
+encounter along the whole line.
+A slight variation of this idea (what we called Protocol 1b)
+has us record location of individuals and also the location on the 
+transect where we observed the individual. 
+The probability of encounter is the probability of encounter prior to
+point $x_{0}$ on the line (Schweder and Skaug paper? XXXXXX) and there
+is a slight modification to the encounter probability model to account
+for that. This is exactly a 
+ distance-sampling observation model, but with an 
+additional hierarchical structure the describes the individual
+location scatter about the home range center.
+Protocol 1c is a slight variation of this -- instead of recording the
+point on the line where the individual was first detected, we use,
+instead, the point on the line that has the shortest perpendicular
+distance. This is a classical distance sampling observation model, and
+it  represents an intentional misspecification of the model
+but it seems that the effect of this is relatively minor, or at least
+otherwise people wouldn't do it. 
 
-Protocol (1c) has us record neither of those things, instead we record the closest perpendicular distance. This is a typical distance sampling situation which produces exactly a DS type of a model (or a CR-DS model). We don't recommend recording closest perpendicular distance and we don't discuss these models too much here
+Analysis of 1d is the ``unstructured survey data'' like
+from Thompson et al. or Russell et al.  Note also that the capcrap
+paper is a version of this - grids or polygons were sampled but no
+information on the search path is available. This could be a Design 3
+problem but that is excess computation I think.
 
-Protocol (1d) . In this case, observations are restricted to the line itself. We imagine that the line is evolving in response to search activity. It is not quite like the other ones so let's call it ``ad hoc''. In this case we use small bins as traps and the length of the line in each grid as a covariate. Thompson et al. and Russell et al.
-Simulation results -----------------
+
+
+
+
+
 
 
 \section{Design 2: Uniform Search Intensity}
@@ -595,36 +618,37 @@ during sample occasion $k$,  i.e.,
 \[
 p({\bf u}_{ik}) = p_{0} \mbox{I}({\bf u}_{ik} \in {\cal X})
 \]
-which resembles Eq. \ref{eq.hardplot} except replacing the encounter
-probability function with the constant $p_{0}$. 
+which resembles Eq. \ref{search-encounter.eq.hardplot}
+except replacing the encounter
+probability function with constant $p_{0}$. 
 
-
-In the analysis of Royle and Young 2008 they used the simple bivariate
-Gaussian movement model in which 
+In the analysis of \citet{royle_young:2008}, a simple bivariate 
+Gaussian movement model was used, in which 
 \[
  {\bf u}_{ik} | {\bf s}_{i} \sim \mbox{Normal}({\bf s}_{i}, \sigma^{2}{\bf I}),
 \]
-However, clearly more general versions of the model can be fitted.
-For example, imnagine a situation where the successive samples of a
+However, clearly more general versions of the model can be developed.
+For example, imagine a situation where the successive samples of a
 bounded sample unit are relatively close together in time so that 
 successive locations of individuals are not well-approximated by the
 independence model. Naturally we might consider using an
 auto-regressive or random-walk type of model in which 
 the successive coordinate locations of individual $i$ behave according to:
 \begin{eqnarray*}
- u_{1}(i,k) | {\bf s}_{i} &\sim &  \mbox{Normal}( u_{1}(i,k-1),  \sigma_{move}^{2}) \\
- u_{2}(i,k) | {\bf s}_{i} &\sim &  \mbox{Normal}( u_{2}(i,k-1),  \sigma_{move}^{2}) \\
+ u_{1}(i,k) | {\bf s}_{i} &\sim &  \mbox{Normal}( u_{1}(i,k-1),  \sigma^{2}) \\
+ u_{2}(i,k) | {\bf s}_{i} &\sim &  \mbox{Normal}( u_{2}(i,k-1),  \sigma^{2}) \\
 \end{eqnarray*}
 here we use the notation $u_{1}$ and $u_{2}$ for the easting and
 northing coordinates, respectively. (to keep from cluttering things up
 with too many subscripts we have $i$ and $k$ as parenthetic arguments
 here).  At any rate, we can use this model and estimate the parameter
-$\sigma_{move}$ or even an regression parameter $\rho$ pre-multiplying
-the lagged value of $u$.  In the repo we provide a script for
+$\sigma$ or even a regression parameter $\rho$ pre-multiplying
+the lagged value of $u$ if we wanted to use an AR type specification.  
+In the \mbox{\tt scrbook} package, we provide a script for
 simulating and fitting search-encounter data using the iid Gaussian
-model and also the random walk model.  The WinBUGS model specification
+model and also the random walk model.  The {\bf BUGS} model specification
 is shown in Panel \ref{search-encounter.panel.uniform} for the random
-walk situation.  Of course we imagine that resouorce seelection
+walk situation.  Of course we imagine that resouorce selection
 perhaps using similar ideas to those dexcribed in
 Chapt. \ref{chapt.rsf} could be parameterized in this movement model
 as well. In this case we set up the run with JAGS using the standard
@@ -634,7 +658,7 @@ better if we provide decent starting values. e.g., the last observed
 location or something. 
 
 
-R CODE FOR SIMULATING THIS SITUATION.....................
+R CODE FOR SIMULATING THIS SITUATION.....................?
 
 \begin{panel}[htp]
 \centering
@@ -707,20 +731,34 @@ yet.
 
 
 
-\section{ Design 3: Ad hoc implementation of Design 1. }
+\section{ Design 3: Partial Information}
 
 We have seen a number of studies that generate ideal data of a ``Design
 1'' type but, for whatever reasons, we choose not to use the search
 path information.   We discuss two of these here.
+For analysis of this situation, we think there are two options:
+you assume the plot was uniformly searched ..........
 
-It would be useful to do a simulation study to look at this:
-We don't do anything new in terms of modeling here but we look at how
-bad do we do if we don't have the search path and use the USI model?
-We consider 4 cases: Case 1 and 2: regular searching of low and high
-intensity. E.g., for a 1 unit block, then we can have a sinusoid track
-through each block of length 1.5 or 2 and then 4 or 5 km.  For case 3
-and 4 we use heterogeneity in search intensity.
+(1) search path not recorded, locations recorded
+(2) search path recorded, locations not recorded
+(3) search path not recorded, locations not recorded [but plot of
+detection is known]
 
+For (1) you could always assume uniform search intensity , 
+which is probably ok if plots were randomly searched.
+It would be useful to do a simulation study to look at how bad that
+model is if plots were systematically or randomly searched, and with
+heterogeneity in search intensity.
+For (2), maybe you could map the locations to the center of each plot,
+think of the plot as effective traps, and maybe use the search path
+length as a covariate, or some measure of coverage of the
+plot. Intuitively, this would be a decent solution of the plots are
+small relative to typical home range sizes.
+For (3) , same thing -- map the locations to the center of the plot,
+but now you don't have a covariate of how much effort when into each
+plot. 
+
+Variations on this theme have appeared in a number of papers.
 
 \subsection{Capricaillie crap}
 
@@ -867,7 +905,7 @@ Arjun's analysis -- trails?
 
 
 
-\section{Design 4 -- no location info }
+\section{Design 4 -- absence of location information}
 
 We imagine a series of models for situations where we forget
 altogether to record location information within the sample unit. We
@@ -881,7 +919,8 @@ about model parameters.
 We have two specific cases here:
 Imagine we have a bunch of quadrats or segments that are contiguous
 and we do the surveys like above and record counts PER individual  but
-no other sampling information.  Not sure what to do about this.
+no other sampling information. 
+
 The other case is that we don't record individual ID at all -- instead
 we just have total count frequencies in each plot. 
 This model is precisely the one considered by
