@@ -81,7 +81,7 @@ points(sx,sy,pch=20,col="red")
 
 sigma<-.3
 alpha0<- -.5
-alpha1<- -1/(2*(.3^2))
+alpha1<- 1/(2*(.3^2))
 X<-regpoints@coords
 J<-nrow(X)
 
@@ -92,7 +92,7 @@ for(i in 1:N){
 for(k in 1:K){
 U[i,k,]<-c(rnorm(1,sx[i],sigma),rnorm(1,sy[i],sigma))
 dvec<-     sqrt( ( U[i,k,1] - X[,1])^2 + (U[i,k,2] - X[,2])^2  )
-loghaz<- alpha0 + alpha1*dvec
+loghaz<- alpha0 - alpha1*dvec
 H<- sum(exp(loghaz))
 pmat[i,k]<- 1-exp(-H)
 y[i,k]<- rbinom(1,1,pmat[i,k])
@@ -148,7 +148,7 @@ model {
 
 # Priors
 alpha0~dunif(-25,25)
-alpha1~dunif(-25,25)
+alpha1~dunif(0,25)
 lsigma~dunif(-5,5)
 sigma<-exp(lsigma)
 tau<-1/(sigma*sigma)
@@ -164,7 +164,7 @@ for(i in 1:M){ # Loop over individuals
     v[i,k] ~ dnorm(s[i,2],tau) 
     for(j in 1:J){ # Loop over each point defining line segments
       d[i,k,j]<-  pow(pow(u[i,k]-X[j,1],2) + pow(v[i,k]-X[j,2],2),0.5)
-      h[i,k,j]<-exp(alpha0+alpha1*d[i,k,j])
+      h[i,k,j]<-exp(alpha0-alpha1*d[i,k,j])
    }
    H[i,k]<-sum(h[i,k,1:J])
    p[i,k]<- z[i]*(1-exp(-H[i,k]))
@@ -183,7 +183,7 @@ data <- list(y=y, u=Ux,  v=Uy, X=X, K=K, M=M, J=J,xlim=xlim,ylim=ylim)
 
 #Define function to generate initial values
 inits <- function(){
-  list(alpha0=alpha0-.1,alpha1=alpha1-3,lsigma=log(.5),
+  list(alpha0=alpha0-.3,alpha1=alpha1-.5,lsigma=log(.5),
        s=S,z=c(rep(1,nind),rep(0,M-nind)) ,u=Ux.st,v=Uy.st)
 }
 
@@ -193,8 +193,8 @@ parameters <- c("alpha0","alpha1", "N", "psi", "sigma")
 # Set MCMC settings
 nthin<-1
 nc<-3
-nb<-1000
-ni<-4000
+nb<-500
+ni<-1000
 
 # Load interface package and start WinBUGS (note: this takes about 4.5 h)
 library("R2jags")
