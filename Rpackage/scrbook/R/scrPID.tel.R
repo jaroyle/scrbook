@@ -1,12 +1,8 @@
-scrPID.tel<-function (n, X, y, M, locs,telID, obsmod = c("pois", "bern"),nmarked=c("known", "unknown"), npics, niters, 
+scrPID.tel<-function (n, X, y, M, locs,telID, obsmod = c("pois", "bern"),npics, niters, 
     xlims, ylims, a, b, inits, delta ) 
 {
 library(mvtnorm)
     obsmod <- match.arg(obsmod)
-    nmarked <- match.arg(nmarked)
-
-    if(identical(nmarked, "unknown") & !missing(npics)) 
-	stop ("Need to know number of marked individuals if individual identification of marks is imperfect")
 
     R <- nrow(n)
     T <- ncol(n)
@@ -36,11 +32,11 @@ library(mvtnorm)
     for (r in 1:R) {
         for (t in 1:T) {
             if (n[r, t] == 0) {
-                Y[, r, t] <- 0
+                Y[!marked, r, t] <- 0
                 next
             }
             unmarked <- !Ydata[, r, t]
-            nUnknown <- n[r, t] - sum(Y[!unmarked, r, t])
+            nUnknown <- n[r, t] 
             if (nUnknown < 0) 
                 browser()
             probs <- lam[, r] * z
@@ -159,11 +155,11 @@ for (x in 1:ntot) {
             zip <- lam[, r] * z
             for (t in 1:T) {
                 if (n[r, t] == 0) {
-                  Y[, r, t] <- 0
+                  Y[!marked, r, t] <- 0
                   next
                 }
                 unmarked <- !Ydata[, r, t]
-                nUnknown <- n[r, t] - sum(Y[!unmarked, r, t])
+                nUnknown <- n[r, t] 
                 if (nUnknown == 0) 
                   next
                 probs <- zip[unmarked]
@@ -178,12 +174,7 @@ for (x in 1:ntot) {
             }
         }
                
-            if (identical(nmarked, "known")) {
-        psi <- rbeta(1, 1 + sum(z[!marked]), 1 + (M-sum(marked)) - sum(z[!marked]))
-	} else if (identical(nmarked, "unknown")) {
-        psi <- rbeta(1, 1 + sum(z), 1 + M - sum(z))
-	}
-
+        psi <- rbeta(1, 1 + sum(z[!marked]), 1 + (M-sum(marked)) - sum(z[!marked])
 
         Sups <-Skups<- 0
         for (i in 1:M) {
