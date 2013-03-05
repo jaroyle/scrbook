@@ -1,11 +1,7 @@
-scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unknown"), niters, npics,
+scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),niters, npics,
     xlims, ylims, a, b, inits, delta ) 
 {
     obsmod <- match.arg(obsmod)
-    nmarked <- match.arg(nmarked)
-
-    if(identical(nmarked, "unknown") & !missing(npics)) 
-	stop ("Need to know number of marked individuals if individual identification of marks is imperfect")
 
     J <- nrow(n)
     K <- ncol(n)
@@ -26,13 +22,11 @@ scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unk
     for (j in 1:J) {
         for (k in 1:K) {
             if (n[j, k] == 0) {
-                Y[, j, k] <- 0
+                Y[!marked, j, k] <- 0
                 next
             }
             unmarked <- !Ydata[, j, k]
-            nUnknown <- n[j, k] - sum(Y[!unmarked, j,k])
-            if (nUnknown < 0) 
-                browser()
+            nUnknown <- n[j, k] 
             probs <- lam[, j] * z
             probs <- probs[unmarked]
             probs <- probs/sum(probs)
@@ -144,11 +138,11 @@ scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unk
             zip <- lam[, j] * z
             for (k in 1:K) {
                 if (n[j, k] == 0) {
-                  Y[, j, k] <- 0
+                  Y[!marked, j, k] <- 0
                   next
                 }
                 unmarked <- !Ydata[, j, k]
-                nUnknown <- n[j, k] - sum(Y[!unmarked, j, k])
+                nUnknown <- n[j, k]
                 if (nUnknown == 0) 
                   next
                 probs <- zip[unmarked]
@@ -163,11 +157,9 @@ scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unk
             }
         }
                
-            if (identical(nmarked, "known")) {
+
         psi <- rbeta(1, 1 + sum(z[!marked]), 1 + (M-sum(marked)) - sum(z[!marked]))
-	} else if (identical(nmarked, "unknown")) {
-        psi <- rbeta(1, 1 + sum(z), 1 + M - sum(z))
-	}
+
 
         Sups <- 0
         for (i in 1:M) {
