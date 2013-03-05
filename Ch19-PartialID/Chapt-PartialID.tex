@@ -461,8 +461,8 @@ Implementing a spatial mark-resight model in {\bf JAGS} is not
 trivial, since the program does not accept partially observed
 multivariate nodes (in this case the partially observed individual
 encounter histories which we model as coming from a multinomial
-distribution). We can, however, work around that by separating the marked from the unmarked data. The {\bf JAGS} code for the model with a known number of marked individuals is shown in Panel \ref{partialID.panel.knownm}. You see that data augmentation is only applied to the unmarked part of the population, and $N$ is the sum of the estimated number of unmarked individuals ({\tt sum(z[])}) and the number of marked individuals, which is known. Although the two data sets are separated, both parts of the population, marked and unmarked, have the same prior uniform distribution of activity centers
-A last noteworthy detail in this code is the {\tt dsum()} function. This function is specific to {\bf JAGS} (i.e., you cannot run this model in {\bf BUGS} and allows you to model data -- here the counts of unmarked individuals, $n_{jk}$ -- as the sum of a number of latent variables -- here the latent erncounter histories of unmarked individuals. While it can be a pain writing out all the arguments of the {\tt dsum()} function, it is this function that allows us to implement SMR models in {\bf JAGS}.
+distribution). We can, however, work around that by separating the marked from the unmarked data. The {\bf JAGS} code for the model with a known number of marked individuals is shown in Panel \ref{partialID.panel.knownm}. You see that data augmentation is only applied to the unmarked part of the population, and $N$ is the sum of the estimated number of unmarked individuals ({\tt sum(z[])}) and the number of marked individuals, which is known. Also, to reduce run time, we summed observations of marked individuals across occasions and account for that by multiplying $\lambda_{ij}$ with $K$. Although the two data sets are separated, both parts of the population, marked and unmarked, have the same prior uniform distribution of activity centers
+A last noteworthy detail in this code is the {\tt dsum()} function. This function is specific to {\bf JAGS} (i.e., you cannot run this model in {\bf BUGS}) and allows you to model data -- here the counts of unmarked individuals, $n_{jk}$ -- as the sum of a number of latent variables -- here the latent erncounter histories of unmarked individuals. While it can be a pain writing out all the arguments of {\tt dsum()}, it is this function that allows us to implement SMR models in {\bf JAGS}.
 
 \begin{panel}[htp]
 \centering
@@ -497,7 +497,7 @@ for(i in 1:M) {
     dist[i,j] <- sqrt((s[i,1]-X[j,1])^2 + (s[i,2]-X[j,2])^2)
     lambda[i,j] <- lam0*exp(-dist[i,j]^2/(2*sigma^2))
     for(k in 1:K) {
-      yu[i,j,k] ~ dpois(lambda[i,j]*z[i])#*u[i])
+      yu[i,j,k] ~ dpois(lambda[i,j]*z[i])
       }
     }
   }
@@ -505,7 +505,7 @@ for(i in 1:M) {
 for(j in 1:J) {
   for(k in 1:K) {nU[j,k] ~ dsum(yu[1,j,k],yu[2,j,k],yu[3,j,k],
 								[...code shortened...],
-								yu[99,j,k],yu[100,j,k])
+								yu[79,j,k],yu[80,j,k])
 	}
   }
 
@@ -517,7 +517,7 @@ N <- sum(z[])+m
 %\end{minipage}
 \rule[-0.15in]{\textwidth}{.03in}
 \caption{
-JAGS code for SMR model with known number of marked individuals. In this example, $M$, the size of the augmented unmarked data set, is 100. Note that the arguments yu[4,j,k] to yu[98,j,k] of the dsum() function are omitted from the code for space reasons.  
+JAGS code for SMR model with known number of marked individuals. In this example, $M$, the size of the augmented unmarked data set, is 80. Note that the arguments yu[4,j,k] to yu[78,j,k] of the dsum() function are omitted from the code for space reasons.  
 }
 \label{partialID.panel.knownm}
 \end{panel}
@@ -526,17 +526,84 @@ Alternatively, we can use the technical skills presented in \ref{chapt.mcmc} XXX
 simple modifications to the MCMC code we developed for regular SCR models in
 Chapt. \ref{chapt.mcmc}.
 Essentially, since we observe individual detections for the marked part of the population, we have to update only the unobserved part of the full -- augmented -- set of encounter histories, ${\bf Y}$, and
-modify the updating steps for $z_i$ and $\psi$, the parameters introduced by data augmentation, to reflect that these only apply to the unmarked part of the population, in other words, to the $M-m$ individuals in our data. You can find the full MCMC code in the accompanying {\bf R} package {\tt scrbook} by invoking {\tt scrPID}. The R code below shows how to simulate SMR data using the {\tt scrbook} function {\tt sim.pID.data}, and running an SMR model on the data, both in {\bf JAGS} and using {\tt scrPID}.
+modify the updating steps for $z_i$ and $\psi$, the parameters introduced by data augmentation, to reflect that these only apply to the unmarked part of the population, in other words, to the $M-m$ individuals in our data. You can find the full MCMC code in the accompanying {\bf R} package {\tt scrbook} by invoking {\tt scrPID}. The R code below shows how to simulate SMR data using the {\tt scrbook} function {\tt sim.pID.data}, and running an SMR model on the data, both in {\bf JAGS} and using {\tt scrPID}. The model file {\tt mknown.jag} in the {\tt jags.model} call should contain the code from Panel \ref{partialID.panel.knownm}.
 
-
-XXX ADD R CODE XXX
 {\small
 \begin{verbatim}
+set.seed(2013)
+N=80 # pop. size
+m<-45 # no. marked
+sigma=0.5
+lam0=0.5
+K=5
+#make resighting array
+gx<-gy<-seq(0,6,1)
+X<-as.matrix(expand.grid(gx, gy))
+J=dim(X)[1]
+#limits of S
+xlims<-ylims<-c(-1.5, 7.5)
+#simulate data
+dat=sim.pID.data(N=N, K=K, sigma=sigma, lam0=lam0, knownID=m, X=X, xlims=xlims, 
+				ylims=ylims, obsmod='pois',	nmarked='known')
 
+### prep data for analysis in JAGS
+n<-dat$n-apply(dat$Yknown,2:3,sum)
+y<-apply(dat$Yknown,1:2,sum)
+
+M<-80 #augmentation only for unmarked
+
+#initial values for latent y
+yin<-array(0, c(M,J,K))
+for(j in 1:J){
+for(k in 1:K){
+yin[1:M,j,k]<-rmultinom(1, n[j,k], rep(1/M, M))
+}}
+
+data<-list(y=y, nU=n, m=m, M=M, J=J, X=X, xlim=xlims, ylim=ylims, K=K)
+inits<-function(){list(sigma=runif(1), lam0=runif(1), 
+			sm=cbind(runif(m, xlims[1], xlims[2]), runif(m, ylims[1], ylims[2])),
+			s=cbind(runif(M, xlims[1], xlims[2]), runif(M, ylims[1], ylims[2])),
+			z=rep(1, M),yu=yin)}
+params<-c('lam0', 'sigma', 'N', 'psi')
+
+#analysis in JAGS
+library(rjags)
+mod<-jags.model('mknown.jag',data, inits, n.chains=1, n.adapt=800)
+out<-coda.samples(mod,params, n.iter=5000)
+
+#analysis with scrbook MCMC code
+library(scrbook)
+library(coda)
+inits2<-function(){list(psi=runif(1), sigma=0.5, lam0=0.5, 
+		S=cbind(runif(M+m, xlims[1],xlims[2] ), runif(M+m, ylims[1],ylims[2])))}
+out2<-scrPID(n=dat$n, X=X, y=dat$Yknown, M=M+m, obsmod = "pois",nmarked="known", 
+		niters=5800, xlims=xlims, ylims=ylims,inits=inits2(),delta=c(0.1,0.1,0.5))
 \end{verbatim}
 }
-
+%$ 
+You can look at the two sets of output invoking {\tt summary(out)} for the {\bf JAGS} analysis and {\tt summary(window(mcmc(out2),start=801))} for the custom MCMC algorithm, excluding the first 800 iterations (analogous to the adaptive phase in {\bf JAGS}). We summarized the results in Table \ref{partialID.tab.knownm}. We see that there is some positive bias in estimates of $N$, but credible intervals overlap the true value (80). As expected, estimates from both implementations are very similar; slight differences are probably the result of the relatively low number of iterations.  
 You will find that sometimes, {\bf JAGS} produces an error message, upon trying to compile the model, saying that some of the observed $y$ are inconsistent with parent nodes at initialization. We have mentioned before that  {\bf JAGS} is very sensitive to initial values and we believe this is what is happening here. If this error occurs, just repeat the {\tt jags.model} command, usually, model compilation is successful on a second attempt (assuming, of course, that you followed the code above correctly). We further find that the custom MCMC alorithm tends to be faster than {\bf JAGS}, which is why the examples and simulation studies shown in the following sections were run solely in {\bf R}.
+
+\begin{table}
+\label{partialID.tab.knownm}
+\centering
+  \caption{Posterior summaries of the spatial mark-resight model with known number of marks, analyzed in JAGS and using {\tt scrPID}.}
+  \begin{tabular}{lcccccc}
+             \hline
+  Implementation & Parameter &   Mean &   SD &  2.5\% & 50\% & 97.5\% \\
+           \hline
+{\bf JAGS} & $N$      & 88.72 & 6.75 & 77 & 88 & 103 \\
+			& $\lambda_0$  &  0.53 & 0.08 & 0.39 & 0.53 & 70 \\
+			& $\sigma$ &  1.29 & 0.02 & 1.26 & 1.30 & 1.32 \\
+			& $\psi$    & 0.47   & 0.03  & 0.45  & 0.47 & 0.53  \\
+		\hline
+{\tt scrPID}& $N$      & 85.53 & 6.97 & 73 & 85 & 101 \\
+			& $\lambda_0$  &  0.53 & 0.08 & 0.37 & 0.53 & 0.70 \\
+			& $\sigma$ &  0.48 & 0.03 & 0.43 & 0.48 & 0.53 \\
+			& $\psi$    & 0.51   & 0.10  & 0.32  & 0.50 & 0.72 \\
+			\hline
+  \end{tabular}
+\end{table}
 
 
 \section {Unknown number of marked individuals}
@@ -554,15 +621,77 @@ setting is less straight-forward than for non-spatial mark-resight. A
 marked individual only has to show up once, anywhere on the resighting
 array,
 for us to know that it is there. When resightings are pooled
-across the entire sampling grid, then the total individual counts $\sum_j y_{ij}$ have to be $>$ 0 for all resighted individuals and a zero-truncated distribution can be used to model these counts. However, we are concerned with trap-specific encounters, $y_{ij}$, which can easily be 0 for a resighted individual, as long as a single $y_{ij}$ is $>$ 0. Thus, the zero-truncation does not apply to the individual and trap specific counts we observe, but only to the sum of these counts over all traps.
+across the entire sampling grid, then the total individual counts $\sum_j y_{ijk}$ have to be $>$ 0 for all resighted individuals and a zero-truncated distribution can be used to model these counts. However, we are concerned with trap-specific encounters, $y_{ijk}$, which can easily be 0 for a resighted individual, as long as a single $y_{ij}$ is $>$ 0. Thus, the zero-truncation does not apply to the individual and trap specific counts we observe, but only to the sum of these counts over all traps.
 
 As an alternative to a zero-truncated distribution, in a Bayesian
 framework, we can make use of data augmentation to estimate the number
-of marked individuals \citep[e.g.,]{mcclintock_hoeting:2010}. In the SMR framework that means that we create two augmented data sets, one for the marked individuals and one for the unmarked, and estimate their number separately, having them share the parameters of the detection model. Sometimes we may know the maximum number that were ever marked before a resighting survey, in which case we can use that number as the data augmentation limit for the marked data set. 
+of marked individuals \citep[e.g.,]{mcclintock_hoeting:2010}. In the SMR framework that means that we create two augmented data sets, one for the marked individuals and one for the unmarked, and estimate their number separately, having them share the parameters of the detection model. Sometimes we may know the maximum number that were ever marked before a resighting survey, in which case we can use that number as the data augmentation limit for the marked data set. Panel \ref{partialID.panel.unknownm} shows the {\bf JAGS} code for the SMR model with unknown number of marks, which is identical to the one in Panel \ref{partialID.panel.knownm}, but for the augmentation of the marked data set. This introduces both a data augmentation parameter, {\tt psim}, and an auxiliary ``alive state'' variable, {\tt zm[i]}, into the description of the marked data model. Again, we provide an alternative, {\bf R}-only MCMC algorithm within {\tt scrbook} -- {\tt scrPID.um}. 
+
+\begin{panel}[htp]
+\centering
+\rule[0.15in]{\textwidth}{.03in}
+%\begin{minipage}{2.5in}
+{\small
+\begin{verbatim}
+model{
+
+#priors
+psim ~ dbeta(1,1) 
+psi ~ dbeta(1,1)        
+lam0 ~ dunif(0, 5)
+sigma ~ dunif(0, 5)
+
+#marked part
+for(i in 1:max) {
+  zm[i]~dbern(psim)
+  sm[i,1] ~ dunif(xlim[1], xlim[2])
+  sm[i,2] ~ dunif(ylim[1], ylim[2])
+  for(j in 1:J) {
+    distm[i,j] <- sqrt((sm[i,1]-X[j,1])^2 + (sm[i,2]-X[j,2])^2)
+    lambdam[i,j] <- lam0*exp(-distm[i,j]^2/(2*sigma^2))*zm[i]
+    y[i,j]~dpois(lambdam[i,j]*K*zm[i])
+    }
+  }
+
+##unmarked part
+for(i in 1:M) {
+  z[i] ~ dbern(psi)
+  s[i,1] ~ dunif(xlim[1], xlim[2])
+  s[i,2] ~ dunif(ylim[1], ylim[2])
+  for(j in 1:J) {
+    dist[i,j] <- sqrt((s[i,1]-X[j,1])^2 + (s[i,2]-X[j,2])^2)
+    lambda[i,j] <- lam0*exp(-dist[i,j]^2/(2*sigma^2))
+    for(k in 1:K) {
+      yu[i,j,k] ~ dpois(lambda[i,j]*z[i])
+      }
+    }
+  }
+
+for(j in 1:J) {
+  for(k in 1:K) {nU[j,k] ~ dsum(yu[1,j,k],yu[2,j,k],yu[3,j,k],
+								[...code shortened...],
+								yu[79,j,k],yu[80,j,k])
+	}
+  }
+
+Nu <- sum(z[])
+Nm<-sum(zm[])
+N<-Nu+Nm
+
+}
+\end{verbatim}
+}
+%\end{minipage}
+\rule[-0.15in]{\textwidth}{.03in}
+\caption{
+JAGS code for SMR model with unknown number of marked individuals. In this example, $M$, the size of the augmented unmarked data set, is 80. Note that the arguments yu[4,j,k] to yu[78,j,k] of the dsum() function are omitted from the code for space reasons.  
+}
+\label{partialID.panel.unknownm}
+\end{panel}
 
 Note that we could look at the problem of not knowing the number of marked individuals in the study population as a manifestation of a lack of population closure. In other words, marked individuals may have emigrated, died or lost their marks in the time between marking and resighting. If we have information on the rates of these events, or a series of resighting surveys, we could develop an open population model for the marks in our population and estimate their number at a given resighting survey in this fashion. This kind of SMR model remains to be explored. 
 
-{\flushleft \bf Example: Canada geese in North Carolina }
+\subsection{Canada geese in North Carolina}
 
 We applied the spatial mark-resight model with an unknown number of
 marks and a binomial encounter process to a dataset of Canada goose
@@ -580,7 +709,7 @@ North Carolina. We treated this population as closed over this period.
 During this part of the study, 57 of the resighting sites vere visited and $n = 654$ marked geese were resighted 3994 times at 40 different sites. In addition, 7944 sightings of unmarked geese were recorded at 48 sites.
 
 In the model, we allowed $\sigma$ to vary between males and
-females. We augmented set the size of the augmented unmarked data set to 7000. We used the total number marked minus known deaths that occurred before resighting (XXXX) as the upper limit for the augmented marked data set. We ran 50000 MCMC iterations and removed a burn-in of 5000 iterations. To describe the state-space, we buffered the resighting locations by 4.5 km. We assumed that marked geese were a random sample from the state-space, which seems reasonable because (a) marking took place across most of the extent of the resighting array; and (b) marking was done during the molting period, when geese are fairly immobile, and it seems resonable to assume that, once the molt is complete, the marked geese redistributed themselves. We provide all the data ({\tt data(`geesedata')}) and functions ({\tt geeseSMR}) for you to repeat this analysis but be aware that given the large data set it will take days to do so. The {\bf R} code to set up the data and run 5000 iterations of the goose model is given as an example on the help page for {\tt geeseSMR}. The model results, including the derived parameter density ($D$) in individuals per $km^2$ are shown in Tab. \ref{partialID.tab.geese}.
+females. We set the size of the augmented unmarked data set to 7000. We used the total number marked geese (751) as the upper limit for the augmented marked data set. We ran 50000 MCMC iterations and removed a burn-in of 5000 iterations. To describe the state-space, we buffered the resighting locations by 4.5 km. We assumed that marked geese were a random sample from the state-space, which seems reasonable because (a) marking took place across most of the extent of the resighting array; and (b) marking was done during the molting period, when geese are fairly immobile, and it seems resonable to assume that, once the molt is complete, the marked geese redistributed themselves. We provide all the data ({\tt data(`geesedata')}) and functions ({\tt geeseSMR}) for you to repeat this analysis but be aware that given the large data set it will take days to do so. The {\bf R} code to set up the data and run 5000 iterations of the goose model is given as an example on the help page for {\tt geeseSMR}. The model results, including the derived parameter density ($D$) in individuals per $km^2$ are shown in Tab. \ref{partialID.tab.geese}.
 
 
 \begin{table}
@@ -594,17 +723,17 @@ females. We augmented set the size of the augmented unmarked data set to 7000. W
 $m$      &  739.77 & 3.24  &  733 & 740  & 746 \\
 $N$      & 5756.10 & 90.68 & 5577 & 5757 & 5932 \\
 $D$       &  13.76 & 0.19 & 13.38 & 13.76 & 14.14 \\
-$\lambda_0$    &  0.19 & $<$0.01 & 0.18 & 0.19 & 0.19 \\
+$\lambda_0$ &  0.19 & $<$0.01 & 0.18 & 0.19 & 0.19 \\
 $\sigma$, females  &  1.29 & 0.02 & 1.26 & 1.30 & 1.32 \\
 $\sigma$, males  &  1.06 & 0.02 & 1.02 & 1.06 & 1.11 \\
-$\psi$, marked    & 0.99   & 0.98  & 0.99  & 0.99 &  \\
+$\psi$, marked    & 0.99 & $<$0.01 & 0.98  & 0.99  & 0.99 \\
 $\psi$, unmarked   & 0.72  & 0.01 & 0.69 & 0.72  & 0.74 \\
 $\phi$     &  0.36 & 0.02 & 0.32 & 0.36 & 0.39 \\
     \hline
   \end{tabular}
 \end{table}
 
-We see that credible intervals of estimates are pretty narrow. Take, for example, $\sigma$ for males and females: Although they differ only by 0.09 km, there is no overlap between the respective credible intervals, surely an effect of the large data set. The parameter $\phi$ in this model is the probability of being a male, a measure of the sex ratio of the population, which is close to 1:1.
+We see that credible intervals of estimates are pretty narrow, surely an effect of the large data set. Estimates of $m$ indicate that most of the 751 geese originally banded are still alive and marked, which is not surprising, given that not much time passed between marking and this first resighting session. The parameter $\phi$ in this model is the probability of being a male, a measure of the sex ratio of the population, which is slightly biased in favor of females.
 
 \begin{figure}[ht]
   \centering
@@ -671,36 +800,44 @@ A more formal, model-based way to specify $c$ is by assuming that
 \[
 \sum y_c \sim \mbox{Binomial}(\sum y_m, c)
 \]
-and estimating $c$ as another model parameter, so that we account for the uncertainty about it. If we choose an uninformative (and conjugate) $\mbox{beta}(1,1)$ prior for $c$, we can update it directly from its full conditional distribution, which is $\mbox{beta}(1 + \sum y_c, 1 + (\sum y_m-\sum y_c))$, within our MCMC algorithm.
-
+and estimating $c$ as another model parameter, so that we account for the uncertainty about it. 
 For the marked individuals we can then multiply $\lambda_0$
-by
-$c$
-to account for the fact that we observe incomplete individual
+by $c$ to account for the fact that we observe incomplete individual
 encounter histories. Since we don't have this identification issue for
 unmarked individuals, their baseline trap encounter rate remains as
-before simply $\lambda_0$ (or in other words, their
-$c$ equals
-1). Observe that now, in addition to assuming that failure to identify
+before simply $\lambda_0$ (or in other words, $c$ for unmarked individuals equals 1). 
+
+Incomplete individual identification of marked
+individuals is easily incorporated into our {\bf JAGS} model, no matter whether $m$ known or unknown, by adding the following two lines of code:
+{\small
+\begin{verbatim}
+c~dbeta(1,1) #prior for c
+npics[1]~dbin(c, npics[2]) #model for c
+\end{verbatim}
+}
+and modifying the marked observation model description to
+{\small
+\begin{verbatim}
+y[i,j]~dpois(lambdam[i,j]*c*K)
+\end{verbatim}
+}
+It is also included as an option in the {\tt scrPID} and  {\tt scrPID.um} functions. Choosing an uninformative (and conjugate) $\mbox{beta}(1,1)$ prior for $c$, within the {\tt scrPID} algorithm we can update $c$ directly from its full conditional distribution, which is $\mbox{beta}(1 + \sum y_c, 1 + (\sum y_m-\sum y_c))$.
+We show an example of using $c$ in an analysis in
+sec. \ref{partialID.sec.telemetry}.
+
+Observe that now, in addition to assuming that failure to identify
 tagged individuals occurs at random throughout the population, we also
 assume that it occurs at random throughout space, i.e. our success of
 identifying a tagged individual does not depend on the trap we
-encounter it in. Incomplete individual identification of marked
-individuals is included as an option in the {\tt scrPID} function and
-we show an example of using $c$ in an analysis in
-sec. \ref{partialID.sec.telemetry}.
-
-As long as individuals are identified based on the same type of tags
+encounter it in. As long as individuals are identified based on the same type of tags
 the assumption that failure to identify marked individuals occurs at
 random throughout the population should be valid. The assumption that
 failure to identify marked individuals occurs at random in space could
 be violated, for example when spatially varying habitat conditions
 influence the ability to recognize individual tags, or when an
 observer effect influences individual identification rates. While we
-haven't
-experimented with it, we believe that the approach
-described
-above could readily be extended to account for these
+haven't experimented with it, we believe that the approach
+described above could readily be extended to account for these
 differences. For example, identification rates could be calculated
 separately for different observers, or be modeled as functions of
 habitat covariates. As an alternative to the approach we present here,
@@ -716,7 +853,7 @@ information of the unmarked records.
 
 \section{How much information do marked and unmarked individuals contribute?}
 \label{partialID.sec.info}
-It is intuitive that having marked individuals in the study population should lead to more accurate and precise parameter estimates than when no individuals are identifiable. To evaluate how strongly adding marked individuals to a population improves parameter estimates, \citet{chandler_royle:2012} performed a simulation study. They used a 15 $\times$ 15 trapping grid and
+It is intuitive that having marked individuals in the study population should lead to more accurate and precise parameter estimates than when no individuals are identifiable. To evaluate how strongly adding marked individuals to a population improves parameter estimates, \citet{chandler_royle:2012} performed a simulation study. They used a 15 $\times$ 15 resighting grid and
 simulated detection data of $N = 75$ individuals in a 20 $\times$ 20 units state-space over $k = 5$ occasions with
 $\sigma = 0.5$ and $\lambda_0 = 0.5$. They generated 100 datasets each for
 $m$ = (0, 5, 15, 25, 35) where $m$ is the known number of marked individuals randomly sampled from the population.
@@ -822,38 +959,60 @@ species' spatial ecology and behavior. In the context of spatial
 mark-resight models, the actual locations
 collected by telemetry tags can provide detailed information on individual location and movement, and being able to incorporate this information directly into the SMR model should improve estimates of these parameters, especially when resighting information is sparse.
 
-So how could we combine resighting data and telemetry data in a unified mark-resight model? Recall that the basic SCR model underlying all the SMR models we discuss here uses a half-normal detection function.
-By using this function, we can relate the parameters $\sigma$ and ${\bf s}_{i}$ directly to those from a bivariate normal model of space usage, with mean = ${\bf s}_{i}$, and variance-covariance matrix $\Sigma$, where the variance in both dimensions is $\sigma^2$ and the covariance is 0. Ordinarily, these parameters are estimated directly from the spatial distribution of individual recaptures/resightings. Telemetry data, however, provide more detailed information on individual location and movement, since the resolution and extent of the data are not limited by the trapping grid and potentially more locations can be accumulated through telemetry than resighting (depending on the monitoring frequency and resighting rates of individuals).
+So how could we combine resighting data and telemetry data in a unified mark-resight model? Recall that the basic SCR model underlying all the SMR models we discuss here uses a Gaussian kernel (or `half-normal') to descripe the trap encounter model.
+By using this function, we can relate the parameters $\sigma$ and ${\bf s}_{i}$ directly to those from a bivariate normal model of space usage, with mean = ${\bf s}_{i}$, and variance-covariance matrix $\Sigma$, where the variance in both dimensions is $\sigma^2$ and the covariance is 0. Ordinarily, these parameters are estimated directly from the spatial distribution of individual captures/resightings. Telemetry data, however, provide more detailed information on individual location and movement, since the resolution and extent of the data are not limited by the trapping grid and potentially more locations can be accumulated through telemetry than resighting (depending on the monitoring frequency and resighting rates of individuals).
 
-By assuming that the $R$ locations of individual $i$, ${\bf l}_{i}$ (consisting of a pair of x and y coordinates, $l_{ix}$ and $l_{iy}$), are a bivariate normal random variable:
+By assuming that the $R_i$ locations of individual $i$, ${\bf l}_{i}$ (consisting of a pair of x and y coordinates, $l_{ix}$ and $l_{iy}$), are a bivariate normal random variable:
 \[
 {\bf l}_i\sim {\mbox Normal}_2 ({\bf s}_i,\Sigma)
 \]
-
 we can estimate $\sigma$ as well as ${\bf s}_{i}$ for the collared individuals directly from telemetry locations, using their full conditional distributions:
 \[
-[\sigma|{\bf l},{\bf s}] \propto \left\{\prod_{i=1}^m \prod_{r=1}^R \frac{1}{2 \pi \sigma^2} {\exp}\left(-1/2 \left[ \frac {(l_{irx}-s_{ix})^2} {\sigma^2} + \frac{(l_{iry}-s_{iy})^2}{\sigma^2} \right]\right)\right\}*[\sigma]
+[\sigma|{\bf l},{\bf s}] \propto \left\{\prod_{i=1}^m \prod_{r=1}^R_{i} \frac{1}{2 \pi \sigma^2} {\exp}\left(-1/2 \left[ \frac {(l_{irx}-s_{ix})^2} {\sigma^2} + \frac{(l_{iry}-s_{iy})^2}{\sigma^2} \right]\right)\right\}*[\sigma]
 \]
 and
 \[
-[{\bf s}_i|{\bf l},\sigma] \propto \left\{\prod_{r=1}^R \frac{1}{2 \pi \sigma^2} {\exp}\left(-1/2 \left[ \frac {(l_{irx}-s_{ix})^2} {\sigma^2} + \frac{(l_{iry}-s_{iy})^2}{\sigma^2} \right]\right)\right\}*[{\bf s}_{i}]
+[{\bf s}_i|{\bf l},\sigma] \propto \left\{\prod_{r=1}^R_{i} \frac{1}{2 \pi \sigma^2} {\exp}\left(-1/2 \left[ \frac {(l_{irx}-s_{ix})^2} {\sigma^2} + \frac{(l_{iry}-s_{iy})^2}{\sigma^2} \right]\right)\right\}*[{\bf s}_{i}]
 \]
 
 For the unmarked individuals
 ${\bf s}_{i}$ are estimated as described before conditional on their
 latent encounter histories.
-
-Note that the bivariate normal model assumes that locations are independent of each other. If you have frequent telemetry fixes, for example from GPS collars that report animal locations every few hours, this assumption seems unrealistic and it might be advisable to thin your telemetry data (maybe to daily fixes) in order to approximate independence.
-
-
-
-Note that not all marked individuals need to be
+Note that the bivariate normal model assumes that locations are independent of each other. If you have frequent telemetry fixes, for example from GPS collars that report animal locations every few hours, this assumption seems unrealistic and it might be advisable to thin your telemetry data (maybe to daily fixes) in order to approximate independence. Not all marked individuals need to be
 telemetry-tagged, but telemetry data
 should correspond to the period over which resighting surveys were conducted (as we discussed in Chapt. \ref{chapt.scr0}, both the ${\bf s}_i$ and $\sigma$ should only be interpreted against the specific sampling period). Further, this approach of incorporating telemetry data into a spatial mark-resight model can easily be extended to update $\sigma$ and ${\bf s}$ conditional on both resighting and telemetry data and applies equally to regular SCR models where all individuals are identifiable.
 
-{\flushleft \bf Example: Raccoons on the Outer Banks of North Carolina }
+Again, implementation of this model extension is straight-forward, both in {\bf JAGS} and  {\bf R}. Take the SMR model description for the case where $m$ is known (Panel \ref{partialID.panel.knownm}). Then, all we have to do is add a description of the bivariate normal model for the telemetry locations, here {\tt locs}, into the loop over the $m$ marked individuals:
+{\small
+\begin{verbatim}
+[...parts of model code omitted...]
 
-\citet{sollmann_etal:2012ecol} applied a spatial mark-resigh model with telemetry data to a camera-trap and radio-telemetry data set from the raccoon population on South Core Banks, a barrier island within Cape Lookout National Seashore, North Carolina. Between May and September 2007, 131 raccoons were marked with dog collars and large individually numbered cattle tags. Individuals were marked throughout the island, so that (a) we do not have to deal with sensitivity to choice of the state space in this case, because it is clearly defined by nature; and (b) it is reasonable to assume that marked raccoons are a random sample of individuals from this state space. 
+for(i in 1:m) {
+
+  sm[i,1] ~ dunif(xlim[1], xlim[2])
+  sm[i,2] ~ dunif(ylim[1], ylim[2])
+
+  #telemetry model
+  for (r in off1[i]:off2[i]){
+  locs[r,1]~dnorm(sm[i,1], 1/(sigma^2))
+  locs[r,2]~dnorm(sm[i,2], 1/(sigma^2))
+  }
+
+  for(j in 1:J) {
+    distm[i,j] <- sqrt((sm[i,1]-X[j,1])^2 + (sm[i,2]-X[j,2])^2)
+    lambdam[i,j] <- lam0*exp(-distm[i,j]^2/(2*sigma^2))
+    y[i,j]~dpois(lambdam[i,j]*K)
+    }
+  }
+  
+[...parts of model code omitted...]
+\end{verbatim}
+}
+The data object {\tt locs} is a table with all $\sum_i^m R_i$ telemetry locations. The two vectors {\tt off1} and {\tt off2} describe which subset of this matrix belongs to individual $i$. So if, say, the locations for individual 1 are contained in the first 10 rows of {\tt locs}, {\tt off1} and {\tt off2} would be 1 and 10 for $i=1$; and if the locations of individual 2 are in the following 15 rows,{\tt off1} and {\tt off2} for $i=2$ would be 11 and 25, and so on. For the implementation of this SMR model with telemetry data in {\bf R}, see the {\tt scrPID.tel} function in {\tt scrbook}. In a nutshell, we replaced the Metropolis-Hastings updating steps for $sigma$ and $s_i$ of marked individuals, which were originally conditional on the resighting data, with updating steps conditional on the telemetry data. This is not quite what the above {\bf JAGS} code does; rather it will update these parameters conditional on both the telemetry {\emph and} the resighting data. We could easily re-write {\tt scrPID.tel} to do that, but believe that for most applications, the information on location and movement contained in the telemetry data will outweigh that in the resighting data, so that the resulting loss of information should be minimal. 
+
+\subsection{Raccoons on the Outer Banks of North Carolina}
+
+\citet{sollmann_etal:2012ecol} applied a spatial mark-resigh model with telemetry data to a camera-trap and radio-telemetry data set from the raccoon population on South Core Banks, a barrier island within Cape Lookout National Seashore, North Carolina. Between May and September 2007, 131 raccoons were marked with dog collars and large individually numbered cattle tags. Individuals were marked throughout the island, so that (a) we do not have to deal with sensitivity to choice of the state-space, because it is clearly defined by nature; and (b) it is reasonable to assume that marked raccoons are a random sample of individuals from this state-space. 
 Of the 131 tagged individuals, 44  were also equipped with radio collars. Collared individuals were located using a VHF receiver and antenna, and their locations were estimated approximately weekly. Twenty camera traps  were set up along the length of South Core Banks and camera trapping data collected between October 1 2007 to January 22 2008 constituted the resighting data in this analysis. During this period 104 marked individuals, 38 radio-collared, were alive and available for resighting with camera traps.
 
 \begin{figure}[ht]
@@ -901,6 +1060,9 @@ In this study, although a large number of raccoons were tagged, photographic dat
 \section{Marked animals are not a random sample from the state-space}
 XXX I dont like this heading but cannot think of anything else XXXXX
 As discussed in sec. \ref{partialID.sec.random}, all the previously developed SMR models assume that marked individuals are a random sample, both spatially and demographically, from the population of the state-space. For many studies it may not be feasibly to strive to meet or approximate this assumption and it is thus important to generalize SMR models to situations where marking did not take place throughout {\cal S}. If you think about it, even if you set up marking traps throughout the state-space, individuals at the border of {\cal S} would be exposed to fewer traps and be less likely to be caught, thus creating a gradient in the proportion of marked to unmarked animals (although if {\cal S} is large enough this might be negligible). Here, we will consider two approaches: (1) where individuals are a random (uniformly distributed) sample from a smaller region within {\cal S}, say {\cal B}; and (2) where we assume that the distribution of marked individuals follows a bivariate normal distribution around the centriod of an array of marking locations (or, generally, an area over which animals were marked), $Xm_c$. 
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
 
 \section{Summary and Outlook}
 In this chapter we combined SCR models and the spatial model for unmarked populations to derive a spatial mark-resight model, which accomodates that part of the population is individually identifiable, usually through artificial tags. The basic model with known number of marked individuals and 100 \% individual identification of marked is easily modified for situations where the number of marked individuals is unknown, or where marked animals can sometimes not be identified to individual level. As expected, having marked individuals in the study population improved accuracy and precision of parameter estimates when compared to fully unmarked populations, but we also saw that the spatial counts of unmarked individuals still contribute information to parameter estimates. Finally, we present an approach of how to incorporate telemetry location data into the spatial mark-resight model to inform estimates of $\sigma$ and activity centers. Especially for difficult-to-study, cryptic species where often only a small sample of the population can be tagged this enables researchers to make optimal use of all existing data and obtain robust density estimates without the need for additional invasive methods. Just as SCR, the spatial mark-resight model framework is flexible to account for a variety of factors that may influence individual movement and detection, as well as survey-related parameters, and we saw one example for the Canada geese, where $\sigma$ was sex-sepcific.
