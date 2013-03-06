@@ -7,12 +7,12 @@ MCMC algorithm for spatial mark-resight models/ SCR models with partial individu
 Runs the MCMC algorithm for spatial mark-resight models described in Chapter 15 
 }
 \usage{
-scrPID<-function (n, X, y, M, locs, telID, obsmod = c("pois", "bern"),nmarked=c("known", "unknown"), npics,niters, 
+scrPID.tel<-function (n, X, y, M, locs, telID, obsmod = c("pois", "bern"),npics,niters, 
                   xlims, ylims, a, b, inits, delta ) 
 }
 \arguments{
   \item{n}{
-	Matrix with spatial counts (marked and unmarked), trap by occasion
+	Matrix with spatial counts of unmarked animals, trap by occasion
 }
   \item{X}{
     2-dimensional matrix with X and Y coordinates for all J traps
@@ -32,9 +32,6 @@ scrPID<-function (n, X, y, M, locs, telID, obsmod = c("pois", "bern"),nmarked=c(
 }
   \item{obsmod}{
    Observation mode; either "pois" for Poisson (also called with replacement) or "bern" for Bernoulli (without replacement)
-}
-  \item{nmarked}{
-   is the number of marked individuals known ("known") or unknown ("unknown") 
 }
   \item{npics}{
     optional; if rate of individual identification of marked individuals <1, provide a vector with the number of identified pictures 
@@ -60,7 +57,7 @@ scrPID<-function (n, X, y, M, locs, telID, obsmod = c("pois", "bern"),nmarked=c(
 
 }
 \value{
-  A matrix with one row per iteration and fsix columns, for sigma,lam0, c, psi and N.
+  A matrix with one row per iteration and five columns, for sigma,lam0, c, psi and N.
 }
 
 \author{
