@@ -5,45 +5,46 @@
 \vspace{0.3cm}
 
 
-In this chapter we discuss models for 
-search-encounter data. These are models are useful in situations where
-you get to observe directly the locations of 
-individuals not biased by trap locations but,
-rather, by searching space in some fashion. In most cases both
-detection probability and parameters related to movement can be
-estimable. In the context of Bayesian analysis, we develop
-search-encounter models conditional on 
-movement outcomes, say $u_{ik}$, the location of individual $i$ during
-sample occasion $k$.
-The models we differentiate here depend on a number of
-things related to data structure or protocol -- basically whether or
-not we record the exact location and how we record it. 
+In this chapter we discuss models for search-encounter data. These are
+models are useful in situations where you get to observe directly the
+locations of individuals not biased by trap locations but, rather, by
+searching space in some fashion. In most cases both detection
+probability and parameters related to movement can be estimable. In
+the context of Bayesian analysis, we develop search-encounter models
+conditional on movement outcomes, say $u_{ik}$, the location of
+individual $i$ during sample occasion $k$.  The models we
+differentiate here depend on a number of things related to data
+structure or protocol -- basically whether or not we record the exact
+location and how we record it.
 
+How exactly are these different from models for data from fixed
+arrays?  (1) sample units are either continuous space polygons or
+lines, not points; (2) we have location information that is not biased
+by trap locations (but is biased by the observation device somehow);
+(3) because we have direct observations of location that exist
+independent of traps we can often build an explicit model of space
+usage or an explicit movement model.
 
-How exactly
-are these different from models for data from fixed arrays?  (1)
-sample units are either continuous space polygons or lines, not
-points; (2) we have location information that is not biased by trap
-locations (but is biased by the observation device somehow); (3)
-because we have direct observations of location that exist independent
-of traps we can often build an explicit model of space usage or an
-explicit movement model.
-
-A few variations of the models exist -- a long sample path through a
-sample region where we note the locations of individuals seen along
-the way, {\it and their identity} (this is different from distance
-sampling int hat sense). Or we could search a region systematically
-and so forth.  
-The canonical situation is Royle and Young (2008) which involved a
-plot search for lizards. They assumed the plot was uniformly searched
-which justified the assumption of constant $p$ within the plot
-boundaries. The data set was $\ge 1$ location observations for each of
-a sample of $n$ individuals. 
-The recent paper by Efford XXXX
-discussed likelihood analysis of similar models. In the jargon of
-\mbox{\tt secr} such models are referred to as models for {\it polygon detectors}.
- An extension of this model was described
-by \citep{royle_etal:2011mee}.  
+A few distinct types of situations exist where these models come in
+handy. The prototypical, maybe ideal, situation \citet{royle_etal:2011mee}, is where we have a
+single search path through a region of space from which observations are made
+(just as in the typical distance sampling situation, using a
+transect). As we walk along the search path, 
+ we note the location of each individual that is detected, 
+{\it and their identity} (this is different from distance
+sampling int hat sense). Alternatively, we could delineate a search
+area, and conduct a systematic search of that region.
+An example is that of \citet{royle_young:2008}, which 
+involved a plot search for lizards. They assumed the plot was
+uniformly searched which justified an assumption of constant $p$
+within the plot boundaries. The data set was $\ge 1$ location
+observations for each of a sample of $n$ individuals.  The recent
+paper by \citet{efford:2011} discussed likelihood analysis of similar
+models. In the terminology 
+of \mbox{\tt secr} such models are referred to
+as models for {\it polygon detectors}.  The model 
+described by \citep{royle_etal:2011mee} is a generalization of the
+polygon search model, as we describe below.
 
 Search-encounter models also provide something of a bridge between the
 standard models for fixed trap arrays (e.g., Chapt. \ref{chapt.scr0}),
@@ -109,7 +110,6 @@ variations of the data collection protocol are possible:
 \caption{snake line.... showing design 1. more here.
 }
 \label{searchencounter.fig.snakeline}
-\label{fig.snakeline}
 \end{figure}
 
 
@@ -371,8 +371,9 @@ assume that individuals are characterized by a latent variable, ${\bf
   s}_{i}$, which represents a center of activity or territory or
 simply ``home range''. This leads to a natural model for the variables
 ${\bf u}_{ik}$. In particular, we can now think of ${\bf u}_{ik}$ as
-the outcomes of a {\it movement process}, conditional on ${\bf
-  s}_{i}$. Here we make use of the bivariate normal model:
+the outcomes of a movement process, conditional on the activity center
+${\bf  s}_{i}$. Here we make use of the bivariate normal model (but
+see below for alternatives):
 \[
  {\bf u}_{ik} | {\bf s}_{i} \sim \mbox{Normal}({\bf s}_{i}, \sigma^{2}{\bf I}),
 \]
@@ -395,11 +396,11 @@ to restrict the potential locations of ${\bf s}$.
 
 Here we will simulate a sample data set that goes with the situation
 desccribed in Fig. \ref{fig.snakeline} and then analyze the ddata in
-{\bf JAGS}. 
-We begin by defining the state-space containing all of the sample
-boxes in Fig. \ref{fig.snakeline} and a total population size which here which is going
-to be 4 individuals per unit quadrat ($1 \times 1$). We use a reguarly
-square state-space here for convenience:
+{\bf JAGS}.  We begin by defining the state-space containing all of
+the sample boxes in Fig. \ref{fig.snakeline} and a total population
+size which here which is going to be 4 individuals per unit quadrat
+($1 \times 1$). We use a regular square state-space here for
+convenience:
 \begin{verbatim}
 > xlim <- c(-1, 4)
 > ylim <- c(-1, 5)
@@ -417,19 +418,21 @@ and \mbox{\tt sp}, especially the function \mbox{\tt sample.Line}, as follows:
 \begin{verbatim}
 > library(rgeos)
 > library(sp)
-> line1<-source("line1.R")
+> line1 <- source("line1.R")
 
-> line1<-as.matrix(cbind(line1$value$x,line1$value$y))
-> points<-SpatialPoints(line1)
+> line1 <- as.matrix(cbind(line1$value$x,line1$value$y))
+> points <- SpatialPoints(line1)
 
-> sLine<-Line(points)
-> regpoints<-sample.Line(sLine,250,type="regular")  # Key step! 
+> sLine <- Line(points)
+> regpoints <- sample.Line(sLine,250,type="regular")  # Key step! 
 \end{verbatim}
 Next we set a random number seed and simulate activity centers and set
 some model parameters required to simulate encounter history data. 
 Note, the commands for doing all of this and plotting the results are given
-in the function \mbox{\tt search_encounter1} in the {\bf R} package
-\mbox{\tt scrbook}. In the following commands you can see where the
+in the function \mbox{\tt search$\_$encounter1} in the {\bf R} package
+\mbox{\tt scrbook} XXXX actually called snakeline.R right now
+XXXXXXX. 
+In the following commands you can see where the
 regular mesh representation of the sample line is extracted from the
 \mbox{\tt regpoints} object which we just created:
 \begin{verbatim}
@@ -437,12 +440,12 @@ set.seed(2013)
 sx<-runif(N,xlim[1],xlim[2])
 sy<-runif(N,ylim[1],ylim[2])
 
-sigma<-.3
-alpha0<- -.5
-alpha1<- -1/(2*(.2^2))
+sigma <-.3
+alpha0 <- -.5
+alpha1 <- -1/(2*(.2^2))
 
-X<-regpoints@coords
-J<-nrow(X)
+X <- regpoints@coords
+J <- nrow(X)
 \end{verbatim}
 
 Next we're going to simulate data. We do this basically in 2 parts:
@@ -473,16 +476,23 @@ Uy<-U[,,2]
 Ux[y==0]<-NA
 Uy[y==0]<-NA
 
-
 captured<-apply(y,1,sum)
 y<-y[captured>0,]
 Ux<-Ux[captured>0,]
 Uy<-Uy[captured>0,]
 \end{verbatim}
 
-
-Final thing is we do the data augmentation and we make up some
-starting values for the location coordinates that are missing.  
+Finally, we 
+do the data augmentation and we make up some
+starting values for the location coordinates that are missing.  For
+these,
+we cheat a little bit (for convenience and hopefully to improve the
+efficiency of the MCMC
+for the simulated data sets) and use the actual activity
+center
+values. In practice, we might think about using the average of the
+observed
+locations.
 \begin{verbatim}
 M<-100
 nind<-nrow(y)
@@ -504,9 +514,14 @@ Uy.st[i,is.na(Uy[i,])]<-S[i,2]
 }
 \end{verbatim}
 
-Now show the WinBUGS model right here and fit it .... Figure XXXXX
-........ it produces the
-following output:
+The BUGS model specification is shown in Panel XXXXXXXXXX and to
+bundle the data, inits, and farm
+all of this stuff out to {\bf JAGS} we execute the following set of
+commands:
+\begin{verbatim}
+stuff right here
+\end{verbatim}
+and this produces the output here:
 
 
 \begin{verbatim}
@@ -554,7 +569,6 @@ sample period $t$.  We demonstrated how to do this in the {\bf BUGS}
 language below for a model of uniform search intensity.
 
 
-
 \subsection{Analysis of other protocols}
 
 
@@ -599,16 +613,26 @@ problem but that is excess computation I think.
 
 A special case of a search-encounter type of model arises when its
 possible to subject a quadrat (or quadrats) to a uniform search
-intensity. This could be interpreted as an exhaustive searhc, or
+intensity. This could be interpreted as an exhaustive search, or
 perhaps just a thorough systematic search of the avaialable habitat. 
 The example considered by \citet{royle_young:2008} involved searching
-of a 9 ha plot for horned lizards (FIG HERE XXXXXX) by a crew of
+of a 9 ha plot for horned lizards Fig. 
+(FIG HERE XXXXXX) by a crew of
 several observers. It was felt in that case that complete coverage of
 the plot was achieved. In general, however, we think you could have
 a random sample of the plot and approximate that as a uniform coverage
 -- this is kind of a design-based argument justifying the uniform
 search intensity model. (we haven't simulated this situation, but it
 would be worth checkign that out).
+
+\begin{figure}
+\centering
+\includegraphics[width=4.5in,height=3.38in]{Ch15-searchencounter/figs/horny_lizard.jpg}
+\caption{A flat-tailed horned lizard.
+}
+\label{searchencounter.fig.hornylizard}
+\end{figure}
+
 
 Anyhow, it is clear that this uniform search intensity model is a
 special case of the more general search encounter model in the sense
