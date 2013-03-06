@@ -1,13 +1,13 @@
-\name{scrPID.tel}
-\alias{scrPID.tel}
+\name{scrPID}
+\alias{scrPID}
 \title{
 MCMC algorithm for spatial mark-resight models/ SCR models with partial individual identifiability
 }
 \description{
-Runs the MCMC algorithm for spatial mark-resight models described in Chapter 15 
+Runs the MCMC algorithm for spatial mark-resight models with unknown number of marked individuals described in Chapter 19 
 }
 \usage{
-scrPID.tel<-function (n, X, y, M, locs, telID, obsmod = c("pois", "bern"),npics,niters, 
+scrPID<-function (n, X, y, M, mmax, obsmod = c("pois", "bern"),npics,niters, 
                   xlims, ylims, a, b, inits, delta ) 
 }
 \arguments{
@@ -21,21 +21,17 @@ scrPID.tel<-function (n, X, y, M, locs, telID, obsmod = c("pois", "bern"),npics,
     3-dimensional array with individual encounter histories of marked individuals (individual by trap by occasion)
 }
   \item{M}{
-    Size of the augmented data set
+    Size of the augmented unmarked data set
 }
-  \item{locs}{
-    list, length = number of individuals with telemetry tags; each entry is a matrix with telemetry locations
-}
-  \item{telID}{
-    vector, length = number of individuals with telemetry tags; vector entries correspond to row numbers in y for the telemetry-tagged individuals, 
-    e.g. if the first individual with a telemetry tag has its resighting data in row 8 of y, the first entry of telID would be "8" 
+  \item{mmax}{
+    Size of the augmented marked data set; total number of individuals ever marked before resighting
 }
   \item{obsmod}{
-   Observation mode; either "pois" for Poisson (also called with replacement) or "bern" for Bernoulli (without replacement)
+   Observation model; either "pois" for Poisson (also called with replacement) or "bern" for Bernoulli (without replacement)
 }
   \item{npics}{
     optional; if rate of individual identification of marked individuals <1, provide a vector with the number of identified pictures 
-    of marked individuals and the total number of pictures ofmarked individuals (both identified and unidentified), in this order! If not provided, 
+    of marked individuals and the total number of pictures of marked individuals (both identified and unidentified), in this order! If not provided, 
     the identification rate is assumed to be 100%
 }
   \item{niter}{
@@ -57,7 +53,7 @@ scrPID.tel<-function (n, X, y, M, locs, telID, obsmod = c("pois", "bern"),npics,
 
 }
 \value{
-  A matrix with one row per iteration and five columns, for sigma,lam0, c, psi and N.
+  A matrix with one row per iteration and seven columns, for sigma, lam0, c, psi for unmarked, psi for marked, m and N.
 }
 
 \author{
