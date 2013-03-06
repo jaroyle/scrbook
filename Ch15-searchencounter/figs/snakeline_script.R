@@ -51,7 +51,8 @@ points<-SpatialPoints(line1)
 sLine<-Line(points)
 ###sLine<-SpatialLines(sLine)
 
-regpoints<-sample.Line(sLine,250,type="regular")
+## should be 250 or higher
+regpoints<-sample.Line(sLine,100,type="regular")
 
 plot(line1,type="l")
 #original points:
@@ -75,8 +76,8 @@ set.seed(2013)
 
 
 
-sx<-runif(N,Xl,Xu)
-sy<-runif(N,Yl,Yu)
+sx<-runif(N,xlim[1],xlim[2])
+sy<-runif(N,ylim[1],ylim[2])
 points(sx,sy,pch=20,col="red")
 
 sigma<-.3
