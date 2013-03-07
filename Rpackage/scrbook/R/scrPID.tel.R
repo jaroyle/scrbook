@@ -1,5 +1,5 @@
-scrPID.tel<-function (n, X, y, M, locs,telID, obsmod = c("pois", "bern"),npics, niters, 
-    xlims, ylims, a, b, inits, delta ) 
+scrPID.tel<-function (n, X, y, M, locs,telID, obsmod = c("pois", "bern"),npics, niters,
+    xlims, ylims, a, b, inits, delta )
 {
 library(mvtnorm)
     obsmod <- match.arg(obsmod)
@@ -36,13 +36,13 @@ library(mvtnorm)
                 next
             }
             unmarked <- !Ydata[, r, t]
-            nUnknown <- n[r, t] 
-            if (nUnknown < 0) 
+            nUnknown <- n[r, t]
+            if (nUnknown < 0)
                 browser()
             probs <- lam[, r] * z
             probs <- probs[unmarked]
             probs <- probs/sum(probs)
-            if (identical(obsmod, "pois")) 
+            if (identical(obsmod, "pois"))
                 Y[unmarked, r, t] <- rmultinom(1, nUnknown, probs)
             else if (identical(obsmod, "bern")) {
                 Y[unmarked, r, t] <- 0
@@ -52,7 +52,7 @@ library(mvtnorm)
         }
     }
 
-	cr<-rep(1,M) 
+	cr<-rep(1,M)
 
 	if(missing(npics)){
 	crat<-1} else{
@@ -65,7 +65,7 @@ library(mvtnorm)
     cat("\nstarting values =", c(sigma, lam0, crat, psi, sum(z)), "\n\n")
     for (iter in 1:niters) {
         if (iter%%100 == 0) {
-            cat("iter", iter, format(Sys.time(), "%H:%M:%S"), 
+            cat("iter", iter, format(Sys.time(), "%H:%M:%S"),
                 "\n")
             cat("   current =", out[iter - 1, ], "\n")
         }
@@ -74,7 +74,7 @@ library(mvtnorm)
         if(identical(obsmod, "pois")) {
             ll <- sum(dpois(Y, lam*cr * z, log = TRUE))
        } else if(identical(obsmod, "bern")) {
-           ll <- sum(dbinom(Y, 1, lam*cr * z, log = TRUE)) 
+           ll <- sum(dbinom(Y, 1, lam*cr * z, log = TRUE))
        }
 
 
@@ -87,11 +87,11 @@ library(mvtnorm)
 sigma.cand <- rnorm(1, sigma, delta[1])
 if (sigma.cand > 0) {
 
-lls<-lls.cand<-rep(NA, ntot) 
+lls<-lls.cand<-rep(NA, ntot)
 
 for (x in 1:ntot) {
-	lls[x]<-sum(dmvnorm(x=locs[[x]],mean=c(S[telID[x],1],S[telID[x],2]), sigma=cbind(c(sigma^2,0), c(0,sigma^2)), log=T))   
-	lls.cand[x]<-sum(dmvnorm(x=locs[[x]],mean=c(S[telID[x],1],S[telID[x],2]), sigma=cbind(c(sigma.cand^2,0), c(0,sigma.cand^2)), log=T))   
+	lls[x]<-sum(dmvnorm(x=locs[[x]],mean=c(S[telID[x],1],S[telID[x],2]), sigma=cbind(c(sigma^2,0), c(0,sigma^2)), log=T))
+	lls.cand[x]<-sum(dmvnorm(x=locs[[x]],mean=c(S[telID[x],1],S[telID[x],2]), sigma=cbind(c(sigma.cand^2,0), c(0,sigma.cand^2)), log=T))
 	}
    if(runif(1) < exp( sum(lls.cand)  - sum(lls) ) ){
     sigma<-sigma.cand
@@ -110,15 +110,15 @@ for (x in 1:ntot) {
 
         lam0.cand <- rnorm(1, lam0, delta[2])
         test2 <- TRUE
-        if (identical(obsmod, "bern")) 
+        if (identical(obsmod, "bern"))
             test2 <- lam0.cand <= 1
         if (lam0.cand >= 0 & test2) {
             lam.cand <- lam0.cand * exp(-(D * D)/(2 * sigma * sigma))
-#            lam.cand[lam.cand==0] <- 1e-300 
-            if (identical(obsmod, "pois")) 
+#            lam.cand[lam.cand==0] <- 1e-300
+            if (identical(obsmod, "pois"))
                 llcand <- sum(dpois(Y, lam.cand*cr * z, log = TRUE))
-            else if (identical(obsmod, "bern")) 
-                llcand <- sum(dbinom(Y, 1, lam.cand*cr * z, log = TRUE)) 
+            else if (identical(obsmod, "bern"))
+                llcand <- sum(dbinom(Y, 1, lam.cand*cr * z, log = TRUE))
             if (runif(1) < exp((llcand) - (ll))) {
                 ll <- llcand
                 lam0 <- lam0.cand
@@ -128,23 +128,23 @@ for (x in 1:ntot) {
         zUps <- 0
         seen <- apply(Y > 0, 1, any)
         for (i in 1:M) {
-            if (seen[i] | marked[i]) 
+            if (seen[i] | marked[i])
                 next
             zcand <- ifelse(z[i] == 0, 1, 0)
             if (identical(obsmod, "pois")) {
                 ll <- sum(dpois(Y[i, , ], lam[i, ] * z[i], log = TRUE))
-                llcand <- sum(dpois(Y[i, , ], lam[i, ] * zcand, 
+                llcand <- sum(dpois(Y[i, , ], lam[i, ] * zcand,
                   log = TRUE))
             }
             else if (identical(obsmod, "bern")) {
-                ll <- sum(dbinom(Y[i, , ], 1, lam[i, ] * z[i], 
+                ll <- sum(dbinom(Y[i, , ], 1, lam[i, ] * z[i],
                   log = TRUE))
-                llcand <- sum(dbinom(Y[i, , ], 1, lam[i, ] * 
+                llcand <- sum(dbinom(Y[i, , ], 1, lam[i, ] *
                   zcand, log = TRUE))
             }
             prior <- dbinom(z[i], 1, psi, log = TRUE)
             prior.cand <- dbinom(zcand, 1, psi, log = TRUE)
-            if (runif(1) < exp((llcand + prior.cand) - (ll + 
+            if (runif(1) < exp((llcand + prior.cand) - (ll +
                 prior))) {
                 z[i] <- zcand
                 zUps <- zUps + 1
@@ -159,12 +159,12 @@ for (x in 1:ntot) {
                   next
                 }
                 unmarked <- !Ydata[, r, t]
-                nUnknown <- n[r, t] 
-                if (nUnknown == 0) 
+                nUnknown <- n[r, t]
+                if (nUnknown == 0)
                   next
                 probs <- zip[unmarked]
                 probs <- probs/sum(probs)
-                if (identical(obsmod, "pois")) 
+                if (identical(obsmod, "pois"))
                   Y[unmarked, r, t] <- rmultinom(1, nUnknown, probs)
                 else if (identical(obsmod, "bern")) {
                   Y[unmarked, r, t] <- 0
@@ -173,8 +173,8 @@ for (x in 1:ntot) {
                 }
             }
         }
-               
-        psi <- rbeta(1, 1 + sum(z[!marked]), 1 + (M-sum(marked)) - sum(z[!marked])
+
+        psi <- rbeta(1, 1 + sum(z[!marked]), 1 + (M-sum(marked)) - sum(z[!marked]))
 
         Sups <-Skups<- 0
         for (i in 1:M) {
@@ -185,10 +185,10 @@ for (x in 1:ntot) {
             Scand <- c(rnorm(1, S[i, 1], delta[4]), rnorm(1, S[i, 2], delta[4]))
                            }
 
-            inbox <- Scand[1] >= xlims[1] & Scand[1] <= xlims[2] & 
+            inbox <- Scand[1] >= xlims[1] & Scand[1] <= xlims[2] &
                 Scand[2] >= ylims[1] & Scand[2] <= ylims[2]
 
-            if (!inbox) 
+            if (!inbox)
                 next
             dtmp <- sqrt((Scand[1] - X[, 1])^2 + (Scand[2] - X[, 2])^2)
             lam.cand <- lam0 * exp(-(dtmp * dtmp)/(2*sigma*sigma))
@@ -197,8 +197,8 @@ for (x in 1:ntot) {
 ############# telemetry model ####################################################
 	if (tel[i]) {
 # still need to match locs with i vector
-	ll<-sum(dmvnorm(x=locs[[sum(tel[1:i])]],mean=c(S[i,1],S[i,2]), sigma=cbind(c(sigma^2,0), c(0,sigma^2)), log=T))   
-	llcand<-sum(dmvnorm(x=locs[[sum(tel[1:i])]],mean=c(Scand[1],Scand[2]), sigma=cbind(c(sigma^2,0), c(0,sigma^2)), log=T))   
+	ll<-sum(dmvnorm(x=locs[[sum(tel[1:i])]],mean=c(S[i,1],S[i,2]), sigma=cbind(c(sigma^2,0), c(0,sigma^2)), log=T))
+	llcand<-sum(dmvnorm(x=locs[[sum(tel[1:i])]],mean=c(Scand[1],Scand[2]), sigma=cbind(c(sigma^2,0), c(0,sigma^2)), log=T))
 
             if (runif(1) < exp(llcand - ll)) {
                 ll <- llcand
@@ -212,11 +212,11 @@ for (x in 1:ntot) {
 
             if (identical(obsmod, "pois")) {
                 ll <- sum(dpois(Y[i, , ], lam[i, ] *cr[i] * z[i], log = TRUE))
-                llcand <- sum(dpois(Y[i, , ], lam.cand *cr[i]* z[i], 
+                llcand <- sum(dpois(Y[i, , ], lam.cand *cr[i]* z[i],
                   log = TRUE))
             }
             else if (identical(obsmod, "bern")) {
-                ll <- sum(dbinom(Y[i, , ], 1, lam[i, ] *cr[i]* z[i], 
+                ll <- sum(dbinom(Y[i, , ], 1, lam[i, ] *cr[i]* z[i],
                   log = TRUE))
                 llcand <- sum(dbinom(Y[i, , ], 1, lam.cand *cr[i]* z[i], log = TRUE))
             }

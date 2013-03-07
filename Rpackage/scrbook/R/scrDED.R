@@ -21,11 +21,11 @@ scrDED <- function(y=y, traplocs=traplocs,
     rp <- as.data.frame(rasterToPoints(rasters))
     G <- as.matrix(rp[,1:2]) # state-space pixel centers
 
-    res <- res(elev)
+    res <- res(rasters)
     area <- prod(res)
     npix <- ncell(rasters)
     SSarea <- area*npix # check for rasterStacks
-    ext <- extent(elev)
+    ext <- extent(rasters)
 
     isEuclid <- isTRUE(all.equal(dist.formula, ~1))
     if(isEuclid)
@@ -34,10 +34,10 @@ scrDED <- function(y=y, traplocs=traplocs,
     den.vars <- all.vars(den.formula)
     dist.vars <- all.vars(dist.formula)
 
-    if(length(den.vars)>0 && (!den.vars %in% layerNames(elev)))
-        stop("variables in den.formula must occur in layerNames(rasters)")
-    if(length(dist.vars)>0 && (!dist.vars %in% layerNames(elev)))
-        stop("variables in dist.formula must occur in layerNames(rasters)")
+    if(length(den.vars)>0 && (!den.vars %in% names(rasters)))
+        stop("variables in den.formula must occur in names(rasters)")
+    if(length(dist.vars)>0 && (!dist.vars %in% names(rasters)))
+        stop("variables in dist.formula must occur in names(rasters)")
 
     Xden <- model.matrix(den.formula, rp)
     Xdist <- model.matrix(dist.formula, rp)
