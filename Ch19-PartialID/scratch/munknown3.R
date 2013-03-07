@@ -72,8 +72,9 @@ sum(rowSums(yM)>0) # 16 of m guys actually detected
 rowSums(y>0)
 
 # Observed data
-y <- yM[rowSums(yM)>0,,]
-dim(y)
+#y <- yM[rowSums(yM)>0,,]
+#dim(y)
+y<-yM[w==1,,]
 
 rowSums(y>0)
 apply(y>0, c(1,2), sum)
@@ -93,8 +94,8 @@ nU
 
 nz <- 80
 
-yz <- array(0, c(nind+nz, J, K))
-yz[1:nind,,] <- y
+#yz <- array(0, c(nind+nz, J, K))
+#yz[1:nind,,] <- y
 
 rowSums(yz)
 
@@ -105,6 +106,27 @@ paste("yu[", (nind+1):(nind+nz), ",j,k]",
 
 library(rjags)
 
+###run in r
+source('c:/users/rs/dropbox/scrPIDHn.R')
+inits<-function(){list(S=cbind( runif(m+nz,xlimS[1],xlimS[2]), runif(m+nz,ylimS[1],ylimS[2])),
+			sigA=0.6, w0=0.9,sigma=0.25, lam0=0.2, psi=0.7 )}
+out<-scrPIDHn(n=nU, X=X, y=y, M=m+nz, obsmod ="pois",niters=5000, cB=cen,h=c(rep(1,m), rep(0,nz)),
+    xlims=xlimS, ylims=ylimS, inits=inits(), delta=c(0.1, 0.1, 0.5, 0.1, 0.1) ) 
+
+yJ<-apply(y,1:2,sum)
+data<-list(m=m, M=nz, J=J, K=K,y=yJ,nU=nU, h=c(rep(1,m), rep(0,nz)), xlim=xlimS, ylim=ylimS,
+		cent=cen, X=X )
+
+yui<-array(NA,c(M,J,K))
+for (j in 1:J){
+for(k in 1:K){
+yui[,j,k]<-rmultinom(1,nU[j,k], rep(1/M,M))
+}}
+
+inits<-function(){listlist(s=cbind( runif(m+nz,xlimS[1],xlimS[2]), runif(m+nz,ylimS[1],ylimS[2])),
+			sigA=0.6, w0=0.9,sigma=0.25, lam0=0.2, psi=0.7,z=rep(1,nz) )}
+params=c("N", "psi","sigma", "lam0", "sigA", "w0")
+mod<-jags.model('c:/users/rs/dropbox/mknown2Hn.jag', inits, n.chains=1, n.adapt=10)
 
 
 dat1 <- list(y=yz, nU=nU, X=X, M=nrow(yz), J=J, K=K,
