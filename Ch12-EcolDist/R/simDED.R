@@ -106,19 +106,23 @@ for(i in 1:nsim) {
 
 
 pdf("../figs/scrDEDsim.pdf", width=6, height=3)
-op <- par(mfrow=c(1,3), mai=c(0.6,0.3,0.3,0.2))
+op <- par(mfrow=c(1,3), mai=c(0.6,0.1,0.1,0.1))
 #hist(simout[,1], main="", xlab="lam0", freq=FALSE, cex.lab=1.2)
 #abline(v=lam0, lwd=3, col=4, lty=1)
 #hist(simout[,2], main="", xlab="sigma", freq=FALSE, cex.lab=1.2)
 #abline(v=sigma, lwd=3, col=4, lty=1)
-hist(simout[,3], main="", xlab="population size (N)", freq=FALSE,
+hist(simout[,3], main="", xlab="Population size (N)", freq=FALSE,
+     yaxt="n",
      cex.lab=1.2)
 abline(v=N, lwd=3, col=gray(0.5), lty=1)
-hist(simout[,4], main="", xlab="Density effect (beta)",
+hist(simout[,4], main="",
+     xlab=expression(paste("Density effect (", beta[1], ")")),
+     yaxt="n",
      freq=FALSE, cex.lab=1.2)
 abline(v=beta, lwd=3, col=gray(0.5), lty=1)
 hist(simout[,5], main="",
-     xlab=expression("Ecological distance effect (", alpha[2], ")"),
+     xlab=expression(paste("Ecologial distance effect (", alpha[2], ")")),
+     yaxt="n",
      freq=FALSE, cex.lab=1.2)
 abline(v=theta, lwd=3, col=gray(0.5), lty=1)
 par(op)
@@ -127,7 +131,7 @@ system("open ../figs/scrDEDsim.pdf")
 
 
 
-
+save(simout, file="simoutDED.gzip")
 
 
 
