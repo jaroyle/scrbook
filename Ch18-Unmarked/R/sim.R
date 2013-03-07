@@ -66,7 +66,16 @@ save(mc1, file="scrUNmc1.gzip")
 
 
 
-mc1s <- mc1
+
+
+# No y updates
+fm2 <- scrUN(n=n, X=X, M=200, niter=5000, xlims=xlim, ylims=ylim,
+             inits=list(lam0=0.3, sigma=0.01),
+             updateY=FALSE,
+             tune=c(0.004, 0.07, 0.3))
+
+
+
 
 
 
@@ -142,6 +151,21 @@ jc2.4 <- coda.samples(jm2, pars2, n.iter=5000)
 
 plot(jc2.4)
 summary(jc2.4)
+
+
+jc2.5 <- coda.samples(jm2, pars2, n.iter=5000)
+
+plot(jc2.5)
+summary(jc2.5)
+
+
+
+
+save.image("sim.RData")
+
+
+
+
 
 
 
