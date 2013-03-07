@@ -468,15 +468,15 @@ Simulating data under the SC model proceeds by first simulating
 standard SCR encounter history data and then collapsing it into count
 data. The following blocks of \R~code generate data from
 the model shown in Sec.~\ref{chapt.unmarked.sec.N}, with parameters
-$\sigma=0.1$, $\lambda_0=0.5$, and $N=50$. The state-space is the unit
-square and a grid of 25 traps
+$\sigma=0.04$, $\lambda_0=0.3$, and $N=50$. The state-space is the unit
+square and a grid of 100 traps
 is centered in the middle. These simulated data might resemble actual
 data from a camera trap study in which an individual can be detected multiple
 times at a trap during a single occasion, and at multiple traps during
 an occasion. The first block of code generates the trap coordinates
 $X$ and the $N=50$ activity centers:
 \begin{verbatim}
-> tr <- seq(0.3, 0.7, length=5)
+> tr <- seq(0.3, 0.7, length=10)
 > X <- cbind(rep(tr, each=length(tr)),
 +            rep(tr, times=length(tr)))    # trap coords
 > set.seed(10)
@@ -492,7 +492,8 @@ $X$ and the $N=50$ activity centers:
 We could have just set $N=50$ directly, but instead we treated density
 as a fixed parameter ($\mu=50$) and generated $N$ as a random
 variable -- it just so happens that with the specified random seed,
-$N$ equals 50.
+$N$ equals 50! % Once again, this highlights that fact that $N$ can be
+% regarded as either a fixed or a random variable.
 
 Now we can generate the encounter histories under the
 Poisson observation model. Let's suppose that sampling is conducted
@@ -641,7 +642,7 @@ for(i in 1:M) {
    z[i] ~ dbern(psi)
    s[i,1] ~ dunif(xlim[1], xlim[2])
    s[i,2] ~ dunif(ylim[1], ylim[2])
-   for(j in 1:J) { # Number of point count locations
+   for(j in 1:J) { # Number of traps
        distsq[i,j] <- (s[i,1] - X[j,1])^2 + (s[i,2] - X[j,2])^2
        lam[i,j] <- lam0 * exp(-distsq[i,j] / (2*sigma^2))
        for(k in 1:K) { # Number of occasions
@@ -665,10 +666,10 @@ ED <- (M*psi)/A # Expected density
 \rule[0.15in]{\textwidth}{.03in}
 \caption{\jags~code to fit the spatial count model. This version
   includes the latent encounter histories.}
-\label{chapt.unmarked.panel.jags1}
+\label{unmarked.panel.jags1}
 \end{panel}
 
-The \jags~model in Panel~\ref{chapt.unmarked.panel.jags1} can be used to
+The \jags~model in Panel~\ref{unmarked.panel.jags1} can be used to
 fit the version of the model in which the latent encounters are
 updated at each Monte Carlo iteration. One challenge faced when using
 this version of the model is that \jags~cannot auto-generate initial values
@@ -711,10 +712,48 @@ the basis for including data on both marked and unmarked individuals,
 as will be discussed in the next chapter. However, this model runs
 very slowly, even when using a fast 64-bit machine with chains run in parallel. The code
 in Panel~\ref{chapt.unmarked.panel.jags2} runs much faster because it
-does not include the latent encounter histories. Here is the code:
-\begin{verbatim}
+does not include the latent encounter histories. %Here is the code:
+%Instead, it fits the model using the
 
+\begin{panel}
+\centering
+\rule[0.05in]{\textwidth}{.03in}
+\begin{small}
+\begin{verbatim}
+model{
+sigma ~ dunif(0, 200)
+lam0 ~ dunif(0, 5)
+psi ~ dbeta(1,1)
+for(i in 1:M) {
+   z[i] ~ dbern(psi)
+   s[i,1] ~ dunif(xlim[1], xlim[2])
+   s[i,2] ~ dunif(ylim[1], ylim[2])
+   for(j in 1:J) { # Number of traps
+       distsq[i,j] <- (s[i,1] - X[j,1])^2 + (s[i,2] - X[j,2])^2
+       lam[i,j] <- lam0 * exp(-distsq[i,j] / (2*sigma^2)) * z[i]
+       }
+   }
+for(j in 1:J) {
+   bigLambda[j] <- sum(lam[,j])
+   for(k in 1:K) {
+       n[j,k] ~ dpois(bigLambda[j])
+       }
+   }
+N <- sum(z[])
+A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1]) * 10000 # Area of state-space (ha)
+D <- N / A      # Realized density
+ED <- (M*psi)/A # Expected density
+}
 \end{verbatim}
+\end{small}
+\rule[0.15in]{\textwidth}{.03in}
+\caption{\jags~code to fit the spatial count model. This version
+  does not include the latent encounter histories, and thus runs much
+  faster than the code in Panel~\ref{chapt.unmarked.panel.jags1}.}
+\label{unmarked.panel.jags2}
+\end{panel}
+
+
 
 An even faster
 alternative is to use the \verb+scrUN+ function in \texttt{scrbook}.
@@ -755,47 +794,8 @@ closely this model is related to standard SCR models, and it provides
 the basis for including data on both marked and unmarked individuals,
 as will be discussed in the next chapter. However, this model runs
 very slowly, even when using a fast 64-bit machine with chains run in parallel. The code
-in Panel~\ref{chapt.unmarked.panel.jags2} runs much faster because it
+in Panel~\ref{unmarked.panel.jags2} runs much faster because it
 does not include the latent encounter histories.
-
-
-\begin{panel}
-\centering
-\rule[0.05in]{\textwidth}{.03in}
-\begin{small}
-\begin{verbatim}
-model{
-sigma ~ dunif(0, 200)
-lam0 ~ dunif(0, 5)
-psi ~ dbeta(1,1)
-for(i in 1:M) {
-   z[i] ~ dbern(psi)
-   s[i,1] ~ dunif(xlim[1], xlim[2])
-   s[i,2] ~ dunif(ylim[1], ylim[2])
-   for(j in 1:J) { # Number of point count locations (J=105)
-       distsq[i,j] <- (s[i,1] - X[j,1])^2 + (s[i,2] - X[j,2])^2
-       lam[i,j] <- exp(-distsq[i,j] / (2*sigma^2)) * z[i]
-       }
-   }
-for(j in 1:J) {
-   bigLambda[j] <- lam0 * sum(lam[,j])
-   for(k in 1:K) {
-       n[j,k] ~ dpois(bigLambda[j])
-       }
-   }
-N <- sum(z[])
-A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1]) * 10000 # Area of state-space (ha)
-D <- N / A      # Realized density
-ED <- (M*psi)/A # Expected density
-}
-\end{verbatim}
-\end{small}
-\rule[0.15in]{\textwidth}{.03in}
-\caption{\jags~code to fit the spatial count model. This version
-  does not include the latent encounter histories, and thus runs much
-  faster than the code in Panel~\ref{chapt.unmarked.panel.jags1}.}
-\label{chapt.unmarked.panel.jags2}
-\end{panel}
 
 
 

@@ -8,8 +8,8 @@ A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1]) # area of S
 mu <- 50                                 # density (animals/unit area)
 (N <- rpois(1, mu*A))                    # Generate N=50 as Poisson deviate
 s <- cbind(runif(N, xlim[1], xlim[2]), runif(N, ylim[1], ylim[2]))
-plot(X, xlim=xlim, ylim=ylim, pch="+")
-points(s, col=gray(0.5), pch=16)
+#plot(X, xlim=xlim, ylim=ylim, pch="+")
+#points(s, col=gray(0.5), pch=16)
 
 sigma <- 0.04
 lam0 <- 0.3
@@ -35,12 +35,49 @@ n[1:5,]
 
 
 plot(X, cex=rowSums(n), asp=1, xlim=c(0,1))
+points(X, pch="+", cex=.5)
+points(s, col=gray(0.5), pch=16)
+
+
+
+
+
+# Analyze using scrUN()
+
+library(scrbook)
+library(coda)
+
+#source("../../Rpackage/scrbook/R/scrUN.R")
+
+fm1 <- scrUN(n=n, X=X, M=200, niter=5000, xlims=xlim, ylims=ylim,
+             inits=list(lam0=0.3, sigma=0.01),
+             updateY=TRUE,
+             tune=c(0.004, 0.07, 0.3))
+
+mc1 <- mcmc(fm1)
+plot(mc1)
+summary(window(mc1, start=3001))
+
+rejectionRate(mc1)
+rejectionRate(window(mc1, start=10001))
+
+save(mc1, file="scrUNmc1.gzip")
+
+
+
+
+mc1s <- mc1
+
+
+
+
+
 
 # Analyze in JAGS
 
 
 library(rjags)
-dat1 <- list(n=n, X=X, J=J, K=K, M=200, xlim=xlim, ylim=ylim)
+dat1 <- list(n=n, X=X, J=J, K=K, M=150, xlim=xlim, ylim=ylim)
 init1 <- function() {
     yi <- array(0, c(dat1$M, dat1$J, dat1$K))
     for(j in 1:dat1$J) {
@@ -55,11 +92,11 @@ pars1 <- c("lam0", "sigma", "N", "mu")
 
 system.time({
 jm <- jags.model("SCmod1.jag", data=dat1, inits=init1, n.chain=1,
-                 n.adapt=1000)
-samples1 <- coda.samples(jm, pars1, n.iter=10000)
+                 n.adapt=500)
+jc1.1 <- coda.samples(jm, pars1, n.iter=1000)
 })
 
-samples2 <- coda.samples(jm, pars1, n.iter=5000)
+jc1.2 <- coda.samples(jm, pars1, n.iter=5000)
 
 plot(samples1)
 
@@ -69,23 +106,42 @@ plot(samples1)
 
 
 
-# Analyze using scrUN()
 
-library(scrbook)
-library(coda)
 
-source("../../Rpackage/scrbook/R/scrUN.R")
 
-fm1 <- scrUN(n=n, X=X, M=200, niter=50000, xlims=xlim, ylims=ylim,
-             inits=list(lam0=0.3, sigma=0.01),
-             updateY=TRUE,
-             tune=c(0.004, 0.07, 0.3))
+library(rjags)
+dat2 <- list(n=n, X=X, J=J, K=K, M=150, xlim=xlim, ylim=ylim)
+init2 <- function() {
+    list(sigma=runif(1, 1, 2), lam0=runif(1),
+         z=rep(1, dat2$M))
+}
+pars2 <- c("lam0", "sigma", "N", "mu")
 
-mc1 <- mcmc(fm1)
-plot(mc1)
-summary(window(mc1, start=10001))
+system.time({
+jm2 <- jags.model("SCmod2.jag", data=dat2, inits=init2, n.chain=1,
+                 n.adapt=500)
+jc2.1 <- coda.samples(jm2, pars2, n.iter=1000)
+}) # 14000 it/hr
 
-rejectionRate(mc1)
-rejectionRate(window(mc1, start=10001))
+plot(jc2.1)
 
-save(mc1, file="scrUNmc1.gzip")
+
+jc2.2 <- coda.samples(jm2, pars2, n.iter=5000)
+plot(jc2.2)
+
+summary(jc2.2)
+
+
+jc2.3 <- coda.samples(jm2, pars2, n.iter=5000)
+
+plot(jc2.3)
+summary(jc2.3)
+
+
+jc2.4 <- coda.samples(jm2, pars2, n.iter=5000)
+
+plot(jc2.4)
+summary(jc2.4)
+
+
+
