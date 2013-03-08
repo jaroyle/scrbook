@@ -49,17 +49,36 @@ library(coda)
 
 #source("../../Rpackage/scrbook/R/scrUN.R")
 
-fm1 <- scrUN(n=n, X=X, M=200, niter=5000, xlims=xlim, ylims=ylim,
+set.seed(4569)
+system.time({
+fm1 <- scrUN(n=n, X=X, M=200, niter=50000, xlims=xlim, ylims=ylim,
              inits=list(lam0=0.3, sigma=0.01),
              updateY=TRUE,
              tune=c(0.004, 0.07, 0.3))
+}) # 39700 it/hr
 
-mc1 <- mcmc(fm1)
+mc1 <- mcmc(fm1$sims)
 plot(mc1)
-summary(window(mc1, start=3001))
+summary(window(mc1, start=10001))
 
 rejectionRate(mc1)
-rejectionRate(window(mc1, start=10001))
+rejectionRate(window(mc1, start=3001))
+
+
+
+
+
+
+fm1.1 <- scrUN(n=n, X=X, M=200, niter=5000, xlims=xlim, ylims=ylim,
+             inits=fm1$last,
+             updateY=TRUE,
+             tune=c(0.004, 0.07, 0.3))
+
+mc1 <- mcmc(rbind(fm1$sims, fm1.1$sims))
+plot(mc1)
+
+
+
 
 save(mc1, file="scrUNmc1.gzip")
 
@@ -69,12 +88,31 @@ save(mc1, file="scrUNmc1.gzip")
 
 
 # No y updates
-fm2 <- scrUN(n=n, X=X, M=200, niter=5000, xlims=xlim, ylims=ylim,
+set.seed(4569)
+system.time({
+fm2 <- scrUN(n=n, X=X, M=200, niter=50000, xlims=xlim, ylims=ylim,
              inits=list(lam0=0.3, sigma=0.01),
+             updateY=FALSE,
+             tune=c(0.004, 0.07, 0.3))
+}) # 40463 it/hr
+
+
+mc2 <- mcmc(fm2$sims)
+plot(mc2)
+rejectionRate(mc2)
+
+
+save(mc2, file="scrUNmc2.gzip")
+
+
+fm2.1 <- scrUN(n=n, X=X, M=200, niter=5000, xlims=xlim, ylims=ylim,
+             inits=fm2$last,
              updateY=FALSE,
              tune=c(0.004, 0.07, 0.3))
 
 
+mc2 <- mcmc(rbind(fm2$sims, fm2.1$sims))
+plot(mc2)
 
 
 
@@ -101,8 +139,8 @@ pars1 <- c("lam0", "sigma", "N", "mu")
 
 system.time({
 jm <- jags.model("SCmod1.jag", data=dat1, inits=init1, n.chain=1,
-                 n.adapt=500)
-jc1.1 <- coda.samples(jm, pars1, n.iter=1000)
+                 n.adapt=1000)
+jc1.1 <- coda.samples(jm, pars1, n.iter=16000)
 })
 
 jc1.2 <- coda.samples(jm, pars1, n.iter=5000)
@@ -128,11 +166,17 @@ pars2 <- c("lam0", "sigma", "N", "mu")
 
 system.time({
 jm2 <- jags.model("SCmod2.jag", data=dat2, inits=init2, n.chain=1,
-                 n.adapt=500)
-jc2.1 <- coda.samples(jm2, pars2, n.iter=1000)
+                 n.adapt=1000)
+jc2.1 <- coda.samples(jm2, pars2, n.iter=16000)
 }) # 14000 it/hr
 
 plot(jc2.1)
+summary(jc2.1)
+
+
+save(jc2.1, file="scrUNjc2.1.gzip")
+
+
 
 
 jc2.2 <- coda.samples(jm2, pars2, n.iter=5000)

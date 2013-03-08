@@ -245,7 +245,12 @@ scrUN <- function(n, X, M, #obsmod=c("pois", "bern"),
             out[iter,] <- c(sigma, lam0, psi, sum(z) )
         }
     }
-    return(out)
+    last <- list(sigma=sigma, lam0=lam0, psi=psi, z=z, s=s)
+    if(updateY)
+        last$y <- y
+    ret <- list(sims=out, last=last)
+    return(ret)
+#    return(out)
 }
 
 
