@@ -82,7 +82,7 @@ points(sx,sy,pch=20,col="red")
 
 sigma.move<- .25
 sigma<-.15
-alpha0<- 0
+alpha0<- .8
 alpha1<- 1/(2*(sigma^2))
 X<-regpoints@coords
 J<-nrow(X)
