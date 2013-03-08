@@ -147,7 +147,8 @@ we can easily build hierarchical models for stratified populations,
 using an {\it individual} level parameterization of the
 model. Obviously this is important for SCR models as they all possess
 at least one random effect in the form of the activity center ${\bf
-  s}$. Moreover, in the context of stratified or multi-session type
+  s}$. 
+In the context of stratified or multi-session type
 models, the ``population membership'' variable $g_{i}$ is a {\it
   categorical} type of individual covariate \citep{huggins:1989,
   alho:1990, royle:2009}.  Before considering SCR models specifically,
@@ -163,7 +164,7 @@ models is that we make use of multinomial models for allocating
 individuals into strata or sessions. We do this because it allows us
 to analyze the models by data augmentation \citep{converse_royle:2012,
   royle_converse:2013}, and it has a natural linkage to the Poisson
-model, which is commonly used throughout ecology to model variation in
+model, which is used throughout ecology to model variation in
 abundance. We demonstrate the formlation of multi-session models using
 data augmentation here using ordinary closed population models and
 apply the idea to SCR models shortly.
@@ -178,10 +179,10 @@ distribution:
 \end{equation}
 with
 \begin{equation}
-\log( \lambda_{g} ) = \beta_{0} + \beta_{1} x_{g}
+\log( \lambda_{g} ) = \beta_{0} + \beta_{1} C_{g}
 \label{eq.poisson2}
 \end{equation}
-where $x_{g}$ is some measured attribute for group $g$.   We
+where $C_{g}$ is some measured attribute for group $g$.   We
 could generalize this a bit by considering a random effect in
 Eq. \ref{eq.poisson2}, producing over-dispersed population
 sizes $N_{g}$. For the special case of adding log-gamma noise, this
@@ -227,6 +228,24 @@ of Bernoulli variables:
 \]
 for $i=1,2,\ldots,M_{T}$.
 \end{comment}
+%%%%%%%%%%%% END COMMENT HERE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 To develop a data augmentation scheme for this group-structured model,
 let's think about doing data augmentatIon on each population {\it
@@ -244,14 +263,14 @@ the correct structure on
 $N_{g}$. If we want to enforce our Poisson model on $N_{g}$ from
 above, we naturally choose $M_{g}$ to be Poisson also, in which case
 the marginal distribution of $N_{g}$ is also Poisson, but with mean
-$\psi \exp(\beta_{0} + \beta_{1}x_{g})$.  In this case, clearly $\psi$ and
+$\psi \exp(\beta_{0} + \beta_{1}C_{g})$.  In this case, clearly $\psi$ and
 $\beta_{0}$ are confounded (See below for more discussion).
 %, and to preserve the
 %meaning of $\beta_{0}$ (as the intercept in the model for $N_{g}$ we
 %should define $\beta_{0}^{*} = (1/\psi)*\beta_{0}.
 In any case, for multiple groups that we want to model jointly, the
 key point is that we 
-we impose the structure that we desire for $N_{g}$ on the
+ impose the structure that we desire for $N_{g}$ on the
 super-population parameters $M_{g}$.  To implement this model at the
 individual level we need to get rid of the $M_{g}$ parameters (which
 is the entire motivation of data augmentation in the first place). So
@@ -285,23 +304,24 @@ independent Poisson random variables.
 
 When we apply data augmentation to the multinomial joint distribution,
 the $\psi$ parameter takes the place of $N_{T}$, the total population
-size (across all strata). In addition, 
- because the total is sufficient
-for the intercept parameter $\beta_{0}$, it is clear that $\psi$
-expresses equivalent information to $\beta_{0}$.
-XXXX I'D PUT THE NEXT FEW COMMENTED-OUT LINES BACK IN; THIS IS OTHERWISE NOT SO EASY TO UNDERSTAND UPON FIRST READING XXXX
-%%In other words, by constructing the
-%%model conditional on the total, $N_{T}$, we lose information about the
-%%intercept $\beta_{0}$, but this is recovered in the data augmentation
-%%parameter $\psi$.  
+size (across all groups or strata). In addition, 
+by 
+constructing the
+model conditional on the total, $N_{T}$, we lose information about the
+intercept $\beta_{0}$\footnote{
+A technical argument is that the total $N_{T}$ is the sufficient
+statistic for $\beta_{0}$ in the multinomial model and so, by conditioning on the total,
+$\beta_{0}$ is no longer a free parameter.}
+but this is recovered in the data augmentation
+parameter $\psi$.  
 Thus, one of these parameters has to be fixed. We can set $\beta_0 = 0$ or
 else we can fix $\psi$ (see Chapt. \ref{chapt.state-space}).  The
 constraint can be specified by noting that, under the binomial data
 augmentation model $\mathbb{E}(N_{T}) = \psi M_{T}$ and, under the
 Poisson model, $\mathbb{E}(N_{T}) = \sum_{g} \exp(\beta_{0} +
-\beta_{1} x_{g})$ and so we can set
+\beta_{1} C_{g})$ and so we can set
 \[
- \psi = \frac{1}{M_{T}} \sum_{g} \exp(\beta_{0} + \beta_{1} x_{g}).
+ \psi = \frac{1}{M_{T}} \sum_{g} \exp(\beta_{0} + \beta_{1} C_{g}).
 \]
 The linkage of $\beta_{0}$ and $\psi$ was also discussed in
 Chapt. \ref{chapt.state-space} in the context of building spatial
@@ -309,8 +329,10 @@ models for density. In that case, $\beta_0$ was the intercept of the
 intensity function and one could choose to estimate either $\beta_0$
 or the data agmentation parameter $\psi$.
 
+
+
 \begin{comment}
-{\bf XXXXXX this is kind of important but its not obvious why! XXXXXX}
+{\bf XXXXXX andy sez: this is kind of important but its not obvious why! XXXXXX}
 The equivalence of $\psi$ and $\beta_{0}$ can be thought of in terms
 of pooling data from the different sub-populations. In a model with
 {\it no} covariates, we could pool all of the data and estimate a
@@ -348,16 +370,17 @@ described by the binary variables $z_{1},\ldots,z_{M_{T}}$ such that
 \]
 where $\psi$ is constrained as noted in the previous section.  The
 {\bf BUGS} model specification for this individual-level formulation
-of the model is shown in Panel \ref{panel.wbcode} for an ordinary
+of the model is shown in Panel \ref{multisession.panel.wbcode} for an ordinary
 closed population model (model $M_{0}$).  This actually shows two
 equivalent formulations. In the left panel we have $\psi$ and
 $\beta_{0}$ as free parameters.  The right panel shows the equivalent
 model but recognizing the constraint between $\psi$ and $\beta_{0}$.
-Running these models using the \mbox{\tt multisession$\_$sim}
+Running these models using the \mbox{\tt multisession$\_$sim} (XXXX
+Change name XXXXX?)
 function, you can verify that the two parameters are not uniquely estimable. In
 particular, 
  using the model
-(representation 1) in the left-hand side of Panel \ref{panel.wbcode}, 
+(representation 1) in the left-hand side of Panel \ref{multisession.panel.wbcode}, 
 you will see that 
 draws of $\beta_{0}$ 
  appear to be draws from the prior distribution,
@@ -379,7 +402,8 @@ g_{i}  \sim \mbox{Categorical}( {\bm \pi}^{+} ) \mbox{ for
 where 
 the probabilities are $\pi_{s}^{+} = \pi_{s} \psi$
 for $g=1,2,\ldots,G$ and $\pi_{G+1}^{+} = (1-\psi)$.
-%% NOTE: This actually amounts to a very informative prior
+%% NOTE: IMPORTANT -- what I wrote here is valid BUT BUT BUT this
+%% actually amounts to a very informative prior
 %% distribution on N_{g} -- this is the same as for the JS model
 %% described in Ch. 10 of Royle and Dorazio.
 \end{comment}
@@ -451,8 +475,23 @@ of the intercept $\beta_0$ and DA parameter $\psi$, which are
 confounded. The required constraint is indicated in the specification
 on the RHS. 
 }
-\label{panel.wbcode}
+\label{multisession.panel.wbcode}
 \end{panel}
+
+\subsection{Groups with no individuals observed}
+
+In practical settings, when the groups represent small populations, it
+will sometimes happen that some groups have no encountered individuals
+or even that $N_{g} = 0$ for some groups. This is dealt with
+implicitly in the development of the model shown in Panel
+\ref{multisession.panel.wbcode} in the sense that the {\it prior} for
+$N_{g}$ has the proper dimension (namely, $G$ multinomial cells of
+non-zero probability) and thus some posterior mass may occur on
+non-zero values of $N_{g}$ even if the {\it data} contain no
+representatives of group $g$.  You can try this out to verify for
+yourself. 
+
+
 
 \subsection{The group-means model}
 
@@ -491,20 +530,19 @@ specific fixed covariates which might explain variation across
 groups. Each additional covariate addes only 1 additional fixed
 parameter to the model; (3) 
 A flexible formulation that provides something of an intermediate model,
-between that of a constant $\lambda$ and independent group-specific XXX GROUP SPECIFIC OR GROUP-SPECIFIC? I THINK THE LATTER BUT YOU USE BOTH XXXX
+between that of a constant $\lambda$ and independent group specific 
 $\lambda_{g}$'s, is that in which we put a prior on $\lambda_{g}$. For
 example, if we assume
 \[
  \lambda_{g} \sim \mbox{Gamma}(a,b)
 \]
-then this corresponds to imposing a Dirichlet compound-multinomial
+this corresponds to imposing a Dirichlet compound-multinomial
 model on the population size vector, or, marginally, a negative
 binomial model on $N_{g}$. See \citet{takemura:1999} for some
 discussion of such models relevant to data augmentation.  For this
 model, we impose the constraint $b=1$ to account for conditionining on
-the total population size $N_{T}$ by data augmentation. 
+the total population size $N_{T}$ to use data augmentation. 
 
-XXX DON'T YOU THINK IT MIGHT BE WORTH MENTIONING COVARIATE MODELS HERE ALSO? I.E. MODELS WHERE VARIATION IN LAMBDA IS DESCRIBED BY MEASURES COVARIATES ON THE GROUP LEVEL? XXXXXXX
 
 \subsection{
 Simulating stratified 
@@ -512,14 +550,15 @@ capture-recapture data
 }
 
 It is helpful, as always, to simulate some data in order to understand
-the model. Suppose we cracked the conservation lotto jackpot and got
+the model. Suppose we cracked the conservation lotto jackpot and obtained
 funding to carry out a camera trapping study of some 
+ flashy 
 carnivore in 20 forest patches or reserves, using a 5 x 5 array of traps. Here we will
 consider an ordinary closed population model, model $M_0$, and we
 suppose there is 
 some forest level covariate, say $\mbox{Dist} = $ disturbance regime, perhaps measured by an
 index of trail density or something.
-We imagine a model like this:
+We imagine a model for patch-level population size such as the following:
 \begin{eqnarray*}
 N_{g} &\sim& \mbox{Poisson}(\lambda_{g})  \\
 \mbox{log}(\lambda_{g})& = &\beta_{0} + \beta_{1} \mbox{Dist}_{g} 
@@ -529,9 +568,9 @@ as follows:
 \begin{verbatim}
 > set.seed(2013)
 > G <- 20                          # G = 20 groups or strata
-> beta0 <- 3
+> beta0 <- 3                       # Abundance model parameters
 > beta1 <- .6
-> p <- .3
+> p <- .3                          # Encounter probability
 > K <- 5                           # Sample occasions for capture-recapture
 > Dist <- rnorm(G)                 # Simulate covariate
 > lambda <- exp(beta0+beta1*Dist)  # Simulate poplation sizes 
@@ -544,20 +583,20 @@ as follows:
 >  }
 > g<- rep(1:G,N)
 
-> ## Now keep the group id and encounter frequency only for
-> ##     individuals that are captured 
+> ##  Now keep the group id and encounter frequency only for
+> ##       individuals that are captured 
 > g<-g[y>0]
 > y<-y[y>0]
 \end{verbatim}
-Thats it! XXX AGAIN; IN THIS PARAGRAPH THE DOUBLE USE OF POPULATION FOR BOTH EACH GROUP AND THE TOTAL IS CONFUSING; MAYBE POPULATION AND SUPER-POPULATION XXX
-We just simulated population structure for $G=20$ populations, and
-capture-recapture data for all individuals in the population. To fit
+Thats it! 
+We just simulated a population size model and 
+capture-recapture data for the populations inhabiting 
+ $G=20$ forest patches (the ``groups'' in this situation). To fit
 this model, we need to augment the \mbox{\tt g} and \mbox{\tt y} data
 objects, and then we can run the model in {\bf JAGS} or {\bf WinBUGS}
-using either specification given in Panel \ref{panel.wbcode}.
+using the model given in Panel \ref{multisession.panel.wbcode}.
 See the help file \mbox{\tt ?multisession\_sim}
-for doing this analysis. 
-
+for doing this analysis with these simulated data. 
 
 
 \section{Other Approaches to Multi-Session Models}
@@ -574,7 +613,8 @@ case we could build in amoung-group structure by modeling the DA
 parameter $\psi$ as being variable for each subject, as a function of
 group-specific variables \citep[see][for an
 example]{hendriks_etal:2013}.  For example, if $C_{g}$ is the value of
-some stratum covariate, then we could have $z_{i} \sim
+some covariate for group $g$,
+then we could have $z_{i} \sim
 \mbox{Bernoulli}( \psi_{i})$ with
 \[
  \mbox{logit}(\psi_{i}) = \beta_0 + \beta_1  C_{g_{i}}
@@ -603,7 +643,13 @@ for $N_{g}$, or for the capture-recapture model. For example,
 \citet{royle_converse:2013} fitted a model having random group effects
 on encounter probability and abundance (i.e., extra-Poisson
 variation). 
+
+\begin{comment}
 XXXX WHEN I TRIED THE MULTI SESSION SECR STUFF FOR ANGELA'S DATA SECR WOULD NOT ALLOW GROUPS WITH 0 OBSERVED INDIVIDUALS (ALTHOUGH THE MANUAL SAYS IT DOES). MIGHT BE WORTH CHECKING OUT; EITHER WAY I THINK IT IS WORTH MENTIONING IN A SENTENCE THAT THIS APPROACH ALLOWS US TO INCLUDE SITES IN THE ANALYSIS WHERE WE MAYBE NEVER CAUGHT AN INDIVIDUAL XXX
+
+XXX Andy sez: I added a section up there
+
+\end{comment}
 
 \section{Spatial Capture-Recapture}
 
@@ -617,9 +663,12 @@ that SCR models are ordinary closed population models
 but with an individual covariate which is the 
 activity center ${\bf s}_{i}$, and the observation model has to be
 defined for each trap. With this in mind, it should be obvious how the
-{\bf BUGS} specification in Panel \ref{panel.wbcode} can be modified
+{\bf BUGS} specification in Panel \ref{multisession.panel.wbcode} can be modified
 to accommodate a group-structured SCR situation. 
-We elaborate...........................
+Specifically, we include the prior distribution for ${\bf s}_{i}$ and
+the observation model that relates ${\bf s}_{i}$ to the probability of
+encounter for individual $i$ and trap $j$, as we've done so many times
+in previous chapters. 
 %XXXX THIS SECTION READS SOMEWHAT INCOMPLETE. MAYBE IT JUST NEEDS A
 %SENTENCE THAT CLARIFIES THAT ALL YOU HAVE TO DO TO TURN THE ORDINARY
 %STRATIFIED CR MODEL INTO A SPATIAL ONE IS SPATIALLY REFERENCED
@@ -674,10 +723,10 @@ elements $1,\ldots,J$) or not captured at all (element $J+1$).
 %what was done in the study from which these data were obtained
 %\citep{converse_etal:2006ea, converse_etal:2006jwm}.
 
-For the multinomial observation model, the encounter probability vector is a
-function of distance between trap locations and individual activity
-centers, modelded on 
-the multinomial logit scale. The Gaussian encounter probability model is:
+For the multinomial observation model, the encounter probability
+vector is a function of distance between trap locations and individual
+activity centers, modelded on the multinomial logit scale. The
+Gaussian encounter probability model is:
 \begin{equation}
 \mbox{mlogit}(\pi_{ij}) = \eta_{ij}  =  \alpha_0 - \alpha_{1} \mbox{dist}({\bf x}_{j},{\bf s}_{i})^2   
 \label{hscr.eq.mlogit}
@@ -921,29 +970,37 @@ captured per group (open circles).  }
 
 \subsection{Reanalysis of the Ovenbird data}
 
+\begin{comment}
 {\bf 
 XXX I THINK YOU CAN DELETE THIS FIRST SHORT PARAGRAPH BC YOU SAY THE
 SAME THINGS IN THE PRECEDING PARAGRAPH... OR MOVE THEM DOWN HERE
 COMPLETELY XXXX }
+XXX Andy sez: This is a fair point, let me read the whole thing and
+see this issue more clearly
+\end{comment}
+
 The analysis before used a secr multi-session model in which $N_{t}
-\sim 
-\mbox{Poisson}(\Lambda_{t})$. We also fitted a model in which we applied
-data augmentation to {\it each} year, so that we didn't have a prior
-distribution on them.  This would be simlar to the multi-session model
-fitted in \mbox{\tt secr} except with a $\mbox{Binomial}(\psi_{t}M)$
-prior instead of a $\mbox{Poisson}(\Lambda_{t})$ prior.
+\sim \mbox{Poisson}(\Lambda_{t})$. We also fitted a model in which we
+applied data augmentation to {\it each} year, so that we didn't have a
+prior distribution on them.  This would be simlar to the multi-session
+model fitted in \mbox{\tt secr} except with a
+$\mbox{Binomial}(\psi_{t}M)$ prior instead of a
+$\mbox{Poisson}(\Lambda_{t})$ prior.
 
-
+{\bf 
 XXXX I think I will put in here a panel that shows a model with TIME
 TREND in it XXXXXXX
+}
 
-To fit the precise Bayesian equivalent XXX UNCLEAR: EQUIVALENT TO WHAT? XXXX we just have to apply the DA
-approach described above. The {\bf R} script in \mbox{\tt scrbook} to run this analysis 
-is called \mbox{\tt ovenbird$\_$ms} which you can use to reproduce the
-results in Table XXXXX.
-In terms of comparison with the previous results of
-Sec. \ref{poisson-mn.sec.ovenbird}, they ........
-look about the same as they should........ 
+{\bf IN PRREP XXXXX}
+
+To fit the precise Bayesian equivalent XXX UNCLEAR: EQUIVALENT TO
+WHAT? XXXX we just have to apply the DA approach described above. The
+{\bf R} script in \mbox{\tt scrbook} to run this analysis is called
+\mbox{\tt ovenbird$\_$ms} which you can use to reproduce the results
+in Table XXXXX.  In terms of comparison with the previous results of
+Sec. \ref{poisson-mn.sec.ovenbird}, they ........  look about the same
+as they should........   XXXX B ut this is not necessarily the case! XXXX
 {\small
 \begin{verbatim}
 > out
@@ -1040,13 +1097,6 @@ independent $N_{g}$ model is probably not too detrimental to
 inferences that apply to explaining marginal variation in $N_{g}$,
 such as habitat or landscape effects that are modeled on the expected
 value of $N_{g}$.
-
-
-
-
-
-
-
 
 
 \section{Summary and Outlook}
