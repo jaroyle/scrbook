@@ -51,10 +51,10 @@ library(coda)
 
 set.seed(4569)
 system.time({
-fm1 <- scrUN(n=n, X=X, M=200, niter=50000, xlims=xlim, ylims=ylim,
+fm1 <- scrUN(n=n, X=X, M=250, niter=250000, xlims=xlim, ylims=ylim,
              inits=list(lam0=0.3, sigma=0.01),
              updateY=TRUE,
-             tune=c(0.004, 0.07, 0.3))
+             tune=c(0.004, 0.09, 0.35))
 }) # 39700 it/hr
 
 mc1 <- mcmc(fm1$sims)
@@ -62,7 +62,7 @@ plot(mc1)
 summary(window(mc1, start=10001))
 
 rejectionRate(mc1)
-rejectionRate(window(mc1, start=3001))
+rejectionRate(window(mc1, start=10001))
 
 
 
@@ -141,11 +141,20 @@ system.time({
 jm <- jags.model("SCmod1.jag", data=dat1, inits=init1, n.chain=1,
                  n.adapt=1000)
 jc1.1 <- coda.samples(jm, pars1, n.iter=16000)
-})
+}) # 1032it/hr
+
+
+plot(jc1.1)
+summary(jc1.1)
+
+
+save(jc1.1, file="scrUNjc1.1.gzip")
+
+
 
 jc1.2 <- coda.samples(jm, pars1, n.iter=5000)
 
-plot(samples1)
+
 
 
 
@@ -213,3 +222,62 @@ save.image("sim.RData")
 
 
 
+
+
+
+
+
+
+
+
+
+# Compare results
+
+ls()
+load("scrUNmc1.gzip")
+load("scrUNmc2.gzip")
+load("scrUNjc1.1.gzip")
+load("scrUNjc2.1.gzip")
+ls()
+
+
+plot(mc1[,c("sigma", "lam0", "N")])
+plot(jc1.1[,c("sigma", "lam0", "N")])
+
+
+plot(mc2[,c("sigma", "lam0", "N")])
+plot(jc2.1[,c("sigma", "lam0", "N")])
+
+
+# Update y
+summary(mc1[,"N"])$quant
+summary(jc1.1[,"N"])$quant
+
+# Don't update y
+summary(mc2[,"N"])$quant
+summary(jc2.1[,"N"])$quant
+
+
+
+
+# Update y
+summary(mc1)$quant   # R version
+summary(jc1.1)$quant # JAGS version
+
+# Don't update y
+summary(mc2)$quant   # R version
+summary(jc2.1)$quant # JAGS version
+
+
+
+
+
+par(mfrow=c(2,2), mai=c(0.3, 0.7, 0.7, 0.2))
+hist(as.vector(mc1[,"N"]), xlim=c(0, 200),
+     main="R: y updated"); abline(v=50, col=4, lwd=2)
+hist(as.vector(mc2[,"N"]), xlim=c(0, 200),
+     main="R: y not updated"); abline(v=50, col=4, lwd=2)
+hist(as.matrix(jc1.1)[,"N"], xlim=c(0, 200),
+     main="JAGS: y updated"); abline(v=50, col=4, lwd=2)
+hist(as.matrix(jc2.1)[,"N"], xlim=c(0, 200),
+     main="JAGS: y not updated"); abline(v=50, col=4, lwd=2)
