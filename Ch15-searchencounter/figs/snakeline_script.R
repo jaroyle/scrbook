@@ -52,7 +52,7 @@ sLine<-Line(points)
 ###sLine<-SpatialLines(sLine)
 
 ## should be 250 or higher
-regpoints<-sample.Line(sLine,250,type="regular")
+regpoints<-sample.Line(sLine,120,type="regular")
 
 plot(line1,type="l")
 #original points:
@@ -80,9 +80,10 @@ sx<-runif(N,xlim[1],xlim[2])
 sy<-runif(N,ylim[1],ylim[2])
 points(sx,sy,pch=20,col="red")
 
-sigma<-.2
-alpha0<- -.5
-alpha1<- 1/(2*(.3^2))
+sigma.move<- .25
+sigma<-.15
+alpha0<- 0
+alpha1<- 1/(2*(sigma^2))
 X<-regpoints@coords
 J<-nrow(X)
 
@@ -91,7 +92,7 @@ U<-array(NA,dim=c(N,K,2))
 y<-pmat<-matrix(NA,nrow=N,ncol=K)
 for(i in 1:N){
 for(k in 1:K){
-U[i,k,]<-c(rnorm(1,sx[i],sigma),rnorm(1,sy[i],sigma))
+U[i,k,]<-c(rnorm(1,sx[i],sigma.move),rnorm(1,sy[i],sigma.move))
 dvec<-     sqrt( ( U[i,k,1] - X[,1])^2 + (U[i,k,2] - X[,2])^2  )
 loghaz<- alpha0 - alpha1*dvec*dvec
 H<- sum(exp(loghaz))
@@ -150,9 +151,10 @@ model {
 # Priors
 alpha0~dunif(-25,25)
 alpha1~dunif(0,25)
+sigma<- sqrt(1/(2*alpha1))
 lsigma~dunif(-5,5)
-sigma<-exp(lsigma)
-tau<-1/(sigma*sigma)
+sigma.move<-exp(lsigma)
+tau<-1/(sigma.move*sigma.move)
 psi~dunif(0,1)
 
 # Likelihood
@@ -189,7 +191,7 @@ inits <- function(){
 }
 
 # List parameters to be estimated
-parameters <- c("alpha0","alpha1", "N", "psi", "sigma")
+parameters <- c("alpha0","alpha1", "N", "psi", "sigma.move")
 
 # Set MCMC settings
 nthin<-1
@@ -202,7 +204,7 @@ library("R2jags")
 wbout2 <- jags(data, inits, parameters, "model0.txt", n.thin=nthin, n.chains=nc,
 n.burnin=nb, n.iter=ni, working.dir=getwd())
 
-# Produce summary of posterior distributions (after WinBUGS has been exited manually or change of argument in previous function to debug = FALSE)
+h# Produce summary of posterior distributions (after WinBUGS has been exited manually or change of argument in previous function to debug = FALSE)
 print(wbout, dig = 3)
 
 

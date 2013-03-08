@@ -436,9 +436,11 @@ set.seed(2013)
 sx<-runif(N,xlim[1],xlim[2])
 sy<-runif(N,ylim[1],ylim[2])
 
-sigma <-.3
-alpha0 <- -.5
-alpha1 <- -1/(2*(.2^2))
+
+sigma.move<- .25
+sigma<-.15
+alpha0<- 0
+alpha1<- 1/(2*(sigma^2))
 
 X <- regpoints@coords
 J <- nrow(X)
@@ -454,28 +456,23 @@ data objects corresponding to individuals that get captured at least 1
 time. All of this goes
 according to the following commands:
 \begin{verbatim}
-K<- 5        ## Number of sample occasions 
-U<-array(NA,dim=c(N,K,2))  ## Locations
+K<- 10   ##period study
+U<-array(NA,dim=c(N,K,2))
 y<-pmat<-matrix(NA,nrow=N,ncol=K)
 for(i in 1:N){
-  for(k in 1:K){
-    U[i,k,]<-c(rnorm(1,sx[i],sigma),rnorm(1,sy[i],sigma))
-    dvec <- sqrt( ( U[i,k,1] - X[,1])^2 + (U[i,k,2] - X[,2])^2  )
-    loghaz <- alpha0 + alpha1*dvec
-    H <- sum(exp(loghaz))
-    pmat[i,k] <- 1-exp(-H)
-    y[i,k] <- rbinom(1,1,pmat[i,k])
-  }
+for(k in 1:K){
+U[i,k,]<-c(rnorm(1,sx[i],sigma.move),rnorm(1,sy[i],sigma.move))
+dvec<-     sqrt( ( U[i,k,1] - X[,1])^2 + (U[i,k,2] - X[,2])^2  )
+loghaz<- alpha0 - alpha1*dvec*dvec
+H<- sum(exp(loghaz))
+pmat[i,k]<- 1-exp(-H)
+y[i,k]<- rbinom(1,1,pmat[i,k])
+}
 }
 Ux<-U[,,1]
 Uy<-U[,,2]
 Ux[y==0]<-NA
 Uy[y==0]<-NA
-
-captured<-apply(y,1,sum)
-y<-y[captured>0,]
-Ux<-Ux[captured>0,]
-Uy<-Uy[captured>0,]
 \end{verbatim}
 
 Finally, we 
@@ -490,15 +487,20 @@ values. In practice, we might think about using the average of the
 observed
 locations.
 \begin{verbatim}
-M<-100
+ncap<-apply(y,1,sum)
+y<-y[ncap>0,]
+Ux<-Ux[ncap>0,]
+Uy<-Uy[ncap>0,]
+
+M<-200
 nind<-nrow(y)
 y<-rbind(y,matrix(0,nrow=(M-nrow(y)),ncol=ncol(y)))
 Namat<-matrix(NA,nrow=(M-nind),ncol=ncol(y))
 Ux<-rbind(Ux,Namat)
 Uy<-rbind(Uy,Namat)
-S<-cbind(runif(M,Xl,Xu),runif(M,Yl,Yu))
+S<-cbind(runif(M,xlim[1],xlim[2]),runif(M,ylim[1],ylim[2]))
 for(i in 1:nind){
-  S[i,]<-c( mean(Ux[i,],na.rm=TRUE),mean(Uy[i,],na.rm=TRUE))
+S[i,]<-c( mean(Ux[i,],na.rm=TRUE),mean(Uy[i,],na.rm=TRUE))
 }
 Ux.st<-Ux
 Uy.st<-Uy
@@ -515,29 +517,92 @@ bundle the data, inits, and farm
 all of this stuff out to {\bf JAGS} we execute the following set of
 commands:
 \begin{verbatim}
-stuff right here
+
+### write BUGS model description
+
+cat("
+model {
+
+# Priors
+alpha0~dunif(-25,25)
+alpha1~dunif(0,25)
+
+lsigma~dunif(-5,5)
+sigma.move<-exp(lsigma)
+tau<-1/(sigma.move*sigma.move)
+psi~dunif(0,1)
+
+# Likelihood
+for(i in 1:M){ # Loop over individuals
+ z[i]~dbern(psi)
+ s[i,1]~dunif(xlim[1],xlim[2])
+ s[i,2]~dunif(ylim[1],ylim[2])
+ for(k in 1:K){ # Loop over temporal replicates
+    u[i,k] ~ dnorm(s[i,1],tau) 
+    v[i,k] ~ dnorm(s[i,2],tau) 
+    for(j in 1:J){ # Loop over each point defining line segments
+      d[i,k,j]<-  pow(pow(u[i,k]-X[j,1],2) + pow(v[i,k]-X[j,2],2),0.5)
+      h[i,k,j]<-exp(alpha0-alpha1*d[i,k,j]*d[i,k,j])
+   }
+   H[i,k]<-sum(h[i,k,1:J])
+   p[i,k]<- z[i]*(1-exp(-H[i,k]))
+   y[i,k] ~ dbern(p[i,k])
+ }
+}
+
+# Derived quantity
+N<-sum(z[])
+}
+",file="model0.txt")
+
+## Prepare objects to run WinBUGS from R
+# Data 
+data <- list(y=y, u=Ux,  v=Uy, X=X, K=K, M=M, J=J,xlim=xlim,ylim=ylim)
+
+#Define function to generate initial values
+inits <- function(){
+  list(alpha0=alpha0-.3,alpha1=alpha1-1.5,lsigma=log(.5),
+       s=S,z=c(rep(1,nind),rep(0,M-nind)) ,u=Ux.st,v=Uy.st)
+}
+
+# List parameters to be estimated
+parameters <- c("alpha0","alpha1", "N", "psi", "sigma.move")
+
+# Set MCMC settings
+nthin<-1
+nc<-3
+nb<-500
+ni<-2000
+
+# Load interface package and start WinBUGS (note: this takes about 4.5 h)
+library("R2jags")
+wbout2 <- jags(data, inits, parameters, "model0.txt", n.thin=nthin, n.chains=nc,
+n.burnin=nb, n.iter=ni, working.dir=getwd())
 \end{verbatim}
 and this produces the output here:
 
 
 \begin{verbatim}
-> wbout
+Run with alpha0= 0
+running now with alpha0 = -.8 probably that will suck
+
+> wbout2
 Inference for Bugs model at "model0.txt", fit using jags,
- 3 chains, each with 5000 iterations (first 1000 discarded)
- n.sims = 12000 iterations saved
-         mu.vect sd.vect    2.5%     25%     50%     75%   97.5%  Rhat n.eff
-N         94.448   5.237  81.000  92.000  96.000  98.000 100.000 1.006   520
-beta0     -0.539   0.743  -1.714  -1.072  -0.637  -0.102   1.258 1.042    54
-beta1    -11.943   2.196 -17.229 -13.236 -11.665 -10.375  -8.378 1.035    62
-psi        0.936   0.056   0.792   0.908   0.951   0.979   0.998 1.005   650
-sigma      0.340   0.043   0.268   0.309   0.337   0.366   0.436 1.004   820
-deviance 206.987  25.474 160.405 189.069 205.779 224.080 259.491 1.017   130
+ 3 chains, each with 2000 iterations (first 500 discarded)
+ n.sims = 4500 iterations saved
+           mu.vect sd.vect    2.5%     25%     50%     75%   97.5%  Rhat n.eff
+N          105.820  14.422  79.000  95.750 105.000 116.000 134.000 1.100    25
+alpha0      -0.527   0.363  -1.211  -0.781  -0.532  -0.284   0.222 1.032    79
+alpha1      18.301   2.699  13.170  16.371  18.242  20.187  23.603 1.025    87
+psi          0.529   0.079   0.380   0.472   0.527   0.583   0.686 1.077    31
+sigma.move   0.229   0.012   0.208   0.221   0.228   0.235   0.254 1.111    27
+deviance   187.467  26.985 135.281 168.835 187.000 205.549 242.072 1.021   100
 
 For each parameter, n.eff is a crude measure of effective sample size,
 and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
 
 DIC info (using the rule, pD = var(deviance)/2)
-pD = 319.4 and DIC = 526.3
+pD = 357.0 and DIC = 544.4
 DIC is an estimate of expected predictive error (lower deviance is better).
 \end{verbatim}
 
