@@ -43,7 +43,7 @@ rejectionRate(window(mcy1, start=4001))
 
 
 
-
+save(mcy1, file="mcy1.gzip")
 
 
 
@@ -66,7 +66,7 @@ rejectionRate(window(mcnoy1, start=1001))
 
 
 
-
+save(mcnoy1, file="mcnoy1.gzip")
 
 
 
