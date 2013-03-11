@@ -21,6 +21,72 @@ system("open ../figs/nopaCounts.pdf")
 
 
 
+
+
+# Fit model using custom code
+
+set.seed(450)
+fmy1 <- scrUN(n=nopa$n, X=nopa$X, M=250, updateY=TRUE, niters=250000,
+              xlims=c(-600, 600), ylims=c(-400, 400),
+              inits=list(sigma=rnorm(1, 100)),
+              tune=c(9, 0.05, 300))
+
+mcy1 <- mcmc(fmy1$sims)
+plot(mcy1)
+summary(mcy1)
+
+rejectionRate(mcy1)
+rejectionRate(window(mcy1, start=4001))
+
+
+
+
+
+
+save(mcy1, file="mcy1.gzip")
+
+
+
+
+
+
+set.seed(450)
+fmnoy1 <- scrUN(n=nopa$n, X=nopa$X, M=300, updateY=FALSE, niters=250000,
+              xlims=c(-600, 600), ylims=c(-400, 400),
+              inits=list(sigma=rnorm(1, 100)),
+              tune=c(9, 0.05, 300))
+
+mcnoy1 <- mcmc(fmnoy1$sims)
+plot(mcnoy1)
+summary(mcnoy1)
+
+rejectionRate(mcnoy1)
+rejectionRate(window(mcnoy1, start=1001))
+
+
+
+
+save(mcnoy1, file="mcnoy1.gzip")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # JAGS
 
 library(rjags)

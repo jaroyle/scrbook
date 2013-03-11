@@ -4,9 +4,6 @@ Developing Markov Chain Monte Carlo Samplers
 \markboth{MCMC}{}
 \label{chapt.mcmc}
 
-% XXX I kept the R output here because this chapter is about how to look at mcmc output using coda, not so much the actual results
-% XXX Need to reconcile the 2 normal Gibbs examples (here and Ch2)
-
 
 \vspace{.3in}
 
@@ -53,17 +50,16 @@ activity centers to any arbitrary polygon in {\bf R} using an ESRI shapefile
 a shape file in a {\bf BUGS} model.  Similarly, models of space usage
 that take into account ecological distance
 (Chapt. \ref{chapt.ecoldist}) cannot be implemented in the {\bf BUGS}
-engines.  Moreover, there are classes of
-SCR models that we have not been able to implement effectively using
-likelihood methods, and are inefficient to run in the {\bf BUGS}
-engines. Examples of those models are covered in Chapts.
-\ref{chapt.scr-unmarked} and \ref{chapt.partialID}.
-
+engines.  
+%Moreover, there are classes of
+% SCR models that we have not been able to implement effectively using
+% likelihood methods, and are inefficient to run in the {\bf BUGS}
+% engines. Examples of those models are covered in Chapts.
+% \ref{chapt.scr-unmarked} and \ref{chapt.partialID}.
 Sometimes implementing an MCMC algorithm in {\bf R} may be faster than in
 {\bf WinBUGS} - especially if you want to run simulation studies where you
 have hundreds or more simulated data sets, several years' worth of
-data or other large models, this can be a big advantage.
-
+data or other large models, this can be a big advantage. Further, writing your own sampler gives you more control over which kind of updater is used (see following sections).
 Finally, building your own MCMC algorithm is a great exercise to
 understand how MCMC sampling works. So while using the {\bf BUGS}
 language requires you to understand the structure of your model,
@@ -112,19 +108,19 @@ This marginal probability is a normalizing constant that ensures that
 the posterior integrates to 1. Often, the
 integral is difficult or impossible to evaluate, unless you are
 dealing with a really simple model.  For example, consider
-a Normal model, with a set of $n$ observations, $y_{i};
+a normal model, with a set of $n$ observations, $y_{i};
 i=1,2,\ldots,n$:
 \[
  y_{i} \sim \mbox{Normal}(\mu, \sigma),
 \]
-where $\sigma$ is known and our objective is to obtain an estimate of
+where $\sigma$ is known and our objective is to estimate
 $\mu$. To fully specify the model in a Bayesian
 framework, we first have to define a prior distribution for $\mu$. Recall
 from Chapt. \ref{chapt.glms}
 that for certain data models, certain priors lead to
 conjugacy, i.e. if you choose a certain prior for your parameter,
-the posterior distribution will be of a known parametric form. The
-conjugate prior for the mean of a Normal model is also a Normal
+the posterior distribution will be of a known parametric form. More specifically, under conjugacy, the prior and posterior distributions are fromn the same parametric family. The
+conjugate prior for the mean of a normal model is also a normal
 distribution:
 \[
 \mu \sim \mbox{Normal}(\mu_0, \sigma_{0}^{2})
@@ -139,12 +135,12 @@ where
 \[
 \mu_{n} = \left( \frac{ \sigma^{2}}  {\sigma^{2}   +n \sigma_{0}^{2}} \right) \times  \left(\mu_0 +      \frac{n  \sigma_{0}^{2}}  {\sigma^{2}   +n \sigma_{0}^{2}} \right) \times\bar{y}
 \]
-And
+and
 \[
  \sigma_{n}^{2} = \frac{\sigma^{2}  \sigma_{0}^{2}} {\sigma^{2} + n \sigma_{0}^{2}}
-\]
-We can directly obtain estimates of interest from this Normal
-posterior distribution, such as the mean $\hat{\mu}$ and its variance; we
+\].
+We can directly obtain estimates of interest from this normal
+posterior distribution, such as its mean $\hat{\mu}$ (which is an estimate of $\mu_{n}$) and variance; we
 do not need to apply MCMC, since we can recognize the posterior as a
 parametric distribution, including the normalizing constant $[y]$.
 But generally we will be interested in more complex models with
@@ -209,18 +205,18 @@ yourself hungry for more background, \citet{casella_george:1992}
 provide a more in-depth introduction to the Gibbs sampler.
 
 Let's go back to our simple example from above to understand the
-motivation and functioning of Gibbs sampling. Recall that for a Normal
-model with known variance and a Normal prior for $\mu$, the posterior
-distribution of $\mu|y$ is also Normal. Conversely, with a fixed
+motivation and functioning of Gibbs sampling. Recall that for a normal
+model with known variance and a normal prior for $\mu$, the posterior
+distribution of $\mu|y$ is also normal. Conversely, with a fixed
 (known) $\mu$, but unknown variance, the conjugate prior for
-$\sigma^2$ is an Inverse-Gamma distribution with shape and scale
+$\sigma^2$ is an inverse-gamma distribution with shape and scale
 parameters $a$ and $b$:
 \[
 \sigma^2 \sim \mbox{Inverse-Gamma}(a,b),
 \]
-With fixed $a$ and $b$, the posterior $[\sigma^2|\mu,y]$ is also an Inverse-Gamma distribution, namely:
+With fixed $a$ and $b$, algebra reveils that the posterior $[\sigma^2|\mu,y]$ is also an inverse-gamma distribution, namely:
 \begin{equation}
-\sigma^2|\mu,y \mbox{Inverse-Gamma} (a_n, b_n),
+\sigma^2|\mu,y \sim \mbox{Inverse-Gamma} (a_n, b_n),
 \label{mcmc.eq.sig-posterior}
 \end{equation}
  where  $a_n = n/2   + a$ and $b_n = (1/2) \displaystyle\sum\limits_{i=1}^{n} (y_i-\mu)^2 + b$.
@@ -243,9 +239,9 @@ to construct the full conditional distribution,
 [\mu|\sigma^2,y]  \propto [y|\mu] [\mu]
 \]
 
-The full conditional of $\mu$ again takes the form of the Normal
+The full conditional of $\mu$ again takes the form of the normal
 distribution shown in Eq. \ref{mcmc.eq.mu-posterior}; similarly, $[\sigma^2|\mu,y]$ takes
-the form of the Inverse-Gamma distribution shown in
+the form of the inverse-gamma distribution shown in
 Eq. \ref{mcmc.eq.sig-posterior}, both distribution we can easily sample
 from. And this is precisely what we do when using Gibbs sampling: we
 break down high-dimensional problems into convenient one-dimensional
@@ -254,29 +250,29 @@ model parameter separately; and we sample from these full
 conditionals, which, if we choose conjugate priors, are known
 parametric distributions.
 Let's put the concept of Gibbs sampling into the MCMC framework of
-generating successive samples, using our simple Normal model with
+generating successive samples, using our simple normal model with
 unknown $\mu$ and $\sigma^2$ and conjugate priors as an example. These are the
 steps you need in order to build a Gibbs sampler:
 
 {\flushleft {\bf Step 0:} Begin with some initial values for $\theta$, say $\theta^{(0)}$.}
-In our example, we have to specify initial values for $\mu$ and $\sigma$, for
-example by drawing a random number from some Uniform distribution, or
+In our example,$\theta =(\mu,\sigma)$, so we have to specify initial values for $\mu$ and $\sigma$, for
+example by drawing a random number from some uniform distribution, or
 by setting them close to what we think they might be. (Note: This step
 is required in any MCMC sampling; chains have to start from
 somewhere. We will get back to these technical details a little
 later.)
 {\flushleft {\bf Step 1:} Draw $\theta^{(1)}$ from the conditional distribution $[\theta_{1}^{(1)}|\theta_{2}^{(0)}$,\ldots, $\theta_{d}^{(0)}]$. }
-Here, $\theta_1$ is $\mu$, which we draw from the Normal distribution in Eq. \ref{mcmc.eq.mu-posterior}  using $\sigma^{(0)}$ as value for $\sigma$.
+Here, $\theta_1$ is $\mu$, which we draw from the normal distribution in Eq. \ref{mcmc.eq.mu-posterior}  using $\sigma^{(0)}$ as value for $\sigma$.
 {\flushleft {\bf Step 2:} Draw $\theta_{2}^{(1)}$ from the conditional distribution $[\theta_{2}^{(1)}|\theta_{1}^{(1)}$, $\theta_{3}^{(0)}$,\ldots, $\theta_{d}^{(0)}]$. }
-Here, $\theta_2$ is $\sigma$, which we draw from the Inverse-Gamma
+Here, $\theta_2$ is $\sigma$, which we draw from the inverse-gamma
 distribution of Eq. \ref{mcmc.eq.sig-posterior}, using $\mu^{(1)}$ as value for $\mu$.
 
 {\flushleft {\bf Step 3,\ldots, $d$:} Draw $\theta_{3}^{(1)}$, $\theta_{4}^{(1)}$,\ldots, $\theta_{d}^{(1)}$ from their conditional distribution $[\theta_{3}^{(1)}|\theta_{1}^{(1)}, \theta_{2}^{(1)}, \theta_{4}^{(0)}$, \ldots, $\theta_{d}^{(0)}]$, \ldots, $[\theta_{d}^{(1)}|\theta_{1}^{(1)}$,\ldots, $\theta_{d-1}^{(1)}]$. }
 In our example we have no additional parameters, so we only need step 0 through to 2.
 
-{\flushleft {\bf Repeat Steps 1 to $d$} for $T$ = a large number of samples.}
+{\flushleft {\bf Repeat Steps 1 to $\mathbf{d}$} for $T$ = a large number of samples.}
 
-In terms of {\bf R} coding, this means we have to write Gibbs updaters for
+Note that the order in which we update the parameters within the Gibbs algorithm does not matter. In terms of {\bf R} coding, this means we have to write Gibbs updaters for
 $\mu$ and $\sigma^2$ and embed them into a loop over $T$ iterations. The final
 code in the form of an {\bf R} function is shown
 in Panel \ref{mcmc.panel.gibbs1}.
@@ -298,13 +294,13 @@ colnames(out)<-c('mu', 'sig')
 
 for (i in 1:niter) {
 
-#update mu according to Eq. 7.2
+#update mu 
 mu_n<-((sigma2/(sigma2+n*sigma2_0))*mu_0
 + (n*sigma2_0/(sigma2 + n*sigma2_0))*ybar)
 sigma2_n <- (sigma2*sigma2_0)/ (sigma2 + n*sigma2_0)
 mu<-rnorm(1,mu_n, sqrt(sigma2_n))
 
-#update sigma2 according to Eq. 7.3
+#update sigma2 
 bn<- 0.5 * (sum((y-mu)^2)) + b
 sigma2<-1/rgamma(1,shape=an, rate=bn)
 out[i,]<-c(mu,sqrt(sigma2))
@@ -316,8 +312,8 @@ return(out)
 %\end{minipage}
 \rule[-0.15in]{\textwidth}{.03in}
 \caption{
-R-code for a Gibbs sampler for a Normal model with unknown $\mu$
-and $\sigma$ and conjugate priors (Normal and Inverse-Gamma, respectively)
+R-code for a Gibbs sampler for a normal model with unknown $\mu$
+and $\sigma$ and conjugate priors (normal and inverse-gamma, respectively)
 for both parameters.
 }
 \label{mcmc.panel.gibbs1}
@@ -334,7 +330,7 @@ y<-rnorm(1000, 5,0.5) #data
 mu_0<-0 #prior mean
 sigma2_0<-100 #prior variance
 
-#Inverse-Gamma hyperparameters
+#inverse-gamma hyperparameters
 a<-0.1
 b<-0.1
 
@@ -356,7 +352,7 @@ par(mfrow=c(1,2))
 hist(out[,1]); hist(out[,2])
 \end{verbatim}
 
-Finally, recall an important characteristic of Markov chains, namely,
+Finally, recall an important characteristic of MCMC, namely,
 that the chain has to have converged (reached its stationary
 distribution) in order to regard samples as coming from the posterior distribution. In
 practice, that means you have to throw out some of the initial samples
@@ -365,7 +361,7 @@ about convergence diagnostics. For now, you can use the
 \verb#plot(out[,1])# or \verb#plot(out[,2])# command to make a time
 series plot of the samples of each parameter and visually assess how
 many of the initial samples you should discard. Fig. \ref{plotsofPD.fig} bottom left and right shows
-plots for the estimates of $\mu$ and $\sigma$ from our simulated data set;
+plots for the samples of $\mu$ and $\sigma$ from our simulated data set;
 you see that in this simple example the Markov chain apparently
 reaches its stationary distribution very quickly -- the chains look
 'grassy' seemingly from the start. It is hard to discern a burn-in
@@ -388,7 +384,7 @@ summary(mod[501:10000,])
 \begin{center}
 \includegraphics[height=4in]{Ch17-MCMC/figs/postdist}
 \end{center}
-\caption{Joint posterior distribution of $\mu$ and $\sigma$ from a Normal Model}
+\caption{Joint posterior distribution of $\mu$ and $\sigma$ from a normal Model}
 \label{postdist.fig}
 \end{figure}
 
@@ -399,7 +395,7 @@ summary(mod[501:10000,])
 \caption{
 Plots of the posterior distributions of $\mu$ (upper left) and
   $\sigma$ (upper right)
-  from a Normal model and time series plots of $\mu$ (lower left) and $\sigma$ (lower right).}
+  from a normal model and time series plots of $\mu$ (lower left) and $\sigma$ (lower right).}
 \label{plotsofPD.fig}
 \end{figure}
 
@@ -417,26 +413,29 @@ the work by \citet{metropolis_ulam:1953}. You saw the basics of this
 algorithm in Chapt. \ref{chapt.glms}. In a nutshell, because we do not recognize the
 posterior $[\theta|y]$ as a parametric distribution, the MH algorithm
 generates samples from a known proposal distribution, say $h(\theta)$,
-that depends on the value of $\theta$ at the previous time step,  $\theta^{t-1}$. The candidate value $\theta^*$ is accepted with probability.
+that depends on the value of $\theta$ at the previous time step,  $\theta^{(t-1)}$. The candidate value $\theta^*$ is accepted with probability
 
 \[
-r = \frac{ [\theta^{t-1}|y] h(\theta^{*}|\theta^{t-1})}
-    {[\theta^{*}|y] h(\theta^{t}|\theta^{*}) }
+r = min(1, \frac{[\theta^{*}|y] h(\theta^{(t-1)}|\theta^{*}) }
+		{ [\theta^{(t-1)}|y] h(\theta^{*}|\theta^{(t-1)})} )
+    
 \]
 
-Proposal distributions can be absolutely
-anything!  You can generate candidate values from a Normal(0,1)
+Proposal distributions must be chosen so that reversibility is ensured. That means, it must be possibly to go from any one value to any other. But within that criterion the proposal distribution can be absolutely
+anything! You can generate candidate values from a Normal(0,1)
 distribution, from a Uniform(-3455,3455) distribution, or anything of
 proper support.  Note, however, that good choices of $h()$ are those
 that approximate the posterior distribution. Obviously if $h() =
-[\theta|y]$ (i.e., the posterior) then you always accept the draw,
+[\theta|y]$ (i.e., the posterior) then you always accept the draw
 and it stands to reason that proposals that are more similar to
-$[\theta|y]$ will lead to higher acceptance probabilities.
+$[\theta|y]$ will lead to higher acceptance probabilities. Actually, when $h() =
+[\theta|y]$ we can draw samples of $\theta$ directly from $h()$, which brings us back to Gibbs sampling. Thus, Gibbs sampling is a special case of Metropolis-Hastings sampling. 
+
 
 The original Metropolis algorithm
 required $h(\theta)$ to be symmetric so that
 \[
-h(\theta^{*}|\theta^{t-1}) = h(\theta^{t-1}|\theta^{*})
+h(\theta^{*}|\theta^{(t-1)}) = h(\theta^{(t-1)}|\theta^{*})
 \]
 In that case these two terms just cancel
 out from the MH acceptance probability and $r$ is then just the ratio
@@ -465,7 +464,7 @@ updating parameters with bounded support in this chapter.
 It is worth
 knowing that there are alternatives to the random walk MH algorithm. For
 example, in the independent MH, $\theta^{*}$ does not depend on
-$\theta^{t-1}$, while the Langevin algorithm \citep{roberts_etal:1998}
+$\theta^{(t-1)}$, while the Langevin algorithm \citep{roberts_etal:1998}
 aims at avoiding the random walk by favoring moves towards regions of
 higher posterior probability density. The interested reader should
 look up these algorithms in \citet{robert_casella:2004} or
@@ -473,39 +472,39 @@ look up these algorithms in \citet{robert_casella:2004} or
 
 Building a MH sampler can be broken down into several steps. We are going to demonstrate these steps using a different but still simple and common model: the logit-normal or logistic regression model. For simplicity, assume that
 \[
-y \sim \mbox{Bernoulli} \left(\frac{\exp(\theta)}{1+ \exp(\theta)}\right)
+y|\theta \sim \mbox{Bernoulli} \left(\frac{\exp(\theta)}{1+ \exp(\theta)}\right)
 \]
 and
 \[
 \theta \sim \mbox{Normal}(\mu, \sigma)
-\]
+\].
 The following steps are required to set up a random walk MH algorithm:
 
 {\flushleft {\bf Step 0}: Choose initial values, $\theta^{(0)}$.}
 
-{\flushleft {\bf Step 1}: Generate a proposed value of $\theta$ from $h(\theta^{*}|\theta^{t-1})$. }
-We often use a Normal proposal distribution, so we draw $\theta^{(1)}$ from $\mbox{Normal}(\theta^{(0)}, \delta)$, where $\delta$ is the variance of the Normal proposal distribution, the tuning parameter that we have to set.
+{\flushleft {\bf Step 1}: Generate a proposed value of $\theta$ from $h(\theta^{*}|\theta^{(t-1)})$. }
+We often use a normal proposal distribution, so we draw $\theta^{*}$ from $\mbox{Normal}(\theta^{(t-1)}, \delta)$, where $\delta$ is the standard deviation of the normal proposal distribution, the tuning parameter that we have to set.
 
 {\flushleft {\bf Step 2}: Calculate the ratio of posterior densities for the proposed and the original value for $\theta$: }
 \[
-r = \frac{[\theta^{*}|y]}  {[\theta^{t-1}|y]}
-\]
+r = \frac{[\theta^{*}|y]}  {[\theta^{(t-1)}|y]}
+\].
 In our example,
 \[
-r = \frac{\mbox{Bernoulli}(y|\theta^{*}) \times \mbox{Normal}(\theta^{*}|\mu, \sigma)} {\mbox{Bernoulli}(y|\theta^{t-1}) \times \mbox{Normal}(\theta^{t-1}|\mu, \sigma)}
+r = \frac{\mbox{Bernoulli}(y|\theta^{*}) \times \mbox{Normal}(\theta^{*}|\mu, \sigma)} {\mbox{Bernoulli}(y|\theta^{(t-1)}) \times \mbox{Normal}(\theta^{(t-1)}|\mu, \sigma)}
 \]
 
 
 {\bf Step 3}: Set
 \begin{eqnarray*}
 \theta^t  &= &   \theta^{*} \mbox{ with probability min(r,1)}\\
-	 & = & 	\theta^{t-1} \mbox{ otherwise }
+	 & = & 	\theta^{(t-1)} \mbox{ otherwise }
 \end{eqnarray*}
 
 We can do this last step by drawing a random number $u$ from a
 $\mbox{Uniform}(0,1)$ and accept $\theta^{*}$ if
 $u<r$.
-Repeat for $t = 1,2,\ldots$ a large number of samples.
+This is repeated for $t = 1,2,\ldots$ a large number of samples. As for Gibbs sampling, the order in which we update parameters does not matter.
 The {\bf R} code for this MH sampler is provided in Panel \ref{mcmc.panel.logitnormal}.
 
 \begin{panel}[ht]
@@ -542,7 +541,7 @@ return(out)
 %\end{minipage}
 \rule[-0.15in]{\textwidth}{.03in}
 \caption{
-{\bf R} code to run a Metropolis sampler on a simple Logit-Normal model.
+{\bf R} code to run a Metropolis sampler on a simple logit-normal model.
 }
 \label{mcmc.panel.logitnormal}
 \end{panel}
@@ -559,10 +558,10 @@ the latter being favored for computational reasons.
 
 Comparing MH sampling to Gibbs sampling, where all draws from the
 conditional distribution are used, in the MH algorithm we discard a
-portion of the candidate values, which inherently makes t less
+portion of the candidate values, which inherently makes it less
 efficient than Gibbs sampling -- the price you pay for its increased
 generality.  In Step 1 of the MH sampler we had to choose a variance,
-$\delta$, for the Normal proposal distribution. Choice of the
+$\delta$, for the normal proposal distribution. Choice of the
 parameters that define our candidate distribution is also referred to
 as 'tuning', and it is important since adequate tuning will make your
 algorithm more efficient.  $\delta$ should be chosen (a) large enough
@@ -584,6 +583,7 @@ rate, at which point the adaptive phase ends and the actual Markov
 chain begins. This is computationally a little more
 advanced. \citet{link_barker:2010} discuss this in more detail. It is
 important the samples drawn during the adaptive phase are discarded.
+
 To illustrate the effects of tuning, we ran the
 Metropolis-within-Gibbs algorithm in Panel \ref{mcmc.panel.logitnormal} with $\delta=0.01$,
 $\delta=0.2$ and $\delta=1$. The first 150 iterations for $\theta$ are
@@ -644,7 +644,7 @@ y_{ij} \sim \mbox{Poisson}(\lambda_{ij})
 \[
 \lambda_{ij} = \exp (\alpha_i + \beta x_{ij})
 \]
-Let's use Normal priors on $\alpha$ and $\beta$,  \[
+Let's place normal priors on $\alpha$ and $\beta$,  \[
 \alpha_i \sim \mbox{Normal} (\mu_{\alpha}, \sigma_{\alpha})
 \]
 and
@@ -665,7 +665,7 @@ components:
 
 \begin{eqnarray*}
 [\alpha_1|\alpha_2,\alpha_3,\ldots,\alpha_i,\beta,{\bf y}_{1}] & \propto &   [{\bf y}_{1}|\alpha_1,\beta]  [\alpha_1] \\
-	 & \propto  &   \mbox{Poisson}({\bf y}_{1}| \exp(\alpha_1 + \beta {\bf x}_1)) \times \mbox{Normal}(\alpha_1|\mu_{\alpha} , \sigma_{\alpha})
+	 & \propto  &   \mbox{Poisson}({\bf y}_{1}| \exp(\alpha_1 + \beta {\bf x}_1)) \times \mbox{Normal}(\alpha_1|\mu_{\alpha} , \sigma_{\alpha}),
 \end{eqnarray*}
 where ${\bf y}_{1} = (y_{11},y_{12}, \ldots, y_{1n})$ is the vector of
 observed counts for site $i=1$ and, in general, ${\bf y}_{i}$ is the
@@ -675,12 +675,12 @@ each $\alpha_{i}$ are constructed similarly:
 
 \begin{eqnarray*}
 [\alpha_2|\alpha_1,\alpha_3,\ldots,\alpha_i,\beta,{\bf y}_{2}] & \propto&  [{\bf y}_{2}|\alpha_2,\beta]  [\alpha_2] \\
-	 & \propto  & \mbox{Poisson}({\bf y}_{2}| \exp(\alpha_2 + \beta {\bf x}_2)) \times \mbox{Norm}(\alpha_2|\mu_{\alpha}, \sigma_{\alpha})
+	 & \propto  & \mbox{Poisson}({\bf y}_{2}| \exp(\alpha_2 + \beta {\bf x}_2)) \times \mbox{Normal}(\alpha_2|\mu_{\alpha}, \sigma_{\alpha}),
 \end{eqnarray*}
 and so on for all elements of ${\bf \alpha}$. The full-conditional for $\beta$ is:
 \begin{eqnarray*}
 [\beta|{\bf \alpha},{\bf y}] &\propto & [{\bf y}|{\bf \alpha},\beta]  [\beta] \\
-	 &\propto& \mbox{Poisson}({\bf y}|exp({\bf \alpha} + \beta {\bf x})) \times \mbox{Normal}(\beta|\mu_{\beta}, \sigma_{\beta})
+	 &\propto& \mbox{Poisson}({\bf y}|exp({\bf \alpha} + \beta {\bf x})) \times \mbox{Normal}(\beta|\mu_{\beta}, \sigma_{\beta}).
 \end{eqnarray*}
 
 Finally, we need to update the hyperparameters for the random effects
@@ -691,14 +691,19 @@ vector ${\bf \alpha}$:
 \[
 [\sigma_{\alpha}|{\bf\alpha}] \propto [{\bf \alpha}|\mu_{\alpha}, \sigma_{\alpha}] [\sigma_{\alpha}]
 \]
-Since we assumed ${\bf \alpha}$ to come from a Normal distribution,
-the choice of priors for $\mu_{\alpha}$ (Normal) and $\sigma_{\alpha}^2$
-(Inverse-Gamma) leads to the same conjugacy we observed in our initial
+
+Note that the likelihood contributions of the counts ${\bf y}$ at each site, when conditioned on ${\bf \alpha}$, do not depend
+on the hyperparameters $\mu_{\alpha}$ and $\sigma_{\alpha}$.  As such, the full conditionals
+for these hyperparameters only depend on the collection of
+all ${\bf \alpha}$, not the data.
+Since we assumed ${\bf \alpha}$ to come from a normal distribution,
+the choice of priors for $\mu_{\alpha}$ (normal) and $\sigma_{\alpha}^2$
+(inverse-gamma) leads to the same conjugacy we observed in our initial
 Normal model, so that both hyperparameters can be updated using Gibbs
 sampling.
 
 Now let's build the updating steps for these full conditionals. Again,
-for the MH steps that update ${\bf \alpha}$ and $\beta$ we use Normal
+for the MH steps that update ${\bf \alpha}$ and $\beta$ we use normal
 proposal distributions with standard deviations $\delta_{\alpha}$ and
 $\delta_{\beta}$.
 
@@ -848,9 +853,9 @@ complicated. We refer the interested reader to
 sampling and slice sampling can be applied on one-dimensional
 conditional distributions within a Gibbs sampling setup.
 
-\section{MCMC for closed capture-recapture Model Mh}
+\section{MCMC for closed capture-recapture Model $M_h$}
 
-By now you have seen MCMC samplers for some simple GL(M)M's. Now, to
+By now you have seen MCMC samplers for some simple generalized (mixed) linear models. Now, to
 ease you into more complex models, we construct our own MCMC algorithm
 using a Metropolis-within-Gibbs sampler for the non-spatial model with
 individual heterogeneity in capture probability, model $M_{h}$, developed in
@@ -895,7 +900,7 @@ $y_{i},p_{i},z_{i}$ and also the prior distributions of the prior parameters:
 \]
 For prior distributions, we assume that $\mu_{p},\sigma_{p}, \psi$ are
 mutually independent and for $\mu_{p}$ and $\sigma_{p}$ we use
-improper uniform priors, and $\psi \sim \mbox{Unif}(0,1)$.  This is
+improper uniform priors, and $\psi \sim \mbox{Uniform}(0,1)$.  This is
 equivalent to $\mbox{Beta}(1,1)$, which will come in handy, as we will
 see in a moment. Note that the likelihood contribution for each
 individual, when conditioned on $p_{i}$ and $z_{i}$, does not depend
@@ -903,7 +908,8 @@ on $\psi$, $\mu_{p}$, or $\sigma_{p}$.  As such, the full-conditional
 for the structural parameter $\psi$ only depend on the collection of
 data augmentation variables $z_{i}$, and that for $\mu_{p}$ and
 $\sigma_{p}$ will only depend on the collection of latent variables
-$p_{i}; i=1,2,\ldots,M$.  The full conditionals for all the unknowns
+$p_{i}; i=1,2,\ldots,M$ (this is equivalent to what we saw in the Poisson regression with random intercept ${\bf \alpha}$, where hyperparameters for the distribution of ${\bf \alpha}$ did not depend on the observed data).
+The full conditionals for all the unknowns
 are as follows:
 
 {\bf (1)} For $p_{i}$:
@@ -934,13 +940,13 @@ are as follows:
 \]
 Remember that \mbox{Beta}(1,1) is equivalent to \mbox{Uniform}(0,1). The beta distribution is the conjugate prior to the binomial and
 Bernoulli distributions and the general form of a full conditional of a beta-binomial model
-with $x_{i} \sim \mbox{Bernoulli} (p) $ and $p \sim \mbox{Beta}(a,b)$ is
+with $x_{i} \sim \mbox{Bernoulli} (\theta) $ and $p \sim \mbox{Beta}(a,b)$ is
 \[
-[p|{\bf x}] \propto \mbox{Beta}(a + \sum_i x_i, b + n-\sum_i x_i)
+[\theta|{\bf x}] \propto \mbox{Beta}(a + \sum_i x_i, b + n-\sum_i x_i).
 \]
 In our case that means
 \[
-[\psi|z_{i}] \propto \mbox{Beta}(1 + \sum z_{i}, 1 + M - \sum z_{i})
+[\psi|z_{i}] \propto \mbox{Beta}(1 + \sum z_{i}, 1 + M - \sum z_{i}).
 \]
 
 What we've done here is identify each of the full conditional
@@ -970,7 +976,7 @@ lp[kp]<-lp.cand[kp]
 The parameters $\mu_{p}$ and $\sigma_{p}$ are also updated using MH steps (see the code for $\mu_{p}$ below). In truth, we could also sample $\mu_{p}$
 and $\sigma_{p}^{2}$ directly with certain choices of prior
 distributions. For example, if $\mu_{p} \sim \mbox{Normal}(0, 1000)$
-then the full conditional for $\mu_{p}$ is also Normal (see
+then the full conditional for $\mu_{p}$ is also normal (see
 sec. \ref{mcmc.sec.gibbs}), etc..
 
 \begin{verbatim}
@@ -1004,7 +1010,7 @@ step from the non-spatial model $M_h$ to a fully spatial
 capture-recapture model. Next, we'll walk you through the steps of
 building your own MCMC sampler for the basic SCR model (i.e. without
 any individual, site or time specific covariates) with both a Poisson
-and a Binomial encounter process.  As usual, we will have to go
+and a binomial encounter process.  As usual, we will have to go
 through two general steps before we write the MCMC algorithm:
 \begin{itemize}
 \item[  (1)] Identify the model with all its components (including
@@ -1028,19 +1034,23 @@ ${\bf s}_i$, are uniformly distributed across the state space ${\cal S}$,
 \]
 and that the number of times individual $i$ encounters trap $j$, $y_{ij}$, is a Poisson variable with mean $\lambda_{ij}$,
 \[
-y_{ij} \sim \mbox{Poisson}(\lambda_{ij})
+y_{ij} \sim \mbox{Poisson}(\lambda_{ij}).
 \]
 The link between individual location, movement and trap encounter
 rates is made by the assumption that $\lambda_{ij}$, is a decreasing
 function of the distance between ${\bf s}_i$ and the location of $j$,
-${\bf x}_{j}$, say $d_{ij} = ||{\bf s}_{i} - {\bf x}_{j}||$, of the half-normal form
+${\bf x}_{j}$, say 
+\[
+d_{ij} = ||{\bf s}_{i} - {\bf x}_{j}||,
+\]
+of the half-normal form
 \[
 \lambda_{ij} =  \lambda_0  \exp(-d_{ij}^2/2\sigma^2),
 \]
-where $\lambda_0$ is the baseline trap encounter rate at $d_{ij}=0$ and $\sigma$ controls the shape of the half-normal function.
+where $\lambda_0$ is the baseline trap encounter rate at $d_{ij}=0$ and $\sigma$ is the scale parameter of the half-normal function.
 
 In order to estimate the number of ${\bf s}_i$ in ${\cal S}$ (or any
-subset of ${\cal S}$), $N$, we use data augmentation (sec. \ref{closed.sec.da}) and create $M-n$ all-zero encounter histories, where $n$ is the number of individuals we observed and $M$ is a somewhat arbitrary number that is larger than $N$. We estimate $N$ by summing over the auxiliary data augmentation variables, $z_i$, which is 1 if the individual is part of the population and 0 if not, and assume that $z_i$ is a Bernoulli random variable,
+subset of ${\cal S}$), $N$, we use data augmentation (sec. \ref{closed.sec.da}) and create $M-n$ all-zero encounter histories, where $n$ is the number of individuals we observed and $M$ is a somewhat arbitrary number that is larger than $N$. We estimate $N$ by summing over the auxiliary data augmentation variables, $z_i$, which are 1 if the individual is part of the population and 0 if not, and assume that $z_i$ is a Bernoulli random variable,
 \[
 z_{i} \sim \mbox{Bernoulli}(\psi)
 \]
@@ -1053,8 +1063,8 @@ The model has the following structural parameters, for which we need to specify 
 \begin{itemize}
 \item[ $\psi$:] the $\mbox{Uniform}(0,1)$ is required as part of the data augmentation procedure and in general is a natural choice of an uninformative prior for a probability. It will also lead to conjugacy as we saw in the example of model $M_h$, so that we can update $\psi$ directly from its full conditional distribution using Gibbs sampling.
 \item[ ${\bf s}_{i}$:] since ${\bf s}_{i}$ is a pair of coordinates it is two-dimensional and we use a uniform prior limited by the extent of our state-space over both dimensions.
-\item[ $\sigma$:] we can conceive several priors for $\sigma$ but let's assume an improper prior, one that is Uniform over $(-\infty, \infty)$. We will see why this is convenient when we construct the full conditionals for $\sigma$.
-\item[ $\lambda_{0}$:] analogous, we will use a $\mbox{Uniform}(-\infty, \infty)$ improper prior for $\lambda_{0}$.
+\item[ $\sigma$:] we can conceive several priors for $\sigma$ but let's assume an improper prior, one that is Uniform over $(0, \infty)$. We will see why this is convenient when we construct the full conditionals for $\sigma$.
+\item[ $\lambda_{0}$:] analogous, we will use a $\mbox{Uniform}(0, \infty)$ improper prior for $\lambda_{0}$.
 \end{itemize}
 The parameter that is the objective of our modeling, $N$, is a derived parameter that we can obtain by summing all $z_i$:
 \[
@@ -1157,9 +1167,9 @@ Recall from Chapt. \ref{chapt.glms} that this is the complementary log-log (clog
 to fall between 0 and 1.
 For our MCMC algorithm that means that, instead of using a Poisson
 likelihood, $\mbox{Poisson}(y|\sigma,\lambda_0,{\bf s},z)$, we use a
-Binomial likelihood, $\mbox{Binomial}(y| \sigma,\lambda_0,{\bf s},z; K)$,
-in all the conditional distributions. An exemplary updating step for $\lambda_0$ under a Binomial encounter model is shown below.
-The full MCMC code for the Binomial SCR with a clog-log link (\mbox{\tt SCR0binom.cl})
+binomial likelihood, $\mbox{Binomial}(y| \sigma,\lambda_0,{\bf s},z; K)$,
+in all the conditional distributions. An exemplary updating step for $\lambda_0$ under a binomial encounter model is shown below.
+The full MCMC code for the binomial SCR with a clog-log link (\mbox{\tt SCR0binom.cl})
 can be found in the {\bf R} package \mbox{\tt scrbook}.
 
 \begin{verbatim}
@@ -1271,7 +1281,7 @@ Start by looking at time series plots of your Markov chains using
 First, recall from sec. \ref{mcmc.sec.mh} that the way the chains move
 through the parameter space gives you an idea of whether your MH
 steps are well tuned. If chains were constant over many iterations
-you would need to decrease the tuning parameter of the (Normal)
+you would need to decrease the tuning parameter of the (normal)
 proposal distribution. If a chain moves along some gradient to a
 stationary state very slowly, you may want to increase the tuning
 parameter so that the parameter space is explored more efficiently.
@@ -1802,7 +1812,7 @@ existing software packages, especially when it comes to handling the
 Another situations in which using {\bf BUGS}/{\bf JAGS} becomes
 increasingly
 complicated or inefficient is when using point processes other
-than the homogeneous Binomial point process (``uniformity of density'') which underlies the basic
+than the homogeneous binomial point process (``uniformity of density'') which underlies the basic
  SCR model (see sec. \ref{scr0.sec.discrete} in Chapt. \ref {chapt.scr0}). In Chapt.
  \ref {chapt.state-space} you already saw an example of an inhomogeneous point process model  and we briefly introduce a different point processes,
   implemented using a custom-made MCMC algorithm, in Chapt. \ref{chapt.final}. 

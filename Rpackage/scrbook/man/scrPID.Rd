@@ -4,15 +4,15 @@
 MCMC algorithm for spatial mark-resight models/ SCR models with partial individual identifiability
 }
 \description{
-Runs the MCMC algorithm for spatial mark-resight models described in Chapter 15 
+Runs the MCMC algorithm for spatial mark-resight models with a known number of marked individuals described in Chapter 19 
 }
 \usage{
-scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unknown"), npics,niters, 
+scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),npics,niters, 
                   xlims, ylims, a, b, inits, delta ) 
 }
 \arguments{
   \item{n}{
-	Matrix with spatial counts (marked and unmarked), trap by occasion
+	Matrix with spatial counts of unmarked animals, trap by occasion
 }
   \item{X}{
     2-dimensional matrix with X and Y coordinates for all J traps
@@ -21,17 +21,14 @@ scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unk
     3-dimensional array with individual encounter histories of marked individuals (individual by trap by occasion)
 }
   \item{M}{
-    Size of the augmented data set
+    Size of the augmented unmarked data set
 }
   \item{obsmod}{
-   Observation mode; either "pois" for Poisson (also called with replacement) or "bern" for Bernoulli (without replacement)
-}
-  \item{nmarked}{
-   is the number of marked individuals known ("known") or unknown ("unknown") 
+   Observation model; either "pois" for Poisson (also called with replacement) or "bern" for Bernoulli (without replacement)
 }
   \item{npics}{
     optional; if rate of individual identification of marked individuals <1, provide a vector with the number of identified pictures 
-    of marked individuals and the total number of pictures ofmarked individuals (both identified and unidentified), in this order! If not provided, 
+    of marked individuals and the total number of pictures of marked individuals (both identified and unidentified), in this order! If not provided, 
     the identification rate is assumed to be 100%
 }
   \item{niter}{

@@ -8,8 +8,8 @@ A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1]) # area of S
 mu <- 50                                 # density (animals/unit area)
 (N <- rpois(1, mu*A))                    # Generate N=50 as Poisson deviate
 s <- cbind(runif(N, xlim[1], xlim[2]), runif(N, ylim[1], ylim[2]))
-plot(X, xlim=xlim, ylim=ylim, pch="+")
-points(s, col=gray(0.5), pch=16)
+#plot(X, xlim=xlim, ylim=ylim, pch="+")
+#points(s, col=gray(0.5), pch=16)
 
 sigma <- 0.04
 lam0 <- 0.3
@@ -35,12 +35,97 @@ n[1:5,]
 
 
 plot(X, cex=rowSums(n), asp=1, xlim=c(0,1))
+points(X, pch="+", cex=.5)
+points(s, col=gray(0.5), pch=16)
+
+
+
+
+
+# Analyze using scrUN()
+
+library(scrbook)
+library(coda)
+
+#source("../../Rpackage/scrbook/R/scrUN.R")
+
+set.seed(4569)
+system.time({
+fm1 <- scrUN(n=n, X=X, M=250, niter=250000, xlims=xlim, ylims=ylim,
+             inits=list(lam0=0.3, sigma=0.01),
+             updateY=TRUE,
+             tune=c(0.004, 0.09, 0.35))
+}) # 39700 it/hr
+
+mc1 <- mcmc(fm1$sims)
+plot(mc1)
+summary(window(mc1, start=10001))
+
+rejectionRate(mc1)
+rejectionRate(window(mc1, start=10001))
+
+
+
+
+
+
+fm1.1 <- scrUN(n=n, X=X, M=200, niter=5000, xlims=xlim, ylims=ylim,
+             inits=fm1$last,
+             updateY=TRUE,
+             tune=c(0.004, 0.07, 0.3))
+
+mc1 <- mcmc(rbind(fm1$sims, fm1.1$sims))
+plot(mc1)
+
+
+
+
+save(mc1, file="scrUNmc1.gzip")
+
+
+
+
+
+
+# No y updates
+set.seed(4569)
+system.time({
+fm2 <- scrUN(n=n, X=X, M=200, niter=50000, xlims=xlim, ylims=ylim,
+             inits=list(lam0=0.3, sigma=0.01),
+             updateY=FALSE,
+             tune=c(0.004, 0.07, 0.3))
+}) # 40463 it/hr
+
+
+mc2 <- mcmc(fm2$sims)
+plot(mc2)
+summary(mc2)
+rejectionRate(mc2)
+
+
+save(mc2, file="scrUNmc2.gzip")
+
+
+fm2.1 <- scrUN(n=n, X=X, M=200, niter=5000, xlims=xlim, ylims=ylim,
+             inits=fm2$last,
+             updateY=FALSE,
+             tune=c(0.004, 0.07, 0.3))
+
+
+mc2 <- mcmc(rbind(fm2$sims, fm2.1$sims))
+plot(mc2)
+
+
+
+
+
+
 
 # Analyze in JAGS
 
 
 library(rjags)
-dat1 <- list(n=n, X=X, J=J, K=K, M=200, xlim=xlim, ylim=ylim)
+dat1 <- list(n=n, X=X, J=J, K=K, M=150, xlim=xlim, ylim=ylim)
 init1 <- function() {
     yi <- array(0, c(dat1$M, dat1$J, dat1$K))
     for(j in 1:dat1$J) {
@@ -56,36 +141,144 @@ pars1 <- c("lam0", "sigma", "N", "mu")
 system.time({
 jm <- jags.model("SCmod1.jag", data=dat1, inits=init1, n.chain=1,
                  n.adapt=1000)
-samples1 <- coda.samples(jm, pars1, n.iter=10000)
-})
-
-samples2 <- coda.samples(jm, pars1, n.iter=5000)
-
-plot(samples1)
+jc1.1 <- coda.samples(jm, pars1, n.iter=16000)
+}) # 1032it/hr
 
 
+plot(jc1.1)
+summary(jc1.1)
+
+
+save(jc1.1, file="scrUNjc1.1.gzip")
+
+
+
+jc1.2 <- coda.samples(jm, pars1, n.iter=5000)
 
 
 
 
 
-# Analyze using scrUN()
 
-library(scrbook)
-library(coda)
 
-source("../../Rpackage/scrbook/R/scrUN.R")
 
-fm1 <- scrUN(n=n, X=X, M=200, niter=50000, xlims=xlim, ylims=ylim,
-             inits=list(lam0=0.3, sigma=0.01),
-             updateY=TRUE,
-             tune=c(0.004, 0.07, 0.3))
 
-mc1 <- mcmc(fm1)
-plot(mc1)
-summary(window(mc1, start=10001))
 
-rejectionRate(mc1)
-rejectionRate(window(mc1, start=10001))
 
-save(mc1, file="scrUNmc1.gzip")
+
+library(rjags)
+dat2 <- list(n=n, X=X, J=J, K=K, M=150, xlim=xlim, ylim=ylim)
+init2 <- function() {
+    list(sigma=runif(1, 1, 2), lam0=runif(1),
+         z=rep(1, dat2$M))
+}
+pars2 <- c("lam0", "sigma", "N", "mu")
+
+system.time({
+jm2 <- jags.model("SCmod2.jag", data=dat2, inits=init2, n.chain=1,
+                 n.adapt=1000)
+jc2.1 <- coda.samples(jm2, pars2, n.iter=16000)
+}) # 14000 it/hr
+
+plot(jc2.1)
+summary(jc2.1)
+
+
+save(jc2.1, file="scrUNjc2.1.gzip")
+
+
+
+
+jc2.2 <- coda.samples(jm2, pars2, n.iter=5000)
+plot(jc2.2)
+
+summary(jc2.2)
+
+
+jc2.3 <- coda.samples(jm2, pars2, n.iter=5000)
+
+plot(jc2.3)
+summary(jc2.3)
+
+
+jc2.4 <- coda.samples(jm2, pars2, n.iter=5000)
+
+plot(jc2.4)
+summary(jc2.4)
+
+
+jc2.5 <- coda.samples(jm2, pars2, n.iter=5000)
+
+plot(jc2.5)
+summary(jc2.5)
+
+
+
+
+save.image("sim.RData")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Compare results
+
+ls()
+load("scrUNmc1.gzip")
+load("scrUNmc2.gzip")
+load("scrUNjc1.1.gzip")
+load("scrUNjc2.1.gzip")
+ls()
+
+
+plot(mc1[,c("sigma", "lam0", "N")])
+plot(jc1.1[,c("sigma", "lam0", "N")])
+
+
+plot(mc2[,c("sigma", "lam0", "N")])
+plot(jc2.1[,c("sigma", "lam0", "N")])
+
+
+# Update y
+summary(mc1[,"N"])$quant
+summary(jc1.1[,"N"])$quant
+
+# Don't update y
+summary(mc2[,"N"])$quant
+summary(jc2.1[,"N"])$quant
+
+
+
+
+# Update y
+summary(mc1)$quant   # R version
+summary(jc1.1)$quant # JAGS version
+
+# Don't update y
+summary(mc2)$quant   # R version
+summary(jc2.1)$quant # JAGS version
+
+
+
+
+
+par(mfrow=c(2,2), mai=c(0.3, 0.7, 0.7, 0.2))
+hist(as.vector(mc1[,"N"]), xlim=c(0, 200),
+     main="R: y updated"); abline(v=50, col=4, lwd=2)
+hist(as.vector(mc2[,"N"]), xlim=c(0, 200),
+     main="R: y not updated"); abline(v=50, col=4, lwd=2)
+hist(as.matrix(jc1.1)[,"N"], xlim=c(0, 200),
+     main="JAGS: y updated"); abline(v=50, col=4, lwd=2)
+hist(as.matrix(jc2.1)[,"N"], xlim=c(0, 200),
+     main="JAGS: y not updated"); abline(v=50, col=4, lwd=2)

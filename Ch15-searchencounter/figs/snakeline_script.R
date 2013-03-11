@@ -51,7 +51,8 @@ points<-SpatialPoints(line1)
 sLine<-Line(points)
 ###sLine<-SpatialLines(sLine)
 
-regpoints<-sample.Line(sLine,250,type="regular")
+## should be 250 or higher
+regpoints<-sample.Line(sLine,120,type="regular")
 
 plot(line1,type="l")
 #original points:
@@ -75,24 +76,25 @@ set.seed(2013)
 
 
 
-sx<-runif(N,Xl,Xu)
-sy<-runif(N,Yl,Yu)
+sx<-runif(N,xlim[1],xlim[2])
+sy<-runif(N,ylim[1],ylim[2])
 points(sx,sy,pch=20,col="red")
 
-sigma<-.3
-alpha0<- -.5
-alpha1<- -1/(2*(.3^2))
+sigma.move<- .25
+sigma<-.15
+alpha0<- .8
+alpha1<- 1/(2*(sigma^2))
 X<-regpoints@coords
 J<-nrow(X)
 
-K<- 5   ##period study
+K<- 10   ##period study
 U<-array(NA,dim=c(N,K,2))
 y<-pmat<-matrix(NA,nrow=N,ncol=K)
 for(i in 1:N){
 for(k in 1:K){
-U[i,k,]<-c(rnorm(1,sx[i],sigma),rnorm(1,sy[i],sigma))
+U[i,k,]<-c(rnorm(1,sx[i],sigma.move),rnorm(1,sy[i],sigma.move))
 dvec<-     sqrt( ( U[i,k,1] - X[,1])^2 + (U[i,k,2] - X[,2])^2  )
-loghaz<- alpha0 + alpha1*dvec
+loghaz<- alpha0 - alpha1*dvec*dvec
 H<- sum(exp(loghaz))
 pmat[i,k]<- 1-exp(-H)
 y[i,k]<- rbinom(1,1,pmat[i,k])
@@ -126,7 +128,7 @@ y<-rbind(y,matrix(0,nrow=(M-nrow(y)),ncol=ncol(y)))
 Namat<-matrix(NA,nrow=(M-nind),ncol=ncol(y))
 Ux<-rbind(Ux,Namat)
 Uy<-rbind(Uy,Namat)
-S<-cbind(runif(M,Xl,Xu),runif(M,Yl,Yu))
+S<-cbind(runif(M,xlim[1],xlim[2]),runif(M,ylim[1],ylim[2]))
 for(i in 1:nind){
 S[i,]<-c( mean(Ux[i,],na.rm=TRUE),mean(Uy[i,],na.rm=TRUE))
 }
@@ -148,10 +150,11 @@ model {
 
 # Priors
 alpha0~dunif(-25,25)
-alpha1~dunif(-25,25)
+alpha1~dunif(0,25)
+sigma<- sqrt(1/(2*alpha1))
 lsigma~dunif(-5,5)
-sigma<-exp(lsigma)
-tau<-1/(sigma*sigma)
+sigma.move<-exp(lsigma)
+tau<-1/(sigma.move*sigma.move)
 psi~dunif(0,1)
 
 # Likelihood
@@ -164,7 +167,7 @@ for(i in 1:M){ # Loop over individuals
     v[i,k] ~ dnorm(s[i,2],tau) 
     for(j in 1:J){ # Loop over each point defining line segments
       d[i,k,j]<-  pow(pow(u[i,k]-X[j,1],2) + pow(v[i,k]-X[j,2],2),0.5)
-      h[i,k,j]<-exp(alpha0+alpha1*d[i,k,j])
+      h[i,k,j]<-exp(alpha0-alpha1*d[i,k,j]*d[i,k,j])
    }
    H[i,k]<-sum(h[i,k,1:J])
    p[i,k]<- z[i]*(1-exp(-H[i,k]))
@@ -183,25 +186,25 @@ data <- list(y=y, u=Ux,  v=Uy, X=X, K=K, M=M, J=J,xlim=xlim,ylim=ylim)
 
 #Define function to generate initial values
 inits <- function(){
-  list(alpha0=alpha0-.1,alpha1=alpha1-3,lsigma=log(.5),
+  list(alpha0=alpha0-.3,alpha1=alpha1-1.5,lsigma=log(.5),
        s=S,z=c(rep(1,nind),rep(0,M-nind)) ,u=Ux.st,v=Uy.st)
 }
 
 # List parameters to be estimated
-parameters <- c("alpha0","alpha1", "N", "psi", "sigma")
+parameters <- c("alpha0","alpha1", "N", "psi", "sigma.move")
 
 # Set MCMC settings
 nthin<-1
 nc<-3
-nb<-1000
-ni<-4000
+nb<-500
+ni<-2000
 
 # Load interface package and start WinBUGS (note: this takes about 4.5 h)
 library("R2jags")
-wbout <- jags(data, inits, parameters, "model0.txt", n.thin=nthin, n.chains=nc,
+wbout2 <- jags(data, inits, parameters, "model0.txt", n.thin=nthin, n.chains=nc,
 n.burnin=nb, n.iter=ni, working.dir=getwd())
 
-# Produce summary of posterior distributions (after WinBUGS has been exited manually or change of argument in previous function to debug = FALSE)
+h# Produce summary of posterior distributions (after WinBUGS has been exited manually or change of argument in previous function to debug = FALSE)
 print(wbout, dig = 3)
 
 
