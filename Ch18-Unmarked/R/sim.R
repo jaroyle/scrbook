@@ -99,6 +99,7 @@ fm2 <- scrUN(n=n, X=X, M=200, niter=50000, xlims=xlim, ylims=ylim,
 
 mc2 <- mcmc(fm2$sims)
 plot(mc2)
+summary(mc2)
 rejectionRate(mc2)
 
 
