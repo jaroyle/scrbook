@@ -13,14 +13,16 @@
      "soul"
      "verbatim"
      "hyperref"
+     "pdftex"
      "natbib"
      "lineno"
      "graphicx"
      "amsfonts"
      "amsmath"
      "float"
+     "bm"
      "latex2e"
      "bk10"
      "book"
-     "Ch10/Ch10")))
+     "Ch10-Design/Chapt-Design")))
 
