@@ -123,11 +123,11 @@ for(k in 1:K){
 yui[,j,k]<-rmultinom(1,nU[j,k], rep(1/M,M))
 }}
 
-inits<-function(){listlist(s=cbind( runif(m+nz,xlimS[1],xlimS[2]), runif(m+nz,ylimS[1],ylimS[2])),
+inits<-function(){list(s=cbind( runif(m+nz,xlimS[1],xlimS[2]), runif(m+nz,ylimS[1],ylimS[2])),
 			sigA=0.6, w0=0.9,sigma=0.25, lam0=0.2, psi=0.7,z=rep(1,nz) )}
 params=c("N", "psi","sigma", "lam0", "sigA", "w0")
-mod<-jags.model('c:/users/rs/dropbox/mknown2Hn.jag', inits, n.chains=1, n.adapt=10)
-
+mod<-jags.model('c:/users/rs/dropbox/mknown2Hn.jag', data, inits, n.chains=1, n.adapt=800)
+out<-coda.samples(mod, params, n.iter=5000)
 
 dat1 <- list(y=yz, nU=nU, X=X, M=nrow(yz), J=J, K=K,
              h=c(rep(1, nind), rep(NA, nz)),
