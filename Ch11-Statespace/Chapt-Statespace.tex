@@ -490,7 +490,7 @@ Binomial encounter process and a half-normal, or Gaussian, encounter model as
 \begin{gather*}
 z_i \sim \mbox{Bernoulli}(\psi) \\
 {\bf s}_i \sim \mbox{IPP}(\mu(\mathbf{x},\beta)) \\
-p_{ij} = p_0 \exp(-\|{\bf s_}i - {\bf x}_{j}\|^2/(2\sigma^2)) \\
+p_{ij} = p_0 \exp(-\|{\bf s}_i - {\bf x}_{j}\|^2/(2\sigma^2)) \\
 y_{ij} \sim \mbox{Binomial}(K, p_{ij} z_i)
 \end{gather*}
 The new prior for $\mathbf{s}_i$ and Eq.~\ref{state-space.eq.psimu}
@@ -589,17 +589,17 @@ state-space, as is true of the following covariate \verb+elev.fn+:
 %\begin{samepage}
   \begin{small}
 \begin{verbatim}
-elev.fn <- function(s) {          # spatial covriate
-    s <- matrix(s, ncol=2)        # Force s to be a matrix
-    (s[,1] + s[,2] - 100) / 40.8  # Returns (standardized) "elevation"
-}
-# intensity function
-mu <- function(s, beta0, beta1) exp(beta0 + beta1*elev.fn(s=s))
-beta0 <- -6 # intercept of intensity function
-beta1 <- 1  # effect of elevation on intensity
-# Next line computes integral
-EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1,
-            lower=c(0,0), upper=c(100,100))$value
+> elev.fn <- function(s) {          # spatial covriate
++     s <- matrix(s, ncol=2)        # Force s to be a matrix
++     (s[,1] + s[,2] - 100) / 40.8  # Returns (standardized) "elevation"
++ }
+> # intensity function
+> mu <- function(s, beta0, beta1) exp(beta0 + beta1*elev.fn(s=s))
+> beta0 <- -6 # intercept of intensity function
+> beta1 <- 1  # effect of elevation on intensity
+> # Next line computes integral
+> EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1,
++             lower=c(0,0), upper=c(100,100))$value
 \end{verbatim}
 \end{small}
 %\end{samepage}
@@ -637,23 +637,30 @@ Fig.~\ref{state-space.fig.hetero}.
 %\begin{samepage}
   \begin{small}
 \begin{verbatim}
-set.seed(31025)
-N <- rpois(1, EN)     # Realized N
-s <- matrix(NA, N, 2) # This matrix will hold the coordinates
-elev.min <- elev.fn(c(0,0))
-elev.max <- elev.fn(c(100, 100))
-Q <- max(c(exp(beta0 + beta1*elev.min),  # max of intensity function
-           exp(beta0 + beta1*elev.max)))
-counter <- 1
-while(counter <= N) { # begin rejection sampling
-  x.c <- runif(1, 0, 100); y.c <- runif(1, 0, 100)
-  s.cand <- c(x.c,y.c) # proposed activity center
-  pr <- mu(s.cand, beta0, beta1)
-  if(runif(1) < pr/Q) { # Typically rejected if pr is low
-    s[counter,] <- s.cand
-    counter <- counter+1
-    }
-  }
+> set.seed(31025)
+> beta0 <- -6 # intercept of intensity function
+> beta1 <- 1  # effect of elevation on intensity
+> # Next line computes integral, which is expected value of N
+> EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1,
++             lower=c(0,0), upper=c(100,100))$value
+> EN
+[1] 39.96634
+> N <- rpois(1, EN) # Realized N
+> s <- matrix(NA, N, 2) # This matrix will hold the coordinates
+> elev.min <- elev.fn(c(0,0))
+> elev.max <- elev.fn(c(100, 100))
+> Q <- max(c(exp(beta0 + beta1*elev.min),
++            exp(beta0 + beta1*elev.max)))
+> counter <- 1
+> while(counter <= N) {
++   x.c <- runif(1, 0, 100); y.c <- runif(1, 0, 100)
++   s.cand <- c(x.c,y.c)
++   pr <- mu(s.cand, beta0, beta1) #/ EN
++   if(runif(1) < pr/Q) {
++     s[counter,] <- s.cand
++     counter <- counter+1
++     }
++   }
 \end{verbatim}
   \end{small}
 %\end{samepage}
@@ -685,15 +692,19 @@ function.
 %\begin{samepage}
 \begin{small}
 \begin{verbatim}
-nll <- function(beta) { # negative log-likelihood
-    beta0 <- beta[1]
-    beta1 <- beta[2]
-    EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1)$value
-    -(sum(beta0 + beta1*elev.fn(s)) - EN)
-}
-starting.values <- c(-10, 0)
-fm <- optim(starting.values, nll, hessian=TRUE)
-cbind(Est=fm$par, SE=sqrt(diag(solve(fm$hessian)))) # estimates and SEs
+> nll <- function(beta) {
++     beta0 <- beta[1]
++     beta1 <- beta[2]
++     EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1,
++                 lower=c(0,0), upper=c(100,100))$value
++     -(sum(beta0 + beta1*elev.fn(s)) - EN)
++ }
+> starting.values <- c(-10, 0)
+> fm <- optim(starting.values, nll, hessian=TRUE)
+> cbind(Est=fm$par, SE=sqrt(diag(solve(fm$hessian)))) # estimates and SEs
+            Est        SE
+[1,] -5.9335547 0.2204693
+[2,]  0.9545532 0.1771507
 \end{verbatim}
 \end{small}
 %\end{samepage}
@@ -713,24 +724,29 @@ rather than a Poisson distribution for $N$. This can be checked
 using the following code:
 \begin{small}
 \begin{verbatim}
-nllBin <- function(beta, M=100) { # Try different values of M!
-    beta0 <- beta[1]
-    beta1 <- beta[2]
-    EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1,
-                lower=c(0,0), upper=c(100,100))$value
-    N <- nrow(s) # Number of points, which is known in this case
-    psi <- EN/M  # Remember, E(N)=M*psi
-    -(sum(beta0 + beta1*elev.fn(s) - log(EN)) + # ln[s1, ..., sN|N]
-      dbinom(N, M, psi, log=TRUE))              # ln[N]
-}
-starting.values <- c(-10, 0)
-fmBin <- optim(starting.values, nllBin, hessian=TRUE)
-cbind(Est=fmBin$par, SE=sqrt(diag(solve(fmBin$hessian)))) # est and SE
+> nllBin <- function(beta, M=100) {
++     beta0 <- beta[1]
++     beta1 <- beta[2]
++     EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1,
++                 flags=list(verbose=0),
++                 lower=c(0,0), upper=c(100,100))$value
++     N <- nrow(s)
++     psi <- EN/M
++     -(sum(beta0 + beta1*elev.fn(s) - log(EN)) +
++       dbinom(N, M, psi, log=TRUE))
++ }
+> cbind(Est=fmBin$par, SE=sqrt(diag(solve(fmBin$hessian)))) # est and SE
+            Est        SE
+[1,] -5.9339490 0.1965479
+[2,]  0.9545742 0.1771962
 \end{verbatim}
 \end{small}
-Execute this and you will see that the results are almost identical,
-which supports the claim that the prior
-on $N$ has little influence in SCR models.
+which indicates that the MLEs are almost identical, and
+supports the claim that the prior
+on $N$ has little influence in SCR models. Notice, however, that the
+standard error for $\beta_0$ is smaller under the binomial model than
+it was under the Poisson model -- a difference that will disapate as
+$M$ tends towards infinity.
 
 This example demonstrates
 that if we had the data we wish we had, i.e. if we knew the
@@ -776,7 +792,7 @@ Poisson observation model (see Chapt. \ref{chapt.poisson-mn}), which could be ap
 trapping studies or when using other methods in which animals could
 be detected multiple times at a trap during a single occasion.
 
-\begin{samepage}
+%\begin{samepage}
 \begin{small}
 \begin{verbatim}
 xsp <- seq(20, 80, by=10); len <- length(xsp)
@@ -801,7 +817,7 @@ yz <- array(0, c(M, ntraps, K))
 yz[1:nrow(y),,] <- y # Fill data augmentation array
 \end{verbatim}
 \end{small}
-\end{samepage}
+%\end{samepage}
 
 Now that we have a simulated capture-recapture dataset \texttt{y} and we have
 augmented it to create the new data object \texttt{yz}, we can
@@ -844,9 +860,9 @@ previous section in which we assumed no observation error. However, we
 see that the confidence intervals are wider. With respect to the other
 parameters in the model, we see that all of the data
 generating parameter fall within the 95\% credible intervals. One
-interesting thing to note is that, although the point estimates for
+thing to note is that, although the point estimates for
 the expected and realized values of $N$ are quite similar, the
-estimate is more precise for the realized value. This is to be
+posterior for the realized value of $N$ is more precise. This is to be
 expected because the uncertainty associated with the realized value of
 $N$ is entirely determined by the sampling error. That is,
 if we could perfectly detect all of the individuals in $\cal S$, there

@@ -30,15 +30,22 @@ system("open ../figs/homoPlots.png")
 
 
 
+set.seed(454500)
+n.Bk <- rmultinom(1, size=50, prob=rep(1/25, 25))
+matrix(n.Bk, 5, 5)
 
 
+
+
+
+
+set.seed(340)
 Area <- 1                  # Area of state-space
 M <- 100                   # Data augmentation size
 mu <- 10                   # Intensity (points per area)
 psi <- (mu*Area)/M         # Data augmentation parameter (thinning rate)
 N <- rbinom(1, M, psi)     # Realized value of N under binomial prior
-cbind(runif(N), runif(N))  # Coordinates of activity centers
-
+cbind(runif(N), runif(N))  # Point pattern from thinned binomial model
 
 
 
@@ -51,6 +58,19 @@ cbind(runif(N), runif(N))  # Coordinates of activity centers
 
 
 # PART II. Fitting IPP models when points are observed
+
+
+elev.fn <- function(s) {          # spatial covriate
+    s <- matrix(s, ncol=2)        # Force s to be a matrix
+    (s[,1] + s[,2] - 100) / 40.8  # Returns (standardized) "elevation"
+}
+# intensity function
+mu <- function(s, beta0, beta1) exp(beta0 + beta1*elev.fn(s=s))
+beta0 <- -6 # intercept of intensity function
+beta1 <- 1  # effect of elevation on intensity
+# Next line computes integral
+EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1,
+            lower=c(0,0), upper=c(100,100))$value
 
 
 
@@ -123,7 +143,7 @@ cbind(Est=fm$par, SE=sqrt(diag(solve(fm$hessian)))) # estimates and SEs
 
 
 # Now with binomial instead of Poisson prior
-nllBin <- function(beta, M=100) {
+nllBin <- function(beta, M=10000) {
     beta0 <- beta[1]
     beta1 <- beta[2]
     EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1,
@@ -183,28 +203,6 @@ par(op)
 dev.off()
 system("open ../figs/heteroPlots.png")
 
-
-
-
-
-
-
-set.seed(454500)
-n.Bk <- rmultinom(1, size=50, prob=rep(1/25, 25))
-matrix(n.Bk, 5, 5)
-
-
-
-
-
-
-set.seed(340)
-Area <- 1                  # Area of state-space
-M <- 100                   # Data augmentation size
-mu <- 10                   # Intensity (points per area)
-psi <- (mu*Area)/M         # Data augmentation parameter (thinning rate)
-N <- rbinom(1, M, psi)     # Realized value of N under binomial prior
-cbind(runif(N), runif(N))  # Point pattern from thinned binomial model
 
 
 
