@@ -8,7 +8,7 @@ Modeling Spatial Variation in Density
 
 Underlying every SCR model is a spatial point process
 that describes the number and distribution of animal activity
-centers. Point process models are charaterized by two key
+centers. Point process models are characterized by two key
 elements: a spatial domain, or state-space $\mathcal{S}$, and an
 intensity function which returns the
 expected value of density at all locations in $\mathcal{S}$.
@@ -444,7 +444,7 @@ where $\bf s$ is now defined as ``pixel ID'' rather than a point in space.
 
 Although the discrete space approach is standard practice, it is
 technically unjustified because covariate values must be known for all
-points in space, and a raster is simply a set of spatially-referened
+points in space, and a raster is simply a set of spatially-referenced
 covariate values at an evenly-spaced subset of points (the pixel
 centers). This same problem is present anytime that we have a
 sample of the spatial covariates, rather than a function defining
@@ -555,7 +555,7 @@ centers, perhaps as the result of an extensive telemetry study. %To
 If we assume $N$ is Poisson distributed and the points are
 mutually independent of one another, we can fit the
 inhomogeneous Poisson point process model. The likelihood of this
-model has two compoents: $[\{\mathbf{s}_1, \ldots, \mathbf{s}_N\}|N]$
+model has two components: $[\{\mathbf{s}_1, \ldots, \mathbf{s}_N\}|N]$
 and $[N]$. The pdf of the first part is given by
 %Eq.~\ref{eq.pdf.ipp}
 Eq.~\ref{state-space.eq.pdf.hetero},
@@ -749,8 +749,8 @@ which indicates that the MLEs are almost identical, and
 supports the claim that the prior
 on $N$ has little influence in SCR models. Notice, however, that the
 standard error for $\beta_0$ is smaller under the binomial model than
-it was under the Poisson model -- a difference that will disapate as
-$M$ tends towards infinity.
+it was under the Poisson model -- a difference that will dissipate as
+$M$ tends toward infinity.
 
 This example demonstrates
 that if we had the data we wish we had, i.e. if we knew the
@@ -795,37 +795,34 @@ actually observed. The following \R~code simulates encounter histories under a
 Poisson observation model (see Chapt. \ref{chapt.poisson-mn}), which could be appropriate in camera
 trapping studies or when using other methods in which animals could
 be detected multiple times at a trap during a single occasion.
-
 %\begin{samepage}
 \begin{small}
 \begin{verbatim}
-xsp <- seq(20, 80, by=10); len <- length(xsp)
-X <- cbind(rep(xsp, each=len), rep(xsp, times=len)) # traps
-ntraps <- nrow(X); noccasions <- 5
-y <- array(NA, c(N, ntraps, noccasions)) # capture data
-sigma <- 5  # scale parameter
-lam0 <- 1   # basal encounter rate
-lam <- matrix(NA, N, ntraps)
-set.seed(5588)
-for(i in 1:N) {
-    for(j in 1:ntraps) {
-        # The object "s" was simulated in previous section
-        distSq <- (s[i,1]-X[j,1])^2 + (s[i,2] - X[j,2])^2
-        lam[i,j] <- exp(-distSq/(2*sigma^2)) * lam0
-        y[i,j,] <- rpois(noccasions, lam[i,j])
-    }
-}
-# data augmentation
-nz <- 80; M <- nz+nrow(y)
-yz <- array(0, c(M, ntraps, K))
-yz[1:nrow(y),,] <- y # Fill data augmentation array
+> xsp <- seq(20, 80, by=10); len <- length(xsp)
+> X <- cbind(rep(xsp, each=len), rep(xsp, times=len)) # traps
+> ntraps <- nrow(X); noccasions <- 5
+> y <- array(NA, c(N, ntraps, noccasions)) # capture data
+> sigma <- 5  # scale parameter
+> lam0 <- 1   # basal encounter rate
+> lam <- matrix(NA, N, ntraps)
+> set.seed(5588)
+> for(i in 1:N) {
++     for(j in 1:ntraps) {
++         # The object "s" was simulated in previous section
++         distSq <- (s[i,1]-X[j,1])^2 + (s[i,2] - X[j,2])^2
++         lam[i,j] <- exp(-distSq/(2*sigma^2)) * lam0
++         y[i,j,] <- rpois(noccasions, lam[i,j])
++     }
++ }
 \end{verbatim}
 \end{small}
 %\end{samepage}
 
-Now that we have a simulated capture-recapture dataset \texttt{y} and we have
-augmented it to create the new data object \texttt{yz}, we can
-estimate the parameters using MCMC.  A commented Gibbs sampler written
+Now that we have a simulated capture-recapture dataset \texttt{y}, %and we have
+%augmented it to create the new data object \texttt{yz},
+we can simulation the posterior distributions of the model parameters
+%estimate the parameters
+using MCMC.  A commented Gibbs sampler written
 in \R~is available in the accompanying \R~package \scrbook~(see
 \texttt{?scrIPP}). This function is not meant to be an all purpose
 tool for fitting SCR models using MCMC. Instead, it is presented so
@@ -835,9 +832,9 @@ The function can be used as so:
 %\begin{samepage}
 \begin{small}
 \begin{verbatim}
-fm1 <- scrIPP(yz, X, M, 10000, xlims=c(0,100), ylims=c(0,100),
-              space.cov=elev.fn, tune=c(0.4, 0.2, 0.3, 0.3, 7))
-plot(mcmc(fm1$out))
+> fm1 <- scrIPP(y, X, M=150, 10000, xlims=c(0,100), ylims=c(0,100),
++               space.cov=elev.fn, tune=c(0.4, 0.2, 0.3, 0.3, 7))
+> plot(mcmc(fm1$out))
 \end{verbatim}
 \end{small}
 %\end{samepage}
@@ -849,6 +846,10 @@ rectangular state-space defined by the \verb+xlims+ and \verb+ylims+
 arguments. Currently, the function
 places uniform priors on the parameters $\sigma$, $\lambda_0$,
 $\beta_0$ and $\beta_1$, although this could easily be modified.
+The \verb+tune+ argument specifies the tuning parameters used in the
+Metropolis-within-Gibbs steps of the algorithm. These should be chosen
+using trial and error to achieve an acceptance rate of between 0.4 and
+0.6, roughly. See Chapt.~\ref{chapt.mcmc} for more details about MCMC.
 
 Results of the analysis are shown in
 Fig.~\ref{state-space.fig.fm1post} and
@@ -877,13 +878,13 @@ error. See Chapt.~\ref{chapt.scr0} and
 difference between realized and expected values of abundance.
 
 
-Fitting continuous space inhomogenous point process models is somewhat
+Fitting continuous space inhomogeneous point process models is somewhat
 difficult in \bugs~because the ``IPP'' prior $[\mathbf{s}_i | \bm
 \beta]$, unlike the uniform prior, is not one of the
 available distributions that comes with the software. It is
 possible to add new distributions in \bugs, but it is somewhat
 cumbersome.  \secr~allows
-users to fit continuous space models using linear or polynomial functions of the x- and y-
+users to fit continuous space models using linear or polynomial functions of the easting and northing
 coordinates, but it does not accept truly continuous covariates that
 are functions of space. However, these
 are not really important limitations because discrete
@@ -927,7 +928,7 @@ Parameter 	 	& Mean  	& SD    	& 2.5\% 	& 97.5\% \\
 
 To fit inhomogeneous point process models using covariates in discrete
 space, i.e. in raster format, we follow the same steps
-as outlined in Chapter~\ref{chapt.poisson-mn}---we define ${\bf s}_i$ as
+as outlined in Chapter~\ref{chapt.poisson-mn} -- we define ${\bf s}_i$ as
 pixel ID, and we use the categorical distribution as a prior. This
 effectively changes the problem from estimating the coordinates of an
 activity center, to estimating the pixel in which an activity center is
@@ -941,7 +942,7 @@ using using the code shown on the help page
 activity centers in each pixel, generated from a single realization of
 the inhomogeneous point process model with intensity
 $\mu(\mathbf{x}, \bm{\beta}) = \exp(\beta_0 + \beta_1
-\text{CANHT}({\bf s}))\times\text{pixelArea}$,
+\text{CANHT}({\bf x}))\times\text{pixelArea}$,
 where $\beta_0 = -6$ and $\beta_1 = 1$.
 \begin{figure}%[ht]
 \centering
@@ -959,7 +960,7 @@ The \bugs~description of the model is shown in
 panel~\ref{state-space.panel1}. The vector \verb+probs[]+ is the prior
 probability defined by Eq.~\ref{state-space.eq.pdf.hetero.d}, which is
 the probability that an individual's activity center is located at
-pixel $\bf s$. \verb+Sgrid+ is the matrix of coordinates for each pixel.
+pixel $\bf x$. \verb+grid+ is the matrix of coordinates for each pixel.
 
 \begin{panel}%[h!]
 \centering
@@ -981,8 +982,8 @@ psi <- EN/M
 for(i in 1:M) {
   z[i] ~ dbern(psi)
   s[i] ~ dcat(probs[])
-  x0g[i] <- Sgrid[s[i],1]
-  y0g[i] <- Sgrid[s[i],2]
+  x0g[i] <- grid[s[i],1]
+  y0g[i] <- grid[s[i],2]
   for(j in 1:ntraps) {
     dist[i,j] <- sqrt(pow(x0g[i]-traps[j,1],2) + pow(y0g[i]-traps[j,2],2))
     lambda[i,j] <- lam0*exp(-dist[i,j]*dist[i,j]/(2*sigma*sigma)) * z[i]
@@ -1024,7 +1025,7 @@ Results of fitting the model in \jags~and \secr~are shown in Table
 similar as expected. The differences that do exist are likely due to
 the differences in Bayesian and frequentist estimation methods, as
 discussed in Chapt~\ref{chapt.glms}. Either answer may be ``more
-correct'' dependeing upon one's criteria for correctness!
+correct'' depending upon one's criteria for correctness!
 % explained by a variety of reasons. For one, there exists some Monte
 % Carlo error in the Bayesian posterior summaries. There is also the
 % fact that posterior summaries can be computed in numerous ways---for
@@ -1102,7 +1103,7 @@ Paraguay. Additional information about the study is presented in
 The expected effect of poaching is a decline in jaguar
 density due to the direct removal of individuals and the depletion of its
 main prey species.
-To protect jaguars and related species, protected areas have
+To conserve jaguars and related species, protected areas have
 been established and three levels of protection are
 recognized, as depicted in Fig.~\ref{state-space.fig.jaguarCts}.
 The dark gray %green XXXX TODO: Convert images to grayscale
@@ -1130,7 +1131,7 @@ scale parameter of the half-normal (or Gaussian) encounter model as
 sex-specific because male cats typically have larger home ranges than
 females \citep{sollmann_etal:2011}. Since sex is an
 individual-specific covariate, and not observed for the individuals
-that were not captured, a prior is required for the sex of uncaptured
+that were not captured, a prior distribution is required for the sex of uncaptured
 individuals. We used a Bernoulli prior with probability 0.5 to
 describe our uncertainty about sex ratio. Another equivalent option is
 to augment the data with an equal number of males and females and let
@@ -1141,9 +1142,9 @@ members of the population.
 \centering
 \includegraphics[width=0.6\textwidth]{Ch11-Statespace/figs/jaguarCountMap}
 \caption{Jaguar detections at 46 camera trap stations. The three levels of
-  protection status are no protection (beige), some protection (light
-  green), and Iguaz\'{u} National Park (dark green). Non-habitat
-  (soybean monocultures) is shown in gray. XXXX CHANGE TO GRAYSCALE}
+  protection status are no protection (light gray), some protection
+  (gray), and Iguaz\'{u} National Park (dark gray). Non-habitat
+  (soybean monocultures) is shown in white. }
 \label{state-space.fig.jaguarCts}
 \end{figure}
 
@@ -1174,8 +1175,8 @@ allow us to work around this problem, but once again we find that it
 is most convenient to work in discrete space and sum over all the pixels defining
 $\mathcal{S}$.
 
-We fit the model to data from a single year of data from 46
-camera stations, each consisting of a pair of cameras placed along
+We fit the model to data from a single year in which 46
+camera stations were operational, each consisting of a pair of cameras placed along
 roads or small trails. Forty-five detections of 16 jaguars (8 males and 8
 females) were made over a 95-day sampling period. The mean number of
 sampling days at each camera station was 48.2. The raw capture data
@@ -1237,7 +1238,7 @@ unprotected area. Fig.~\ref{state-space.fig.Dsurface} shows the estimated
 density surfaces. The first map is the expected density in each of
 the three values, which was computed by plugging in the posterior mean
 values of $\beta_0$ and $\beta_1$ into the log-linear intensity
-function. The second map is the realized density surface---the
+function. The second map is the realized density surface -- the
 conditional-on-$N$ probability distribution of the number of
 activity centers in each pixel of the rasterized
 state-space. The expected values
@@ -1249,7 +1250,7 @@ description of the system during the study period.
 \centering
 \includegraphics[width=\textwidth]{Ch11-Statespace/figs/reD}
 \caption{Estimated density (activity centers / pixel) surfaces from
-  the analysis of the jaguar data. XXXX CONVERT TO GRAYSCALE}
+  the analysis of the jaguar data.}
 \label{state-space.fig.Dsurface}
 \end{figure}
 
