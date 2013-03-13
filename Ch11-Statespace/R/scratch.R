@@ -60,12 +60,12 @@ cbind(runif(N), runif(N))  # Point pattern from thinned binomial model
 # PART II. Fitting IPP models when points are observed
 
 
-elev.fn <- function(s) {          # spatial covriate
-    s <- matrix(s, ncol=2)        # Force s to be a matrix
-    (s[,1] + s[,2] - 100) / 40.8  # Returns (standardized) "elevation"
+elev.fn <- function(x) {          # spatial covriate
+    x <- matrix(x, ncol=2)        # Force x to be a matrix
+    (x[,1] + x[,2] - 100) / 40.8  # Returns (standardized) "elevation"
 }
 # intensity function
-mu <- function(s, beta0, beta1) exp(beta0 + beta1*elev.fn(s=s))
+mu <- function(x, beta0, beta1) exp(beta0 + beta1*elev.fn(x=x))
 beta0 <- -6 # intercept of intensity function
 beta1 <- 1  # effect of elevation on intensity
 # Next line computes integral
