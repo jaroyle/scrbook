@@ -189,7 +189,22 @@ system("open ../figs/heteroPlots.png")
 
 
 
+set.seed(454500)
+n.Bk <- rmultinom(1, size=50, prob=rep(1/25, 25))
+matrix(n.Bk, 5, 5)
 
+
+
+
+
+
+set.seed(340)
+Area <- 1                  # Area of state-space
+M <- 100                   # Data augmentation size
+mu <- 10                   # Intensity (points per area)
+psi <- (mu*Area)/M         # Data augmentation parameter (thinning rate)
+N <- rbinom(1, M, psi)     # Realized value of N under binomial prior
+cbind(runif(N), runif(N))  # Point pattern from thinned binomial model
 
 
 
