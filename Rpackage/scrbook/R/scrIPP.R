@@ -54,32 +54,44 @@ spcov <- function(B=1, pix=0.05, cor=2) {
 
 
 # MCMC. SCR model with inhomogenous point process
-scrIPP <- function(Z, X, M, niters, xlims, ylims, space.cov,
+scrIPP <- function(y, X, M, niters, xlims, ylims, space.cov,
                    init=list(beta0=-5, beta1=0, sigma=5, lam0=1,
-                             S=cbind(runif(M, xlims[1], xlims[2]),
+                             s=cbind(runif(M, xlims[1], xlims[2]),
                                      runif(M, ylims[1], ylims[2]))),
                    tune=rep(0.1, 5))
 {
     if(!require(R2Cuba))
         stop("Requires the R2Cuba package")
 
-    Zdims <- dim(Z)
-    R <- Zdims[2]
-    T <- Zdims[3]
+    ydims <- dim(y)
+    if(length(ydims) != 3)
+        stop("y should be a 3D array of capture data")
+    n <- ydims[1]
+    if(n > M)
+        stop("nrow(y)<M is not allowed")
+    J <- ydims[2]
+    K <- ydims[3]
+
+    yold <- y
+    y <- array(0L, c(M, J, K)) # created augmented dataset
+    y[1:n,,] <- yold
+
+    if((nrow(X) != J) | (ncol(X) != 2))
+        stop("X should be a 2-column matrix of trap coordinates")
 
     # initial values
     for(i in 1:length(init))
         assign(names(init)[i], init[[i]])
-    pn <- c("beta0", "beta1", "sigma", "lam0", "S")
+    pn <- c("beta0", "beta1", "sigma", "lam0", "s")
     noi <- !(pn %in% ls())
     if(any(noi)) {
         stop("Need initial values for ", pn[noi])
     }
 
-    D <- e2dist(S, X)
+    D <- e2dist(s, X)
     lam <- lam0*exp(-(D*D)/(2*sigma*sigma))
 
-    mu <- function(s, beta0, beta1) exp(beta0 + beta1*space.cov(s=s))
+    mu <- function(x, beta0, beta1) exp(beta0 + beta1*space.cov(x=x))
     EN <- cuhre(2, 1, mu, lower=c(xlims[1], ylims[1]),
                 upper=c(xlims[2], ylims[2]),
                 beta0=beta0, beta1=beta1,
@@ -89,7 +101,7 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, space.cov,
         stop("Bad initial values for beta0 or beta1. Or M is too low")
 
     w <- rbinom(M, 1, psi)
-    w[rowSums(Z)>0] <- 1
+    w[rowSums(y)>0] <- 1
 #    w[] <- 1
 
     # matrix to hold samples
@@ -105,17 +117,17 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, space.cov,
             cat("iter", iter, format(Sys.time(), "%H:%M:%S"), "\n")
             cat("current =", out[iter-1,], "\n")
             cat("  Acceptance rates\n")
-            cat("    S =", Sups/M, "\n")
+            cat("    s =", sups/M, "\n")
             cat("    w =", wUps/M, "\n")
         }
 
-        ll <- sum(dpois(Z, lam*w, log=TRUE))
+        ll <- sum(dpois(y, lam*w, log=TRUE))
 
         # update sigma
         sigma.cand <- rnorm(1, sigma, tune[1])
         if(sigma.cand > 0) {
             lam.cand <- lam0*exp(-(D*D)/(2*sigma.cand*sigma.cand))
-            llcand <- sum(dpois(Z, lam.cand*w, log=TRUE) )
+            llcand <- sum(dpois(y, lam.cand*w, log=TRUE) )
             if(runif(1) < exp( llcand  - ll ) ){
                 ll <- llcand
                 lam <- lam.cand
@@ -127,7 +139,7 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, space.cov,
         lam0.cand <- rnorm(1, lam0, tune[2])
         if(lam0.cand>0) {
             lam.cand <- lam0.cand*exp(-(D*D)/(2*sigma*sigma))
-            llcand<- sum(dpois(Z, lam.cand*w, log=TRUE) )
+            llcand<- sum(dpois(y, lam.cand*w, log=TRUE) )
             if(runif(1) < exp( llcand - ll ) ) {
                 lam0<-lam0.cand
                 lam<-lam.cand
@@ -137,7 +149,7 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, space.cov,
 
         # update w
         wUps <- 0
-        seen <- apply(Z>0, 1, any)
+        seen <- apply(y>0, 1, any)
         for(i in 1:M) {
             if(seen[i])
                 next
@@ -145,10 +157,10 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, space.cov,
             if(w[i]==0) {
                 wcand[i] <- 1
                 ll.w <- 0
-                ll.w.cand <- sum(dpois(Z[i,,], lam[i,]*wcand[i], log=TRUE))
+                ll.w.cand <- sum(dpois(y[i,,], lam[i,]*wcand[i], log=TRUE))
             } else {
                 wcand[i] <- 0
-                ll.w <- sum(dpois(Z[i,,], lam[i,]*w[i], log=TRUE))
+                ll.w <- sum(dpois(y[i,,], lam[i,]*w[i], log=TRUE))
                 ll.w.cand <- 0
             }
             prior <- dbinom(w[i], 1, psi, log=TRUE)
@@ -165,10 +177,10 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, space.cov,
                          upper=c(xlims[2], ylims[2]),
                          beta0 = beta0.cand, beta1=beta1,
                          flags=list(verbose=0))$value
-        ll.beta <- sum(((beta0 + beta1*space.cov(S)) - log(EN))*w) +
+        ll.beta <- sum(((beta0 + beta1*space.cov(s)) - log(EN))*w) +
             dbinom(sum(w), M, EN/M, log=TRUE)
         if(EN.cand < M) {
-            ll.beta.cand <- sum(((beta0.cand + beta1*space.cov(S)) -
+            ll.beta.cand <- sum(((beta0.cand + beta1*space.cov(s)) -
                 log(EN.cand))*w) + dbinom(sum(w), M, EN.cand/M, log=TRUE)
             if(runif(1) < exp(ll.beta.cand - ll.beta) )  {
                 beta0 <- beta0.cand
@@ -184,7 +196,7 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, space.cov,
                          beta0 = beta0, beta1=beta1.cand,
                          flags=list(verbose=0))$value
         if(EN.cand < M) {
-            ll.beta.cand <- sum(((beta0 + beta1.cand*space.cov(S)) -
+            ll.beta.cand <- sum(((beta0 + beta1.cand*space.cov(s)) -
                 log(EN.cand))*w) + dbinom(sum(w), M, EN.cand/M, log=TRUE)
             if(runif(1) < exp(ll.beta.cand - ll.beta) )  {
                 beta1 <- beta1.cand
@@ -196,39 +208,39 @@ scrIPP <- function(Z, X, M, niters, xlims, ylims, space.cov,
         # update psi
         psi <- EN / M
 
-        # update S
-        Sups <- 0
+        # update s
+        sups <- 0
         for(i in 1:M) {
-            Scand <- c(rnorm(1, S[i,1], tune[5]),
-                       rnorm(1, S[i,2], tune[5]))
-            inbox <- Scand[1]>=xlims[1] & Scand[1]<=xlims[2] &
-                     Scand[2]>=ylims[1] & Scand[2]<=ylims[2]
+            scand <- c(rnorm(1, s[i,1], tune[5]),
+                       rnorm(1, s[i,2], tune[5]))
+            inbox <- scand[1]>=xlims[1] & scand[1]<=xlims[2] &
+                     scand[2]>=ylims[1] & scand[2]<=ylims[2]
             if(!inbox)
                 next
-            dtmp <- sqrt( (Scand[1] - X[,1])^2 + (Scand[2] - X[,2])^2 )
+            dtmp <- sqrt( (scand[1] - X[,1])^2 + (scand[2] - X[,2])^2 )
             lam.cand <- lam
             lam.cand[i,] <-  lam0*exp(-(dtmp*dtmp)/(2*sigma*sigma))
             if(w[i]==0)
-                ll.S <- ll.S.cand <- 0
+                ll.s <- ll.s.cand <- 0
             else {
-                ll.S <- sum(dpois(Z[i,,], lam[i,], log=TRUE) )
-                ll.S.cand <- sum(dpois(Z[i,,], lam.cand[i,], log=TRUE) )
+                ll.s <- sum(dpois(y[i,,], lam[i,], log=TRUE) )
+                ll.s.cand <- sum(dpois(y[i,,], lam.cand[i,], log=TRUE) )
             }
             #ln(prior), denominator is constant
-            prior.S <- beta0 + beta1*space.cov(S[i,])
-            prior.S.cand <- beta0 + beta1*space.cov(Scand)
+            prior.s <- beta0 + beta1*space.cov(s[i,])
+            prior.s.cand <- beta0 + beta1*space.cov(scand)
 
-           if(runif(1)< exp((ll.S.cand+prior.S.cand) - (ll.S+prior.S))) {
-                S[i,] <- Scand
+           if(runif(1)< exp((ll.s.cand+prior.s.cand) - (ll.s+prior.s))) {
+                s[i,] <- scand
                 lam <- lam.cand
                 D[i,] <- dtmp
                 ##psi[i] <- psi.cand
-                Sups <- Sups+1
+                sups <- sups+1
             }
         }
         out[iter,] <- c(sigma, lam0, beta0, beta1, sum(w), EN)
     }
-    last <- list(S=S, lam=lam, w=w)
+    last <- list(s=s, lam=lam, w=w)
     list(out=out, last=last)
 }
 

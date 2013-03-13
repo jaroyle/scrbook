@@ -75,12 +75,12 @@ EN <- cuhre(2, 1, mu, beta0=beta0, beta1=beta1,
 
 
 # Spatial covariate (with mean 0)
-elev.fn <- function(s) {
-    s <- matrix(s, ncol=2)        # Force s to be a matrix
-    (s[,1] + s[,2] - 100) / 40.8  # Returns (standardized) "elevation"
-}
+#elev.fn <- function(s) {
+#    s <- matrix(s, ncol=2)        # Force s to be a matrix
+#    (s[,1] + s[,2] - 100) / 40.8  # Returns (standardized) "elevation"
+#}
 
-mu <- function(s, beta0, beta1) exp(beta0 + beta1*elev.fn(s=s))
+#mu <- function(s, beta0, beta1) exp(beta0 + beta1*elev.fn(s=s))
 
 library(R2Cuba)
 xx <- cuhre(2, 1, mu, lower=c(0,0), upper=c(100,100), beta0=0, beta1=2)
@@ -242,25 +242,28 @@ for(i in 1:N) {
     }
 }
 # data augmentation
-nz <- 80
-M <- nz+nrow(y)
-yz <- array(0, c(M, ntraps, noccasions))
-yz[1:nrow(y),,] <- y # Fill data augmentation array
+#nz <- 80
+#M <- nz+nrow(y)
+#yz <- array(0, c(M, ntraps, noccasions))
+#yz[1:nrow(y),,] <- y # Fill data augmentation array
 
 
 
 
 
 library(scrbook)
+library(coda)
 
 #source("../../Rpackage/scrbook/R/Ch11.R")
+#source("../../Rpackage/scrbook/R/scrIPP.R")
+
 
 set.seed(3434)
 system.time({
-fm1 <- scrIPP(yz, X, M, 10000, xlims=c(0,100), ylims=c(0,100),
+fm1 <- scrIPP(y, X, M=200, 10000, xlims=c(0,100), ylims=c(0,100),
               space.cov=elev.fn,
-              tune=c(0.4, 0.2, 0.3, 0.3, 7))
-}) # 328s
+              tune=c(0.4, 0.2, 0.3, 0.25, 9))
+}) # 360s
 
 plot(mcmc(fm1$out))
 summary(mcmc(fm1$out))
@@ -462,7 +465,7 @@ canht <- raster:::flip(raster(t(canhtMat)), direction="y")
 
 png("../figs/discrete.png", width=6, height=6, units="in", res=400)
 par(mai=c(0.4, 0.4, 0.2, 0.2))
-image(cell, cell, canhtMat, ann=FALSE)
+image(cell, cell, canhtMat, ann=FALSE, col=gray(seq(0,1,len=50)))
 points(dat[s.tmp>0,c("x","y")], cex=s.tmp[s.tmp>0])
 points(X, pch="+")
 box()
@@ -604,8 +607,8 @@ psi <- EN/M
 for(i in 1:M) {
   w[i] ~ dbern(psi)
   s[i] ~ dcat(probs[])
-  x0g[i] <- Sgrid[s[i],1]
-  y0g[i] <- Sgrid[s[i],2]
+  x0g[i] <- grid[s[i],1]
+  y0g[i] <- grid[s[i],2]
   for(j in 1:ntraps) {
     dist[i,j] <- sqrt(pow(x0g[i]-traps[j,1],2) + pow(y0g[i]-traps[j,2],2))
     lambda[i,j] <- lam0*exp(-dist[i,j]*dist[i,j]/(2*sigma*sigma)) * w[i]
@@ -625,7 +628,7 @@ modfile <- "ippDiscrete.jag"
 jags.data <- list(y=yz, CANHT=drop(dat$CANHT),
                   nPix=nrow(dat), pixArea=pixArea,
                   M=nrow(yz), ntraps=nrow(X),
-                  Sgrid=as.matrix(dat[,1:2]),
+                  grid=as.matrix(dat[,1:2]),
                   traps=X)
 str(jags.data)
 
