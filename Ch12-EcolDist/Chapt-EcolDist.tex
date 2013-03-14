@@ -214,7 +214,7 @@ defined on every pixel of the according raster. For example, using a
 single covariate $C({\bf x})$ we define the cost of moving from some pixel
 ${\bf x}$ to neighboring pixel ${\bf x}'$ as
 \begin{equation}
-\log(  cost({\bf x},{\bf x}'))=  \alpha_{2}\left( \frac{C({\bf
+\log(  \mbox{cost}({\bf x},{\bf x}'))=  \alpha_{2}\left( \frac{C({\bf
       x})+C({\bf x}')}{2}
 \right)
 \label{ecoldist.eq.cost}
@@ -282,11 +282,11 @@ the {\bf R} script \mbox{\tt SCRed} -- see the help file for that):
 \begin{verbatim}
 > library(raster)
 > library(gdistance)
-> r<-raster(nrows=4,ncols=4)
-> projection(r)<- "+proj=utm +zone=12 +datum=WGS84" # Sets the projection
-> extent(r)<-c(.5,4.5,.5,4.5) #sets the extent of the raster
-> costs1<- c(100,100,100,100,1,100,100,100,1,1,100,1,1,1,1,1)
-> values(r)<-matrix(costs1,4,4,byrow=FALSE) #assign the costs to the raster
+> r <- raster(nrows=4,ncols=4)
+> projection(r) <- "+proj=utm +zone=12 +datum=WGS84" # Sets the projection
+> extent(r) <- c(.5,4.5,.5,4.5) #sets the extent of the raster
+> costs1 <- c(100,100,100,100,1,100,100,100,1,1,100,1,1,1,1,1)
+> values(r) <- matrix(costs1,4,4,byrow=FALSE) #assign the costs to the raster
 > par(mfrow=c(1,1))
 > plot(r)
 \end{verbatim}
@@ -317,7 +317,7 @@ Euclidean distance, but different cost-weighted distances according to
 our cost function.
 
 The least-cost path distances can be
-computed with just a couple {\bf R} commands, and these commands can
+computed with just a few {\bf R} commands, and these commands can
 be inserted directly into the likelihood construction for an ordinary
 spatial capture-recapture model. The {\bf R} package
 \mbox{\tt gdistance} calculates least-cost path using  Dijkstra's algorithm
@@ -341,11 +341,11 @@ matrix. For that, we define the center points of each raster, here
 these are just integers on $[1,4] \times [1,4]$.  The commands
 altogether are as follows: {\small
 \begin{verbatim}
-> tr1<-transition(r,transitionFunction=function(x) 1/mean(x),directions=8)
-> tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
-> pts<-cbind( sort(rep(1:4,4)),rep(4:1,4))
-> costs1<-costDistance(tr1CorrC,pts)
-> outD<-as.matrix(costs1)
+> tr1 <- transition(r,transitionFunction=function(x) 1/mean(x),directions=8)
+> tr1CorrC <- geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
+> pts <- cbind( sort(rep(1:4,4)),rep(4:1,4))
+> costs1 <- costDistance(tr1CorrC,pts)
+> outD <- as.matrix(costs1)
 \end{verbatim}
 }
 Now we can look at the result and see if it makes sense to us. Here we
@@ -410,8 +410,8 @@ $C({\bf x}) = row({\bf x}) + col({\bf x})$ and $row({\bf x})$ and $col({\bf x})$
 column, respectively, of the raster.  This might mimic something
 related to distance from an urban area or a gradient in habitat
 quality due to land use, or environmental conditions such as
-temperature or precipitation gradients.  In the second case we make up
-a covariate by generating a field of spatially correlated noise to
+temperature or precipitation gradients.  In the second case, the 
+covariate was generated using spatially correlated noise to
 emulate a typical patchy habitat covariate (``patchy covariate'') such as
 tree or understory density.
 
@@ -457,8 +457,7 @@ circular, as in SCR models based on Euclidean distance.
 For example, using one of the covariates we use in
 our simulation study below (Fig. \ref{ecoldist.fig.raster100}, right
 panel) with a Gaussian
-%pdf detection function
-encounter model but having distance
+encounter probability model but having distance
 metric defined by Eq. \ref{eq.lcp}, produces home ranges such
 as those shown in Fig. \ref{fig.homeranges}.
 
@@ -488,45 +487,45 @@ of {\bf R} commands is:
 {\small
 \begin{verbatim}
 ### Grab a covariate
-library(scrbook)
-set.seed(2013)
-out<-make.EDcovariates()
-covariate<-out$covariate.patchy
+> library(scrbook)
+> set.seed(2013)
+> out <- make.EDcovariates()
+> covariate <- out$covariate.patchy
 
 ### prescribe some settings
-N<-200
-alpha0<- -2
-sigma<- .5
-alpha1<- 1/(2*sigma*sigma)
-alpha2<-1
-K<- 5
-S<-cbind(runif(N,.5,4.5),runif(N,.5,4.5))
+> N <- 200
+> alpha0 <- -2
+> sigma <- .5
+> alpha1 <- 1/(2*sigma*sigma)
+> alpha2 <-1
+> K <- 5
+> S <- cbind(runif(N,.5,4.5),runif(N,.5,4.5))
 
 # make up some trap locations
-xg<-seq(1,4,1); yg<-4:1
-traplocs<-cbind( sort(rep(xg,4)),rep(yg,4))
-points(traplocs,pch=20,col="red")
-ntraps<-nrow(traplocs)
+> xg <- seq(1,4,1); yg<-4:1
+> traplocs <- cbind( sort(rep(xg,4)),rep(yg,4))
+> points(traplocs,pch=20,col="red")
+> ntraps <- nrow(traplocs)
 
 ### make a raster and fill it up with the "cost"
-r<-raster(nrows=20,ncols=20)
-projection(r)<- "+proj=utm +zone=12 +datum=WGS84"
-extent(r)<-c(.5,4.5,.5,4.5)
-cost<- exp(alpha2*covariate)
+> r <- raster(nrows=20,ncols=20)
+> projection(r) <- "+proj=utm +zone=12 +datum=WGS84"
+> extent(r) <- c(.5,4.5,.5,4.5)
+> cost <- exp(alpha2*covariate)
 
 ### compute least-cost path distance
-tr1<-transition(cost,transitionFunction=function(x) 1/mean(x),directions=8)
-tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
-D<-costDistance(tr1CorrC,S,traplocs)
-probcap<-plogis(alpha0)*exp(-alpha1*D*D)
+> tr1 <- transition(cost,transitionFunction=function(x) 1/mean(x),directions=8)
+> tr1CorrC <- geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
+> D <- costDistance(tr1CorrC,S,traplocs)
+> probcap <- plogis(alpha0)*exp(-alpha1*D*D)
 
 # now generate the encounters of every individual in every trap
 # discard uncaptured individuals
-Y<-matrix(NA,nrow=N,ncol=ntraps)
-for(i in 1:nrow(Y)){
- Y[i,]<-rbinom(ntraps,K,probcap[i,])
-}
-Y<-Y[apply(Y,1,sum)>0,]
+> Y <- matrix(NA,nrow=N,ncol=ntraps)
+> for(i in 1:nrow(Y)){
++    Y[i,] <- rbinom(ntraps,K,probcap[i,])
++ }
+> Y <- Y[apply(Y,1,sum)>0,]
 \end{verbatim}
 }
 
@@ -595,8 +594,8 @@ covariate using the following commands:
 The summary output for the two model fits is shown in Table \ref{ecoldist.tab.results1}.
 The model based on least-cost path (the data generating model) appears
 to be much preferred in terms of negative log-likelihood.
-The output parameter order is $(\alpha_{0}, \alpha_{1}, \log(n_{0}), \text{and}
-\log(\alpha_{2}))$ (remember, we want to keep $\alpha_{2}$
+The output parameter order is $\alpha_{0}, \alpha_{1}, \log(n_{0})$, \text{and}
+$\log(\alpha_{2}))$ (remember, we want to keep $\alpha_{2}$
 positive, so it's logarithm is estimated).
 The data generating parameter values were
 $\alpha_{0} = - 2$,
@@ -639,7 +638,7 @@ reasonably straightforward, the model cannot be fitted
 in the  {\bf BUGS} engines because least-cost path distance cannot be computed.
 It would be possible to fit the models
 in {\bf BUGS} if the parameter $\alpha_{2}$ was fixed. In that case,
-one could compute the distance matrix ahead of time and reference the
+one could compute the least-cost distance matrix ahead of time and reference the
 required elements for a given ${\bf s}$.
 Alternatively, it would be possible to write a custom MCMC routine
 using the methods we present in Chapt. \ref{chapt.mcmc}, although we
@@ -657,7 +656,6 @@ normal Euclidean distance metric, and evaluate the general bias and
 precision properties of the MLE using the systematic and patchy
 landscapes shown in
 Fig. \ref{ecoldist.fig.raster100}.
-
 Their results showed extreme
 bias in estimates of $N$ when the misspecified Euclidean distance is
 used, and only negligible small-sample
@@ -668,8 +666,7 @@ The performance of estimating the other parameters, including the
 cost parameter $\alpha_{2}$ mirrors
 the results for estimating $N$.
 We reproduce a subset of the results from \citet{royle_etal:2012ecol}
-%here,
-in Table \ref{ecoldist.tab.simresults}.
+in Table \ref{ecoldist.tab.simresults} in order to highlight some key points.
 
 \begin{table}[htp]
 \label{tab.results1}
@@ -689,27 +686,27 @@ sampling distribution reported are the mean, standard deviation
 }
 \begin{tabular}{l|rrrrr}
   \hline
-         & \multicolumn{5}{c}{N=100  }  \\ \hline
-         &   mean &  SD  & 0.025 & 0.50  & 0.975   \\ \hline
-$K=3$      &        &      &       &       &         \\
-euclid   &  78.68 & 18.12& 49.40 & 76.34 & 125.47  \\
-lcp      & 110.96 & 28.65& 69.55 &106.98 & 181.84  \\
-$K=5$     &        &      &       &       &         \\
-euclid   &  77.85 & 11.55& 59.17 & 77.44 & 101.14  \\
-lcp      & 104.44 & 15.79& 78.38 &101.47 & 139.55  \\
-$K=10$     &        &      &       &       &         \\
-euclid   &  78.01 & 5.26 & 68.00 & 77.96 & 87.81   \\
-lcp      & 100.42 & 7.56 & 86.72 &100.34 & 115.47  \\ \hline
-        & \multicolumn{5}{c}{N=200   }  \\ \hline
-$K=3$      &        &      &       &       &         \\
-euclid  154.34& 33.74& 107.00& 146.34& 221.43\\
-lcp     208.77& 49.29& 141.68& 197.89& 325.77\\
-$K=5$           &      &       &       &        \\
-euclid   153.39& 15.57& 129.31& 149.54& 185.38\\
-lcp      200.91& 20.78& 164.42& 200.47& 246.46\\
-$K=10$           &      &       &       &       \\
-euclid   156.27&  8.51& 142.17& 156.05& 174.55\\
-lcp      198.45& 11.44& 180.06& 198.04& 219.52\\ \hline
+       & \multicolumn{5}{c}{N=100  }               \\ \hline
+       & mean   & SD    & 0.025  & 0.50   & 0.975  \\ \hline
+$K=3$  &        &       &        &        &        \\
+euclid & 78.68  & 18.12 & 49.40  & 76.34  & 125.47 \\
+lcp    & 110.96 & 28.65 & 69.55  & 106.98 & 181.84 \\
+$K=5$  &        &       &        &        &        \\
+euclid & 77.85  & 11.55 & 59.17  & 77.44  & 101.14 \\
+lcp    & 104.44 & 15.79 & 78.38  & 101.47 & 139.55 \\
+$K=10$ &        &       &        &        &        \\
+euclid & 78.01  & 5.26  & 68.00  & 77.96  & 87.81  \\ 
+lcp    & 100.42 & 7.56  & 86.72  & 100.34 & 115.47 \\ \hline
+       & \multicolumn{5}{c}{N=200   }              \\ \hline
+$K=3$  &        &       &        &        &        \\
+euclid & 154.34 & 33.74 & 107.00 & 146.34 & 221.43 \\
+lcp    & 208.77 & 49.29 & 141.68 & 197.89 & 325.77 \\
+$K=5$  &        &       &        &        &        \\
+euclid & 153.39 & 15.57 & 129.31 & 149.54 & 185.38 \\
+lcp    & 200.91 & 20.78 & 164.42 & 200.47 & 246.46 \\
+$K=10$ &        &       &        &        &        \\
+euclid & 156.27 & 8.51  & 142.17 & 156.05 & 174.55 \\
+lcp    & 198.45 & 11.44 & 180.06 & 198.04 & 219.52 \\ \hline
 \end{tabular}
 }
 \label{ecoldist.tab.simresults}
@@ -1012,17 +1009,17 @@ number of points has been obtained by \mbox{\tt make.seg}.
 In the following set of commands we generate two line
 segments, \mbox{\tt l1} consisting of 9 points and \mbox{\tt l2}
 consisting of 5 points, and these reside in a geographic region
-enclosedd by $[0,10] \times [0,10]$:
+enclosed by $[0,10] \times [0,10]$:
 {\small
 \begin{verbatim}
-library(scrbook)
-library(sp)
-plot(NULL,xlim=c(0,10),ylim=c(0,10))
-l1<-make.seg(9)
-plot(l1)
-l2<-make.seg(5)
-plot(l1)
-lines(l2)
+> library(scrbook)
+> library(sp)
+> plot(NULL,xlim=c(0,10),ylim=c(0,10))
+> l1 <- make.seg(9)
+> plot(l1)
+> l2 <- make.seg(5)
+> plot(l1)
+> lines(l2)
 \end{verbatim}
 }
 
@@ -1040,26 +1037,26 @@ and the result is shown in Fig. \ref{ecoldist.fig.corridor}.
 
 {\small
 \begin{verbatim}
-data(fakecorridor)
-library(sp)
-library(rgeos)
+> data(fakecorridor)
+> library(sp)
+> library(rgeos)
 
-buffer<- 0.5
-par(mfrow=c(1,1))
-aa<-gUnion(l1,l2)
-plot(gBuffer(aa,width=buffer),xlim=c(0,10),ylim=c(0,10))
-pg<-gBuffer(aa,width=buffer)
-pg.coords<- pg@polygons[[1]]@Polygons[[1]]@coords
+> buffer <- 0.5
+> par(mfrow=c(1,1))
+> aa <- gUnion(l1,l2)
+> plot(gBuffer(aa,width=buffer),xlim=c(0,10),ylim=c(0,10))
+> pg <- gBuffer(aa,width=buffer)
+> pg.coords <- pg@polygons[[1]]@Polygons[[1]]@coords
 
-xg<-seq(0,10,,40)
-yg<-seq(10,0,,40)
+> xg <- seq(0,10,,40)
+> yg <- seq(10,0,,40)
 
-delta<-mean(diff(xg))
-pts<- cbind(sort(rep(xg,40)),rep(yg,40))
-points(pts,pch=20,cex=.5)
+> delta <- mean(diff(xg))
+> pts <- cbind(sort(rep(xg,40)),rep(yg,40))
+> points(pts,pch=20,cex=.5)
 
-in.pts<-point.in.polygon(pts[,1],pts[,2],pg.coords[,1],pg.coords[,2])
-points(pts[in.pts==1,],pch=20,col="red")
+> in.pts <- point.in.polygon(pts[,1],pts[,2],pg.coords[,1],pg.coords[,2])
+> points(pts[in.pts==1,],pch=20,col="red")
 \end{verbatim}
 }
 
@@ -1104,27 +1101,27 @@ sample {\bf R} script (\mbox{\tt ?intlik3edv2}).
 {\small
 \begin{verbatim}
 ### Define the cost structure
-cost<-rep(NA,nrow(pts))
-cost[in.pts==1]<-1      # low cost to move among pixels but not 0
-cost[in.pts!=1]<-10000  # high cost
+> cost <- rep(NA,nrow(pts))
+> cost[in.pts==1]<-1      # low cost to move among pixels but not 0
+> cost[in.pts!=1]<-10000  # high cost
 
 ### Stuff costs into a raster
-library("raster")
-r<-raster(nrows=40,ncols=40)
-projection(r)<- "+proj=utm +zone=12 +datum=WGS84"
-extent(r)<-c(0-delta/2,10+delta/2,0-delta/2,10+delta/2)
-values(r)<-matrix(cost,40,40,byrow=FALSE)
+> library("raster")
+> r <- raster(nrows=40,ncols=40)
+> projection(r) <- "+proj=utm +zone=12 +datum=WGS84"
+> extent(r) <- c(0-delta/2,10+delta/2,0-delta/2,10+delta/2)
+> values(r) <- matrix(cost,40,40,byrow=FALSE)
 
 # check what it looks like
-plot(r)
-points(pts,pch=20,cex=.4)
+> plot(r)
+> points(pts,pch=20,cex=.4)
 
 # compute ecological distances:
-library("gdistance")
-tr1<-transition(r,transitionFunction=function(x) 1/mean(x),directions=8)
-tr1CorrC<-geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
-costs1<-costDistance(tr1CorrC,pts)
-outD<-as.matrix(costs1)
+> library("gdistance")
+> tr1 <- transition(r,transitionFunction=function(x) 1/mean(x),directions=8)
+> tr1CorrC <- geoCorrection(tr1,type="c",multpl=FALSE,scl=FALSE)
+> costs1 <- costDistance(tr1CorrC,pts)
+> outD <- as.matrix(costs1)
 \end{verbatim}
 }
 
@@ -1135,37 +1132,37 @@ define the f-shaped patch in
 Fig. \ref{ecoldist.fig.corridor}:
 {\small
 \begin{verbatim}
-library(scrbook)
-traplocs<-traps$loc
-trap.id<-traps$locid
-ntraps<-nrow(traplocs)
+> library(scrbook)
+> traplocs <- traps$loc
+> trap.id <- traps$locid
+> ntraps <- nrow(traplocs)
 
-set.seed(2013)
-N<-200
-S.possible<- (1:nrow(pts))[in.pts==1]
-S.id<-sample(S.possible,N,replace=TRUE)
-S<- pts[S.id,]
+> set.seed(2013)
+> N <- 200
+> S.possible <- (1:nrow(pts))[in.pts==1]
+> S.id <- sample(S.possible,N,replace=TRUE)
+> S <- pts[S.id,]
 
-D<- outD[S.id,trap.id]
-eD<- e2dist(S,traplocs)
-Dtraps<-outD[trap.id,]
+> D <- outD[S.id,trap.id]
+> eD <- e2dist(S,traplocs)
+> Dtraps <- outD[trap.id,]
 
-alpha0<- -1.5
-sigma<- 1.5
-alpha1<- 1/(2*sigma*sigma)
-K<-10
+> alpha0 <- -1.5
+> sigma <- 1.5
+> alpha1 <- 1/(2*sigma*sigma)
+> K <-10
 
-probcap<-plogis(alpha0)*exp(-alpha1*D*D)
-Y<-matrix(NA,nrow=N,ncol=ntraps)
-for(i in 1:nrow(Y)){
- Y[i,]<-rbinom(ntraps,K,probcap[i,])
-}
-Y<-Y[apply(Y,1,sum)>0,]
+> probcap <- plogis(alpha0)*exp(-alpha1*D*D)
+> Y <- matrix(NA,nrow=N,ncol=ntraps)
+> for(i in 1:nrow(Y)){
++   Y[i,] <- rbinom(ntraps,K,probcap[i,])
+> }
+> Y <- Y[apply(Y,1,sum)>0,]
 
-frog1<-nlm(intlik3edv2,c(-2.5,2,log(4)),hessian=TRUE,y=Y,K=K,X=traplocs,
-            S=pts,D=Dtraps,inpoly=in.pts)
-frog2<-nlm(intlik3edv2,c(-2.5,2,log(4)),hessian=TRUE,y=Y,K=K,X=traplocs,
-            S=pts,D=Deuclid,inpoly=in.pts)
+> frog1 <- nlm(intlik3edv2,c(-2.5,2,log(4)),hessian=TRUE,y=Y,K=K,X=traplocs,
++            S=pts,D=Dtraps,inpoly=in.pts)
+> frog2 <- nlm(intlik3edv2,c(-2.5,2,log(4)),hessian=TRUE,y=Y,K=K,X=traplocs,
++            S=pts,D=Deuclid,inpoly=in.pts)
 \end{verbatim}
 }
 
@@ -1218,7 +1215,7 @@ center, the probability of capture may be very
 low. In this case, forest cover is a covariate of
 both density and encounter probability,
 and we could model it as such by combining the methods described in
-this chapter with those described in Chapter~\ref{chapt.state-space}.
+this chapter with those described in Chapt.~\ref{chapt.state-space}.
 
 To demonstrate, we continue with our analysis of the data shown in
 Fig~\ref{state-space.fig.discrete}. Once again, we suppose that density
@@ -1258,8 +1255,8 @@ intensity parameter $\mu(\mathbf{s}, \beta)$ and the least-cost distance
 function $\text{lcd}(\theta)$ are specified using \R's formula interface. A
 simple function call is
 \begin{verbatim}
-fm <- scrDED(y, traplocs=X, den.formula=~elev, dist.formula=~elev,
-             rasters=elev.raster)
+> fm <- scrDED(y, traplocs=X, den.formula=~elev, dist.formula=~elev,
++             rasters=elev.raster)
 \end{verbatim}
 To assess the possibility of estimating both $\bm \beta$ and $\alpha_2$, we
 conducted a small simulation study, generating 500 datasets from the
