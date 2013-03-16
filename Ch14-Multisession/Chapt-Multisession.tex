@@ -8,7 +8,7 @@ Multi-session and Multi-site Data}
 
 In this chapter, we describe SCR models for situations when we have
 multiple distinct sample groups, strata or ``sessions'' (the term used
-in \mbox{\tt secr}) each with a population size parameters $N_{g}$ for
+in \mbox{\tt secr}) each with a population size parameters $N_{g}$, for
 group $g$.
 %The models
 %provide a flexible hierarchical modeling
@@ -49,7 +49,7 @@ In Chapts. \ref{chapt.covariates} and \ref{chapt.gof} we fitted models
 with sex-specificity of parameters using multi-session models, where
 the stratification variable in that case was sex.  In this chapter, we
 focus on Bayesian analysis of stratified SCR models using data
-augmentation \citep{royle_etal:2012arXiv,royle_converse:2013}.  The
+augmentation \citep{converse_royle:2012,royle_etal:2012arXiv}.  The
 technical modification of data augmentation to deal with such models
 is that it is based on a model for the joint distribution of the
 stratum-specific population sizes, $N_{g}$, {\it conditioned} on their
@@ -89,7 +89,7 @@ demographically open model for $N$ might be appropriate -- one that
 involves survival and recruitment. We deal with those models
 specifically in Chapt. \ref{chapt.open}.  However, the stratified
 models covered here can be thought of as a primative type of model for
-open systems in which the populations are assumed to be {\it
+open systems in which the population sizes are assumed to be {\it
   independent} across temporal strata, and so we might still find them
 useful in cases where the strata are temporal periods or sessions.
 \begin{comment}
@@ -147,14 +147,13 @@ we can easily build hierarchical models for stratified populations,
 using an {\it individual} level parameterization of the
 model. Obviously this is important for SCR models as they all possess
 at least one random effect in the form of the activity center ${\bf
-  s}$.
-In the context of stratified or multi-session type
-models, the ``population membership'' variable $g_{i}$ is a {\it
-  categorical} type of individual covariate \citep{huggins:1989,
-  alho:1990, royle:2009}.  Before considering SCR models specifically,
-in the next section we talk a little bit about the technical
-formulation of data augmentation for stratified populations in the
-context of ordinary closed population models.
+  s}$.  In the context of stratified or multi-session type models, the
+``population membership'' variable $g_{i}$ is a {\it categorical} type
+of individual covariate \citep{huggins:1989, alho:1990, royle:2009}.
+Before considering SCR models specifically, in the next section we
+talk a little bit about the technical formulation of data augmentation
+for stratified populations in the context of ordinary closed
+population models.
 
 
 \section{Multinomial Abundance Models}
@@ -171,8 +170,8 @@ apply the idea to SCR models shortly.
 
 To motivate the technical famework, consider sampling $g=1,2,\ldots,G$
 groups having unknown sizes $N_{g}$, and we wish to impose model
-structure on the group-specific population size variables using a Poisson
-distribution:
+structure on the group-specific population size variables using a
+Poisson distribution:
 \begin{equation}
  N_{g} \sim \mbox{Poisson}(\lambda_{g})
 \label{eq.poisson1}
@@ -284,12 +283,12 @@ pseudo-individual, according to the binary data augmentation variable
 $z_{i}$.  As specified in {\bf BUGS} pseudo-code, the
 model is:
 \begin{verbatim}
-psi ~ dunif(0,1)
-for(g in 1:G){
-  pi[g] <- lambda[g]/sum(lambda[])
-}
-g[i] ~ dcat(pi[1:G])
-z[i] ~ dbern(psi)
+      psi ~ dunif(0,1)
+      for(g in 1:G){
+         pi[g] <- lambda[g]/sum(lambda[])
+      }
+      g[i] ~ dcat(pi[1:G])
+      z[i] ~ dbern(psi)
 \end{verbatim}
 This produces a vector of population size parameters ${\bf N} =
 (N_{1},\ldots,N_{G})$ which are approximately, for large $M_{T}$,
@@ -368,8 +367,7 @@ closed population model (model $M_{0}$).  This actually shows two
 equivalent formulations. In the left panel we have $\psi$ and
 $\beta_{0}$ as free parameters.  The right panel shows the equivalent
 model but recognizing the constraint between $\psi$ and $\beta_{0}$.
-Running these models using the \mbox{\tt multisession$\_$sim} (XXXX
-Change name XXXXX?)
+Running these models using the \mbox{\tt multisession.sim} 
 function, you can verify that the two parameters are not uniquely estimable. In
 particular,
  using the model
@@ -418,7 +416,7 @@ model {
   beta1 ~ dnorm(0,.1)
   psi ~ dunif(0,1)
   for(j in 1:G){
-    log(lam[j]) <- beta0+beta1*x[j]
+    log(lam[j]) <- beta0+beta1*C[j]
     gprobs[j]<-lam[j]/sum(lam[1:G])
   }
   for(i in 1:M){
@@ -444,7 +442,7 @@ model {
   beta1 ~ dnorm(0,.1)
   psi <- sum(lam[])/M
   for(j in 1:G){
-    log(lam[j]) <- beta0+beta1*x[j]
+    log(lam[j]) <- beta0+beta1*C[j]
     gprobs[j]<-lam[j]/sum(lam[1:G])
   }
   for(i in 1:M){
@@ -462,7 +460,7 @@ model {
 \rule[-0.15in]{\textwidth}{.03in}
 \caption{BUGS model specification for a capture-recapture model with
   constant encounter probability and Poisson subpopulation sizes,
-  $N_{g}$, with mean depending on a single covariate \mbox{\tt x[j]}.
+  $N_{g}$, with mean depending on a single covariate \mbox{\tt C[j]}.
 Two version of the model: The first one describes the model in terms
 of the intercept $\beta_0$ and DA parameter $\psi$, which are
 confounded. The required constraint is indicated in the specification
@@ -548,12 +546,12 @@ obtained funding to carry out a camera trapping study of some flashy
 carnivore in 20 forest patches or reserves, using a 5 x 5 array of
 traps. Here we will consider an ordinary closed population model,
 model $M_0$, and we suppose there is some forest level covariate, say
-$\mbox{Dist} = $ disturbance regime, perhaps measured by an index of
+$\mbox{\tt Dist} = $ disturbance regime, perhaps measured by an index of
 trail density or something.  We imagine a model for patch-level
 population size such as the following:
 \begin{eqnarray*}
 N_{g} &\sim& \mbox{Poisson}(\lambda_{g})  \\
-\mbox{log}(\lambda_{g})& = &\beta_{0} + \beta_{1} \mbox{Dist}_{g}
+\mbox{log}(\lambda_{g})& = &\beta_{0} + \beta_{1} \mbox{\tt Dist}_{g}
 \end{eqnarray*}
 We simulate some population sizes and encounter data under this model
 as follows:
@@ -570,9 +568,9 @@ as follows:
 
 > y <- NULL                        # Simulate model M0 data
 > for(g in 1:G){
->  if(N[g]>0)
->   y <- c(y,  rbinom(N[g],K,p))
->  }
++  if(N[g]>0)
++    y <- c(y,  rbinom(N[g],K,p))
++  }
 > g<- rep(1:G,N)
 
 > ##  Now keep the group id and encounter frequency only for
@@ -587,7 +585,7 @@ capture-recapture data for the populations inhabiting
 this model, we need to augment the \mbox{\tt g} and \mbox{\tt y} data
 objects, and then we can run the model in {\bf JAGS} or {\bf WinBUGS}
 using the model given in Panel \ref{multisession.panel.wbcode}.
-See the help file \mbox{\tt ?multisession\_sim}
+See the help file \mbox{\tt ?multisession.sim}
 for doing this analysis with these simulated data.
 
 
@@ -687,7 +685,7 @@ to a small mammal trapping problem which involved replicate
 management practices on small-mammal densities.
 
 To refresh your memory about the multinomial observation model, let
-${\bf y}_{ik} = (y_{i1k},y_{i2k},\ldots,y_{iJk},y_{i,J+1,k})$ be the
+${\bf y}_{ik} = (y_{i1k}, y_{i2k}, \ldots, y_{iJk}, y_{i,J+1,k})$ be the
 spatial encounter history for individual $i$, during sample occassion
 $k$ where the last element $y_{i,J+1,k}$ corresponds to ``not
 captured''.  For mist nets, an individual can be captured in at most
@@ -745,6 +743,314 @@ follows:
 \]
 We note that, in this case, the multinomial probabilities depend not only
 on individual and trap, but also on sample occasion.
+
+\subsection{Reanalysis of the Ovenbird data}
+
+The analysis before used a secr multi-session model in which $N_{t}
+\sim \mbox{Poisson}(\Lambda_{t})$. We also fitted a model in which we
+applied data augmentation to {\it each} year independently, so that
+the population sizes were not assumed to be independent draws from a
+common distribution.
+This would be simlar to the multi-session
+model fitted in \mbox{\tt secr} except with a
+$\mbox{Binomial}(\psi_{t}M)$ prior instead of a
+$\mbox{Poisson}(\Lambda_{t})$ prior.
+
+Here we use data augmentation to fit a model that approximates the
+Poisson model with expected value
+$\mathbb{E}(N_{g}) = \lambda_{g}$
+and 
+\[
+\log( \lambda_{g} ) = \beta_{0} + \beta_{1} C_{g}
+\]
+
+constant mean
+year-specific mean
+linear trend
+and density dependence 
+
+
+To fit a version of the multi-session model ..............
+the precise Bayesian equivalent XXX UNCLEAR: EQUIVALENT TO
+WHAT? XXXX we just have to apply the DA approach described above. The
+{\bf R} script in \mbox{\tt scrbook} to run this analysis is called
+\mbox{\tt ovenbird.ms} which you can use to reproduce the results
+in Table XXXXX.  In terms of comparison with the previous results of
+Sec. \ref{poisson-mn.sec.ovenbird}, they ........  look about the same
+as they should........   XXXX B ut this is not necessarily the case! XXXX
+
+
+\begin{verbatim}
+model {
+ # year-specific N parameterized in DA parameter 
+
+alpha0 ~ dnorm(0,.01)
+sigma ~ dunif(0,200)
+alpha1 <- 1/(2*sigma*sigma)
+psi<- sum(lambda[])/bigM
+
+A <- ((xlim[2]-xlim[1]))*((ylim[2]-ylim[1]))
+for(t in 1:5){
+for(i in 1:bigM){
+ingroup[i,t]<- yrid[i] == t
+ingroup2[i,t]<- z[i]*ingroup[i,t]
+}
+N[t] <- sum(ingroup2[,t])   ####inprod(z[1:bigM],yrdummy[,t])
+D[t] <- (N[t]/A)*10000  # put in units of per ha
+pi[t]<- lambda[t]/sum(lambda[])
+}
+
+for(t in 1:5){
+log(lambda[t])<- beta0[t]
+beta0[t] ~ dnorm(0.01)
+} 
+for(i in 1:bigM){
+   
+  z[i] ~ dbern(psi)
+  yrid[i] ~ dcat(pi[])
+  S[i,1] ~ dunif(xlim[1],xlim[2])
+  S[i,2] ~ dunif(ylim[1],ylim[2])
+
+  for(j in 1:ntraps){
+      d2[i,j] <- pow(pow(S[i,1]-X[j,1],2) + pow(S[i,2]-X[j,2],2),1)
+   }
+  for(k in 1:K){
+     Ycat[i,k] ~ dcat(cp[i,k,])
+    for(j in 1:ntraps){
+      lp[i,k,j] <- exp(alpha0 - alpha1*d2[i,j])*z[i]*(1-died[i,k])        
+      cp[i,k,j] <- lp[i,k,j]/(1+sum(lp[i,k,1:ntraps]))
+    }
+    cp[i,k,ntraps+1] <- 1-sum(cp[i,k,1:ntraps])  # last cell = not captured
+  }
+}
+}
+",file="model.txt")
+###
+###
+###
+
+nind<-c(nrow(Y[[1]]),nrow(Y[[2]]),nrow(Y[[3]]),nrow(Y[[4]]),nrow(Y[[5]]))
+yrid<-NULL
+zst<-NULL
+
+for(i in 1:5){
+yrid<-c(yrid,rep(i,nind[i]),rep(NA,M-nind[i]))
+zst<-c(zst,rep(1,nind[i]),rep(0,M-nind[i]))
+
+}
+
+
+yrdummy<-as.numeric(c(yrid==1,yrid==2,yrid==3,yrid==4,yrid==5))
+yrdummy<-matrix(yrdummy,ncol=5,byrow=FALSE)
+
+bigM<- 5*M
+
+yrst<-yrid
+yrst[!is.na(yrid)]<- NA
+yrst[is.na(yrid)]<- sample(1:5,sum(is.na(yrid)),replace=TRUE)
+
+inits <- function(){list (z=zst,sigma=runif(1,50,100) ,S=Sst,
+alpha0=runif(1,-2,-1) ,alpha2=-2,alpha3=-2,yrid=yrst ) }              
+## parameters to monitor
+parameters <- c("psi","alpha0","alpha1","sigma","N","D","beta0")
+## data used in BUGS model                                                                  
+data <- list (died=died,yrid=yrid,X=as.matrix(X[[1]]),
+K=10,Ycat=Ymat,bigM=bigM,ntraps=ntraps,ylim=ylim,xlim=xlim)         
+
+
+results (short run)
+
+> out12
+Inference for Bugs model at "model.txt", fit using jags,
+ 3 chains, each with 2000 iterations (first 1000 discarded)
+ n.sims = 3000 iterations saved
+         mu.vect sd.vect   2.5%    25%    50%     75%   97.5%  Rhat n.eff
+D[1]       0.863   0.185  0.550  0.734  0.844   0.966   1.284 1.015   150
+D[2]       0.941   0.199  0.624  0.795  0.917   1.064   1.369 1.008   260
+D[3]       1.127   0.228  0.746  0.966  1.113   1.272   1.614 1.006   370
+D[4]       0.821   0.188  0.514  0.685  0.795   0.929   1.247 1.017   130
+D[5]       0.687   0.162  0.416  0.575  0.673   0.783   1.052 1.008   260
+N[1]      70.579  15.116 45.000 60.000 69.000  79.000 105.000 1.015   150
+N[2]      76.982  16.284 51.000 65.000 75.000  87.000 112.000 1.008   260
+N[3]      92.181  18.615 61.000 79.000 91.000 104.000 132.000 1.006   370
+N[4]      67.126  15.350 42.000 56.000 65.000  76.000 102.000 1.017   130
+N[5]      56.201  13.279 34.000 47.000 55.000  64.000  86.000 1.008   260
+alpha0    -3.457   0.159 -3.774 -3.559 -3.457  -3.353  -3.142 1.002  1300
+alpha1     0.000   0.000  0.000  0.000  0.000   0.000   0.000 1.023   130
+beta0[1]   4.227   0.244  3.747  4.065  4.234   4.396   4.697 1.017   130
+beta0[2]   4.313   0.236  3.830  4.165  4.314   4.475   4.759 1.007   300
+beta0[3]   4.498   0.224  4.046  4.353  4.502   4.656   4.904 1.004   600
+beta0[4]   4.173   0.257  3.660  4.004  4.180   4.356   4.657 1.014   150
+beta0[5]   3.994   0.272  3.439  3.825  4.007   4.183   4.507 1.006   420
+psi        0.363   0.053  0.269  0.326  0.361   0.397   0.471 1.023    98
+sigma     78.613   6.664 66.169 74.024 78.311  82.972  92.482 1.023   130
+
+For each parameter, n.eff is a crude measure of effective sample size,
+and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
+
+
+SECR analysis
+
+
+> ovenbird.model.DT<-secr.fit(ovenCH,model=list(D~session))
+
+318 likelihood evaluations
+and it will give a warning message asking for a larger buffer, so you
+should try 300 and it produces the results below.
+
+Fitted (real) parameters evaluated at base levels of covariates 
+
+
+Fitted (real) parameters evaluated at base levels of covariates 
+
+ session = 2005 
+       link    estimate SE.estimate         lcl         ucl
+D       log  0.92025223 0.227622113  0.57079750  1.48365082
+g0    logit  0.02762856 0.004047056  0.02071139  0.03676918
+sigma   log 78.56622352 6.379032913 67.02513663 92.09457509
+
+ session = 2006 
+       link    estimate SE.estimate         lcl         ucl
+D       log  0.96342303 0.238300304  0.59757470  1.55325173
+g0    logit  0.02762856 0.004047056  0.02071139  0.03676918
+sigma   log 78.56622352 6.379032913 67.02513663 92.09457509
+
+ session = 2007 
+       link    estimate SE.estimate         lcl         ucl
+D       log  1.13858815 0.281626961  0.70622297  1.83565676
+g0    logit  0.02762856 0.004047056  0.02071139  0.03676918
+sigma   log 78.56622352 6.379032913 67.02513663 92.09457509
+
+ session = 2008 
+       link    estimate SE.estimate         lcl         ucl
+D       log  0.83204345 0.205803889  0.51608494  1.34143869
+g0    logit  0.02762856 0.004047056  0.02071139  0.03676918
+sigma   log 78.56622352 6.379032913 67.02513663 92.09457509
+
+ session = 2009 
+       link    estimate SE.estimate         lcl         ucl
+D       log  0.70067100 0.173309237  0.43459960  1.12963714
+g0    logit  0.02762856 0.004047056  0.02071139  0.03676918
+sigma   log 78.56622352 6.379032913 67.02513663 92.09457509
+
+
+
+\end{verbatim}
+
+
+
+
+
+
+
+
+
+
+
+\section{Spatial or Temporal Dependence}
+
+The models described here, and including the multi-session formulation
+used in \mbox{\tt secr}, assume that the population sizes $N_{g}$ are
+{\it independent} (in a limiting sense, under data augmentation).  As
+a practical matter, this precludes the sharing of individuals among
+populations (i.e., the same individual cannot be captured in multiple
+groups) which can be violated in a number of situations.  First, when
+the groups represent sampling in distinct time periods (seasons,
+years) but of the same functional population (a standard ``robust
+design'' situation), it is possible that some individuals remain in
+the population from one time period to the next.  In this situation,
+by disregarding individual identity across groups, the models ignore a
+slight bit of dependence of $N_{g}$ which may entail some incremental
+loss of efficiency. We imgaine this should have little practical
+effect unless survival probability is extremely high between the
+periods.  Estimators of parameters obtained by assuming independence
+should be conservative in their statement of precision, but they
+should be unbiased (or, rather, ignoring the dependence should not
+affect the bias of the estimator much if at all).
+
+A second distinct situation is that in which the stratification
+variable is {\it spatial}, and the strata (e.g., trap arrays or other
+sampling mechanism) are in relatively close spatial proximity to one
+another so that individuals can sometimes be encountered by more than
+one array (e.g., the possum data, see
+Fig. \ref{poisson-mn.fig.possum}). This case is somewhat easier to
+deal with in the analysis because we can build a model in which the
+state-space is the joint state-space enclosing all of the trapping
+arrays, and we preserve individual identity in an ordinary SCR model,
+just with a larger array of traps that is the union of the trap arrays
+of all sample groups. This may be impractical when the trap arrays are
+far apart creating only a slight bit of overlap of populations,
+because, in that case, the combined state-space may contain a huge
+population that one has to deal with in the MCMC (remember that
+increasing $M$ increases computation time).
+\citep{royle_etal:2011mee} had this problem in an analysis of data
+from a sample of 1 km quadrats using a search-encounter type model
+(discussed in the following chapter).  Even in this case the
+independent $N_{g}$ model is probably not too detrimental to
+inferences that apply to explaining marginal variation in $N_{g}$,
+such as habitat or landscape effects that are modeled on the expected
+value of $N_{g}$.
+
+
+\section{Summary and Outlook}
+
+Capture-recapture data are not always collected as single isolated
+studies but, instead, data are often grouped or stratified in some
+natural way, either because a number of distinct trap arrays are used,
+or sampling occurs in several forest patches, or over time. Often this
+is motivated by specific objectives, e.g., the trap arrays or units
+represent experimental replicates, or sometimes just to derive more
+valid estimates of density by obtaining a representative (ideally,
+random) sample of space within some region.  The fact that data are
+grouped in such a way raises the obvious technical problem of having
+to combine data from multiple arrays, sites or otherwise defined
+groups in a single unified model that accommodates explicit sources of
+variation in density among these groups.  This is naturally
+accomplished by developing an explicit model for variation in $N$,
+e.g., a Poisson GLM or similar \citep{converse_royle:2012,
+  royle_etal:2012arXiv}.
+
+In this chapter, we outlined an approach to Bayesian analysis of
+multi-session models using data augmentation
+\citet{converse_royle:2012, royle_converse:2013}.  This approach gives
+us one method for building explicit models for $N$ and also gives us
+great flexibility in specifying the encounter model using standard or
+novel capture-recapture modeling considerations. Certain types of
+multi-session models can be fitted easily in \mbox{\tt secr} (see
+Chapt. \ref{chapt.poisson-mn}) and we suspect that platform will be
+satisfactory for many problems you encounter. However, as always, we
+believe the flexible model-building platform of the {\bf BUGS}
+language can be beneficial in many situations.
+
+A common applied context of these multi-session models is when
+replicate arrays are used to address explicit hypotheses about the
+effects of landscape variation or modification on abundance. For
+example, in studies of forestry practices and their effects on local
+fauna, small mammal grids are used as experimental units, and the
+``dependent variable'' is $N$ (or density) of small mammals (or some
+small mammal focal species) for each trap array, which is not
+observable.  Thus, hierarchical models are needed to directly address
+the basic hypotheses of such studies.  Another distinct context for
+the application of multi-session models is when the populations are
+temporally structured (e.g., the ovenbird data), such as when sampling
+occurs in distinct seasons or years.  In these applications, we view
+multi-session models as a simplified type of open population model, an
+open model {\it without} explicit Markovian dynamics. They are
+analogous to what is usually referred to as models of random temporary
+emigration \citep{kendall_etal:1997, chandler_etal:2011}.  The models
+are not incorrect, just simplified, reduced versions of more general
+Markovian models, and with fewer parameters to estimate.  We cover
+general Markovian models in Chapt. \ref{chapt.open}.
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -954,284 +1260,10 @@ captured per group (open circles).  }
 \end{comment}
 
 
-\subsection{Reanalysis of the Ovenbird data}
-
-\begin{comment}
-{\bf
-XXX I THINK YOU CAN DELETE THIS FIRST SHORT PARAGRAPH BC YOU SAY THE
-SAME THINGS IN THE PRECEDING PARAGRAPH... OR MOVE THEM DOWN HERE
-COMPLETELY XXXX }
-XXX Andy sez: This is a fair point, let me read the whole thing and
-see this issue more clearly
-\end{comment}
-
-The analysis before used a secr multi-session model in which $N_{t}
-\sim \mbox{Poisson}(\Lambda_{t})$. We also fitted a model in which we
-applied data augmentation to {\it each} year, so that we didn't have a
-prior distribution on them.  This would be simlar to the multi-session
-model fitted in \mbox{\tt secr} except with a
-$\mbox{Binomial}(\psi_{t}M)$ prior instead of a
-$\mbox{Poisson}(\Lambda_{t})$ prior.
-
-\begin{verbatim}
-model {
- # year-specific N parameterized in DA parameter 
-
-alpha0 ~ dnorm(0,.01)
-sigma ~ dunif(0,200)
-alpha1 <- 1/(2*sigma*sigma)
-psi<- sum(lambda[])/bigM
-
-A <- ((xlim[2]-xlim[1]))*((ylim[2]-ylim[1]))
-for(t in 1:5){
-for(i in 1:bigM){
-ingroup[i,t]<- yrid[i] == t
-ingroup2[i,t]<- z[i]*ingroup[i,t]
-}
-N[t] <- sum(ingroup2[,t])   ####inprod(z[1:bigM],yrdummy[,t])
-D[t] <- (N[t]/A)*10000  # put in units of per ha
-pi[t]<- lambda[t]/sum(lambda[])
-}
-
-for(t in 1:5){
-log(lambda[t])<- beta0[t]
-beta0[t] ~ dnorm(0.01)
-} 
-for(i in 1:bigM){
-   
-  z[i] ~ dbern(psi)
-  yrid[i] ~ dcat(pi[])
-  S[i,1] ~ dunif(xlim[1],xlim[2])
-  S[i,2] ~ dunif(ylim[1],ylim[2])
-
-  for(j in 1:ntraps){
-      d2[i,j] <- pow(pow(S[i,1]-X[j,1],2) + pow(S[i,2]-X[j,2],2),1)
-   }
-  for(k in 1:K){
-     Ycat[i,k] ~ dcat(cp[i,k,])
-    for(j in 1:ntraps){
-      lp[i,k,j] <- exp(alpha0 - alpha1*d2[i,j])*z[i]*(1-died[i,k])        
-      cp[i,k,j] <- lp[i,k,j]/(1+sum(lp[i,k,1:ntraps]))
-    }
-    cp[i,k,ntraps+1] <- 1-sum(cp[i,k,1:ntraps])  # last cell = not captured
-  }
-}
-}
-",file="model.txt")
-###
-###
-###
-
-nind<-c(nrow(Y[[1]]),nrow(Y[[2]]),nrow(Y[[3]]),nrow(Y[[4]]),nrow(Y[[5]]))
-yrid<-NULL
-zst<-NULL
-
-for(i in 1:5){
-yrid<-c(yrid,rep(i,nind[i]),rep(NA,M-nind[i]))
-zst<-c(zst,rep(1,nind[i]),rep(0,M-nind[i]))
-
-}
-
-
-yrdummy<-as.numeric(c(yrid==1,yrid==2,yrid==3,yrid==4,yrid==5))
-yrdummy<-matrix(yrdummy,ncol=5,byrow=FALSE)
-
-bigM<- 5*M
-
-yrst<-yrid
-yrst[!is.na(yrid)]<- NA
-yrst[is.na(yrid)]<- sample(1:5,sum(is.na(yrid)),replace=TRUE)
-
-inits <- function(){list (z=zst,sigma=runif(1,50,100) ,S=Sst,
-alpha0=runif(1,-2,-1) ,alpha2=-2,alpha3=-2,yrid=yrst ) }              
-## parameters to monitor
-parameters <- c("psi","alpha0","alpha1","sigma","N","D","beta0")
-## data used in BUGS model                                                                  
-data <- list (died=died,yrid=yrid,X=as.matrix(X[[1]]),
-K=10,Ycat=Ymat,bigM=bigM,ntraps=ntraps,ylim=ylim,xlim=xlim)         
-
-
-results (short run)
-
-> out12
-Inference for Bugs model at "model.txt", fit using jags,
- 3 chains, each with 2000 iterations (first 1000 discarded)
- n.sims = 3000 iterations saved
-         mu.vect sd.vect   2.5%    25%    50%     75%   97.5%  Rhat n.eff
-D[1]       0.863   0.185  0.550  0.734  0.844   0.966   1.284 1.015   150
-D[2]       0.941   0.199  0.624  0.795  0.917   1.064   1.369 1.008   260
-D[3]       1.127   0.228  0.746  0.966  1.113   1.272   1.614 1.006   370
-D[4]       0.821   0.188  0.514  0.685  0.795   0.929   1.247 1.017   130
-D[5]       0.687   0.162  0.416  0.575  0.673   0.783   1.052 1.008   260
-N[1]      70.579  15.116 45.000 60.000 69.000  79.000 105.000 1.015   150
-N[2]      76.982  16.284 51.000 65.000 75.000  87.000 112.000 1.008   260
-N[3]      92.181  18.615 61.000 79.000 91.000 104.000 132.000 1.006   370
-N[4]      67.126  15.350 42.000 56.000 65.000  76.000 102.000 1.017   130
-N[5]      56.201  13.279 34.000 47.000 55.000  64.000  86.000 1.008   260
-alpha0    -3.457   0.159 -3.774 -3.559 -3.457  -3.353  -3.142 1.002  1300
-alpha1     0.000   0.000  0.000  0.000  0.000   0.000   0.000 1.023   130
-beta0[1]   4.227   0.244  3.747  4.065  4.234   4.396   4.697 1.017   130
-beta0[2]   4.313   0.236  3.830  4.165  4.314   4.475   4.759 1.007   300
-beta0[3]   4.498   0.224  4.046  4.353  4.502   4.656   4.904 1.004   600
-beta0[4]   4.173   0.257  3.660  4.004  4.180   4.356   4.657 1.014   150
-beta0[5]   3.994   0.272  3.439  3.825  4.007   4.183   4.507 1.006   420
-psi        0.363   0.053  0.269  0.326  0.361   0.397   0.471 1.023    98
-sigma     78.613   6.664 66.169 74.024 78.311  82.972  92.482 1.023   130
-
-For each parameter, n.eff is a crude measure of effective sample size,
-and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
-
-
-SECR analysis
-
-
-> ovenbird.model.DT<-secr.fit(ovenCH,model=list(D~session))
-
-318 likelihood evaluations
-and it will give a warning message asking for a larger buffer, so you
-should try 300 and it produces the results below.
-
-Fitted (real) parameters evaluated at base levels of covariates 
-
-
-Fitted (real) parameters evaluated at base levels of covariates 
-
- session = 2005 
-       link    estimate SE.estimate         lcl         ucl
-D       log  0.92025223 0.227622113  0.57079750  1.48365082
-g0    logit  0.02762856 0.004047056  0.02071139  0.03676918
-sigma   log 78.56622352 6.379032913 67.02513663 92.09457509
-
- session = 2006 
-       link    estimate SE.estimate         lcl         ucl
-D       log  0.96342303 0.238300304  0.59757470  1.55325173
-g0    logit  0.02762856 0.004047056  0.02071139  0.03676918
-sigma   log 78.56622352 6.379032913 67.02513663 92.09457509
-
- session = 2007 
-       link    estimate SE.estimate         lcl         ucl
-D       log  1.13858815 0.281626961  0.70622297  1.83565676
-g0    logit  0.02762856 0.004047056  0.02071139  0.03676918
-sigma   log 78.56622352 6.379032913 67.02513663 92.09457509
-
- session = 2008 
-       link    estimate SE.estimate         lcl         ucl
-D       log  0.83204345 0.205803889  0.51608494  1.34143869
-g0    logit  0.02762856 0.004047056  0.02071139  0.03676918
-sigma   log 78.56622352 6.379032913 67.02513663 92.09457509
-
- session = 2009 
-       link    estimate SE.estimate         lcl         ucl
-D       log  0.70067100 0.173309237  0.43459960  1.12963714
-g0    logit  0.02762856 0.004047056  0.02071139  0.03676918
-sigma   log 78.56622352 6.379032913 67.02513663 92.09457509
 
 
 
-\end{verbatim}
 
 
-To fit a version of the multi-session model ..............
-the precise Bayesian equivalent XXX UNCLEAR: EQUIVALENT TO
-WHAT? XXXX we just have to apply the DA approach described above. The
-{\bf R} script in \mbox{\tt scrbook} to run this analysis is called
-\mbox{\tt ovenbird$\_$ms} which you can use to reproduce the results
-in Table XXXXX.  In terms of comparison with the previous results of
-Sec. \ref{poisson-mn.sec.ovenbird}, they ........  look about the same
-as they should........   XXXX B ut this is not necessarily the case! XXXX
 
-\section{Spatial or Temporal Dependence}
-
-The models described here, and including the multi-session formulation
-used in \mbox{\tt secr}, assume that the population sizes $N_{g}$ are
-{\it independent} (in a limiting sense, under data augmentation).  As
-a practical matter, this precludes the sharing of individuals among
-populations (i.e., the same individual cannot be captured in multiple
-groups) which can be violated in a number of situations.  First, when
-the groups represent sampling in distinct time periods (seasons,
-years) but of the same functional population (a standard ``robust
-design'' situation), it is possible that some individuals remain in
-the population from one time period to the next.  In this situation,
-by disregarding individual identity across groups, the models ignore a
-slight bit of dependence of $N_{g}$ which may entail some incremental
-loss of efficiency. We imgaine this should have little practical
-effect unless survival probability is extremely high between the
-periods.  Estimators of parameters obtained by assuming independence
-should be conservative in their statement of precision, but they
-should be unbiased (or, rather, ignoring the dependence should not
-affect the bias of the estimator much if at all).
-
-A second distinct situation is that in which the stratification
-variable is {\it spatial}, and the strata (e.g., trap arrays or other
-sampling mechanism) are in relatively close spatial proximity to one
-another so that individuals can sometimes be encountered by more than
-one array (e.g., the possum data, see
-Fig. \ref{poisson-mn.fig.possum}). This case is somewhat easier to
-deal with in the analysis because we can build a model in which the
-state-space is the joint state-space enclosing all of the trapping
-arrays, and we preserve individual identity in an ordinary SCR model,
-just with a larger array of traps that is the union of the trap arrays
-of all sample groups. This may be impractical when the trap arrays are
-far apart creating only a slight bit of overlap of populations,
-because, in that case, the combined state-space may contain a huge
-population that one has to deal with in the MCMC (remember that
-increasing $M$ increases computation time).
-\citep{royle_etal:2011mee} had this problem in an analysis of data
-from a sample of 1 km quadrats using a search-encounter type model
-(discussed in the following chapter).  Even in this case the
-independent $N_{g}$ model is probably not too detrimental to
-inferences that apply to explaining marginal variation in $N_{g}$,
-such as habitat or landscape effects that are modeled on the expected
-value of $N_{g}$.
-
-
-\section{Summary and Outlook}
-
-Capture-recapture data are not always collected as single isolated
-studies but, instead, data are often grouped or stratified in some
-natural way, either because a number of distinct trap arrays are used,
-or sampling occurs in several forest patches, or over time. Often this
-is motivated by specific objectives, e.g., the trap arrays or units
-represent experimental replicates, or sometimes just to derive more
-valid estimates of density by obtaining a representative (ideally,
-random) sample of space within some region.  The fact that data are
-grouped in such a way raises the obvious technical problem of having
-to combine data from multiple arrays, sites or otherwise defined
-groups in a single unified model that accommodates explicit sources of
-variation in density among these groups.  This is naturally
-accomplished by developing an explicit model for variation in $N$,
-e.g., a Poisson GLM or similar \citep{converse_royle:2012,
-  royle_etal:2012arXiv}.
-
-In this chapter, we outlined an approach to Bayesian analysis of
-multi-session models using data augmentation
-\citet{converse_royle:2012, royle_converse:2013}.  This approach gives
-us one method for building explicit models for $N$ and also gives us
-great flexibility in specifying the encounter model using standard or
-novel capture-recapture modeling considerations. Certain types of
-multi-session models can be fitted easily in \mbox{\tt secr} (see
-Chapt. \ref{chapt.poisson-mn}) and we suspect that platform will be
-satisfactory for many problems you encounter. However, as always, we
-believe the flexible model-building platform of the {\bf BUGS}
-language can be beneficial in many situations.
-
-A common applied context of these multi-session models is when
-replicate arrays are used to address explicit hypotheses about the
-effects of landscape variation or modification on abundance. For
-example, in studies of forestry practices and their effects on local
-fauna, small mammal grids are used as experimental units, and the
-``dependent variable'' is $N$ (or density) of small mammals (or some
-small mammal focal species) for each trap array, which is not
-observable.  Thus, hierarchical models are needed to directly address
-the basic hypotheses of such studies.  Another distinct context for
-the application of multi-session models is when the populations are
-temporally structured (e.g., the ovenbird data), such as when sampling
-occurs in distinct seasons or years.  In these applications, we view
-multi-session models as a simplified type of open population model, an
-open model {\it without} explicit Markovian dynamics. They are
-analogous to what is usually referred to as models of random temporary
-emigration \citep{kendall_etal:1997, chandler_etal:2011}.  The models
-are not incorrect, just simplified, reduced versions of more general
-Markovian models, and with fewer parameters to estimate.  We cover
-general Markovian models in Chapt. \ref{chapt.open}.
 
