@@ -31,7 +31,7 @@ table(apply(apply(y, c(1,2), sum)>0, 1, sum))
 n <- apply(y, c(2,3), sum)
 dimnames(n) <- list(paste("trap", 1:J, sep=""),
                     paste("night", 1:K, sep=""))
-n[1:5,]
+n[1:4,]
 
 
 plot(X, cex=rowSums(n), asp=1, xlim=c(0,1))
@@ -51,7 +51,7 @@ library(coda)
 
 set.seed(4569)
 system.time({
-fm1 <- scrUN(n=n, X=X, M=250, niter=250000, xlims=xlim, ylims=ylim,
+fm1 <- scrUN(n=n, X=X, M=250, niter=150000, xlims=xlim, ylims=ylim,
              inits=list(lam0=0.3, sigma=0.01),
              updateY=TRUE,
              tune=c(0.004, 0.09, 0.35))
@@ -82,9 +82,9 @@ plot(mc1)
 
 save(mc1, file="scrUNmc1.gzip")
 
-
-
-
+ls()
+# load("scrUNmc1.gzip")
+ls()
 
 
 # No y updates
@@ -104,6 +104,11 @@ rejectionRate(mc2)
 
 
 save(mc2, file="scrUNmc2.gzip")
+
+ls()
+# load("scrUNmc2.gzip")
+ls()
+
 
 
 fm2.1 <- scrUN(n=n, X=X, M=200, niter=5000, xlims=xlim, ylims=ylim,
@@ -185,6 +190,12 @@ summary(jc2.1)
 
 
 save(jc2.1, file="scrUNjc2.1.gzip")
+
+
+ls()
+# load("scrUNjc2.1.gzip")
+ls()
+
 
 
 
