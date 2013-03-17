@@ -664,7 +664,10 @@ trap $j$, as we've done so many times in previous chapters.
 %MODELS (CONSIDERING THAT THIS STUFF IS PROB. NEW FOR MANY READERS)
 %XXXXXX
 
-We discuss this here in the context of a multinomial observation model
+\subsection{Multinomial (``multi-catch'') observations}
+
+We discuss Bayesian analysis of the multi-session model using data
+augmentation in the context of a multinomial observation model
 such as for a multi-catch sampling situation\footnote{This might be
   slightly confusing that we are considering multinomial observation
   models {\it and} multinomial models for group-specific abundance
@@ -746,6 +749,7 @@ on individual and trap, but also on sample occasion.
 
 \subsection{Reanalysis of the Ovenbird data}
 
+\begin{comment}
 The analysis before used a secr multi-session model in which $N_{t}
 \sim \mbox{Poisson}(\Lambda_{t})$. We also fitted a model in which we
 applied data augmentation to {\it each} year independently, so that
@@ -755,152 +759,146 @@ This would be simlar to the multi-session
 model fitted in \mbox{\tt secr} except with a
 $\mbox{Binomial}(\psi_{t}M)$ prior instead of a
 $\mbox{Poisson}(\Lambda_{t})$ prior.
+\end{comment}
 
-Here we use data augmentation to fit a model that approximates the
+Here we use Bayesian analysis by data augmentation to fit a model that approximates the
 Poisson model with expected value
 $\mathbb{E}(N_{g}) = \lambda_{g}$
-and 
+where we model effects on the log-mean scale according to:
 \[
-\log( \lambda_{g} ) = \beta_{0} + \beta_{1} C_{g}
+\log( \lambda_{g} ) = \beta_{0} + \beta_{1} C_{g}.
 \]
+We consider only two models here: A model with year-specific abundance, and
+a model with a linear trend in density over time, so $C_{g} \equiv
+\mbox{\tt Year}$.
+We show the {\bf BUGS} model specification for the year-specific
+abundance model in Panel \ref{multisession.panel.ovenbird}. Note the
+construction of the multinomial cell probabilities which distribute
+individuals among years, based on the year-specific mean
+$\lambda_{t}$. On the log-scale, each of these parameters has a
+diffuse normal prior: \mbox{\tt beta0[t] ~ dnorm(0,0.01)}. A few lines
+of model specification that compute the derived population size
+parameters and density are not shown, but you can look at the
+{\bf R} script \mbox{\tt ovenbird.ms} in \mbox{\tt scrbook} to run
+this analysis, and produce the posterior summaries shown in 
+Table XXXXX.  
 
-constant mean
-year-specific mean
-linear trend
-and density dependence 
 
-
-To fit a version of the multi-session model ..............
-the precise Bayesian equivalent XXX UNCLEAR: EQUIVALENT TO
-WHAT? XXXX we just have to apply the DA approach described above. The
-{\bf R} script in \mbox{\tt scrbook} to run this analysis is called
-\mbox{\tt ovenbird.ms} which you can use to reproduce the results
-in Table XXXXX.  In terms of comparison with the previous results of
-Sec. \ref{poisson-mn.sec.ovenbird}, they ........  look about the same
-as they should........   XXXX B ut this is not necessarily the case! XXXX
-
-
+\begin{panel}[ht]
+\renewcommand{\baselinestretch}{1.0}
+\centering
+\rule[0.15in]{\textwidth}{.03in}
+{\small
 \begin{verbatim}
 model {
  # year-specific N parameterized in DA parameter 
 
-alpha0 ~ dnorm(0,.01)
-sigma ~ dunif(0,200)
-alpha1 <- 1/(2*sigma*sigma)
-psi<- sum(lambda[])/bigM
+ alpha0 ~ dnorm(0,.01)
+ sigma ~ dunif(0,200)
+ alpha1 <- 1/(2*sigma*sigma)
+ psi<- sum(lambda[])/bigM
 
-A <- ((xlim[2]-xlim[1]))*((ylim[2]-ylim[1]))
-for(t in 1:5){
-for(i in 1:bigM){
-ingroup[i,t]<- yrid[i] == t
-ingroup2[i,t]<- z[i]*ingroup[i,t]
-}
-N[t] <- sum(ingroup2[,t])   ####inprod(z[1:bigM],yrdummy[,t])
-D[t] <- (N[t]/A)*10000  # put in units of per ha
-pi[t]<- lambda[t]/sum(lambda[])
-}
+ for(t in 1:5){
+    beta0[t] ~ dnorm(0,0.01)   
+    log(lambda[t])<- beta0[t]
+    pi[t]<- lambda[t]/sum(lambda[])
+ } 
+ for(i in 1:bigM){
+    z[i] ~ dbern(psi)
+    yrid[i] ~ dcat(pi[])
+    S[i,1] ~ dunif(xlim[1],xlim[2])
+    S[i,2] ~ dunif(ylim[1],ylim[2])
 
-for(t in 1:5){
-log(lambda[t])<- beta0[t]
-beta0[t] ~ dnorm(0.01)
-} 
-for(i in 1:bigM){
-   
-  z[i] ~ dbern(psi)
-  yrid[i] ~ dcat(pi[])
-  S[i,1] ~ dunif(xlim[1],xlim[2])
-  S[i,2] ~ dunif(ylim[1],ylim[2])
-
-  for(j in 1:ntraps){
-      d2[i,j] <- pow(pow(S[i,1]-X[j,1],2) + pow(S[i,2]-X[j,2],2),1)
-   }
-  for(k in 1:K){
-     Ycat[i,k] ~ dcat(cp[i,k,])
     for(j in 1:ntraps){
-      lp[i,k,j] <- exp(alpha0 - alpha1*d2[i,j])*z[i]*(1-died[i,k])        
-      cp[i,k,j] <- lp[i,k,j]/(1+sum(lp[i,k,1:ntraps]))
+        d2[i,j] <- pow(pow(S[i,1]-X[j,1],2) + pow(S[i,2]-X[j,2],2),1)
     }
-    cp[i,k,ntraps+1] <- 1-sum(cp[i,k,1:ntraps])  # last cell = not captured
-  }
+   for(k in 1:K){
+      Ycat[i,k] ~ dcat(cp[i,k,])
+         for(j in 1:ntraps){
+         lp[i,k,j] <- exp(alpha0 - alpha1*d2[i,j])*z[i]*(1-died[i,k])        
+         cp[i,k,j] <- lp[i,k,j]/(1+sum(lp[i,k,1:ntraps]))
+       }
+      cp[i,k,ntraps+1] <- 1-sum(cp[i,k,1:ntraps])  # last cell = not captured
+   }  # close k
+ } # close i
+} # end model
+\end{verbatim}
 }
+\rule[-0.15in]{\textwidth}{.03in}
+\caption{BUGS model specification for a stratified (multi-session) SCR
+  model using data augmentation. This shows a 
+multinomial (``multi-catch'')
+  type of observation model, used to analyze the ovenbird data.
+Some code to tally up the derived population sizes and density
+parameters is omitted. See ovenbird.ms script 
 }
-",file="model.txt")
-###
-###
-###
-
-nind<-c(nrow(Y[[1]]),nrow(Y[[2]]),nrow(Y[[3]]),nrow(Y[[4]]),nrow(Y[[5]]))
-yrid<-NULL
-zst<-NULL
-
-for(i in 1:5){
-yrid<-c(yrid,rep(i,nind[i]),rep(NA,M-nind[i]))
-zst<-c(zst,rep(1,nind[i]),rep(0,M-nind[i]))
-
-}
+\label{multisession.panel.ovenbird}
+\end{panel}
+%A <- ((xlim[2]-xlim[1]))*((ylim[2]-ylim[1]))
+%for(t in 1:5){
+%for(i in 1:bigM){
+%ingroup[i,t]<- yrid[i] == t
+%ingroup2[i,t]<- z[i]*ingroup[i,t]
+%}
+%N[t] <- sum(ingroup2[,t])   ####inprod(z[1:bigM],yrdummy[,t])
+%D[t] <- (N[t]/A)*10000  # put in units of per ha
+%}
 
 
-yrdummy<-as.numeric(c(yrid==1,yrid==2,yrid==3,yrid==4,yrid==5))
-yrdummy<-matrix(yrdummy,ncol=5,byrow=FALSE)
-
-bigM<- 5*M
-
-yrst<-yrid
-yrst[!is.na(yrid)]<- NA
-yrst[is.na(yrid)]<- sample(1:5,sum(is.na(yrid)),replace=TRUE)
-
-inits <- function(){list (z=zst,sigma=runif(1,50,100) ,S=Sst,
-alpha0=runif(1,-2,-1) ,alpha2=-2,alpha3=-2,yrid=yrst ) }              
-## parameters to monitor
-parameters <- c("psi","alpha0","alpha1","sigma","N","D","beta0")
-## data used in BUGS model                                                                  
-data <- list (died=died,yrid=yrid,X=as.matrix(X[[1]]),
-K=10,Ycat=Ymat,bigM=bigM,ntraps=ntraps,ylim=ylim,xlim=xlim)         
 
 
-results (short run)
-
-> out12
+\begin{verbatim} 
+\begin{table}
+\caption{
 Inference for Bugs model at "model.txt", fit using jags,
- 3 chains, each with 2000 iterations (first 1000 discarded)
- n.sims = 3000 iterations saved
-         mu.vect sd.vect   2.5%    25%    50%     75%   97.5%  Rhat n.eff
-D[1]       0.863   0.185  0.550  0.734  0.844   0.966   1.284 1.015   150
-D[2]       0.941   0.199  0.624  0.795  0.917   1.064   1.369 1.008   260
-D[3]       1.127   0.228  0.746  0.966  1.113   1.272   1.614 1.006   370
-D[4]       0.821   0.188  0.514  0.685  0.795   0.929   1.247 1.017   130
-D[5]       0.687   0.162  0.416  0.575  0.673   0.783   1.052 1.008   260
-N[1]      70.579  15.116 45.000 60.000 69.000  79.000 105.000 1.015   150
-N[2]      76.982  16.284 51.000 65.000 75.000  87.000 112.000 1.008   260
-N[3]      92.181  18.615 61.000 79.000 91.000 104.000 132.000 1.006   370
-N[4]      67.126  15.350 42.000 56.000 65.000  76.000 102.000 1.017   130
-N[5]      56.201  13.279 34.000 47.000 55.000  64.000  86.000 1.008   260
-alpha0    -3.457   0.159 -3.774 -3.559 -3.457  -3.353  -3.142 1.002  1300
-alpha1     0.000   0.000  0.000  0.000  0.000   0.000   0.000 1.023   130
-beta0[1]   4.227   0.244  3.747  4.065  4.234   4.396   4.697 1.017   130
-beta0[2]   4.313   0.236  3.830  4.165  4.314   4.475   4.759 1.007   300
-beta0[3]   4.498   0.224  4.046  4.353  4.502   4.656   4.904 1.004   600
-beta0[4]   4.173   0.257  3.660  4.004  4.180   4.356   4.657 1.014   150
-beta0[5]   3.994   0.272  3.439  3.825  4.007   4.183   4.507 1.006   420
-psi        0.363   0.053  0.269  0.326  0.361   0.397   0.471 1.023    98
-sigma     78.613   6.664 66.169 74.024 78.311  82.972  92.482 1.023   130
-
-For each parameter, n.eff is a crude measure of effective sample size,
-and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
-
-
-SECR analysis
-
-
-> ovenbird.model.DT<-secr.fit(ovenCH,model=list(D~session))
-
-318 likelihood evaluations
-and it will give a warning message asking for a larger buffer, so you
-should try 300 and it produces the results below.
-
-Fitted (real) parameters evaluated at base levels of covariates 
+ 3 chains, each with 5000 iterations (first 1000 discarded)
+ n.sims = 12000 iterations saved
+}
+\begin{tabular}{rrrrrrr}
+         mu.vect sd.vect   2.5%     50%     97.5%  Rhat n.eff
+D[1]       0.883   0.191  0.562   0.868     1.308 1.002  2500
+D[2]       0.972   0.200  0.624   0.954     1.418 1.001  3800
+D[3]       1.146   0.224  0.758   1.125     1.638 1.001 12000
+D[4]       0.836   0.183  0.538   0.819     1.247 1.001  9200
+D[5]       0.705   0.167  0.428   0.685     1.088 1.001  4200
+N[1]      72.208  15.596 46.000  71.000   107.000 1.002  2500
+N[2]      79.478  16.367 51.000  78.000   116.000 1.001  3800
+N[3]      93.725  18.327 62.000  92.000   134.000 1.001 12000
+N[4]      68.399  14.952 44.000  67.000   102.000 1.001  9200
+N[5]      57.665  13.659 35.000  56.000    89.000 1.001  4200
+alpha0    -3.465   0.159 -3.779  -3.465    -3.155 1.004   570
+alpha1     0.000   0.000  0.000   0.000     0.000 1.009   240
+beta0[1]   4.250   0.244  3.754   4.257     4.710 1.001  4600
+beta0[2]   4.349   0.233  3.872   4.356     4.786 1.001 10000
+beta0[3]   4.516   0.220  4.059   4.522     4.930 1.001 12000
+beta0[4]   4.194   0.248  3.697   4.202     4.664 1.001 12000
+beta0[5]   4.013   0.275  3.456   4.022     4.524 1.001  3600
+psi        0.371   0.051  0.281   0.367     0.482 1.001  3800
+sigma     77.918   6.314 66.963 77.240     91.583 1.009   240
+\end{tabular}
+\end{table}
+\end{verbatim}
 
 
+We previously analyzed these data in 
+Sec. \ref{poisson-mn.sec.ovenbird} using \mbox{\tt secr} and the
+``one-at-a-time'' data augmentation approach (independent binomial
+priors for $N_{t}$).
+To reproduce those results from \mbox{\tt secr} for the equivalent
+model we execute this command:
+\begin{verbatim}
+> ovenbird.model.DT<-secr.fit(ovenCH,model=list(D~session),buffer=300)
+\end{verbatim}
+Note, small values of \mbox{\tt buffer} can produce a warning that
+it is too small relative to the indicated value of $\sigma$ (which has
+posterior mass up to near $\sigma = 100$). 
+The \mbox{\tt secr} results are as follows: {\bf (XXXX Maybe I put just the
+estimates and SE in a small table? XXXXXX)}. There are, as always,
+slight differences between the MLEs shown here and the posterior
+summaries shown Table XXXXX. 
+
+{\small
+\begin{verbatim}
 Fitted (real) parameters evaluated at base levels of covariates 
 
  session = 2005 
@@ -932,14 +930,8 @@ sigma   log 78.56622352 6.379032913 67.02513663 92.09457509
 D       log  0.70067100 0.173309237  0.43459960  1.12963714
 g0    logit  0.02762856 0.004047056  0.02071139  0.03676918
 sigma   log 78.56622352 6.379032913 67.02513663 92.09457509
-
-
-
 \end{verbatim}
-
-
-
-
+}
 
 
 

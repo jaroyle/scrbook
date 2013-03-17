@@ -150,7 +150,7 @@ model {
 
 # Priors
 alpha0~dunif(-25,25)
-alpha1~dunif(0,25)
+alpha1~dunif(0,60)
 sigma<- sqrt(1/(2*alpha1))
 lsigma~dunif(-5,5)
 sigma.move<-exp(lsigma)
