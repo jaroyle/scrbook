@@ -9,54 +9,56 @@
 \section{Introduction}
 
 
-All of the previous chapters focused on closed population models
-for estimating density and for inference about spatial variation in density.
-However, a thorough
-understanding of population dynamics
-requires information about both
-spatial and  temporal variation in population density and demographic parameters.
-In this chapter,
-we develop a framework for
-inference about the processes governing spatial and temporal dynamics,
-namely survival, recruitment, and movement (migration, dispersal, etc...).
-The ability to estimate these parameters is critical to both basic and
-applied ecological research (\cite{knape_deValpine:2012}. For example, testing hypotheses about
-life history trade-offs requires accurate estimates of both survival
-and fecundity (\cite{caswell:1989, nichols_etal:1994}).
-Inference about density-dependent population
-regulation, which has fascinated theoretical ecologists for well over
-a century,
-is likewise best accomplished by studying
-the factors affecting survival and fecundity, rather than the more common approach of
-modeling time series data \citep{nichols_etal:2000}.  A mechanistic understanding
-of population changes, which is essential for basic ecological and conservation based questions,
-requires useful models of vital
-rates. Furthermore, if we know how environmental
-variables affect demographic parameters, we can make predictions about
-population changes under different future scenarios. We can also assess
-the sensitivity of parameters such as population growth rate to
-variation in survival or fecundity. Although matrix
-population models are often used for these purposes \citep{caswell:1989,saether_bakke:2000}, the same
-objectives can be accomplished by computing posterior predictive
+In the previous chapters we focused mostly on
+ closed population models for
+estimating density and for inference about spatial variation in
+density.  However, a thorough understanding of population dynamics
+requires information about both spatial and temporal variation in
+population density and demographic parameters.  In this chapter, we
+discuss modeling
+ the processes governing
+spatial and temporal dynamics, namely survival, recruitment, and
+movement (migration, dispersal, etc...).  The ability to estimate
+these parameters is critical to both basic and applied ecological
+research (\cite{knape_deValpine:2012}. For example, testing hypotheses
+about life history trade-offs requires accurate estimates of both
+survival and fecundity (\cite{caswell:1989, nichols_etal:1994}).
+Inference about density-dependent population regulation, which has
+fascinated theoretical ecologists for well over a century, is likewise
+best accomplished by studying the factors affecting survival and
+fecundity, rather than the more common approach of modeling time
+series data \citep{nichols_etal:2000}.  A mechanistic understanding of
+population changes, which is essential for basic ecological and
+conservation based questions, requires useful models of vital
+rates. Furthermore, if we know how environmental variables affect
+demographic parameters, we can make predictions about population
+changes under different future scenarios. We can also assess the
+sensitivity of parameters such as population growth rate to variation
+in survival or fecundity. Although matrix population models are often
+used for these purposes \citep{caswell:1989,saether_bakke:2000}, the
+same objectives can be accomplished by computing posterior predictive
 distributions as part of the MCMC algorithm.
 
 The modeling framework we will develop in this chapter is based on a
-formulation of Cormack-Jolly-Seber (CJS) and Jolly-Seber (JS) type
-models \citep{cormack:1964, jolly:1965, seber:1965} that are amenable
-to modeling individual effects, including individual covariates.
-There is a long history of use of these models in fisheries, wildlife,
-and ecology studies \citep{pollock_etal:1990, lebreton_etal:1992,
-  pradel:1996, williams_etal:2002, schwarz_arnason:2005, gimenez:2007}.
-Additionally, there have been many modifications and developments of
-the CJS and JS models including dealing with individuals that do have a
-well defined home range but instead are moving through the sampled area (transients),
-dealing with more than one site or state (multi-state models; states maybe
+formulation of the classical Cormack-Jolly-Seber (CJS) and Jolly-Seber
+(JS) type models \citep{cormack:1964, jolly:1965, seber:1965} that are
+amenable to modeling individual effects, including individual
+covariates.  There is a long history of use of these models in
+fisheries, wildlife, and ecology studies \citep{pollock_etal:1990,
+  lebreton_etal:1992, pradel:1996, williams_etal:2002,
+  schwarz_arnason:2005, gimenez:2007}.  Additionally, there have been
+many modifications and developments of the CJS and JS models including
+dealing with individuals that do have a well defined home range but
+instead are moving through the sampled area (transients), dealing with
+more than one site or state (multi-state models; states maybe
 geographic units, reproductive stage, etc.), and addressing individual
 movement through spatially implicit models.
 
 
 For the first time, these models can fully
-integrate the movement of individuals onto and off of the trap array
+integrate the movement of individuals in the vicinity of the
+trap array
+%%%onto and off of the trap array
 with their encounter histories to simultaneously estimate density,
 survival, and recruitment in a spatial model.
 For many species, such
@@ -69,11 +71,13 @@ sampling perspective.  Longer time periods are often needed to sample
 rare or elusive species to ensure that enough captures and recaptures
 are produced.  This extended time frame can quickly lead to violations
 in the assumption of population closure.  For example, the European
-wildcat study that was mentioned in Chapt \ref{chapt.covariates} (see
+wildcat study that was mentioned in Chapt. \ref{chapt.covariates} (see
 \citet{kery_etal:2011} for details) was
-conducted over a year long period.  While the researchers in that
-study used a closed population, they did model variation in detection
-as a function of time.  Another approach would have been to use an
+conducted over a year-long period.  While the researchers in that
+study used a closed population model, they did model variation in detection
+as a function of time to account for seasonal variation in behavior. 
+%% andy added the last phrase to above line
+ Another approach would have been to use an
 open population model (the spatial capture recapture open models had
 not been developed at the time of the wildcat study, so we'll forgive
 the authors for not having used this more appropriate model).
@@ -90,89 +94,114 @@ movement and dispersal.
 
 \subsection{Brief overview of population dynamics}
 
-The most basic formulation of models for population growth stems from an idea originally used
-in accounting, the balance sheet.  To gain a mechanistic understanding of population dynamics, it is
-important to understand four fundamental processes that drive
-population size: births and immigrants (i.e., population ``credits'') and deaths and
-emigrants (i.e., population ``debits'').  The population at time $t+1$ is a
-function of these four components:
+The most basic formulation of models for population growth stems from
+an idea originally used in accounting, the balance sheet.  To gain a
+mechanistic understanding of population dynamics, it is important to
+understand four fundamental processes that drive population size:
+births and immigrants (i.e., population ``credits'') and deaths and
+emigrants (i.e., population ``debits'').  The population at time $t+1$
+is a function of these four components:
 \[
 N(t+1) = N(t) + B(t) + I(t) - D(t) - E(t)
 \]
-where $N(t)$ is the population size at time $t$, $B(t)$ and $I(t)$ are the credits (additions) from births and
-immigrants at time $t$, and $D(t)$ and $E(t)$ are the debits (losses) due to deaths and emigration.   This balance
-equation model is
-known as
-the ``BIDE model''.  A simple population growth model under density independence, assuming no immigration or emigration,
-can be derived as:
+where $N(t)$ is the population size at time $t$, $B(t)$ and $I(t)$ are
+the credits (additions) from births and immigrants at time $t$, and
+$D(t)$ and $E(t)$ are the debits (losses) due to deaths and
+emigration.  This balance equation model is known as the ``BIDE
+model''.  A simple population growth model under density independence,
+assuming no immigration or emigration, can be derived as:
 \[
 N(t+1) = N(t) + N(t)r(t)
 \]
-where $r(t) = b(t) - d(t)$.  Here, $b(t)$ and $d(t)$ are the per-capita birth and death rates and thus $r(t)$ is the per-capita
-growth rate. Models which are based only on the intrinsic population growth rate, `r';
-however, do not retain much information
-about the underlying drivers of the population dynamics.
-Density-dependent, age structured, stochastic effects on
-growth, spatially structured, and competition models (e.g., Lotka-Volterra)
-all are derivations of the basic BIDE model.
+where $r(t) = b(t) - d(t)$.  Here, $b(t)$ and $d(t)$ are the
+per-capita birth and death rates and thus $r(t)$ is the per-capita
+growth rate. Models which are based only on the intrinsic population
+growth rate, `r'; however, do not retain much information about the
+underlying drivers of the population dynamics.  Density-dependent, age
+structured, stochastic effects on growth, spatially structured, and
+competition models (e.g., Lotka-Volterra) all are derivations of the
+basic BIDE model.
 
-In closed population models, we focus on estimating the population size, $N$,
-but in open population models
-we are interested in the dynamics that arise between years or seasons
-and thus we focus not only on $N(t)$ but on the processes
-that drive the population changes.  By taking the basic parameters in the BIDE model and reconceptualizing them,
-they can then be related to the commonly used parameters in JS and CJS models, described in more detail
-throughout this chapter. In the absence of movement, deaths (D) can be estimated in the
-CJS model and both D and B (births) can be estimated in the JS model.  However,
-in considering movement, it becomes difficult to distinguish births from immigrants and
-deaths from emigrants. For example, survival ($\phi(t)$) is defined as the probability of an individual
-surviving from time $t$ to $t+1$, and often this is called `\textit{apparent} survival' because
-deaths and emigration cannot be separated. Mortality, the probability of dying from time $t$ to $t+1$, is $1-\phi(t)$.
-Recruitment ($\gamma$) is the probability of a new individual entering the population between $t$ to $t+1$, which includes both those
-born into the population and immigrants. This inability to distinguish between the different forms of
-losses and gains does not allow researchers to test specific hypotheses about population
-dynamics.   To address this, \cite{nichols_pollock:1990} applied the robust design to a two age class situation in order to
-separate estimates of recruitment into immigration and {\it in situ } reproduction.  While models that focus
-on the population growth rate tend to lose important information on population dynamics, more recent work has been done
-to estimate the contributions of survival and recruitment to the per capita growth rate, `r', using capture-recapture data and a reverse-time
-modeling approach (\citep{pradel:1996, nichols_etal:2000a}).   All of these model improvements have provided invaluable
-information in the study of population dynamics, but none explicitly incorporate animal movement.
+In closed population models, we focus on estimating the population
+size, $N$, but in open population models we are interested in the
+dynamics that arise between years or seasons and thus we focus not
+only on $N(t)$ but on the processes that drive the population changes.
+By taking the basic parameters in the BIDE model and reconceptualizing
+them, they can then be related to the commonly used parameters in JS
+and CJS models, described in more detail throughout this chapter. In
+the absence of movement, deaths (D) can be estimated in the CJS model
+and both D and B (births) can be estimated in the JS model.  However,
+in considering movement, it becomes difficult to distinguish births
+from immigrants and deaths from emigrants. For example, survival
+($\phi(t)$) is defined as the probability of an individual surviving
+from time $t$ to $t+1$, and often this is called `\textit{apparent}
+survival' because deaths and emigration cannot be
+separated. Mortality, the probability of dying from time $t$ to $t+1$,
+is $1-\phi(t)$.  Recruitment ($\gamma$) is the probability of a new
+individual entering the population between $t$ to $t+1$, which
+includes both those born into the population and immigrants. This
+inability to distinguish between the different forms of losses and
+gains does not allow researchers to test specific hypotheses about
+population dynamics.  To address this, \cite{nichols_pollock:1990}
+applied the robust design to a two age class situation in order to
+separate estimates of recruitment into immigration and {\it in situ }
+reproduction.  While models that focus on the population growth rate
+tend to lose important information on population dynamics, more recent
+work has been done to estimate the contributions of survival and
+recruitment to the per capita growth rate, `r', using
+capture-recapture data and a reverse-time modeling approach
+(\citep{pradel:1996, nichols_etal:2000a}).  All of these model
+improvements have provided invaluable information in the study of
+population dynamics, but none explicitly incorporate animal movement.
 
 
 \subsection{Animal movement related to population demography}
 
 
-One issue that arises frequently in traditionally open population models is that movement can
-make it difficult to distinguish survival from emigration.
-For example, we know that movement of transients and temporary emigration will affect
-the estimates of survival, causing us to refer to estimates as ``apparent survival'' (\cite{lebreton_etal:1992}).
-This is because an animal that appears in the population for a short period of time and then leaves
-is going to appear as though it has died.  Due to this problem, there has been a significant amount
-of work developing models to deal with temporary emigration and transients in both closed and open capture-recapture models
-\citep{kendall_etal:1997, pradel_hines:1997, hines_etal:2003, clavel_etal:2008, gilroy_etal:2012}.  Because movement is estimated directly
-within the SCR framework, we can better understand the impact of animals moving onto and off of the trap
-array and hence we can improve our estimates of survival by combining the traditional CJS and JS models with
-the SCR model.
+One issue that arises frequently in traditionally open population
+models is that movement can make it difficult to distinguish survival
+from emigration.  For example, we know that movement of transients and
+temporary emigration will affect the estimates of survival, causing us
+to refer to estimates as ``apparent survival''
+\citep{lebreton_etal:1992}.  This is because an animal that appears
+in the population for a short period of time and then leaves is going
+to appear as though it has died.  Due to this problem, there has been
+a significant amount of work developing models to deal with temporary
+emigration and transients in both closed and open capture-recapture
+models \citep{kendall_etal:1997, pradel_hines:1997, hines_etal:2003,
+  clavel_etal:2008, gilroy_etal:2012,chandler_etal:2011}.  
+Because movement is modeled %%%estimated
+directly within the SCR framework, we can better understand the impact
+of animals moving onto and off of the trap array and hence we can
+improve our estimates of survival by combining the traditional CJS and
+JS models with the SCR model.
 
-While demographic parameters such as
-survival rates, population growth, etc. are influenced by density (\cite{fowler:1981, murdoch:1994, saether_etal:2002}), it is also likely that movement of individuals
-can influence these parameters.
-It is generally accepted that population structure (i.e., age, stage, or size distribution) can affect
- both population size and growth over time \cite{caswell_werner:1978}.
-We also know that how animals distribute themselves in space
-can directly influence the age or stage structure of a population -- this can be behavioral, habitat
-related, or some combination of factors.
-For example, if habitat is limited,
-some younger members of the population might have trouble finding
-and/or defending a territory.  Ultimately, this may lower survival for a certain age class in the population directly
-impacting the population structure.
+While demographic parameters such as survival rates, population
+growth, etc. are influenced by density (\cite{fowler:1981,
+  murdoch:1994, saether_etal:2002}), it is also likely that movement
+of individuals can influence these parameters.  It is generally
+accepted that population structure (i.e., age, stage, or size
+distribution) can affect both population size and growth over time
+\cite{caswell_werner:1978}.  We also know that how animals distribute
+themselves in space can directly influence the age or stage structure
+of a population -- this can be behavioral, habitat related, or some
+combination of factors.  For example, if habitat is limited, some
+younger members of the population might have trouble finding and/or
+defending a territory.  Ultimately, this may lower survival for a
+certain age class in the population directly impacting the population
+structure.
 
-Dispersal can also affect population structure.  In population ecology, dispersal can be related with accession to reproduction,
-population regulation, habitat quality, as well as the linking of local populations in metapopulation
-ecology (\cite{clobert_etal:2001, ovaskainen:2004, ovaskainen_etal:2008}).   It is known
-that dispersal may be influenced by density-dependence (\cite{matthysen:2005}); for example, competition may cause individuals
-to be more likely to emigrate from an area, while on the other hand individuals may leave an area in search
-a mate or partner.  We discuss modeling dispersal with capture recapture data a bit further in Sec. \ref{open.sec.ACdyanmics} at the end of the chapter.
+Dispersal can also affect population structure.  In population
+ecology, dispersal can be related with accession to reproduction,
+population regulation, habitat quality, as well as the linking of
+local populations in metapopulation ecology (\cite{clobert_etal:2001,
+  ovaskainen:2004, ovaskainen_etal:2008}).  It is known that dispersal
+may be influenced by density-dependence (\cite{matthysen:2005}); for
+example, competition may cause individuals to be more likely to
+emigrate from an area, while on the other hand individuals may leave
+an area in search a mate or partner.  We discuss modeling dispersal
+with capture recapture data a bit further in
+Sec. \ref{open.sec.ACdyanmics} at the end of the chapter.
 
 
 
@@ -224,51 +253,55 @@ chapter, we can estimate heterogeneity in capture probabilities.
 
 \subsection{Traditional Jolly-Seber models}
 
-The JS model was developed as a way to estimate not only
-detection and abundance, but survival and recruitment (new
-individuals coming into the population) based on
-capture-recapture data (\cite{jolly:1965, seber:1965}).
-There are a number of ways that researchers have
-formulated the JS model and while
-all are slightly different,
-the resulting estimates of abundance and the driving parameters such
-as survival and some form of recruitment should be the same.
-The most commonly used formulations are the
-Link-Barker (\citep{link_barker:2005}, Pradel-recruitment (\citep{pradel:1996}), Burham JS,
-and POPAN (\citep{schwarz_arnason:1996}).
-In all of these models, the parameter of interest
-is recruitment, or how new individuals arrive into the population.
-Therefore one of the main differences between
-the various models is how new entrants into the population are parameterized.
+The JS model was developed as a way to estimate not only detection and
+abundance, but survival and recruitment (new individuals coming into
+the population) based on capture-recapture data (\cite{jolly:1965,
+  seber:1965}).  There are a number of ways that researchers have
+formulated the JS model \citep{cooch_white:2006} 
+and while all are slightly different, the
+resulting estimates of abundance and the driving parameters such as
+survival and some form of recruitment should be equivalent. 
+Commonly used formulations are the Link-Barker
+(\citep{link_barker:2005}, Pradel-recruitment (\citep{pradel:1996}),
+%%%% XXXXX POPAN? Is this the Super-population one?
+Burham JS, and the super-population formulation of
+ \citet{schwarz_arnason:1996}.     %% What is the "Burnham JS" --
+                                %% never heard of it! ?
+%% I edited this line above
+In all of these
+models, the parameter of interest is recruitment, or how new
+individuals arrive into the population.  Therefore one of the main
+differences between the various models is how new entrants into the
+population are parameterized.
 
 
-While the JS model can be analyzed with sampling conducted only once between the occassions
-in which survival will be estimated;
-\citet{pollock:1982} created the robust design in order to allow for heterogeneity in capture probability
-under the JS model.  We present the robust design approach as it is more flexible and generalizing
-to the spatial version of the JS model will be much simplier.
-The basic idea is that there are primary occasions (e.g., years, seasons) and we
-allow the population to be ``open'' between the primary occasions.  This means that individuals can enter
-and leave the population (i.e., births, deaths, immigration,
-emigration can occur) between the primary occasions and within a primary occasion,
-the population is assumed to be
-closed to these processes.
-The standard JS model
-does not allow for variation in detection probability between individuals or within
-a primary occasion because only one sample is collected per primary
-period.
-However, when multiple samples are taken within a primary
-occasion (we call these ``secondary occasions''), then variation in detection probability can be modeled and thus
-our estimates of $N$ can be improved.  To
-that extent, we can envision the data as arising from repeated
-sampling over seasons or years (or {\it primary} periods) within which
-one or more samples (e.g., nights) might be taken ({\it secondary}
-periods). Fig. \ref{open.figs.robustdesign} demonstrates the sampling process graphically.
-Comparing this with all of our previous work, the sample
-occasions %intervals
+While the JS model can be analyzed with sampling conducted only once
+between the occassions in which survival will be estimated;
+\citet{pollock:1982} devised
+ the robust design in order to allow for
+%% Was this really the motivation?  What kind of heterogeneity? Individual?
+heterogeneity in capture probability under the JS model.  We present
+the robust design approach as it is more flexible and generalizing to
+the spatial version of the JS model will be much simplier.  The basic
+idea is that there are primary occasions (e.g., years, seasons) and we
+allow the population to be ``open'' between the primary occasions.
+This means that individuals can enter and leave the population (i.e.,
+births, deaths, immigration, emigration can occur) between the primary
+occasions and within a primary occasion, the population is assumed to
+be closed to these processes.  The standard JS model does not allow
+for variation in detection probability between individuals or within a
+primary occasion because only one sample is collected per primary
+period.  However, when multiple samples are taken within a primary
+occasion (we call these ``secondary occasions''), then variation in
+detection probability can be modeled and thus our estimates of $N$ can
+be improved.  To that extent, we can envision the data as arising from
+repeated sampling over seasons or years (or {\it primary} periods)
+within which one or more samples (e.g., nights) might be taken ({\it
+  secondary} periods). Fig. \ref{open.figs.robustdesign} demonstrates
+the sampling process graphically.  Comparing this with all of our
+previous work, the sample occasions %intervals
 (e.g., trap nights, weeks, etc$\dots$) described in the closed
-population chapters are
-called {\it secondary} sampling occasions.
+population chapters are called {\it secondary} sampling occasions.
 
 
 
@@ -280,10 +313,14 @@ are considered open between primary periods and closed within the secondary}
 \label{open.figs.robustdesign}
 \end{figure}
 
-Based on the robust design, we can easily create a non-spatial JS model.  We define $y_{ikt}$ as the encounter
-history for individual $i$ at secondary occasion $k$ during primary occasion $t$.  If we have a Bernoulli encounter
-process then we can describe the observation model, specified
-conditional on the alive state, $z(i,t)$, for individual $i$ at primary time $t$, as:
+We can easily formulate
+ a non-spatial JS
+model using the robust design.  We 
+define $y_{ikt}$ as the encounter history for individual
+$i$ at secondary occasion $k$ during primary occasion $t$.  If we have
+a Bernoulli encounter process then we can describe the observation
+model, specified conditional on the ``alive state'', $z(i,t)$, for
+individual $i$ at primary time $t$, as:
  \[
   y_{ikt}|z(i,t) \sim
 \mbox{Bernoulli}(p z(i,t)).
@@ -291,7 +328,9 @@ conditional on the alive state, $z(i,t)$, for individual $i$ at primary time $t$
 Thus, if individual $i$ is alive at time $t$ ($z(i,t)=1$), then the
 observations are Bernoulli with detection probability $p$ as before.  Conversely, if the individual is
 not alive ($z(i,t)=0$), then the observations must be fixed zeros with
-probability 1.
+probability 1. Note our distinct use of the variable $z$ here as
+representing the state of individuals (alive/dead) instead of our
+previous use of $z$ as the data augmentation variable. 
 
 Survival and recruitment in the open population are manifest in a
 model for the latent state variables $z(i,t)$ describing individual
@@ -302,7 +341,6 @@ number of individuals ever alive during the study (a parameter which
 we label $N$) based on $T$ periods, as in \cite{schwarz_arnason:1996}.  Data
 augmentation induces a special interpretation on the latent state
 variables $z(i,t)$.
-
 In particular, ``not alive'' includes individuals
 that have died, or individuals that have not yet been recruited.
 \citep{royle_dorazio:2008} showed that using this formulation
@@ -332,37 +370,37 @@ $t$ to $t+1$ is:
  z(i,t+1) \sim \mbox{Bernoulli}( \phi_t z(i,t)  + \gamma_t (1-z(i,t)) ).
 \]
 
-This parameterization then results in $T-1$ survival and recruitment
+This parameterization results in $T-1$ survival and recruitment
 parameters.  The main difference here from the CJS model, described below,
  is that we include recruitment and are interested in estimating $N$ for each $t$.
-Since this state model described above is conditional-on-N, we must
-deal with the fact that N is unknown, which is done through data
+Since this state model described above is conditional-on-$N$, we must
+deal with the fact that $N$ is unknown, which is done through data
 augmentation similar to how we used it in the closed population
 models.
 
 
 \subsection{Data augmentation for the Jolly-Seber model}
 
-The fundamental challenge in carrying out a
-Bayesian analysis of this model
-is that the parameter $N$ (the total number of individuals alive
-during the study)
-is not known.  We have discussed and
-demonstrated data augmentation in many previous chapters; however,
-with the open population model, we have to take care that two issues
-are addressed: (1) the data augmentation is large enough to accommodate
-all potential individuals alive in the population during the entire
-study and (2) that individuals cannot die and then re-enter the
-population.  \citep{royle_dorazio:2008} describe this formulation for
-open population models, including the non-spatial JS and robust
-design models.
+The fundamental challenge in carrying out a Bayesian analysis of this
+model is that the parameter $N$ (the total number of individuals alive
+during the study) is not known.  We have discussed and demonstrated
+data augmentation in many previous chapters; however, with the open
+population model, we have to take care that two issues are addressed:
+(1) the data augmentation is large enough to accommodate all potential
+individuals alive in the population during the entire study and (2)
+that individuals cannot die and then re-enter the population.
+\citep{royle_dorazio:2008} (see also \citet{kery_schaub:2011})  
+describe this formulation for open
+population models, including the non-spatial JS and robust design
+models.
 
 To begin, let's consider the role of recruitment, $\gamma$, in the
 model when we use data augmentation to estimate $N$.
 Data augmentation formally reparameterizes the model, replacing $N$,
 the number of individuals ever alive with $M$, where we
-assume $N \sim \mbox {Bin}(M, \psi)$.  This is the same as having
-a discrete uniform prior on $N$, when the prior for $\psi$ is $\mbox{Unif}(0,1)$.
+assume $N \sim \mbox {Binomial}(M, \psi)$.  
+%This is the same as having a discrete uniform prior on $N$, when the 
+% prior for $\psi$ is $\mbox{Unif}(0,1)$.
 That is, the expected value of $N$ under the model is equal to
 $\psi M$.  As a result of this repararameterization, the recruitment
 parameters $\gamma_{t}$ are also relative to the number of ``available
@@ -370,8 +408,9 @@ recruits'' on the data augmented list of size $M$, and not directly
 related to the population size.  This can be dealt with
 by deriving
 $N_t$, and $R_{t}$, the population size and number of recruits in year
-$t$, as a function of the latent state variables $z(i,t)$.  In
-particular, the total number of individuals alive at time $t$ is
+$t$, as a function of the latent state variables $z(i,t)$.  For
+example, 
+ the total number of individuals alive at time $t$ is
 \[
 N_{t} = \sum_{i=1}^{M} z(i,t)
 \]
@@ -388,7 +427,7 @@ greater than 2, we must formulate the model for recruitment by
 introducing another latent variable.  We do this in order to ensure
 that an individual can only be recruited once into the population.
 Here, this formulation of the model uses a set of latent indicator
-variables, $A(i,t)$,
+variables, which we label $A(i,t)$,
 which describe the time interval $(t-1, t)$ at
 which individual is recruited into the population.  Let $A(i,t) = 1$
 if individual $i$ is recruited in time interval $(t-1, t)$ otherwise
@@ -396,11 +435,11 @@ $A(i,t)=0$.  To construct the recruitment process we make use of the
 standard conditional binomial construction of a removal process
 (\citealt{royle_dorazio:2008}).  The initial state is given by:
 \[
-   A(i,1) \sim \mbox{Bin}(1, \gamma_{1})
+   A(i,1) \sim \mbox{Binomial}(1, \gamma_{1})
 \]
 for $i=1,2,\ldots,N$. Then, for $t>1$
 \[
- A(i,t)|A(i, t-1) \dots A(i, 1) \sim \mbox{Bin}((1 - \sum_{\tau=1}^{t-1} A(i, \tau) ) \times \gamma_{t}, 1)
+ A(i,t)|A(i, t-1) \dots A(i, 1) \sim \mbox{Binomial}((1 - \sum_{\tau=1}^{t-1} A(i, \tau) ) \times \gamma_{t}, 1)
 \]
 % XXXX What is tau here? XXXX  BETH:  it's just an index place holder, can't use t
 Each recruitment variable is conditional on whether the individual was ever
