@@ -47,13 +47,19 @@ points(s, col=gray(0.5), pch=16)
 library(scrbook)
 library(coda)
 
-#source("../../Rpackage/scrbook/R/scrUN.R")
+# source("../../Rpackage/scrbook/R/scrUN.R")
 
 set.seed(4569)
 system.time({
-fm1 <- scrUN(n=n, X=X, M=250, niter=10000, xlims=xlim, ylims=ylim,
+fm1 <- scrUN(n=n, X=X, M=250, niter=1000, xlims=xlim, ylims=ylim,
              inits=list(lam0=0.3, sigma=0.01),
              updateY=TRUE,
+             priors=list(sigma=list("dgamma",
+                                    list(shape=0.001, rate=0.001)),
+                         lam0=list("dgamma",
+                                   list(shape=0.001, rate=0.001)),
+                         psi=list("dbeta",
+                                  list(shape1=0.001, shape2=1))),
              tune=c(0.004, 0.09, 0.15))
 }) # 39700 it/hr
 
@@ -67,7 +73,7 @@ rejectionRate(window(mc1, start=10001))
 
 
 
-
+debugonce(scrUN)
 
 
 fm1.1 <- scrUN(n=n, X=X, M=200, niter=5000, xlims=xlim, ylims=ylim,
