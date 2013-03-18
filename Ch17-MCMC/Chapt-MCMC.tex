@@ -26,7 +26,7 @@ building MCMC samplers relevant to SCR models.
 
 
 
-\subsection{Why build your own MCMC algorithm?}
+\section{Why build your own MCMC algorithm?}
 
 The standard programs we have used so far to do MCMC analyses are
 {\bf WinBUGS} \citep{gilks_etal:1994} and {\bf JAGS}
@@ -39,7 +39,7 @@ of MCMC sampling for the model specified by the user.
 The fact that we have such a Swiss Army knife type of MCMC machine
 begs the question: Why would anyone want to build their own MCMC
 algorithm? For one, there are a limited number of distributions and
-functions implemented in {\bf BUGS}. While {\bf OpenBUGS} provides more
+functions implemented in {\bf BUGS}. While {\bf OpenBUGS} and {\bf JAGS} provide more
 options, some more complex models may be impossible to build within
 these programs. A very simple example from spatial capture-recapture
 that can give you a headache in {\bf WinBUGS} is when your state-space is an
@@ -47,16 +47,12 @@ irregular-shaped polygon, rather than an ideal rectangle that can be
 characterized by four pairs of coordinates. It is easy to restrict
 activity centers to any arbitrary polygon in {\bf R} using an ESRI shapefile
 (and we will show you an example in a little bit), but you cannot use
-a shape file in a {\bf BUGS} model.  Similarly, models of space usage
+a shapefile in a {\bf BUGS} model.  Similarly, models of space usage
 that take into account ecological distance
 (Chapt. \ref{chapt.ecoldist}) cannot be implemented in the {\bf BUGS}
 engines.
-%Moreover, there are classes of
-% SCR models that we have not been able to implement effectively using
-% likelihood methods, and are inefficient to run in the {\bf BUGS}
-% engines. Examples of those models are covered in Chapts.
-% \ref{chapt.scr-unmarked} and \ref{chapt.partialID}.
-Sometimes implementing an MCMC algorithm in {\bf R} may be faster than in
+
+Sometimes, implementing an MCMC algorithm in {\bf R} may be faster than in
 {\bf WinBUGS} - especially if you want to run simulation studies where you
 have hundreds or more simulated data sets, several years' worth of
 data or other large models, this can be a big advantage. Further, writing your own sampler gives you more control over which kind of updater is used (see following sections).
@@ -65,8 +61,7 @@ understand how MCMC sampling works. So while using the {\bf BUGS}
 language requires you to understand the structure of your model,
 building an MCMC algorithm requires you to think about the
 relationship between your data, priors and posteriors, and how these
-can be efficiently analyzed and characterized. Not to mention that, if
-you are an {\bf R} junkie, it can actually be fun.  However, if you
+can be efficiently analyzed and characterized.  However, if you
 don't think you will ever sit down and write your own MCMC sampler,
 consider skipping this chapter - apart from coding it will not cover
 anything SCR-related that is not covered by other, more model-oriented
@@ -119,11 +114,11 @@ framework, we first have to define a prior distribution for $\mu$. Recall
 from Chapt. \ref{chapt.glms}
 that for certain data models, certain priors lead to
 conjugacy, i.e. if you choose a certain prior for your parameter,
-the posterior distribution will be of a known parametric form. More specifically, under conjugacy, the prior and posterior distributions are fromn the same parametric family. The
+the posterior distribution will be of a known parametric form. More specifically, under conjugacy, the prior and posterior distributions are from the same parametric family. The
 conjugate prior for the mean of a normal model is also a normal
 distribution:
 \[
-\mu \sim \mbox{Normal}(\mu_0, \sigma_{0}^{2})
+\mu \sim \mbox{Normal}(\mu_0, \sigma_{0}^{2}).
 \]
 If $\mu_{0}$ and $\sigma_{0}^{2}$ are fixed, the posterior for $\mu$
 has the following form (for some of the algebra behind this, see Chapt. 2 in \citet{gelman_etal:2004}):
@@ -137,10 +132,10 @@ where
 \]
 and
 \[
- \sigma_{n}^{2} = \frac{\sigma^{2}  \sigma_{0}^{2}} {\sigma^{2} + n \sigma_{0}^{2}}
-\].
+ \sigma_{n}^{2} = \frac{\sigma^{2}  \sigma_{0}^{2}} {\sigma^{2} + n \sigma_{0}^{2}}.
+\]
 We can directly obtain estimates of interest from this normal
-posterior distribution, such as its mean $\hat{\mu}$ (which is an estimate of $\mu_{n}$) and variance; we
+posterior distribution, such as its mean $\hat{\mu}$ (which is equivalent to an estimate of $\mu_{n}$) and variance; we
 do not need to apply MCMC, since we can recognize the posterior as a
 parametric distribution, including the normalizing constant $[y]$.
 But generally we will be interested in more complex models with
@@ -212,7 +207,7 @@ distribution of $\mu|y$ is also normal. Conversely, with a fixed
 $\sigma^2$ is an inverse-gamma distribution with shape and scale
 parameters $a$ and $b$:
 \[
-\sigma^2 \sim \mbox{Inverse-Gamma}(a,b),
+\sigma^2 \sim \mbox{Inverse-Gamma}(a,b).
 \]
 With fixed $a$ and $b$, algebra reveils that the posterior $[\sigma^2|\mu,y]$ is also an inverse-gamma distribution, namely:
 \begin{equation}
@@ -255,17 +250,17 @@ unknown $\mu$ and $\sigma^2$ and conjugate priors as an example. These are the
 steps you need in order to build a Gibbs sampler:
 
 {\flushleft {\bf Step 0:} Begin with some initial values for $\theta$, say $\theta^{(0)}$.}
-In our example,$\theta =(\mu,\sigma)$, so we have to specify initial values for $\mu$ and $\sigma$, for
+In our example, $\theta =(\mu,\sigma)$, so we have to specify initial values for $\mu$ and $\sigma$, for
 example by drawing a random number from some uniform distribution, or
 by setting them close to what we think they might be. (Note: This step
 is required in any MCMC sampling; chains have to start from
 somewhere. We will get back to these technical details a little
 later.)
-{\flushleft {\bf Step 1:} Draw $\theta^{(1)}$ from the conditional distribution $[\theta_{1}^{(1)}|\theta_{2}^{(0)}$,\ldots, $\theta_{d}^{(0)}]$. }
-Here, $\theta_1$ is $\mu$, which we draw from the normal distribution in Eq. \ref{mcmc.eq.mu-posterior}  using $\sigma^{(0)}$ as value for $\sigma$.
-{\flushleft {\bf Step 2:} Draw $\theta_{2}^{(1)}$ from the conditional distribution $[\theta_{2}^{(1)}|\theta_{1}^{(1)}$, $\theta_{3}^{(0)}$,\ldots, $\theta_{d}^{(0)}]$. }
+{\flushleft {\bf Step 1:} For iteration $t$, Draw $\theta^{(t)}$ from the conditional distribution $[\theta_{1}^{(t)}|\theta_{2}^{(t-1)}$,\ldots, $\theta_{d}^{(t-1)}]$. }
+Here, $\theta_1$ is $\mu$, which we draw from the normal distribution in Eq. \ref{mcmc.eq.mu-posterior}  using $\sigma^{(t-1)}$ as value for $\sigma$.
+{\flushleft {\bf Step 2:} Draw $\theta_{2}^{(t)}$ from the conditional distribution $[\theta_{2}^{(t)}|\theta_{1}^{(t)}$, $\theta_{3}^{(t-1)}$,\ldots, $\theta_{d}^{(t-1)}]$. }
 Here, $\theta_2$ is $\sigma$, which we draw from the inverse-gamma
-distribution of Eq. \ref{mcmc.eq.sig-posterior}, using $\mu^{(1)}$ as value for $\mu$.
+distribution of Eq. \ref{mcmc.eq.sig-posterior}, using the newly generated $\mu^{(t)}$ as value for $\mu$.
 
 {\flushleft {\bf Step 3,\ldots, $d$:} Draw $\theta_{3}^{(1)}$, $\theta_{4}^{(1)}$,\ldots, $\theta_{d}^{(1)}$ from their conditional distribution $[\theta_{3}^{(1)}|\theta_{1}^{(1)}, \theta_{2}^{(1)}, \theta_{4}^{(0)}$, \ldots, $\theta_{d}^{(0)}]$, \ldots, $[\theta_{d}^{(1)}|\theta_{1}^{(1)}$,\ldots, $\theta_{d-1}^{(1)}]$. }
 In our example we have no additional parameters, so we only need step 0 through to 2.
@@ -404,7 +399,7 @@ Plots of the posterior distributions of $\mu$ (upper left) and
 \label{mcmc.sec.mh}
 
 Although it is applicable to a wide range of problems, the limitations
-of Gibbs sampling are immediately obvious: what if we do not want to
+of Gibbs sampling are obvious: what if we do not want to
 use conjugate priors or what if we cannot recognize the full
 conditional distribution as a parametric distribution, or simply do
 not want to worry about these issues? The most general solution is to
@@ -423,12 +418,12 @@ r = min(1, \frac{[\theta^{*}|y] h(\theta^{(t-1)}|\theta^{*}) }
 Proposal distributions must be chosen so that reversibility is ensured. That means, it must be possibly to go from any one value to any other. But within that criterion the proposal distribution can be absolutely
 anything! You can generate candidate values from a Normal(0,1)
 distribution, from a Uniform(-3455,3455) distribution, or anything of
-proper support.  Note, however, that good choices of $h()$ are those
-that approximate the posterior distribution. Obviously if $h() =
+proper support.  Note, however, that good choices of $h(\theta)$ are those
+that approximate the posterior distribution. Obviously if $h(\theta) =
 [\theta|y]$ (i.e., the posterior) then you always accept the draw
 and it stands to reason that proposals that are more similar to
-$[\theta|y]$ will lead to higher acceptance probabilities. Actually, when $h() =
-[\theta|y]$ we can draw samples of $\theta$ directly from $h()$, which brings us back to Gibbs sampling. Thus, Gibbs sampling is a special case of Metropolis-Hastings sampling.
+$[\theta|y]$ will lead to higher acceptance probabilities. Actually, when $h(\theta) =
+[\theta|y]$ we can draw samples of $\theta$ directly from $h(\theta)$, which brings us back to Gibbs sampling. Thus, Gibbs sampling is a special case of Metropolis-Hastings sampling.
 
 
 The original Metropolis algorithm
@@ -462,7 +457,7 @@ updating parameters with bounded support in this chapter.
 
 It is worth
 knowing that there are alternatives to the random walk MH algorithm. For
-example, in the independent MH, $\theta^{*}$ does not depend on
+example, in the independent MH, the proposal distribution $h()$ does not depend on
 $\theta^{(t-1)}$, while the Langevin algorithm \citep{roberts_etal:1998}
 aims at avoiding the random walk by favoring moves towards regions of
 higher posterior probability density. The interested reader should
@@ -475,19 +470,19 @@ y|\theta \sim \mbox{Bernoulli} \left(\frac{\exp(\theta)}{1+ \exp(\theta)}\right)
 \]
 and
 \[
-\theta \sim \mbox{Normal}(\mu, \sigma)
-\].
+\theta \sim \mbox{Normal}(\mu, \sigma).
+\]
 The following steps are required to set up a random walk MH algorithm:
 
 {\flushleft {\bf Step 0}: Choose initial values, $\theta^{(0)}$.}
 
 {\flushleft {\bf Step 1}: Generate a proposed value of $\theta$ from $h(\theta^{*}|\theta^{(t-1)})$. }
-We often use a normal proposal distribution, so we draw $\theta^{*}$ from $\mbox{Normal}(\theta^{(t-1)}, \delta)$, where $\delta$ is the standard deviation of the normal proposal distribution, the tuning parameter that we have to set.
+We will use the random walk MH algorithm, so we draw $\theta^{*}$ from $\mbox{Normal}(\theta^{(t-1)}, \delta)$, where $\delta$ is the standard deviation of the normal proposal distribution, the tuning parameter that we have to set.
 
 {\flushleft {\bf Step 2}: Calculate the ratio of posterior densities for the proposed and the original value for $\theta$: }
 \[
-r = \frac{[\theta^{*}|y]}  {[\theta^{(t-1)}|y]}
-\].
+r = \frac{[\theta^{*}|y]}  {[\theta^{(t-1)}|y]}.
+\]
 In our example,
 \[
 r = \frac{\mbox{Bernoulli}(y|\theta^{*}) \times \mbox{Normal}(\theta^{*}|\mu, \sigma)} {\mbox{Bernoulli}(y|\theta^{(t-1)}) \times \mbox{Normal}(\theta^{(t-1)}|\mu, \sigma)}
@@ -496,14 +491,14 @@ r = \frac{\mbox{Bernoulli}(y|\theta^{*}) \times \mbox{Normal}(\theta^{*}|\mu, \s
 
 {\bf Step 3}: Set
 \begin{eqnarray*}
-\theta^t  &= &   \theta^{*} \mbox{ with probability min(r,1)}\\
+\theta^t  &= &   \theta^{*} \mbox{ with probability } min(r,1)\\
 	 & = & 	\theta^{(t-1)} \mbox{ otherwise }
 \end{eqnarray*}
 
 We can do this last step by drawing a random number $u$ from a
 $\mbox{Uniform}(0,1)$ and accept $\theta^{*}$ if
 $u<r$.
-This is repeated for $t = 1,2,\ldots$ a large number of samples. As for Gibbs sampling, the order in which we update parameters does not matter.
+This is repeated for $t = 1,2,\ldots, T$ a large number of samples. As for Gibbs sampling, the order in which we update parameters does not matter.
 The {\bf R} code for this MH sampler is provided in Panel \ref{mcmc.panel.logitnormal}.
 
 \begin{panel}[ht]
@@ -547,7 +542,7 @@ return(out)
 
 
 
-The reason we sum the logs of the likelihood and the prior, rather
+The reason why in the {\bf R} code we sum the logs of the likelihood and the prior, rather
 than multiplying the original values, is simply computational. The
 product of small probabilities can be numbers very close to 0, which
 computers do not handle well. Thus we add the logarithms, sum, and
@@ -581,7 +576,7 @@ is automatically adjusted until it reaches a user-defined acceptance
 rate, at which point the adaptive phase ends and the actual Markov
 chain begins. This is computationally a little more
 advanced. \citet{link_barker:2010} discuss this in more detail. It is
-important the samples drawn during the adaptive phase are discarded.
+important that the samples drawn during the adaptive phase are discarded.
 
 To illustrate the effects of tuning, we ran the
 Metropolis-within-Gibbs algorithm in Panel \ref{mcmc.panel.logitnormal} with $\delta=0.01$,
@@ -620,7 +615,7 @@ when evaluating whether to accept or reject the candidate values for
 $\theta$ becomes increasingly complex or inefficient as the number of
 parameters in a model increases. As you already saw in Chapt. \ref{chapt.glms}, in
 these cases you can simply combine MH sampling and Gibbs sampling. You
-can use Gibbs sampling to break down your high-dimensional parameter
+can use the principles of Gibbs sampling to break down your high-dimensional parameter
 space into easy-to-handle one-dimensional conditional distributions
 and use MH sampling for these conditional distributions. Better yet,
 if you have some conjugacy in your model, you can use the more
@@ -657,7 +652,7 @@ to specify hyperpriors for these parameters:
 \mu_{\alpha}  &\sim &  \mbox{Normal}(\mu_0, \sigma_0)  \\
 \sigma_{\alpha}^2 & \sim & \mbox{Inverse-Gamma}(a_0, b_0)
 \end{eqnarray*}
-Note that for simplicity we assume that $\beta$ is constant across the $i$ study sites, and for analysis we would set $\mu_{\beta}$ and $\sigma_{\beta}$.
+Note that for simplicity we assume that $\beta$ is constant across the $i$ study sites, and for analysis we set $\mu_{\beta}$ and $\sigma_{\beta}$ (i.e., we don't estimate these parameters from the data).
 With the model completely specified, we can compile the full conditionals,
 breaking the multi-dimensional parameter space into one-dimensional
 components:
@@ -678,56 +673,56 @@ each $\alpha_{i}$ are constructed similarly:
 \end{eqnarray*}
 and so on for all elements of ${\bf \alpha}$. The full-conditional for $\beta$ is:
 \begin{eqnarray*}
-[\beta|{\bf \alpha},{\bf y}] &\propto & [{\bf y}|{\bf \alpha},\beta]  [\beta] \\
-	 &\propto& \mbox{Poisson}({\bf y}|exp({\bf \alpha} + \beta {\bf x})) \times \mbox{Normal}(\beta|\mu_{\beta}, \sigma_{\beta}).
+[\beta|\mbox{\boldmath$\alpha$},{\bf y}] &\propto & [{\bf y}|\mbox{\boldmath$\alpha$},\beta]  [\beta] \\
+	 &\propto& \mbox{Poisson}({\bf y}|exp(\mbox{\boldmath$\alpha$} + \beta {\bf x})) \times \mbox{Normal}(\beta|\mu_{\beta}, \sigma_{\beta}).
 \end{eqnarray*}
 
 Finally, we need to update the hyperparameters for the random effects
 vector ${\bf \alpha}$:
 \[
-[\mu_{\alpha}|{\bf \alpha}] \propto [{\bf \alpha}|\mu_{\alpha}, \sigma_{\alpha}] [\mu_{\alpha}]
+[\mu_{\alpha}|\mbox{\boldmath$\alpha$}] \propto [\mbox{\boldmath$\alpha$}|\mu_{\alpha}, \sigma_{\alpha}] [\mu_{\alpha}]
 \]
 \[
-[\sigma_{\alpha}|{\bf\alpha}] \propto [{\bf \alpha}|\mu_{\alpha}, \sigma_{\alpha}] [\sigma_{\alpha}]
+[\sigma_{\alpha}|\mbox{\boldmath$\alpha$}] \propto [\mbox{\boldmath$\alpha$}|\mu_{\alpha}, \sigma_{\alpha}] [\sigma_{\alpha}]
 \]
 
-Note that the likelihood contributions of the counts ${\bf y}$ at each site, when conditioned on ${\bf \alpha}$, do not depend
+Note that the likelihood contributions of the counts ${\bf y}$ at each site, when conditioned on {\boldmath$\alpha$}, do not depend
 on the hyperparameters $\mu_{\alpha}$ and $\sigma_{\alpha}$.  As such, the full conditionals
 for these hyperparameters only depend on the collection of
-all ${\bf \alpha}$, not the data.
-Since we assumed ${\bf \alpha}$ to come from a normal distribution,
+all {\boldmath$\alpha$}, not the data.
+Since we assumed {\boldmath$\alpha$} to come from a normal distribution,
 the choice of priors for $\mu_{\alpha}$ (normal) and $\sigma_{\alpha}^2$
 (inverse-gamma) leads to the same conjugacy we observed in our initial
-Normal model, so that both hyperparameters can be updated using Gibbs
+normal model, so that both hyperparameters can be updated using Gibbs
 sampling.
 
 Now let's build the updating steps for these full conditionals. Again,
-for the MH steps that update ${\bf \alpha}$ and $\beta$ we use normal
+for the MH steps that update {\boldmath$\alpha$} and $\beta$ we use normal
 proposal distributions with standard deviations $\delta_{\alpha}$ and
 $\delta_{\beta}$.
 
-First, we set the initial values ${\bf \alpha}^{(0)}$ and
+First, we set the initial values $\mbox{\boldmath$\alpha$}^{(0)}$ and
 $\beta^{(0)}$. Then, starting with $\alpha_1$, we draw
-$\alpha_1^{(1)}$ from $\mbox{Norm}(\alpha_1^{(0)}, \delta_{\alpha})$,
+$\alpha_1^{(1)}$ from $\mbox{Normal}(\alpha_1^{(0)}, \delta_{\alpha})$,
 calculate the conditional posterior density of $\alpha_1^{(0)}$ and
 $\alpha_1^{(1)}$ and compare their ratios,
 \[
 r = \frac{\mbox{Poisson}({\bf y}_{1}|exp(\alpha_1^{(1)} + \beta {\bf x}_1)) \times
   \mbox{Normal}(\alpha_1^{(1)}|\mu_{\alpha}, \sigma_{\alpha})} {\mbox{Poisson}({\bf y}_{1}|exp(\alpha_1^{(0)} + \beta {\bf x}_1)) \times \mbox{Normal}(\alpha_1^{(0)}|\mu_{\alpha}, \sigma_{\alpha})}
 \]
-and accept $\alpha_1^{(1)}$ with probability $min(r,1)$. We repeat this for all ${\bf \alpha}$.
+and accept $\alpha_1^{(1)}$ with probability $min(r,1)$. We repeat this for all {\boldmath$\alpha$} .
 
-For $\beta$, we draw $\beta^{(1)}$ from $\mbox{Norm} (\beta^{(0)}, \delta_{\beta})$, compare the posterior densities of $\beta^{(0)}$ and $\beta^{(1)}$,
+For $\beta$, we draw $\beta^{(1)}$ from $\mbox{Normal} (\beta^{(0)}, \delta_{\beta})$, compare the posterior densities of $\beta^{(0)}$ and $\beta^{(1)}$,
 \[
-r = \frac{\mbox{Poisson}({\bf y}|exp({\bf \alpha} + \beta^{(1)}{\bf x}))
+r = \frac{\mbox{Poisson}({\bf y}|exp(\mbox{\boldmath$\alpha$} + \beta^{(1)}{\bf x}))
   \times\mbox{Normal}(\beta^{(1)}|\mu_{\beta}, \sigma_{\beta})} { \mbox{Poisson}({\bf
-    y}|exp({\bf \alpha} + \beta^{(0)}{\bf x})) \times \mbox{Normal}(\beta^{(0)}|\mu_{\beta}, \sigma_{\beta})},
+    y}|exp(\mbox{\boldmath$\alpha$} + \beta^{(0)}{\bf x})) \times \mbox{Normal}(\beta^{(0)}|\mu_{\beta}, \sigma_{\beta})},
 \]
 and accept $\beta^{(1)}$  with probability $min(r,1)$.
 
 For $\mu_{\alpha}$ and $\sigma_{\alpha}^2$, we sample directly from the full conditional distributions (Eq. \ref{mcmc.eq.mu-posterior}  and Eq. \ref{mcmc.eq.sig-posterior}):
 \[
-\mu_{\alpha}^{(1)} \sim \mbox{Norm} (\mu_n, \sigma_n^2)
+\mu_{\alpha}^{(1)} \sim \mbox{Normal} (\mu_n, \sigma_n^2)
 \]
 where
 \[\mu_n =  \frac{\sigma_{\alpha}^{2(0)}}  {\sigma_{\alpha}^{2(0)}   +n_{\alpha}    \sigma_0^2} \times  \mu_0 +  \frac{n_{\alpha}  \sigma_0^2} {\sigma_{\alpha}^{2(0)}   +n_{\alpha} \sigma_0^2} \times \bar{\alpha}^{(1)}
@@ -738,24 +733,33 @@ and
 \]
 Here, $\bar{\alpha}$ is the current mean of the vector ${\bf\alpha}$, which we
 updated before, and $n_{\alpha}$ is the length of ${\bf\alpha}$.
-For $\sigma_{\alpha}^2$ we use $\sigma_{\alpha}^{2(1)}\sim \mbox{Inverse-Gamma} (a_n, b_n)$,
-where  $a_n = n_a/2   + a_0$, and $b_n = 0.5  \displaystyle\sum\limits_{i=1}^{n_{\alpha}} (\alpha_i^{(1)}-\mu_{\alpha}^{(1)})^2+ b_0$.
-
+For $\sigma_{\alpha}^2$ we use 
+\[
+\sigma_{\alpha}^{2(1)}\sim \mbox{Inverse-Gamma} (a_n, b_n),
+\]
+where  
+\[
+a_n = n_a/2   + a_0,
+\]
+and 
+\[
+b_n = 0.5  \displaystyle\sum\limits_{i=1}^{n_{\alpha}} (\alpha_i^{(1)}-\mu_{\alpha}^{(1)})^2+ b_0.
+\]
 
 We repeat these steps over $T$ iterations of the MCMC algorithm. Call
 the function \mbox{\tt PoisGLMM()} in \mbox{\tt scrbook} to check out
 what this algorithm looks like in {\bf R}.
 
-In this example we may not want to save each individual $\alpha$, but
+In this example we may not want to save each individual $\alpha_i$, but
 are only interested in their mean and standard deviation. Since these
 two parameters will change as soon as the value for one element in
-$\bf{\alpha}$ changes, their acceptance rates will always be close to
+{\boldmath$\alpha$} changes, their acceptance rates will always be close to
 1 and are not representative of how well your algorithm performs. To
 monitor the acceptance rates of parameters you do not want to save,
 you simply need to add a few lines of code into your updater to see
 how often the individual parameters are accepted. The code for
-updating {\bf $\alpha$} from our Poisson GLMM below shows one way how to
-monitor acceptance of individual $\alpha$'s.
+updating {\boldmath$\alpha$} from our Poisson GLMM below shows one way how to
+monitor acceptance of individual $\alpha_i$'s.
 
 {\small
 \begin{verbatim}
@@ -816,7 +820,7 @@ high-dimensional problems, since it becomes increasingly hard to
 define a reasonable envelope function. For an example of rejection
 sampling in the context of SCR models, see
 Chapt. \ref{chapt.state-space}, where we use it to simulation
-non-stationary point processes.
+inhomogeneous point processes.
 
 Another alternative is slice sampling
 \citep{neal:2003}. In slice sampling, we sample uniformly from the
@@ -876,7 +880,7 @@ y_i \sim \mbox{Binomial} (p_i \times z_i, K)
 Further, we prescribe a distribution for the capture
 probability $p_{i}$. Here we assume
 \[
-\mathrm{logit}(p_{i}) \sim \mbox{Normal}(\mu,\sigma^2)
+\mathrm{logit}(p_{i}) \sim \mbox{Normal}(\mu_p,\sigma_p^2)
 \]
 
 As usual, we have to go through two general steps before we write the MCMC algorithm:
@@ -907,14 +911,14 @@ on $\psi$, $\mu_{p}$, or $\sigma_{p}$.  As such, the full-conditional
 for the structural parameter $\psi$ only depend on the collection of
 data augmentation variables $z_{i}$, and that for $\mu_{p}$ and
 $\sigma_{p}$ will only depend on the collection of latent variables
-$p_{i}; i=1,2,\ldots,M$ (this is equivalent to what we saw in the Poisson regression with random intercept ${\bf \alpha}$, where hyperparameters for the distribution of ${\bf \alpha}$ did not depend on the observed data).
+$p_{i}; i=1,2,\ldots,M$ (this is equivalent to what we saw in the Poisson regression with random intercept {\boldmath$\alpha$}, where hyperparameters for the distribution of {\boldmath$\alpha$} did not depend on the observed data).
 The full conditionals for all the unknowns
 are as follows:
 
 {\bf (1)} For $p_{i}$:
 \begin{eqnarray*}
 [p_{i}|y_{i}, \mu_p, \sigma_{p},z_{i}] &\propto  &
-[y_{i}|p_{i}][p_{i}|\mu_p,\sigma_{p}^{2}] \mbox{ if $z_{i}=1$ }  \\
+[y_{i}|p_{i}][p_{i}|\mu_p,\sigma_{p}] \mbox{ if $z_{i}=1$ }  \\
                  &  &  [p_{i}|\mu_p,\sigma_{p}] \mbox{ if $z_{i}=0$ }
 \end{eqnarray*}
 
@@ -939,7 +943,7 @@ are as follows:
 \]
 Remember that \mbox{Beta}(1,1) is equivalent to \mbox{Uniform}(0,1). The beta distribution is the conjugate prior to the binomial and
 Bernoulli distributions and the general form of a full conditional of a beta-binomial model
-with $x_{i} \sim \mbox{Bernoulli} (\theta) $ and $p \sim \mbox{Beta}(a,b)$ is
+with $x_{i} \sim \mbox{Bernoulli} (\theta) $ and $\theta \sim \mbox{Beta}(a,b)$ is
 \[
 [\theta|{\bf x}] \propto \mbox{Beta}(a + \sum_i x_i, b + n-\sum_i x_i).
 \]
@@ -950,13 +954,13 @@ In our case that means
 
 What we've done here is identify each of the full conditional
 distributions in sufficient detail to toss them into our
-Metropolis-Hastings algorithm (the constant term in the full
-conditionals for $\mu_{p}$ and $\sigma_{p}$ reflects the improper
-prior we chose for both parameters).  Below, you see the updating step
+Metropolis-Hastings algorithm. The constant terms in the full
+conditionals for $\mu_{p}$ and $\sigma_{p}$ reflect the improper
+prior we chose for both parameters. Becaue of the choice of an improper prior, prior probability densities for both parameters $\propto 1$, i.e. constant, and these constants cancel out of the MH acceptance ratio (see updating step below and following example).  Below, you see the updating step
 for the detection parameter ${\bf p}$. Note that (1) we draw candidate
 values on the logit scale and (2) instead of looping through $1 - M$
 individuals to update all $p_{i}$, we update all elements of the
-vector of {\bf p} in parallel.
+vector of {\bf p} in parallel, for computational efficiency.
 
 \begin{verbatim}
 ### update the logit(p) parameters
@@ -1000,13 +1004,13 @@ psi<-rbeta(1, sum(z) + 1, M-sum(z) + 1)
 To update the $z_{i}$ we have opted for a MH updater
 (although they could be updated directly from their
 full-conditional). Since $z_{i}$ can only take the values of 0 or 1, we generate candidate values using \verb#z.cand<-ifelse(z==1,0,1)#.
-You can check out the full code by invoking \mbox{\tt modelMh()} from the {\bf R} package \mbox{\tt scrbook}.
+The updating step for $z_{i}$ is detailed in the next example. You can check out the full code by invoking \mbox{\tt modelMh()} from the {\bf R} package \mbox{\tt scrbook}.
 
 \section{MCMC algorithm for model SCR0}
 
 Conceptually, but also in terms of MCMC coding, it is only a small
 step from the non-spatial model $M_h$ to a fully spatial
-capture-recapture model. Next, we'll walk you through the steps of
+capture-recapture model. Next, we will walk you through the steps of
 building your own MCMC sampler for the basic SCR model (i.e. without
 any individual, site or time specific covariates) with both a Poisson
 and a binomial encounter process.  As usual, we will have to go
@@ -1023,8 +1027,8 @@ the essence of how to express a full conditional
 distribution. Therefore, we will exemplify step 2 for some parameters
 and tie these examples directly to the respective R code.
 
-{\bf Step 1 -- Identify your model}
 
+{\bf Step 1 -- Identify your model}
 Recall the components of the basic SCR model with a Poisson encounter process from Chapt. \ref{chapt.poisson-mn}:
 We assume that individuals $i$, or rather, their activity centers
 ${\bf s}_i$, are uniformly distributed across the state space ${\cal S}$,
@@ -1042,16 +1046,15 @@ ${\bf x}_{j}$, say
 \[
 d_{ij} = ||{\bf s}_{i} - {\bf x}_{j}||,
 \]
-of the half-normal form
+of the Gaussian (or half-normal) form
 \[
 \lambda_{ij} =  \lambda_0  \exp(-d_{ij}^2/2\sigma^2),
 \]
 where $\lambda_0$ is the baseline trap encounter rate at $d_{ij}=0$ and $\sigma$ is the scale parameter of the half-normal function.
 
-In order to estimate the number of ${\bf s}_i$ in ${\cal S}$ (or any
-subset of ${\cal S}$), $N$, we use data augmentation (sec. \ref{closed.sec.da}) and create $M-n$ all-zero encounter histories, where $n$ is the number of individuals we observed and $M$ is a somewhat arbitrary number that is larger than $N$. We estimate $N$ by summing over the auxiliary data augmentation variables, $z_i$, which are 1 if the individual is part of the population and 0 if not, and assume that $z_i$ is a Bernoulli random variable,
+As in the non-spatial exaple for model $M_h$, we estimate $N$, here the number of ${\bf s}_i$ in ${\cal S}$, using data augmentation (sec. \ref{closed.sec.da}). We create $M-n$ all-zero encounter histories and estimate $N$ by summing over the auxiliary data augmentation variables, $z_i$, which we assume is a Bernoulli random variable,
 \[
-z_{i} \sim \mbox{Bernoulli}(\psi)
+z_{i} \sim \mbox{Bernoulli}(\psi).
 \]
 
 To link the two model components, we modify our trap encounter model to
@@ -1062,22 +1065,14 @@ The model has the following structural parameters, for which we need to specify 
 \begin{itemize}
 \item[ $\psi$:] the $\mbox{Uniform}(0,1)$ is required as part of the data augmentation procedure and in general is a natural choice of an uninformative prior for a probability. It will also lead to conjugacy as we saw in the example of model $M_h$, so that we can update $\psi$ directly from its full conditional distribution using Gibbs sampling.
 \item[ ${\bf s}_{i}$:] since ${\bf s}_{i}$ is a pair of coordinates it is two-dimensional and we use a uniform prior limited by the extent of our state-space over both dimensions.
-\item[ $\sigma$:] we can conceive several priors for $\sigma$ but let's assume an improper prior, one that is Uniform over $(0, \infty)$. We will see why this is convenient when we construct the full conditionals for $\sigma$.
+\item[ $\sigma$:] we can conceive several priors for $\sigma$ but let's assume an improper prior, one that is Uniform over $(0, \infty)$. As we already saw, this choice is convenient when updating the parameter, because the constant prior probability cancels out of the MH acceptance ratio.
 \item[ $\lambda_{0}$:] analogous, we will use a $\mbox{Uniform}(0, \infty)$ improper prior for $\lambda_{0}$.
 \end{itemize}
-The parameter that is the objective of our modeling, $N$, is a derived parameter that we can obtain by summing all $z_i$:
-\[
-N = \sum_{i=1}^{M} z_{i}
-\]
 
 {\bf Step 2 -- Construct the full conditionals:}
 Having completed step 1, let's look at the full conditional distributions for some of these parameters.
-We find that with improper priors, full conditionals are proportional only to the likelihood of the observations; for example, consider $\sigma$:
-\[
-[\sigma|{\bf s}, \lambda_{0}, {\bf z}, {\bf y}] \propto \left\{ \prod_{i} [y_{i}| {\bf
-    s}_{i}, \lambda_{0}, z_{i}, \sigma] \right\}  [\sigma]
-\]
-Since the improper prior implies that $[\sigma] \propto 1$, we can reduce this further to
+We saw that with improper priors, full conditionals are proportional only to the likelihood of the observations; for example, consider $\sigma$:
+
 \[
 [\sigma|{\bf s}, \lambda_{0}, {\bf z}, {\bf y}] \propto \left\{
   \prod_{i} [y_{i}| {\bf s}_{i}, \lambda_{0}, z_{i}, \sigma] \right\}
@@ -1104,21 +1099,21 @@ use MH steps for
 all of these parameters. Similar to the random intercepts in our
 Poisson GLMM, we update each ${\bf s}_i$ individually. Note that to be fully
 correct, the full conditional for ${\bf s}_i$ contains both the likelihood and
-prior component, since we did not specify an improper, but a proper Uniform
-prior on ${\bf s}_i$. However, with a Uniform distribution the probability
+prior component, since we did not specify an improper, but a proper uniform
+prior on ${\bf s}_i$. However, with a uniform distribution the probability
 density of any value is 1/(upper limit - lower limit) =
 constant. Thus, the prior components are identical for both the
-current and the candidate value and can be ignored (formally, when you
+current and the candidate value so that when you
 calculate the ratio of posterior densities, $r$, the identical prior
-component appears both in the numerator and denominator, so that they
-cancel each other out).
+component appears both in the numerator and denominator and
+cancel each other out.
 
 We still have to update $z_i$. The full conditional for $z_i$ is
 \[
 [z_i|y_{i}, \sigma, \lambda_0, {\bf s}_{i}] \propto [y_{i}|z_{i},\sigma, \lambda_0,
 {\bf s}_{i}] [z_i]
 \]
-and since $z_i \sim \mbox{Bern}(\psi)$,
+and since $z_i \sim \mbox{Bernoulli}(\psi)$,
 the term has to be taken into account when updating $z_i$:
 
 \begin{verbatim}
@@ -1142,7 +1137,7 @@ the term has to be taken into account when updating $z_i$:
 The parameter $\psi$ is a hyperparameter of the model, with an uninformative prior
  distribution of $\mbox{Uniform}(0,1)$ or $\mbox{Beta}(1,1)$, so that
 \[
-[\psi|{\bf z}] \propto \mbox{Beta}(1 + \sum_i z_i, 1 + M-\sum_i z_i)
+[\psi|{\bf z}] \propto \mbox{Beta}(1 + \sum_i z_i, 1 + M-\sum_i z_i).
 \]
 
 
@@ -1168,7 +1163,7 @@ For our MCMC algorithm that means that, instead of using a Poisson
 likelihood, $\mbox{Poisson}(y|\sigma,\lambda_0,{\bf s},z)$, we use a
 binomial likelihood, $\mbox{Binomial}(y| \sigma,\lambda_0,{\bf s},z; K)$,
 in all the conditional distributions. An exemplary updating step for $\lambda_0$ under a binomial encounter model is shown below.
-The full MCMC code for the binomial SCR with a clog-log link (\mbox{\tt SCR0binom.cl})
+The full MCMC code for the binomial SCR with a cloglog link (\mbox{\tt SCR0binom.cl})
 can be found in the {\bf R} package \mbox{\tt scrbook}.
 
 \begin{verbatim}
@@ -1216,14 +1211,12 @@ formulation the updater for $p_0$ becomes:
 \end{verbatim}
 
 
-\subsection{Looking at model output}
+\section{Looking at model output}
 \label{mcmc.subsec.output}
 Now that you have an MCMC algorithm to analyze spatial capture-recapture
 data with, let's run an actual analysis so we can look at the output. As
 an example, we will use the Fort Drum
-bear data set we first introduced in Chapt. \ref{chapt.intro} and already analyzed in Chapt. \ref{chapt.closed} with
-traditional non-spatial models (and that you will see again in Chapt.
-\ref{chapt.covariates}). You can load the Fort Drum data
+bear data set we first introduced in Chapt. \ref{chapt.intro} and already analyzed in several preceding chapters. You can load the Fort Drum data
 (\mbox{\tt data(beardata) }), extract the
 trap locations (\mbox{\tt trapmat}) and
 detection data (\mbox{\tt bearArray}) and build the augmented $M \times J$ array of individual
@@ -1250,9 +1243,9 @@ yu<- max(trapmat[,2])+ 20
 \end{verbatim}
 
 Finally, use the MCMC code for the binomial encounter model
-with the clog-log link  ({\tt SCR0binom.cl}) and run 5000 iterations. This should take
+with the cloglog link  ({\tt SCR0binom.cl}) and run 5000 iterations. This should take
 approximately 25 minutes (in real life we would of course run the algorithm a lot longer but for demonstration purposes let's stick with a number of iterations that can be run in a manageable amount of time).
-%need to look at tuning... not happy
+
 \begin{verbatim}
 set.seed(13)
 mod0<-SCR0binom.cl(y=Xaug, X=trapmat, M=M, xl=xl, xu=xu, yl=yl,
@@ -1269,7 +1262,7 @@ convert your model output to an mcmc object
 \end{verbatim}
 which can be used by coda to produce MCMC specific output.
 
-\subsubsection{Markov chain time series plots}
+\subsection{Markov chain time series plots}
 
 Start by looking at time series plots of your Markov chains using
 \verb#plot(chain)#. This command produces a time series plot and
@@ -1299,7 +1292,7 @@ Second, you will be able to see if your chains converged and how many initial si
 
 \subsection{Posterior density plots}
 
-The \verb#plot()# command also produces posterior density plots and it is worthwhile to look at those carefully. For parameters with priors that have bounds (e.g. Uniform over some interval), you will be able to see if your choice of the prior is truncating the posterior distribution. In the context of SCR models, this will mostly involve our choice of $M$, the size of the augmented data set. If the posterior of $N$ has a lot of mass concentrated close to $M$ (or equivalently the posterior of $\psi$ has a lot of mass concentrated close to 1), as in the example in Fig. \ref{mcmc.fig.timeseries2}, we have to re-run the analysis with a larger $M$.  A diffuse
+The \verb#plot()# command also produces posterior density plots and it is worthwhile to look at those carefully. For parameters with priors that have bounds (e.g. uniform over some interval), you will be able to see if your choice of the prior is truncating the posterior distribution. In the context of SCR models, this will mostly involve our choice of $M$, the size of the augmented data set. If the posterior of $N$ has a lot of mass concentrated close to $M$ (or equivalently the posterior of $\psi$ has a lot of mass concentrated close to 1), as in the example in Fig. \ref{mcmc.fig.timeseries2}, we have to re-run the analysis with a larger $M$.  A diffuse
 posterior plot suggests
 that the parameter may not be well-identified.
 There may not be enough information in your data to estimate model parameters and you may have to consider a simpler model. Finally, posterior density plots will show you if the posterior distribution is symmetrical or skewed -- if the distribution has a heavy tail, using the mean as a point estimate of your parameter of interest may be biased and you may want to opt for the median or mode instead.
@@ -1458,15 +1451,15 @@ As mentioned before, this situation is difficult to handle in {\bf WinBUGS}.
 In some simple cases we can adjust the state space by setting one of the
 coordinates of ${\bf s}_{i}$ to be some function of the other and reject candidate ${\bf s}_{i}$ that do not fall within this modified state space.
 In this manner, we can cut off corners of the rectangle to approximate
-the actual state space\footnote{This idea was pitched to us by Mike Meredith, from WCS Malaysia}. To visualize this approach, plot the following rectangle, representing your state space polygon, and line, representing, for example, the approximation of a shore line:
+the actual state space\footnote{This idea was pitched to us by Mike Meredith, Biodiversity Conservation Society Sarawak/WCS Malaysia}. To visualize this approach, plot the following rectangle, representing your state space polygon, and line, representing, for example, the approximation of a shore line:
 \begin{verbatim}
 xlim<-c(-5,5)
 ylim<-c(-7,7)
 plot(xlim, ylim, type='n')
 abline(a=4, b=0.4)
 \end{verbatim}
-The Y coordinates limiting your state space to the habitat that si suitable to the species you study can now be expressed as a linear function of the X coordinates, in this case, $Y=4+0.4 \times X$.
-Toinclude this new limit in our {\bf WinBUGS} model, we need to change the following:
+The Y coordinates limiting your state space to the habitat that is suitable to the species you study can now be expressed as a linear function of the X coordinates, in this case, $Y=4+0.4 \times X$.
+To include this new limit in our {\bf WinBUGS} model, we need to change the following:
 \begin{verbatim}
 #draw SX and SY as before
 SX[i]~dunif(xlim[1],xlim[2])
@@ -1478,7 +1471,7 @@ ymax[i]<-4+0.4*SX[i]
 Pin[i] <- step(ymax[i] - SY[i])
 In[i] ~ dbern(Pin[i])
 \end{verbatim}
-{\tt In} is a vector of $M$ 1's, passed as data to the model. If Pin = 0, the likelihood will be 0 and the candidate [SX, SY] pair will be rejected. If Pin = 1, this bit of the likelihood is equal to 1, and whether or not the the candidate pair of coordinates is accepted depends only on capture history of $i$. This approach can be very useful in some situations but is clearly restricted by the functional form of the relationship between SX and SY that it requires.
+The object {\tt In} is a vector of $M$ 1's, passed as data to the model. If Pin = 0, the likelihood will be 0 and the candidate [SX, SY] pair will be rejected. If Pin = 1, this bit of the likelihood is equal to 1, and whether or not the the candidate pair of coordinates is accepted depends only on capture history of $i$. This approach can be very useful in some situations but is clearly restricted by the functional form of the relationship between SX and SY that it requires.
 
 In {\bf R}, we are much more flexible, as we can
 use the actual state-space polygon to constrain ${\bf s}_i$.
@@ -1499,7 +1492,7 @@ Instead, within {\bf R} we can use an actual shapefile of the island.
 In other circumstances you may still want to create the state space as before, by adding some buffer to your trapping grid, but you may find that the resulting rectangle includes water bodies, paved parking lots or any other kind of habitat you know is never used by the species you study.
 In order to precisely describe the state-space, these features need to be
 removed. You can create a precise state-space polygon in {\bf ArcGIS} and
-read it into {\bf R}, or create the polygon directly within {\bf R}, by intersecting two shape files -- one of the rectangle defining the outer limits of your state-space state and one of the landscape feature you want to remove.
+read it into {\bf R}, or create the polygon directly within {\bf R}, by intersecting two shapefiles -- one of the rectangle defining the outer limits of your state-space state and one of the landscape feature you want to remove.
 While you will most likely have to obtain the shapefile describing the
 landscape of and around your trapping grid (coastlines, water bodies etc.)
 from some external source, the polygon shapefile buffering your outermost
@@ -1548,7 +1541,7 @@ extracted directly from the state-space object \mbox{\tt SSp}:
 To include this polygon into our MCMC sampler we need one last spatial
 {\bf R} package, \mbox{\tt sp} \citep{pebesma_bivand:2011}, which has a
 function, \verb#over()#, which allows us to check if a pair of coordinates
-falls within a polygon or not.\footnote{Remember from the previous chapter (\ref{mle.sec.shapefile}) that the {\tt over} function takes as its second argument (among others) an object of the class ``SpatialPolygons'' or ``SpatialPolygonsDataFrame''. The former produces a vector while the latter produces a data frame (e.g., in the example above), which is important for how you index the output.} All we have to do is embed this new check
+falls within a polygon or not.\footnote{Remember from Chapt. (\ref{mle.sec.shapefile}) that the {\tt over} function takes as its second argument (among others) an object of the class ``SpatialPolygons'' or ``SpatialPolygonsDataFrame''. The former produces a vector while the latter produces a data frame (e.g., in the example above), which is important for how you index the output.} All we have to do is embed this new check
 into the updating steps for the $s_i$:
 \begin{verbatim}
     #draw candidate value
@@ -1584,10 +1577,10 @@ ${\cal S}$ back to the original scale (UTM) before running the
 \verb#over()# command.
 
 \section{Increasing computational speed}
-Using custom written MCMC algorithms in {\bf R} is not only more flexible but can also be faster than using programs such as {\bf JAGS} and especially {\bf BUGS}. Also, {\bf R} tends to use much less memory than {\bf JAGS}, which can be crucial if you are running a large model but only have limited memory available. For example, you will see in Chapt. \ref{chapt.covariates} that even with a reasonable sized data set certain parameterizations of SCR models can max out the memory of a 16 GB computer when using {\bf JAGS}. These are mostly the models that require us to look at individual sampling occasions instead of joining observations for a given sampling location across the entire study, which requires us to introduce another for-loop into the {\bf JAGS} model. {\bf BUGS} is limited in the amount of memory it can access and thus will likely not max out your memory, but as a trade-off, it will take a long time to run such models. In this chapter we have provided you with the guidelines to write your own MCMC sampler. But beyond the material that we have covered there are a number of ways you can make your sampler more efficient, through parallel computing or by accessing an alternative computer language such as {\bf c++}. Exploring these options exhaustively is beyond the scope of this book; instead, in this section we will give you some pointers to get started with these more advanced computational issues.
+Using custom written MCMC algorithms in {\bf R} is not only more flexible but can also be faster than using programs such as {\bf JAGS} and especially {\bf BUGS}. Also, {\bf R} tends to use much less memory than {\bf JAGS}, which can be crucial if you are running a large model but only have limited memory available. {\bf BUGS} is limited in the amount of memory it can access and thus will likely not max out your memory, but as a trade-off, it will take a long time to run such models. In this chapter we have provided you with the guidelines to write your own MCMC sampler. But beyond the material that we have covered there are a number of ways you can make your sampler more efficient, through parallel computing or by accessing an alternative computer language such as {\bf c++}. Exploring these options exhaustively is beyond the scope of this book; instead, in this section we will give you some pointers to get started with these more advanced computational issues.
 
 \subsection{Parallel computing}
-If you are using a computer with several cores, you can make use of parallel computing to speed up overall computation. In parallel computing we execute commands simultaneously on different cores of the computer, instead of running them serially on one single core. For example, imagine you have 4 cores available and you want to implement a for-loop in {\bf R}; instead of going through the loop iteration by iteration, you can prompt {\bf R} to execute iterations 1 to 4 at the same time on the 4 different cores. The core that finishes first will then continue with iteration 5, and so on.  There are several packages in {\bf R} that allow you to induce parallel computing, such as {\tt snow} \citep{tierney_etal:2011} and {\tt snowfall} \citep{knaus:2010}, and the more current versions of {\bf R} (from 2.14.0 upwards) come with a pre-installed set of functions grouped under the name {\tt parallel}.
+If you are using a computer with several cores, you can make use of parallel computing to speed up overall computation. In parallel computing we execute commands simultaneously on different cores of the computer, instead of running them serially on one single core. For example, imagine you have 4 cores available and you want to implement a for-loop in {\bf R}; instead of going through the loop iteration by iteration, you can prompt {\bf R} to execute iterations 1 to 4 simultaneously on the 4 different cores. The core that finishes first will then continue with iteration 5, and so on.  There are several packages in {\bf R} that allow you to induce parallel computing, such as {\tt snow} \citep{tierney_etal:2011} and {\tt snowfall} \citep{knaus:2010}, and the more current versions of {\bf R} (from 2.14.0 upwards) come with a pre-installed set of functions grouped under the name {\tt parallel}.
 
 The MCMC algorithms developed here and in other parts of this book come with plenty of opportunities to parallelize computation. In various instances within the algorithm, we have for-loops across our augmented data set of size $M$, or we may have for-loops across sampling occasions. We also have for-loops across iterations of the algorithm, but since one iteration of the Markov chain depends on the preceding iteration these should always be run serially, not in parallel. There is another dimension we can think of, and that is running multiple chains of an algorithm to assess convergence. This is a comparatively easy implementation of parallel computing and thus provides a good starting point to understand how it works in {\bf R}.
 
@@ -1675,7 +1668,7 @@ Parallel computing is a great tool to speed up computations, but its usefulness 
 
 In order to use {\bf C++} you need a compiler such as \verb!g++!
 that (together with other compilers, for example for {\bf C} and {\bf FORTRAN}) comes with {\bf Rtools}, which you can easily download from the web (at \url{http://cran.r-project.org/bin/windows/Rtools/}). All of these compilers are part of the GNU compiler collection (\url{http://gcc.gnu.org/}). Make sure the version of {\bf Rtools} matches your version of {\bf R} or you may run into compilation errors later on.
-To give you a taste of {\bf C++} we will show you how to write a function that calculates the squared distances of individual activity centers to all traps, as is implemented in the {\tt scrbook} package in the function {\tt e2dist} (to be exact,{\tt e2dist} calculates the distance, not the squared distance), and compare performance between {\bf R} and {\bf C++}. We will refer to these functions as ``distance functions''. First, let us set up dummy data --  a matrix holding the coordinates of the trap array, outer limits of the state space and uniformly distributed activity centers for $M=700$ individuals:
+To give you a taste of {\bf C++} we will show you how to write a function that calculates the squared distances of individual activity centers to all traps, as is implemented in the {\tt scrbook} package in the function {\tt e2dist} (to be exact, {\tt e2dist} calculates the distance, not the squared distance), and compare performance between {\bf R} and {\bf C++}. We will refer to these functions as ``distance functions''. First, let us set up dummy data --  a matrix holding the coordinates of the trap array, outer limits of the state space and uniformly distributed activity centers for $M=700$ individuals:
 {\small
 \begin{verbatim}
 gx<-seq(1,10,1)
@@ -1712,7 +1705,7 @@ system.time(
 \end{verbatim}
 }
 The code to implement the same function in {\bf C++}
-using the {\tt inline} and {\tt RcppArmadillo} packages is shown in panel \ref{mcmc.panel.C1}. These packages allow you to use a range of data formats such as lists and matrices, and they take care of compiling the code in {\bf C++} and loading the resulting function into {\bf R}. This is also referred to compiling {\bf C++} code ``on the fly''. You will see that the way the code is set up is reasonably similar to {\bf R}. One difference that is worthy to point out is that in {\bf C++} indexes for vectors range from 0 to $n-1$, NOT from 1 to $n$, as in {\bf R}. Note that with {\tt inline} we only need to write the core of the code and define the type of the variables we want to pass to the function, while the {\tt cxxfunction} call takes care of the rest. Once your function is compiled and loaded you should check out the full {\bf C++} code by calling {\tt DfunArma@code}.
+using the {\tt inline} and {\tt RcppArmadillo} packages is shown in panel \ref{mcmc.panel.C1}. These packages allow you to use a range of data formats such as lists and matrices, and they take care of compiling the code in {\bf C++} and loading the resulting function into {\bf R}. This is also referred to compiling {\bf C++} code ``on the fly''. You will see that the way the code is set up is reasonably similar to {\bf R}. One difference that is worthy to point out is that in {\bf C++} indices for vectors range from 0 to $n-1$, NOT from 1 to $n$, as in {\bf R}. Note that with {\tt inline} we only need to write the core of the code and define the type of the variables we want to pass to the function, while the {\tt cxxfunction} call takes care of the rest. Once your function is compiled and loaded you should check out the full {\bf C++} code by calling {\tt DfunArma@code}.
 
 \begin{panel}[ht]
 \centering
@@ -1757,7 +1750,7 @@ Code to compute squared distance between individual activity centers and traps i
 \label{mcmc.panel.C1}
 \end{panel}
 
-Executing this code shows that it is also faster than the {\bf R} version of the distance function or {\tt e2dist}; in fact it is too fast for the time resolution of the {\tt system.time()} function to even give us a time estimate:
+Executing this code shows that it is faster than the {\bf R} version of the distance function or {\tt e2dist}; in fact it is too fast for the time resolution of the {\tt system.time()} function to even give us a time estimate:
 {\small
 \begin{verbatim}
 system.time(
@@ -1776,7 +1769,7 @@ remember that each command has to executed at each iteration of the Markov chain
 
 \section{Summary and Outlook}
 
-In a nutshell, programs like {\bf WinBUGS} do everything that we
+In a nutshell, programs like {\bf JAGS} and {\bf WinBUGS} do all the MCMC-related things that we
 went through in this chapter (and quite a bit more). Looking through
 your model, they determine which parameters they can use standard
 Gibbs sampling for (i.e. for conjugate full conditional distributions).
@@ -1796,9 +1789,9 @@ based on their posterior probability densities.
 
 These custom-made MCMC algorithms give you more modeling flexibility than
 existing software packages, especially when it comes to handling the
- state-space: In {\bf BUGS} (and {\bf JAGS} for that matter) we define
+ state-space: In {\bf BUGS} and {\bf JAGS} we define
   a continuous rectangular state-space using the corner coordinates to
-  constrain the Uniform priors on the activity centers ${\bf s}$.
+  constrain the uniform priors on the activity centers ${\bf s}$.
    But what if a continuous rectangle is an inadequate description of
    the state-space? In this chapter we saw that in {\bf R} it only takes
    a few lines of code to use any arbitrary polygon shapefile as the
@@ -1815,7 +1808,7 @@ than the homogeneous binomial point process (``uniformity of density'') which un
  SCR model (see sec. \ref{scr0.sec.discrete} in Chapt. \ref {chapt.scr0}). In Chapt.
  \ref {chapt.state-space} you already saw an example of an inhomogeneous point process model  and we briefly introduce a different point processes,
   implemented using a custom-made MCMC algorithm, in Chapt. \ref{chapt.final}.
-Finally, as mentioned earlier, the following chapters, \ref {chapt.scr-unmarked} and \ref {chapt.partialID}, deal with unmarked or
+Finally, Chapt. \ref {chapt.partialID} deals with 
 partially marked populations using hand-made MCMC algorithms to
 handle the (partially) latent individual encounter histories.
 While some of these models can be written in {\bf BUGS}/{\bf JAGS}, they are painstakingly slow; others (for example the classes of models
