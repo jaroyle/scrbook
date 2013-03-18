@@ -44,12 +44,23 @@ likelihood analysis of similar models. In the terminology of \mbox{\tt
   detectors}.  The model described by \citep{royle_etal:2011mee} is a
 generalization of the polygon search model, as we describe below.
 
+
+\begin{comment}
+%%## This argument here is basically true, but i'm not sure how to
+%%package the idea yet.
+
 Search-encounter models also provide something of a bridge between the
-standard models for fixed trap arrays (e.g., Chapt. \ref{chapt.scr0}),
-and the models of \citep{chandler_royle:2012} where no individual
-identity is present. The latter are search-encounter models where the
-movement process (and outcomes) are completely latent. Another type of
-model is SCR/DS -- this is a SCR model with ..................
+standard models for fixed trap arrays (e.g., Chapt. \ref{chapt.scr0}, etc.),
+and the models described in Chapt. \ref{chapt.noID} in which individual
+identity is not available. One one hand, in the standard fixed trap
+array situation, we observe individual encounter data at each fixed
+trap. In the ``no ID'' models, we observe trap-specific encounter
+frequencies, but no individual identity. 
+Search-encounter models are intermediate
+in terms of the structure of the observable data.
+
+\end{comment}
+
 
 \section{Search-encounter sampling designs}
 
@@ -100,7 +111,11 @@ the closest perpendicular distance. This is a typical
 \begin{figure}
 \centering
 \includegraphics[width=4in,height=4in]{Ch15-searchencounter/figs/snakeline.png}
-\caption{snake line.... showing design 1. more here.
+\caption{
+A survey line through parts of 7 quadrats in a
+  hypothetical landscape. An observer travels the transect and
+  identifies individuals in the vicinity of the line, recording their
+  identity and location.
 }
 \label{searchencounter.fig.snakeline}
 \end{figure}
@@ -117,41 +132,56 @@ boundaries of the sample area. The polygon boundaries defining the
 sample unit are important because it tells us that $p=0$ by design
 outside of the boundary.
 
-Using the example from the Fig. \ref{searchencounter.fig.snakeline}, we could imagine that each
-quadrat was uniformly searched. The individual quadrat boundaries are
-irrelevant and we only need to be concerned about the ``total''
-boundary of the composite polygon (the intersection of all little
-ones). That said, for analysis in {\bf BUGS}, it is easier to work with square
-polygons.  We show a simulation example here and we analyze it either
-using a bivariate normal movement model or else a 2-d random walk type
-of model.  But we don't provide a real example as \citet{royle_dorazio:2008}
-did a reanalysis of the lizard data and see also
-\citet{efford:2011ecol} and \citet{marques_etal:2011}.
+Using the example from the Fig. \ref{searchencounter.fig.snakeline},
+we imagine that each quadrat was uniformly searched which is an
+assumption that each individual within the boundaries of the search
+path has an equal probability of being detected. In this case, the
+individual quadrat boundaries are irrelevant and we only need to be
+concerned about the ``total'' boundary of the composite polygon (the
+intersection of all little ones). That said, for analysis in {\bf
+  BUGS}, it is easier to work with rectangular polygons and so, from a
+practical standpoint, it might be advantageous to ensure nice
+rectangular plot boundaries (or else write your own MCMC algorithmm,
+see Chapt. \ref{chapt.mcmc}).  We show a simulation example below, and
+we analyze it either using a bivariate normal movement model or else a
+2-d random walk type of model.  \citet{royle_dorazio:2008} did a
+reanalysis of the lizard data from \citet{royle_young:2008}, and see
+also \citet{efford:2011ecol} and \citet{marques_etal:2011} for further
+examples and analysis.
 
 
-\subsection{ Design 3: Ad hoc implementation of 1 or 2}
+\subsection{Partial Information Designs (3 and 4)}
 
-This is not a formal (i.e., intentional) design but, rather, we
-imagine that we set up
-search polygons (e.g., the grid cells in Fig. \ref{searchencounter.fig.snakeline}) and
-record
+In practice, we think many situations will arise in which partial
+spatial information is available. The data structure and model are
+slightly different in these cases.
+
+Design 3: We imagine that search polygons are defined
+(e.g., the grid cells in Fig. \ref{searchencounter.fig.snakeline}) and
+we record
 locations of encountered individuals, but we do not do a uniform search
-of quadrats and we neglect to record the GPS path.
+of quadrats and we neglect to record the GPS path. What we have are
+observations of individuals {\it and} the quadrat they are detected,
+but not the final scale ``movement'' information. 
 
-\subsection{Design 4: Really bad implementation of 1 or 2}
 
+Design 4:
 In this
-case we screw up even further and forget to record the locations of
-individuals within a bunch of quadrats.
-There are two variations of Design 4:
+we neglect to record the locations of 
+individuals within the quadrats.
+{\bf XXXX In this case we treat it as an ordinary SCR model XXXXX}
+There are variations of this.
 \begin{itemize}
 \item[] Protocol (4a) - We imagine that you could have
-counts BY individual identity within each quadrat. Not sure what
-analysis model this would be.
+counts BY individual identity within each quadrat.
 \item[] Protocol (4b) - We don't have
-individual identities but just total counts. This is Chandler and
-Royle (2012/13).
+individual identities but just total counts. This is the
+\citet{chandler_royle:2013} model (Chapt. \ref{chapt.noID}).
 \end{itemize}
+Its possible also that we retain the survey line information, which
+could possibly be used to identify a covariate of ``coverage''. 
+
+
 
 
 \begin{comment}
@@ -193,17 +223,16 @@ Example 2: Fisher data possibly - lion data or -- or  Capricaillie data?
 \section{A Model for Search-Encounter Data}
 
 We focus here on developing a model for Designs 1 and 2, as these
-represent an ideal situation.  We describe the model for the encounter
-data $y_{ik}$ in terms of individual locations ${\bf u}_{ik}$, the
-two-dimensional location of capture at the instant of sample, $k$. In
-contrast to most of the models describe in this book, we develop
-models for encounter probability that depend explicitly on the
-instantaneous location ${\bf u}_{ik}$, i.e., $p_{ik} \equiv p({\bf
-  u}_{ik}) = \Pr(y_{ik}=1|{\bf u}_{ik})$.  Note that ${\bf u}$ is
-unobserved for the $y=0$ observations and thus we cannot analyze the
-conditional-on-${\bf u}$ likelihood directly. Instead, we regard ${\bf
-  u}$ as random effects and assume a distribution for them, which
-allows us to handle the problem of missing ${\bf u}_{ik}$ values.
+represent an ideal situation.  In contrast to most of the models
+describe in this book (but see Sec. \ref{poisson-mn.sec.acoustic}), we
+develop models for encounter probability that depend explicitly on the
+instantaneous location ${\bf u}_{ik}$, for individual $i$ at sample
+occasion $k$: $p_{ik} \equiv p({\bf u}_{ik}) = \Pr(y_{ik}=1|{\bf
+  u}_{ik})$.  Note that ${\bf u}$ is unobserved for the $y=0$
+observations and thus we cannot analyze the conditional-on-${\bf u}$
+likelihood directly. Instead, we regard ${\bf u}$ as random effects
+and assume a distribution for them, which allows us to handle the
+problem of missing ${\bf u}_{ik}$ values.
 
 To develop encounter probability models for this problem we cannot
 just use the previous models because the ``trap'' is actaully a line
@@ -342,17 +371,17 @@ which is a Weibull hazard function.
 
 We have so far described the model for the encounter data in a manner
 that is conditional on the locations ${\bf u}_{ik}$, some of which are
-unobserved. That consideration alone justifies the need for a 2nd
-level model -- a ``random effects'' distribution -- for the ${\bf
-  u}_{ik}$ variables. In addition, biologically we expect that these
-variables should be correlated because they correspond to repeated
-measures on the same individual.  To develop such a model, we adopt
-what is now customary in spatial capture-recapture problems -- we
+unobserved. Naturally, we should specify a model for these latent
+variables -- i.e., a movement model -- so that we could either do a Bayesian analysis by MCMC
+\citep{royle_young:2008, royle_etal:2011} or compute the marginal likelihood
+\citep{efford:2011}.
+To develop such a model, we adopt
+what is now customary in SCR models -- we
 assume that individuals are characterized by a latent variable, ${\bf
-  s}_{i}$, which represents a center of activity or territory or
-simply ``home range''. This leads to a natural model for the variables
-${\bf u}_{ik}$. In particular, we can now think of ${\bf u}_{ik}$ as
-the outcomes of a movement process, conditional on the activity center
+  s}_{i}$, which represents the activity center.
+This leads to some natural models
+ for the movement outcomes
+${\bf u}_{ik}$ conditional on the activity center
 ${\bf  s}_{i}$. Here we make use of the bivariate normal model (but
 see below for alternatives):
 \[
@@ -363,7 +392,7 @@ primitive model of individual movements about their home range but we
 believe it will be adequate in many capture-recapture studies which
 are often limited by sparse data.
 
-We adopt our now customary assumption for the activity centers ${\bf s}$:
+We adopt our default assumption for the activity centers ${\bf s}$:
 \[
  {\bf s}_{i} \sim \mbox{Uniform}({\cal S}); \; \; i=1,2,\ldots,N.
 \]
@@ -376,7 +405,7 @@ to restrict the potential locations of ${\bf s}$.
 \subsection{Simulation and analysis in {\bf JAGS}}
 
 Here we will simulate a sample data set that goes with the situation
-desccribed in Fig. \ref{searchencounter.fig.snakeline} and then analyze the ddata in
+desccribed in Fig. \ref{searchencounter.fig.snakeline} and then analyze the data in
 {\bf JAGS}.  We begin by defining the state-space containing all of
 the sample boxes in Fig. \ref{searchencounter.fig.snakeline} and a total population
 size which here which is going to be 4 individuals per unit quadrat
@@ -410,9 +439,8 @@ and \mbox{\tt sp}, especially the function \mbox{\tt sample.Line}, as follows:
 Next we set a random number seed and simulate activity centers and set
 some model parameters required to simulate encounter history data.
 Note, the commands for doing all of this and plotting the results are given
-in the function \mbox{\tt search$\_$encounter1} in the {\bf R} package
-\mbox{\tt scrbook} {\bf XXXX actually called snakeline.R right now
-XXXXXXX}.
+in the function \mbox{\tt snakeline} in the {\bf R} package
+\mbox{\tt scrbook}. 
 In the following commands you can see where the
 regular mesh representation of the sample line is extracted from the
 \mbox{\tt regpoints} object which we just created:
@@ -498,14 +526,18 @@ Uy.st[i,is.na(Uy[i,])]<-S[i,2]
 \end{verbatim}
 }
 
-The BUGS model specification is shown in Panel XXXXXXXXXX and to
+The {\bf BUGS} model specification is shown in Panel 
+\ref{search-encounter.panel.design1}, although we neglect the standard
+steps showing how to 
 bundle the data, inits, and farm
-all of this stuff out to {\bf JAGS} we execute the following set of
-commands:
+all of this stuff out to {\bf JAGS} (see the help file for \mbox{\tt
+  snakeline})for the whole script.
 
+\begin{panel}[htp]
+\centering
+\rule[0.15in]{\textwidth}{.03in}
+{\small
 \begin{verbatim}
-### write BUGS model description
-
 cat("
 model {
 
@@ -539,35 +571,21 @@ for(i in 1:M){ # Loop over individuals
 # Derived quantity
 N<-sum(z[])
 }
-",file="model0.txt")
-
-## Prepare objects to run WinBUGS from R
-# Data
-data <- list(y=y, u=Ux,  v=Uy, X=X, K=K, M=M, J=J,xlim=xlim,ylim=ylim)
-
-#Define function to generate initial values
-inits <- function(){
-  list(alpha0=alpha0-.3,alpha1=alpha1-1.5,lsigma=log(.5),
-       s=S,z=c(rep(1,nind),rep(0,M-nind)) ,u=Ux.st,v=Uy.st)
-}
-
-# List parameters to be estimated
-parameters <- c("alpha0","alpha1", "N", "psi", "sigma.move")
-
-# Set MCMC settings
-nthin<-1
-nc<-3
-nb<-500
-ni<-2000
-
-# Load interface package and start WinBUGS (note: this takes about 4.5 h)
-library("R2jags")
-wbout2 <- jags(data, inits, parameters, "model0.txt", n.thin=nthin, n.chains=nc,
-n.burnin=nb, n.iter=ni, working.dir=getwd())
 \end{verbatim}
+}
+\rule[-0.15in]{\textwidth}{.03in}
+\caption{
+{\bf BUGS} model specification for the search-encounter model similar
+to ..................XXXXXXXXXXXX
+help file \mbox{\tt ?snakeline} in the {\bf R} package \mbox{\tt scrbook}.
+}
+\label{search-encounter.panel.design1}
+\end{panel}
+
 
 and this produces the output here:
 
+{\bf XXXx Will table-isze final results XXXXX}
 
 \begin{verbatim}
 Run with alpha0= 0
@@ -646,12 +664,8 @@ it  represents an intentional misspecification of the model
 but it seems that the effect of this is relatively minor, or at least
 otherwise people wouldn't do it.
 
-Analysis of 1d is the ``unstructured survey data'' like
-from Thompson et al. or Russell et al.  Note also that the capcrap
-paper is a version of this - grids or polygons were sampled but no
-information on the search path is available. This could be a Design 3
-problem but that is excess computation I think.
-
+Analysis of Protocol 1d is the ``unstructured survey data'' like
+from Thompson et al. or Russell et al. 
 
 (2) Tiger density in the Bandipur tiger reserve:
 \citet{gopalaswamy_etal:2012ecol} reported on a study in the Bandipur
@@ -694,6 +708,8 @@ encounter.
 
 
 \subsection{Sierra National Forest Fisher Study}
+
+A real example with data and an R script. 
 
 Thompson et al. did this fisher study which involved dogs searching
 space. This seems typical of many
@@ -782,15 +798,16 @@ the uniformity model:
 which effectively takes the place of the model for ${\bf s}_{i}$ that
 we typically use. Under this model, individuals dont' have an activity
 center but, rather, they drift through space more-or-less randomly
-based just on their previous location. See Oveskainen XXXXX
-papers..... see also our discussion of a similar model that might
-arise in signal strength detectory surveys Chapt. XXXXXXXXX.
+based just on their previous location. See \citet{ovaskainen:2004,
+ovaskainen:2008}
+see also our discussion of a similar model that might
+arise in acoustic  surveys (Sec. \ref{poisson-mn.sec.acoustic}).
 
 We could allow for dependent movements about a central location ${\bf
   s}_{i}$ by modifying the model to be an AR(1) or similar type of
 model with parameter $\rho$, e.g.,
 \begin{eqnarray*}
- u_{1}(i,k) | {\bf s}_{i} &\sim &  \mbox{Normal}( \rho ( u_{1}(i,k-1)
+ u_{1}(i,k) | {\bf s}_{i} &\sim &  \mbox{Normal}( \rho*( u_{1}(i,k-1)
  - s_{1}(i) ),  \sigma^{2}) \\
 \end{eqnarray*}
 (and similar for coordinate $u_{2}$).
