@@ -45,13 +45,15 @@ rejectionRate(window(mcy1, start=4001))
 
 save(mcy1, file="mcy1.gzip")
 
-
+ls()
+# load("mcy1.gzip")
+ls()
 
 
 
 
 set.seed(450)
-fmnoy1 <- scrUN(n=nopa$n, X=nopa$X, M=300, updateY=FALSE, niters=250000,
+fmnoy1 <- scrUN(n=nopa$n, X=nopa$X, M=400, updateY=FALSE, niters=5000,
               xlims=c(-600, 600), ylims=c(-400, 400),
               inits=list(sigma=rnorm(1, 100)),
               tune=c(9, 0.05, 300))
@@ -63,12 +65,16 @@ summary(mcnoy1)
 rejectionRate(mcnoy1)
 rejectionRate(window(mcnoy1, start=1001))
 
+summary(as.matrix(mcnoy1)[,"N"])
 
 
 
 save(mcnoy1, file="mcnoy1.gzip")
 
 
+ls()
+# load("mcnoy1.gzip")
+ls()
 
 
 
