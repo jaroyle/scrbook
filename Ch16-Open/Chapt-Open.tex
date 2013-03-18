@@ -1338,16 +1338,7 @@ returning downstream after spawning in the upstream area.  These
 results highlight the utility in using a multi-state model to
 understand movement between states; here, we used spatial states, but
 age, class, breeding status, etc. are all possibilities.  We did have
-to reduce the   %%%% XXXX BETH IMPORTANT -- there was a Git conflict
-                %%%% living in this document -- see below. You need to
-                %%%% figure this out!
-<<<<<<< HEAD dataset however to fit this model and
-information on spatial location was lost in creating just two states,
-downstream and upstream.  Losing information is one potential effect
-of using a multi-state model, additionally when states are hidden or
-unknown (e.g., when animals are in a region not exposed to sampling),
-these models can be difficult to fit (XXX cite Sarah?).  Both of these
-issues can be resolved using the fully spatial CJS model.  =======
+to reduce the  
 dataset however to fit this model and information on spatial location
 was lost in creating just two states, downstream and upstream.  Losing
 information is one potential effect of using a multi-state model,
@@ -1358,15 +1349,15 @@ an overview of these problems).  Not losing information and unknown
 states are two issues that can be resolved using the fully spatial CJS
 model.  Misclassification of state (or even individual) is a difficult
 problem to solve and current approaches (\cite{link_etal:2010,
-  mcclintock_etal:inpress}).  >>>>>>> final edits
+  mcclintock_etal:inpress}).  
 
+%%% XXX Double check usages of "essentially" and try to reduce. This
+%%% paragraph has 2 uses of that -- and many times I have seen 2 or 3
+%%% uses so I removed some of them.
 
 \subsection{Spatial CJS models}
 
 In Chapt. \ref{chapt.poisson-mn}, we suggested that SCR models are 
-%%% XXX Double check usages of "essentially" and try to reduce. This
-%%% paragraph has 2 uses of that -- and many times I have seen 2 or 3
-%%% uses so I removed some of them.
 essentially a type of multi-state model with spatially structured
 transition probabilities.  As we noted, individuals can appear in $>1$
 states, simultaneously, which is not directly analogous to a standard
@@ -1374,7 +1365,7 @@ multi-state model.  However, building on the state space and
 multi-state CJS models, we can explicitly incorporate individual
 movement as an individual covariate model \citep{royle_indcov:2007}.
 To move from the basic and multi-state CJS models to the SCR version,
-we need only make a few changes to the model.  Essentially, we will
+we need only make a few changes to the model.  We will
 not have discrete states and thus the biggest difference is that
 individuals do not ``transition'' between a finite set of states, but
 instead are allowed to move in continuous space.
@@ -1394,9 +1385,7 @@ Poisson observation model, specified conditional on $z(i,t)$, is:
 % XXXX Remind people what g is
 %If individual $i$ is alive at time $t$ ($z(i,t)=1$), then the observations are Poisson as before.
 where $\lambda_{0}$ is the baseline encounter rate.
-%%% XXXX Beth: the "Conversely" doesn't make any sense here! There is
-%%% no early thing to contrast with.
-Conversely, if the
+If the
 individual is not alive ($z(i,t)=0$), then the observations must be
 fixed zeros with probability 1.   In the CJS formulation, we will condition on first capture
 which means that $z(i,t)$ will
@@ -1455,31 +1444,18 @@ during the week, which means we just sum the encounters over the week
 and eliminate any need for explicit secondary occasions in the
 model. The result is a 3-D array instead of a 4-D array.  Given the
 structure of the encounters, we use a Poisson encounter model in this
-example.
+example shown in \ref{open.panel.spatialCJS}.  The code to carry out this
+model is provided in the script XXXX....
 
-%% XXXX BETH: I think you should carve out the model and put it in a
-%% panel, and put all the R code in a script, put the script in the
-%% repo and IDENTIFY THE NAME OF THE SCRIPT here.
-% XXXX Suggest sticking with your format of putting BUGS code in a
-% panel, and keeping R code seperate. And add more comments. XXXX
+%BETH - include script name and add it here!
+
+
+\begin{panel}[htp]
+\centering
+\rule[0.1in]{\textwidth}{.03in}
 {\small
 \begin{verbatim}
-library(reshape)
 
-# Constants:
-M <- 315       # Number of individuals
-T <- 12        # Number of periods (weeks)
-nantenna <- 7  # weir, 6 antennas
-antenna.loc <- c(3,7,12,44,56,72,77)  # antenna locations
-
-# Input and format data matrix:
-AS10 <- read.table("AS10.txt" ,header=T)
-melted.rkm <- melt(AS10, id=c("TagID","RKM"))
-y <- cast(melted.rkm, TagID ~ RKM ~ value, fill=0, length)
-first=read.csv("firstcap.csv")
-
-sink("ModelCJS.txt")
-cat("
 
 model {
 # Priors
@@ -1492,7 +1468,8 @@ tau<-1/(tauv*tauv)
 
 for (i in 1:M){
   z[i,first[i]] <- 1
-  S[i,first[i]] ~ dunif(0,50)
+  S[i,first[i]] ~ dunif(0,50)   #Fish enter the stream at 0, thus the
+			                 #first AC is set to the lower stream end
 
 for(j in 1:nantenna) {
 	  D2[i,j,first[i]] <- pow(S[i,first[i]]-antenna.loc[j], 2)
@@ -1502,7 +1479,7 @@ for(j in 1:nantenna) {
       }
 
    for (t in first[i]+1:T) {
-	          S[i,t] ~ dunif(xl, xu) # XXXX above you have dunif(0,50)?
+	          S[i,t] ~ dunif(xl, xu) 
          for(j in 1:nantenna) {
 		        D2[i,j,t] <- pow(S[i,t]-antenna.loc[j], 2)
                lam[i,j,t] <- lam0 * exp(-D2[i,j,t]/(2*sigma2))
@@ -1514,29 +1491,22 @@ for(j in 1:nantenna) {
 	}
 	}
 }
-
-",fill = TRUE)
-sink()
-
-data1<-list(y=y, first=first, M=M, T=T, xl=0, xu=80, nantenna=nantenna, antenna.loc=antenna.loc)
-
-z=matrix(NA, M, T)
-for(i in 1:M){
-for(t in first[i]:12){
-z[i,t] <-1
-}
-}
-
-inits =  function() {list(z=z,phi=runif(1,0,1), lam0=runif(1,0,2),
-                     tauv=runif(1,10, 20), sigma=runif(1,0,10)) }
-
-parameters <- c("sigma", "phi", "lam0")
-
-library("rjags")
-out1 <- jags.model("modelCJS.txt", data1, inits, n.chains=3, n.adapt=500)
-out2CJS <- coda.samples(out1,parameters,n.iter=20000)
 \end{verbatim}
 }
+\rule[-0.1in]{\textwidth}{.03in}
+\caption{
+\jags~ model specification for the spatial
+Cormack-Jolly-Seber (CJS) model for the American shad dataset. Note that the first alive state of
+each individual, \mbox{\tt z[i,first[i]]} is not stochastic. It is
+equal to 1 with probability 1.}
+\label{open.panel.spatialCJS}
+\end{panel}
+
+
+
+
+
+
 
 \begin{table}
 \centering
@@ -1591,7 +1561,6 @@ are different than found in \cite{raabe_diss:2012}.
 
 \section{Modeling movement and dispersal dynamics}
 
-%%%%Activity Center Dynamics}
 \label{open.sec.ACdyanmics}
 
 
