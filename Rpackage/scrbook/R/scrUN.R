@@ -3,7 +3,8 @@
 scrUN <- function(n, X, M, #obsmod=c("pois", "bern"),
                   updateY=TRUE,
                   niters, xlims, ylims,
-                  inits=NULL, priors=NULL,
+                  inits=NULL,
+                  priors=NULL,
                   tune=c(0.2, 0.1, 2)) {
 
 #    obsmod <- match.arg(obsmod)
@@ -53,6 +54,35 @@ scrUN <- function(n, X, M, #obsmod=c("pois", "bern"),
     if(length(z) != M)
         stop("length(z) should be ", M)
 
+    # priors
+    prior.names <- names(priors)
+    if("sigma" %in% prior.names) {
+        prior.sigma <- TRUE
+        sigma.prior <- function(sig) {
+            do.call(priors[["sigma"]][[1]],
+                    list(c(x=sig, unlist(priors[["sigma"]][[2]]))))
+        }
+    } else
+        prior.sigma <- FALSE
+    if("lam0" %in% prior.names) {
+        prior.lam0 <- TRUE
+        lam0.prior <- function(lam0) {
+            do.call(priors[["lam0"]][[1]],
+                    list(c(x=lam0, unlist(priors[["lam0"]][[2]]))))
+        }
+    } else
+        prior.lam0 <- FALSE
+    if("psi" %in% prior.names)
+        prior.psi <- TRUE
+    else
+        prior.psi <- FALSE
+    if(prior.psi) {
+        psi.a <- priors[["psi"]][[2]]["a"]
+        psi.b <- priors[["psi"]][[2]]["b"]
+    } else {
+        psi.a <- 1
+        psi.b <- 1
+    }
 
     out <- matrix(NA, nrow=niters, ncol=4)
     nought <- ifelse(obsmod=="pois", "lam0", "p0")
@@ -73,7 +103,12 @@ scrUN <- function(n, X, M, #obsmod=c("pois", "bern"),
             # update sigma
             sigma.cand <- rnorm(1, sigma, tune[1])
             if(sigma.cand > 0) {
-                prior <- prior.cand <- 0
+                if(prior.sigma) {
+                    prior <- sigma.prior(sigma)
+                    prior.cand <- sigma.prior(sigma.cand)
+                } else {
+                    prior <- prior.cand <- 0
+                }
                 lam.cand <- lam0*exp(-(dist*dist) /
                                      (2*sigma.cand*sigma.cand))
                 llcand <- sum(dpois(y, lam.cand*z, log=TRUE))
@@ -89,7 +124,13 @@ scrUN <- function(n, X, M, #obsmod=c("pois", "bern"),
             if(lam0.cand >= 0) {
                 lam.cand <- lam0.cand*exp(-(dist*dist)/(2*sigma*sigma))
                 llcand <- sum(dpois(y, lam.cand*z, log=TRUE))
-                if(runif(1) < exp((llcand) - (ll))) {
+                if(prior.lam0) {
+                    prior <- lam0.prior(lam0)
+                    prior.cand <- lam0.prior(lam0.cand)
+                } else {
+                    prior <- prior.cand <- 0
+                }
+                if(runif(1) < exp((llcand + prior.cand) - (ll + prior))) {
                     ll <- llcand
                     lam0 <- lam0.cand
                     lam <- lam.cand
@@ -128,7 +169,7 @@ scrUN <- function(n, X, M, #obsmod=c("pois", "bern"),
             }
 
             # update psi
-            psi <- rbeta(1, 1+sum(z), 1+M-sum(z))
+            psi <- rbeta(1, psi.a+sum(z), psi.b+M-sum(z))
 
             # update s
             sups <- 0

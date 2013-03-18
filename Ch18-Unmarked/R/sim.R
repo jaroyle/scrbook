@@ -51,14 +51,15 @@ library(coda)
 
 set.seed(4569)
 system.time({
-fm1 <- scrUN(n=n, X=X, M=250, niter=150000, xlims=xlim, ylims=ylim,
+fm1 <- scrUN(n=n, X=X, M=250, niter=10000, xlims=xlim, ylims=ylim,
              inits=list(lam0=0.3, sigma=0.01),
              updateY=TRUE,
-             tune=c(0.004, 0.09, 0.35))
+             tune=c(0.004, 0.09, 0.15))
 }) # 39700 it/hr
 
 mc1 <- mcmc(fm1$sims)
 plot(mc1)
+summary(mc1)
 summary(window(mc1, start=10001))
 
 rejectionRate(mc1)
@@ -172,7 +173,7 @@ jc1.2 <- coda.samples(jm, pars1, n.iter=5000)
 
 
 library(rjags)
-dat2 <- list(n=n, X=X, J=J, K=K, M=150, xlim=xlim, ylim=ylim)
+dat2 <- list(n=n, X=X, J=J, K=K, M=250, xlim=xlim, ylim=ylim)
 init2 <- function() {
     list(sigma=runif(1, 1, 2), lam0=runif(1),
          z=rep(1, dat2$M))
@@ -182,7 +183,7 @@ pars2 <- c("lam0", "sigma", "N", "mu")
 system.time({
 jm2 <- jags.model("SCmod2.jag", data=dat2, inits=init2, n.chain=1,
                  n.adapt=1000)
-jc2.1 <- coda.samples(jm2, pars2, n.iter=16000)
+jc2.1 <- coda.samples(jm2, pars2, n.iter=50000)
 }) # 14000 it/hr
 
 plot(jc2.1)
@@ -293,3 +294,10 @@ hist(as.matrix(jc1.1)[,"N"], xlim=c(0, 200),
      main="JAGS: y updated"); abline(v=50, col=4, lwd=2)
 hist(as.matrix(jc2.1)[,"N"], xlim=c(0, 200),
      main="JAGS: y not updated"); abline(v=50, col=4, lwd=2)
+
+
+
+
+
+
+
