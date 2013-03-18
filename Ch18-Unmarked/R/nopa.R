@@ -31,7 +31,7 @@ system("open ../figs/nopaCounts.pdf")
 
 
 set.seed(450)
-fmy1 <- scrUN(n=nopa$n, X=nopa$X, M=400, updateY=TRUE, niters=25000,
+fmy1 <- scrUN(n=nopa$n, X=nopa$X, M=400, updateY=TRUE, niters=250000,
               xlims=c(-600, 600), ylims=c(-400, 400),
               inits=list(sigma=rnorm(1, 100)),
               priors=list(sigma=list("dgamma",
@@ -40,7 +40,7 @@ fmy1 <- scrUN(n=nopa$n, X=nopa$X, M=400, updateY=TRUE, niters=25000,
                                     list(shape=0.001, rate=0.001)),
                            psi=list("dbeta",
                                     list(shape1=1, shape2=1))),
-              tune=c(9, 0.05, 300))
+              tune=c(9, 0.05, 50))
 
 mcy1 <- mcmc(fmy1$sims)
 plot(mcy1)
@@ -64,7 +64,7 @@ ls()
 
 
 set.seed(450)
-fmnoy1 <- scrUN(n=nopa$n, X=nopa$X, M=400, updateY=FALSE, niters=25000,
+fmnoy1 <- scrUN(n=nopa$n, X=nopa$X, M=400, updateY=FALSE, niters=250000,
               xlims=c(-600, 600), ylims=c(-400, 400),
               inits=list(sigma=rnorm(1, 100)),
               priors=list(sigma=list("dgamma",
@@ -73,7 +73,7 @@ fmnoy1 <- scrUN(n=nopa$n, X=nopa$X, M=400, updateY=FALSE, niters=25000,
                                     list(shape=0.001, rate=0.001)),
                            psi=list("dbeta",
                                     list(shape1=1, shape2=1))),
-              tune=c(9, 0.05, 300))
+              tune=c(9, 0.05, 50))
 
 mcnoy1 <- mcmc(fmnoy1$sims)
 plot(mcnoy1)

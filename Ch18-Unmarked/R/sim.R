@@ -51,7 +51,7 @@ library(coda)
 
 set.seed(4569)
 system.time({
-fm1 <- scrUN(n=n, X=X, M=250, niter=60000, xlims=xlim, ylims=ylim,
+fm1 <- scrUN(n=n, X=X, M=250, niter=500000, xlims=xlim, ylims=ylim,
              inits=list(lam0=0.3, sigma=0.01),
              updateY=TRUE,
              priors=list(sigma=list("dgamma",
@@ -60,7 +60,7 @@ fm1 <- scrUN(n=n, X=X, M=250, niter=60000, xlims=xlim, ylims=ylim,
                                    list(shape=0.001, rate=0.001)),
                          psi=list("dbeta",
                                   list(shape1=1, shape2=1))),
-             tune=c(0.003, 0.085, 0.35))
+             tune=c(0.003, 0.085, 0.05))
 }) # 39700 it/hr
 
 mc1 <- mcmc(fm1$sims)
@@ -102,7 +102,7 @@ ls()
 # No y updates
 set.seed(4569)
 system.time({
-fm2 <- scrUN(n=n, X=X, M=250, niter=60000, xlims=xlim, ylims=ylim,
+fm2 <- scrUN(n=n, X=X, M=250, niter=500000, xlims=xlim, ylims=ylim,
              inits=list(lam0=0.3, sigma=0.01),
              updateY=FALSE,
              priors=list(sigma=list("dgamma",
@@ -111,7 +111,7 @@ fm2 <- scrUN(n=n, X=X, M=250, niter=60000, xlims=xlim, ylims=ylim,
                                    list(shape=0.001, rate=0.001)),
                          psi=list("dbeta",
                                   list(shape1=1, shape2=1))),
-             tune=c(0.003, 0.085, 0.35))
+             tune=c(0.003, 0.085, 0.05))
 }) # 40463 it/hr
 
 
