@@ -65,9 +65,9 @@ fm1 <- scrUN(n=n, X=X, M=250, niter=60000, xlims=xlim, ylims=ylim,
 
 mc1 <- mcmc(fm1$sims)
 plot(mc1)
-plot(window(mc1, start=5001))
+plot(window(mc1, start=10001))
 summary(mc1)
-summary(window(mc1, start=5001))
+summary(window(mc1, start=10001))
 
 rejectionRate(mc1)
 rejectionRate(window(mc1, start=5001))
@@ -88,7 +88,11 @@ plot(mc1)
 
 
 
-save(mc1, file="scrUNmc1.gzip")
+#save(mc1, file="scrUNmc1.gzip")
+
+save(mc1, file="scrUNmc1prior.gzip")
+
+
 
 ls()
 # load("scrUNmc1.gzip")
@@ -115,12 +119,16 @@ mc2 <- mcmc(fm2$sims)
 plot(mc2)
 plot(window(mc2, start=6001))
 summary(mc2)
-summary(window(mc2, start=6001))
+summary(window(mc2, start=10001))
 rejectionRate(mc2)
 rejectionRate(window(mc2, start=6001))
 
 
-save(mc2, file="scrUNmc2.gzip")
+#save(mc2, file="scrUNmc2.gzip")
+
+save(mc2, file="scrUNmc2prior.gzip")
+
+
 
 ls()
 # load("scrUNmc2.gzip")
