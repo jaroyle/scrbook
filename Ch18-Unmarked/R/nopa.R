@@ -25,11 +25,22 @@ system("open ../figs/nopaCounts.pdf")
 
 # Fit model using custom code
 
+
+# source("../../Rpackage/scrbook/R/scrUN.R")
+
+
+
 set.seed(450)
-fmy1 <- scrUN(n=nopa$n, X=nopa$X, M=250, updateY=TRUE, niters=250000,
+fmy1 <- scrUN(n=nopa$n, X=nopa$X, M=400, updateY=TRUE, niters=250000,
               xlims=c(-600, 600), ylims=c(-400, 400),
               inits=list(sigma=rnorm(1, 100)),
-              tune=c(9, 0.05, 300))
+              priors=list(sigma=list("dgamma",
+                                     list(shape=0.001, rate=0.001)),
+                          lam0=list("dgamma",
+                                    list(shape=0.001, rate=0.001)),
+                           psi=list("dbeta",
+                                    list(shape1=1, shape2=1))),
+              tune=c(9, 0.05, 50))
 
 mcy1 <- mcmc(fmy1$sims)
 plot(mcy1)
@@ -53,10 +64,16 @@ ls()
 
 
 set.seed(450)
-fmnoy1 <- scrUN(n=nopa$n, X=nopa$X, M=400, updateY=FALSE, niters=5000,
+fmnoy1 <- scrUN(n=nopa$n, X=nopa$X, M=400, updateY=FALSE, niters=250000,
               xlims=c(-600, 600), ylims=c(-400, 400),
               inits=list(sigma=rnorm(1, 100)),
-              tune=c(9, 0.05, 300))
+              priors=list(sigma=list("dgamma",
+                                     list(shape=0.001, rate=0.001)),
+                          lam0=list("dgamma",
+                                    list(shape=0.001, rate=0.001)),
+                           psi=list("dbeta",
+                                    list(shape1=1, shape2=1))),
+              tune=c(9, 0.05, 50))
 
 mcnoy1 <- mcmc(fmnoy1$sims)
 plot(mcnoy1)

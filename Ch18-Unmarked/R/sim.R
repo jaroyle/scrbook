@@ -51,7 +51,7 @@ library(coda)
 
 set.seed(4569)
 system.time({
-fm1 <- scrUN(n=n, X=X, M=250, niter=1000, xlims=xlim, ylims=ylim,
+fm1 <- scrUN(n=n, X=X, M=250, niter=500000, xlims=xlim, ylims=ylim,
              inits=list(lam0=0.3, sigma=0.01),
              updateY=TRUE,
              priors=list(sigma=list("dgamma",
@@ -59,24 +59,25 @@ fm1 <- scrUN(n=n, X=X, M=250, niter=1000, xlims=xlim, ylims=ylim,
                          lam0=list("dgamma",
                                    list(shape=0.001, rate=0.001)),
                          psi=list("dbeta",
-                                  list(shape1=0.001, shape2=1))),
-             tune=c(0.004, 0.09, 0.15))
+                                  list(shape1=1, shape2=1))),
+             tune=c(0.003, 0.085, 0.05))
 }) # 39700 it/hr
 
 mc1 <- mcmc(fm1$sims)
 plot(mc1)
+plot(window(mc1, start=10001))
 summary(mc1)
 summary(window(mc1, start=10001))
 
 rejectionRate(mc1)
-rejectionRate(window(mc1, start=10001))
+rejectionRate(window(mc1, start=5001))
 
 
 
 debugonce(scrUN)
 
 
-fm1.1 <- scrUN(n=n, X=X, M=200, niter=5000, xlims=xlim, ylims=ylim,
+fm1.1 <- scrUN(n=n, X=X, M=250, niter=5000, xlims=xlim, ylims=ylim,
              inits=fm1$last,
              updateY=TRUE,
              tune=c(0.004, 0.07, 0.3))
@@ -87,7 +88,11 @@ plot(mc1)
 
 
 
-save(mc1, file="scrUNmc1.gzip")
+#save(mc1, file="scrUNmc1.gzip")
+
+save(mc1, file="scrUNmc1prior.gzip")
+
+
 
 ls()
 # load("scrUNmc1.gzip")
@@ -97,20 +102,33 @@ ls()
 # No y updates
 set.seed(4569)
 system.time({
-fm2 <- scrUN(n=n, X=X, M=200, niter=50000, xlims=xlim, ylims=ylim,
+fm2 <- scrUN(n=n, X=X, M=250, niter=500000, xlims=xlim, ylims=ylim,
              inits=list(lam0=0.3, sigma=0.01),
              updateY=FALSE,
-             tune=c(0.004, 0.07, 0.3))
+             priors=list(sigma=list("dgamma",
+                                    list(shape=0.001, rate=0.001)),
+                         lam0=list("dgamma",
+                                   list(shape=0.001, rate=0.001)),
+                         psi=list("dbeta",
+                                  list(shape1=1, shape2=1))),
+             tune=c(0.003, 0.085, 0.05))
 }) # 40463 it/hr
 
 
 mc2 <- mcmc(fm2$sims)
 plot(mc2)
+plot(window(mc2, start=6001))
 summary(mc2)
+summary(window(mc2, start=10001))
 rejectionRate(mc2)
+rejectionRate(window(mc2, start=6001))
 
 
-save(mc2, file="scrUNmc2.gzip")
+#save(mc2, file="scrUNmc2.gzip")
+
+save(mc2, file="scrUNmc2prior.gzip")
+
+
 
 ls()
 # load("scrUNmc2.gzip")
