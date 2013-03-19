@@ -1,35 +1,28 @@
 model {
 
-p ~ dbeta(1,1)       # detection prob
-tau ~ dunif(0, 100)  # "movement parameter" of Gaussian kernel model
+p ~ dbeta(1,1)        # detection prob
+tau ~ dunif(0, 5000)  # "movement parameter" of Gaussian kernel model
 psi ~ dbeta(1,1)
-
-# Multinomial cell probs for removal sampling
-pi[1] <- p
-pi[2] <- (1-p)*p
-pi[3] <- (1-p)*(1-p)*p
-pcap <- sum(pi[1:3])
-pi[4] <- 1 - pcap # -> (1-p)^3
 
 for(i in 1:M) {
   z[i] ~ dbern(psi)
   s[i] ~ dcat(PrSeg[]) # which of the G segments is s in?
   for(g in 1:G) {
-    PrU[i,g] <- exp(-distmat[s[i],g]^2/(2*tau^2))*z[i]
-    for(k in 1:K) {
-      u[i,g,k] ~ dcat(PrU[]) # which of the G segments is u in at time k?
-      }
+    PrU[i,g] <- exp(-distmat[s[i],g]^2/(2*tau^2)) # Pr(u(g) | s)
+    }
+  for(k in 1:K) {
+    y[i,1:G,k] ~ dmulti(PrU[i,1:G], z[i])
     }
   }
 
-for(g in 1:G) {
+for(j in 1:J) {
   for(k in 1:K) {
-    N[g,k] <- sum(u[,g,k]) # Number of individuals in segment g at time k
-    y[g,1,k] ~ dbinom(N[g,k], p)
-    N2[g,k] <- N[g,k] - y[g,1,k]
-    y[g,2,k] ~ dbinom(N2[g,k], p)
-    N3[g,k] <- N2[g,k] - y[g,2,k]
-    y[g,3,k] ~ dbinom(N3[g,k], p)
+    N[j,k] <- sum(y[,seg[j],k]) # Number of individuals in seg j at time k
+    n[j,1,k] ~ dbin(p, N[j,k])
+    N2[j,k] <- N[j,k] - n[j,1,k]
+    n[j,2,k] ~ dbin(p, N2[j,k])
+    N3[j,k] <- N2[j,k] - n[j,2,k]
+    n[j,3,k] ~ dbin(p, N3[j,k])
     }
   }
 

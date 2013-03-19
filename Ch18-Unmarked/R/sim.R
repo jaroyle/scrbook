@@ -51,7 +51,7 @@ library(coda)
 
 set.seed(4569)
 system.time({
-fm1 <- scrUN(n=n, X=X, M=250, niter=500000, xlims=xlim, ylims=ylim,
+fm1 <- scrUN(n=n, X=X, M=300, niter=60000, xlims=xlim, ylims=ylim,
              inits=list(lam0=0.3, sigma=0.01),
              updateY=TRUE,
              priors=list(sigma=list("dgamma",
@@ -60,30 +60,22 @@ fm1 <- scrUN(n=n, X=X, M=250, niter=500000, xlims=xlim, ylims=ylim,
                                    list(shape=0.001, rate=0.001)),
                          psi=list("dbeta",
                                   list(shape1=1, shape2=1))),
-             tune=c(0.003, 0.085, 0.05))
+             tune=c(0.004, 0.085, 0.05))
 }) # 39700 it/hr
 
 mc1 <- mcmc(fm1$sims)
 plot(mc1)
-plot(window(mc1, start=10001))
+plot(window(mc1, start=8001))
 summary(mc1)
 summary(window(mc1, start=10001))
 
 rejectionRate(mc1)
-rejectionRate(window(mc1, start=5001))
+rejectionRate(window(mc1, start=10001))
 
 
 
-debugonce(scrUN)
+# debugonce(scrUN)
 
-
-fm1.1 <- scrUN(n=n, X=X, M=250, niter=5000, xlims=xlim, ylims=ylim,
-             inits=fm1$last,
-             updateY=TRUE,
-             tune=c(0.004, 0.07, 0.3))
-
-mc1 <- mcmc(rbind(fm1$sims, fm1.1$sims))
-plot(mc1)
 
 
 
@@ -102,7 +94,7 @@ ls()
 # No y updates
 set.seed(4569)
 system.time({
-fm2 <- scrUN(n=n, X=X, M=250, niter=500000, xlims=xlim, ylims=ylim,
+fm2 <- scrUN(n=n, X=X, M=300, niter=60000, xlims=xlim, ylims=ylim,
              inits=list(lam0=0.3, sigma=0.01),
              updateY=FALSE,
              priors=list(sigma=list("dgamma",
@@ -111,17 +103,18 @@ fm2 <- scrUN(n=n, X=X, M=250, niter=500000, xlims=xlim, ylims=ylim,
                                    list(shape=0.001, rate=0.001)),
                          psi=list("dbeta",
                                   list(shape1=1, shape2=1))),
-             tune=c(0.003, 0.085, 0.05))
+             tune=c(0.004, 0.088, 0.08))
 }) # 40463 it/hr
 
 
 mc2 <- mcmc(fm2$sims)
 plot(mc2)
-plot(window(mc2, start=6001))
+plot(window(mc2, start=10001))
 summary(mc2)
 summary(window(mc2, start=10001))
+
 rejectionRate(mc2)
-rejectionRate(window(mc2, start=6001))
+rejectionRate(window(mc2, start=10001))
 
 
 #save(mc2, file="scrUNmc2.gzip")
@@ -136,14 +129,72 @@ ls()
 
 
 
-fm2.1 <- scrUN(n=n, X=X, M=200, niter=5000, xlims=xlim, ylims=ylim,
-             inits=fm2$last,
+
+
+
+
+
+
+
+
+
+
+
+# Yes y, but no priors
+
+set.seed(4569)
+system.time({
+fm3 <- scrUN(n=n, X=X, M=300, niter=60000, xlims=xlim, ylims=ylim,
+             inits=list(lam0=0.3, sigma=0.01),
+             updateY=TRUE,
+             tune=c(0.0035, 0.09, 0.05))
+}) # 39700 it/hr
+
+mc3 <- mcmc(fm3$sims)
+plot(mc3)
+plot(window(mc3, start=50001))
+summary(mc3)
+summary(window(mc3, start=5001))
+
+rejectionRate(mc3)
+rejectionRate(window(mc3, start=5001))
+
+
+
+save(mc3, file="scrUNmc3.gzip")
+
+
+
+
+
+# No y, no priors
+
+
+# No y updates
+set.seed(4569)
+system.time({
+fm4 <- scrUN(n=n, X=X, M=300, niter=60000, xlims=xlim, ylims=ylim,
+             inits=list(lam0=0.3, sigma=0.01),
              updateY=FALSE,
-             tune=c(0.004, 0.07, 0.3))
+             tune=c(0.004, 0.09, 0.06))
+}) # 40463 it/hr
 
 
-mc2 <- mcmc(rbind(fm2$sims, fm2.1$sims))
-plot(mc2)
+mc4 <- mcmc(fm4$sims)
+plot(mc4)
+plot(window(mc4, start=1001))
+summary(mc4)
+summary(window(mc4, start=1001))
+
+rejectionRate(mc4)
+rejectionRate(window(mc4, start=1001))
+
+
+
+
+
+
+
 
 
 
@@ -186,6 +237,13 @@ save(jc1.1, file="scrUNjc1.1.gzip")
 jc1.2 <- coda.samples(jm, pars1, n.iter=5000)
 
 
+
+
+
+
+
+
+#
 
 
 

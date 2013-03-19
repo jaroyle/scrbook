@@ -29,9 +29,9 @@ system("open ../figs/nopaCounts.pdf")
 # source("../../Rpackage/scrbook/R/scrUN.R")
 
 
-
+system.time({
 set.seed(450)
-fmy1 <- scrUN(n=nopa$n, X=nopa$X, M=400, updateY=TRUE, niters=250000,
+fmy1 <- scrUN(n=nopa$n, X=nopa$X, M=400, updateY=TRUE, niters=25000,
               xlims=c(-600, 600), ylims=c(-400, 400),
               inits=list(sigma=rnorm(1, 100)),
               priors=list(sigma=list("dgamma",
@@ -40,14 +40,18 @@ fmy1 <- scrUN(n=nopa$n, X=nopa$X, M=400, updateY=TRUE, niters=250000,
                                     list(shape=0.001, rate=0.001)),
                            psi=list("dbeta",
                                     list(shape1=1, shape2=1))),
-              tune=c(9, 0.05, 50))
+              tune=c(7, 0.04, 100))
+})
 
 mcy1 <- mcmc(fmy1$sims)
 plot(mcy1)
+plot(window(mcy1, start=3001))
+
 summary(mcy1)
+summary(window(mcy1, start=3001))
 
 rejectionRate(mcy1)
-rejectionRate(window(mcy1, start=4001))
+rejectionRate(window(mcy1, start=10001))
 
 
 
@@ -64,7 +68,7 @@ ls()
 
 
 set.seed(450)
-fmnoy1 <- scrUN(n=nopa$n, X=nopa$X, M=400, updateY=FALSE, niters=250000,
+fmnoy1 <- scrUN(n=nopa$n, X=nopa$X, M=400, updateY=FALSE, niters=5000,
               xlims=c(-600, 600), ylims=c(-400, 400),
               inits=list(sigma=rnorm(1, 100)),
               priors=list(sigma=list("dgamma",
@@ -73,14 +77,17 @@ fmnoy1 <- scrUN(n=nopa$n, X=nopa$X, M=400, updateY=FALSE, niters=250000,
                                     list(shape=0.001, rate=0.001)),
                            psi=list("dbeta",
                                     list(shape1=1, shape2=1))),
-              tune=c(9, 0.05, 50))
+              tune=c(9, 0.045, 100))
 
 mcnoy1 <- mcmc(fmnoy1$sims)
 plot(mcnoy1)
+plot(window(mcnoy1, start=3001))
+
 summary(mcnoy1)
+summary(window(mcnoy1, start=3001))
 
 rejectionRate(mcnoy1)
-rejectionRate(window(mcnoy1, start=1001))
+rejectionRate(window(mcnoy1, start=3001))
 
 summary(as.matrix(mcnoy1)[,"N"])
 
