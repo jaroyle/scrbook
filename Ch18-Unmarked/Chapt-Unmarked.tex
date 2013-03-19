@@ -997,8 +997,11 @@ entire stream network.
 
 \begin{figure}
   \centering
-  \includegraphics[width=0.8\textwidth]{Ch18-Unmarked/figs/sal1}
-  \caption{Counts of northern dusky salamanders in the Chesapeak and Ohio National Historic Park, VA/MD.}
+  \includegraphics[width=0.8\textwidth]{Ch18-Unmarked/figs/saln27}
+  \caption{Stream segment counts of northern dusky salamanders along a
+    stream in the Chesapeak and Ohio National Historic Park,
+    VA/MD. Each segment is a 50-m stretch in which 3 removal passes
+    are made on 3 occasions each summer (only 2 occasions are shown here).}
   \label{unmarked.fig.salct}
 \end{figure}
 
@@ -1015,6 +1018,52 @@ $u_{ijk} \sim Binormal({\bf s}_i, {\bf \Sigma})$.
 In this way, we can model the probability of detection given the
 distance between a trap and an individual's actual location, instead
 of the individual's activity center as we typically do.
+
+
+
+
+\begin{panel}
+\centering
+\rule[0.05in]{\textwidth}{.03in}
+\begin{small}
+\begin{verbatim}
+model {
+p ~ dbeta(1,1)        # detection prob
+tau ~ dunif(0, 5000)  # "movement parameter" of Gaussian kernel model
+psi ~ dbeta(1,1)      # data augmentation parameter
+for(i in 1:M) {
+  z[i] ~ dbern(psi)
+  s[i] ~ dcat(PrSeg[]) # location (stream segment) of activity center
+  for(g in 1:G) {
+    PrU[i,g] <- exp(-distmat[s[i],g]^2/(2*tau^2)) # Pr(u | s)
+    }
+  for(k in 1:K) {
+    u[i,k] ~ dcat(PrU[i,]) # location of guy i at time k
+    for(g in 1:G) {
+      y[i,g,k] <- (u[i,k] == g)*z[i]
+      }
+    }
+  }
+for(j in 1:J) {
+  for(k in 1:K) {
+    N[j,k] <- sum(y[,seg[j],k]) # Number of individuals in seg j at time k
+    # removal model:
+    n[j,1,k] ~ dbin(p, N[j,k])
+    N2[j,k] <- N[j,k] - n[j,1,k]
+    n[j,2,k] ~ dbin(p, N2[j,k])
+    N3[j,k] <- N2[j,k] - n[j,2,k]
+    n[j,3,k] ~ dbin(p, N3[j,k])
+    }
+  }
+Ntot <- sum(z[])
+}
+\end{verbatim}
+\end{small}
+\rule[0.05in]{\textwidth}{.03in}
+\caption{\bugs~description of model in which ...}
+\label{unmarked.panel.sal}
+\end{panel}
+
 
 
 
