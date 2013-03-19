@@ -164,10 +164,21 @@ system.time({
     jc2 <- coda.samples(jm1, pars1, n.iter=1000)
 })
 
-plot(jc2)
+
+summary(jc2)
+plot(jc2, ask=TRUE)
+
+summary(window(jc2, start=901), ask=TRUE)
+plot(window(jc2, start=901), ask=TRUE)
 
 
 
+system.time({
+    jc3 <- coda.samples(jm1, pars1, n.iter=1000)
+})
+
+summary(jc3)
+plot(jc3)
 
 
 
