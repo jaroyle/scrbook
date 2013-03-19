@@ -1000,10 +1000,10 @@ entire stream network.
   \includegraphics[width=0.8\textwidth]{Ch18-Unmarked/figs/saln27}
   \caption{Stream segment counts of northern dusky salamanders along a
     stream in the Chesapeak and Ohio National Historic Park,
-    VA/MD. Each segment is a 50-m stretch in which 3 removal passes
+    VA/MD. Each segment is a 25-m stretch in which 3 removal passes
     are made on 3 occasions each summer (only 2 occasions are shown
     here). Notice the consistency of the spatial correlation between
-    occasions and the apparent decrease in abundance.}
+    occasions and the temporal decline in the counts.}
   \label{unmarked.fig.salct}
 \end{figure}
 
@@ -1030,11 +1030,14 @@ of the individual's activity center as we typically do.
 \begin{small}
 \begin{verbatim}
 model {
+phi ~ dbeta(1,1)      # "availability" parameter
+tau ~ dunif(0, 1000)  # "movement parameter" of Gaussian kernel model
 p ~ dbeta(1,1)        # detection prob
-tau ~ dunif(0, 5000)  # "movement parameter" of Gaussian kernel model
 psi ~ dbeta(1,1)      # data augmentation parameter
 for(i in 1:M) {
-  z[i] ~ dbern(psi)
+  z[i,1] ~ dbern(psi)        # is the guy real?
+  z[i,2] ~ dbern(z[i,1]*phi) # and still alive?
+  z[i,3] ~ dbern(z[i,2]*phi) # still kicking
   s[i] ~ dcat(PrSeg[]) # location (stream segment) of activity center
   for(g in 1:G) {
     PrU[i,g] <- exp(-distmat[s[i],g]^2/(2*tau^2)) # Pr(u | s)
@@ -1042,7 +1045,7 @@ for(i in 1:M) {
   for(k in 1:K) {
     u[i,k] ~ dcat(PrU[i,]) # location of guy i at time k
     for(g in 1:G) {
-      y[i,g,k] <- (u[i,k] == g)*z[i]
+      y[i,g,k] <- (u[i,k] == g)*z[i,k] # was guy at u==g?
       }
     }
   }
@@ -1057,16 +1060,43 @@ for(j in 1:J) {
     n[j,3,k] ~ dbin(p, N3[j,k])
     }
   }
-Ntot <- sum(z[])
+Ntot[1] <- sum(z[,1]) # Abundance, occasion 1
+Ntot[2] <- sum(z[,2]) # Abundance, occasion 2
+Ntot[3] <- sum(z[,3]) # Abundance, occasion 3
 }
 \end{verbatim}
 \end{small}
 \rule[0.05in]{\textwidth}{.03in}
-\caption{\bugs~description of model in which ...}
+\caption{\bugs~description of model for the data shown in
+  Fig.~\ref{unmarked.fig.salct}. The model allows for
+  spatially-explicit temporary emigration, and for a decrease in
+  abundance as individuals move underground throughout the course of
+  the season.}
 \label{unmarked.panel.sal}
 \end{panel}
 
 
+
+
+
+\begin{table}
+  \centering
+  \caption{Posterior summarizes from removal model of salamander
+    counts allowing for movement and decreasing population size over
+    the course of a breeding season.}
+  \begin{tabular}{lrrrrr}
+    \hline
+    Parameter & Mean & SD & 2.5\% & 50\% & 97.5\% \\
+    \hline
+    $N_1$  & 166.724 &  12.298 & 146.000 & 166.000 & 193.000\\
+    $N_2$  &  58.568 &   5.678 &  49.000 &  58.000 &  72.000\\
+    $N_3$  &  20.010 &   3.264 &  15.000 &  20.000 &  28.000\\
+    $p$    &   0.431 &   0.048 &   0.339 &   0.428 &   0.533\\
+    $\phi$ &   0.350 &   0.038 &   0.279 &   0.350 &   0.425\\
+    $\tau$ &  36.542 &   5.322 &  26.649 &  36.332 &  46.140\\
+    \hline
+  \end{tabular}
+\end{table}
 
 
 

@@ -1,18 +1,18 @@
 
-tr <- seq(0.3, 0.7, length=15)
+tr <- seq(30, 70, length=10)
 X <- cbind(rep(tr, each=length(tr)),
            rep(tr, times=length(tr)))    # trap coords
 set.seed(10)
-xlim <- c(0, 1); ylim <- c(0, 1)         # S is the unit square
-A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1]) # area of S
+xlim <- c(0, 100); ylim <- c(0, 100)     # S is [0,100]x[0,100] square
+A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1])/1e4 # area of S
 mu <- 75                                 # density (animals/unit area)
 (N <- rpois(1, mu*A))                    # Generate N=75 as Poisson deviate
 s <- cbind(runif(N, xlim[1], xlim[2]), runif(N, ylim[1], ylim[2]))
 #plot(X, xlim=xlim, ylim=ylim, pch="+")
 #points(s, col=gray(0.5), pch=16)
 
-sigma <- 0.04
-lam0 <- 0.3
+sigma <- 4
+lam0 <- 0.4
 J <- nrow(X)
 K <- 5
 y <- array(NA, c(N, J, K))
@@ -33,8 +33,9 @@ dimnames(n) <- list(paste("trap", 1:J, sep=""),
                     paste("night", 1:K, sep=""))
 n[1:4,]
 
+table(n)
 
-plot(X, cex=rowSums(n), asp=1, xlim=c(0,1))
+plot(X, cex=rowSums(n), asp=1, xlim=xlim)
 points(X, pch="+", cex=.5)
 points(s, col=gray(0.5), pch=16)
 
@@ -52,15 +53,15 @@ library(coda)
 set.seed(4569)
 system.time({
 fm1 <- scrUN(n=n, X=X, M=300, niter=6000, xlims=xlim, ylims=ylim,
-             inits=list(lam0=0.3, sigma=0.01),
+             inits=list(lam0=0.3, sigma=5),
              updateY=TRUE,
-             priors=list(sigma=list("dgamma",
-                                    list(shape=0.001, rate=0.001)),
-                         lam0=list("dgamma",
-                                   list(shape=0.001, rate=0.001)),
-                         psi=list("dbeta",
-                                  list(shape1=1, shape2=1))),
-             tune=c(0.004, 0.085, 0.15))
+#             priors=list(sigma=list("dgamma",
+#                                    list(shape=0.001, rate=0.001)),
+#                         lam0=list("dgamma",
+#                                   list(shape=0.001, rate=0.001)),
+#                         psi=list("dbeta",
+#                                  list(shape1=1, shape2=1))),
+             tune=c(0.1, 0.085, 5))
 }) # 39700 it/hr
 
 mc1 <- mcmc(fm1$sims)
@@ -95,15 +96,15 @@ ls()
 set.seed(4569)
 system.time({
 fm2 <- scrUN(n=n, X=X, M=300, niter=60000, xlims=xlim, ylims=ylim,
-             inits=list(lam0=0.3, sigma=0.01),
+             inits=list(lam0=0.3, sigma=5),
              updateY=FALSE,
-             priors=list(sigma=list("dgamma",
-                                    list(shape=0.001, rate=0.001)),
-                         lam0=list("dgamma",
-                                   list(shape=0.001, rate=0.001)),
-                         psi=list("dbeta",
-                                  list(shape1=1, shape2=1))),
-             tune=c(0.004, 0.088, 0.08))
+#             priors=list(sigma=list("dgamma",
+#                                    list(shape=0.001, rate=0.001)),
+#                         lam0=list("dgamma",
+#                                   list(shape=0.001, rate=0.001)),
+#                         psi=list("dbeta",
+#                                  list(shape1=1, shape2=1))),
+             tune=c(0.1, 0.85, 5))
 }) # 40463 it/hr
 
 

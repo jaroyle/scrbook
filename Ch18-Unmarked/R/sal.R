@@ -178,7 +178,24 @@ system.time({
 })
 
 summary(jc3)
-plot(jc3)
+plot(jc3, ask=TRUE)
+
+
+
+
+
+
+
+
+# Output
+
+ss3 <- summary(jc3)
+
+out3 <- cbind(ss3$stat[,1:2], ss3$quant[,c(1,3,5)])
+
+write.table(format(out3, digits=2), quote=FALSE, sep=" & ", eol="\\\\\n")
+
+
 
 
 
