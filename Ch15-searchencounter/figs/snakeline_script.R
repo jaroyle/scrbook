@@ -191,7 +191,7 @@ inits <- function(){
 }
 
 # List parameters to be estimated
-parameters <- c("alpha0","alpha1", "N", "psi", "sigma.move")
+parameters <- c("alpha0","alpha1", "N", "psi", "sigma.move","sigma")
 
 # Set MCMC settings
 nthin<-1
@@ -203,9 +203,6 @@ ni<-3500
 library("R2jags")
 wbout2 <- jags(data, inits, parameters, "model0.txt", n.thin=nthin, n.chains=nc,
 n.burnin=nb, n.iter=ni, working.dir=getwd())
-
-h# Produce summary of posterior distributions (after WinBUGS has been exited manually or change of argument in previous function to debug = FALSE)
-print(wbout, dig = 3)
 
 
 
