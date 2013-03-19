@@ -52,7 +52,7 @@ sLine<-Line(points)
 ###sLine<-SpatialLines(sLine)
 
 ## should be 250 or higher
-regpoints<-sample.Line(sLine,120,type="regular")
+regpoints<-sample.Line(sLine,100,type="regular")
 
 plot(line1,type="l")
 #original points:
@@ -72,7 +72,7 @@ xlim<-c(-1,4)
 ylim<-c(-1,5)
 
 
-set.seed(2013)
+set.seed(2014)
 
 
 
@@ -80,8 +80,8 @@ sx<-runif(N,xlim[1],xlim[2])
 sy<-runif(N,ylim[1],ylim[2])
 points(sx,sy,pch=20,col="red")
 
-sigma.move<- .25
-sigma<-.15
+sigma.move<- .35
+sigma<-.4
 alpha0<- .8
 alpha1<- 1/(2*(sigma^2))
 X<-regpoints@coords
@@ -197,7 +197,7 @@ parameters <- c("alpha0","alpha1", "N", "psi", "sigma.move")
 nthin<-1
 nc<-3
 nb<-500
-ni<-2000
+ni<-3500
 
 # Load interface package and start WinBUGS (note: this takes about 4.5 h)
 library("R2jags")
