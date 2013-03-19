@@ -84,6 +84,7 @@ sampling protocol. In later sections of this chapter we will explore some
 examples involving of some of these situations. 
 
 \subsection{Design 1: Fixed Search Path}
+\label{searchencounter.sec.fixedpath}
 
 The ideal situation is where we have a continuous search-path or
 line, or multiple such lines, in some region
@@ -414,7 +415,7 @@ Any model for encounter probability can be converted to a hazard model
 so that encounter probability based on total hazard can be derived.
 We introduced this model above:
 \[
-\log(h({\bf u}_{ik},{\bf x})) = \alpha_{0} + \alpha_{1}*dist({\bf u}_{ik},{\bf x}).
+\log(h({\bf u}_{ik},{\bf x})) = \alpha_{0} + \alpha_{1}*\mbox{dist}({\bf u}_{ik},{\bf x}).
 \]
 which is usually called the Gompertz hazard function in survival
 analysis, and it is most often written as $h(t) = a \exp( b*t)$ in which
@@ -423,13 +424,13 @@ case $log(h(t)) = log(a) + b*t$.
 Model 2 (squared-distance) is a
 quadratic function of distance
 \[
-\log(h({\bf u}_{ik},{\bf x})) = \alpha_{0} + \alpha_{1}*dist({\bf u}_{ik},{\bf x})^2.
+\log(h({\bf u}_{ik},{\bf x})) = \alpha_{0} + \alpha_{1}*\mbox{dist}({\bf u}_{ik},{\bf x})^2.
 \]
 We've used this type of Gaussian kernel model 
 quite a bit in the book, and it implies a
 bivariate normal hazard rate. \citet{borchers_efford:2008} use this model:
 \[
-h({\bf u}_{ik},{\bf x} ) = -log(1 - \mbox{expit}(\alpha_{0})
+h({\bf u}_{ik},{\bf x} ) = -\log(1 - \mbox{expit}(\alpha_{0})
 \exp( \alpha_{1}*\mbox{dist}({\bf u}_{ik},{\bf x})^2 ) )
 \]
 which produces a normal kernel model for {\it probability of
@@ -444,7 +445,7 @@ which is a Weibull hazard function.
 
 
 
-\subsection{Movement model}
+\subsection{Modeling movement outcomes}
 
 We have so far described the model for the encounter data in a manner
 that is conditional on the locations ${\bf u}_{ik}$, some of which are
@@ -527,15 +528,14 @@ regular mesh representation of the sample line is extracted from the
 \mbox{\tt regpoints} object which we just created:
 {\small
 \begin{verbatim}
-> set.seed(2013)
+> set.seed(2014)
 > sx <- runif(N,xlim[1],xlim[2])
 > sy <- runif(N,ylim[1],ylim[2])
 
-> sigma.move <- .25
-> sigma <- .15
-> alpha0 <- 0
+> sigma.move <- .35
+> sigma <-.4
+> alpha0 <- .8
 > alpha1 <- 1/(2*(sigma^2))
-
 > X <- regpoints@coords
 > J <- nrow(X)
 \end{verbatim}
@@ -544,30 +544,32 @@ regular mesh representation of the sample line is extracted from the
 Next we're going to simulate data. We do this basically in 2 steps:
 For each individual in the population and for each of $K$ sample
 occasions, we simulate the location of the individual as a bivariate
-normal random variable with mean ${\bf s}_i$ and $\sigma = 0.25$ ({\tt sigma.move} in the code above). Next, we compute the
-encounter probability model using
-Eq. \ref{search-encounter.eq.encounterprob}, and then retain the
-data objects corresponding to individuals that get captured at least once. All of this goes
-according to the following commands:
+normal random variable with mean ${\bf s}_i$ and $\sigma = 0.25$ ({\tt
+  sigma.move} in the code above). Next, we compute the encounter
+probability model using Eq. \ref{search-encounter.eq.encounterprob},
+with the bivariate normal hazard model, 
+and then retain the data objects corresponding to individuals that get
+captured at least once. All of this goes according to the following
+commands: 
 {\small
 \begin{verbatim}
-K<- 10   ##period study
-U<-array(NA,dim=c(N,K,2))
-y<-pmat<-matrix(NA,nrow=N,ncol=K)
-for(i in 1:N){
-for(k in 1:K){
-U[i,k,]<-c(rnorm(1,sx[i],sigma.move),rnorm(1,sy[i],sigma.move))
-dvec<-     sqrt( ( U[i,k,1] - X[,1])^2 + (U[i,k,2] - X[,2])^2  )
-loghaz<- alpha0 - alpha1*dvec*dvec
-H<- sum(exp(loghaz))
-pmat[i,k]<- 1-exp(-H)
-y[i,k]<- rbinom(1,1,pmat[i,k])
-}
-}
-Ux<-U[,,1]
-Uy<-U[,,2]
-Ux[y==0]<-NA
-Uy[y==0]<-NA
+> K <- 10   ##  Sample occasions = 10
+> U <- array(NA,dim=c(N,K,2))  ## Array to hold locations
+> y <- pmat <- matrix(NA,nrow=N,ncol=K)  ## Initialize
+> for(i in 1:N){
++ for(k in 1:K){
++   U[i,k,] <- c(rnorm(1,sx[i],sigma.move),rnorm(1,sy[i],sigma.move))
++   dvec <- sqrt( ( U[i,k,1] - X[,1])^2 + (U[i,k,2] - X[,2])^2  )
++   loghaz<- alpha0 - alpha1*dvec*dvec   
++   H <- sum(exp(loghaz))
++   pmat[i,k] <- 1-exp(-H)
++   y[i,k] <- rbinom(1,1,pmat[i,k])
+>   }
+> }
+> Ux <- U[,,1]
+> Uy <- U[,,2]
+> Ux[y==0] <- NA
+> Uy[y==0] <- NA
 \end{verbatim}
 }
 
@@ -577,7 +579,6 @@ observed locations of individuals during each occasion. Note that, if
 an individual is {\it not} captured, we set the value to \mbox{\tt
   NA}. We pass these partially observed objects to {\bf JAGS} to fit
 the model. 
-% XX RS: Maybe say something about the objects, at least U, which holds the locations; and we set U[y==0]<-NA because this is how we pass partially observed data to JAGS. I think that'll make the code more readable. Or bliefly give the names of the R objects in the simulation description before the code. Also, some of the verbatim stuff is set as {\small} and some isn't.
 
 Finally, we do the data augmentation and we make up some starting
 values for the location coordinates that are missing. 
@@ -588,29 +589,29 @@ activity center values. In practice, we might think about using the
 average of the observed locations.
 {\small
 \begin{verbatim}
-ncap<-apply(y,1,sum)
-y<-y[ncap>0,]
-Ux<-Ux[ncap>0,]
-Uy<-Uy[ncap>0,]
+> ncap <- apply(y,1,sum)
+> y <- y[ncap>0,]
+> Ux <- Ux[ncap>0,]
+> Uy <- Uy[ncap>0,]
 
-M<-200
-nind<-nrow(y)
-y<-rbind(y,matrix(0,nrow=(M-nrow(y)),ncol=ncol(y)))
-Namat<-matrix(NA,nrow=(M-nind),ncol=ncol(y))
-Ux<-rbind(Ux,Namat)
-Uy<-rbind(Uy,Namat)
-S<-cbind(runif(M,xlim[1],xlim[2]),runif(M,ylim[1],ylim[2]))
-for(i in 1:nind){
-S[i,]<-c( mean(Ux[i,],na.rm=TRUE),mean(Uy[i,],na.rm=TRUE))
-}
-Ux.st<-Ux
-Uy.st<-Uy
-for(i in 1:M){
-Ux.st[i,!is.na(Ux[i,])]<-NA
-Uy.st[i,!is.na(Uy[i,])]<-NA
-Ux.st[i,is.na(Ux[i,])]<-S[i,1]
-Uy.st[i,is.na(Uy[i,])]<-S[i,2]
-}
+> M <- 200
+> nind <- nrow(y)
+> y <- rbind(y,matrix(0,nrow=(M-nrow(y)),ncol=ncol(y)))
+> Namat <- matrix(NA,nrow=(M-nind),ncol=ncol(y))
+> Ux <- rbind(Ux,Namat)
+> Uy <- rbind(Uy,Namat)
+> S <- cbind(runif(M,xlim[1],xlim[2]),runif(M,ylim[1],ylim[2]))
+> for(i in 1:nind){
++     S[i,] <- c( mean(Ux[i,],na.rm=TRUE),mean(Uy[i,],na.rm=TRUE))
+> }
+> Ux.st <- Ux
+> Uy.st <- Uy
+> for(i in 1:M){
++     Ux.st[i,!is.na(Ux[i,])]<-NA
++     Uy.st[i,!is.na(Uy[i,])]<-NA
++     Ux.st[i,is.na(Ux[i,])]<-S[i,1]
++     Uy.st[i,is.na(Uy[i,])]<-S[i,2]
+> }
 \end{verbatim}
 }
 
@@ -662,18 +663,20 @@ N<-sum(z[])
 }
 \rule[-0.15in]{\textwidth}{.03in}
 \caption{
-{\bf BUGS} model specification for the search-encounter model similar
-to ..................XXXXXXXXXXXX
-help file \mbox{\tt ?snakeline} in the {\bf R} package \mbox{\tt scrbook}.
+{\bf BUGS} model specification for the search-encounter model, based
+on that from \citet{royle_etal:2011mee}. 
+See the 
+help file \mbox{\tt ?snakeline} for the {\bf R} code to simulate data
+and fit this model. 
 }
 \label{search-encounter.panel.design1}
 \end{panel}
 
 
-and this produces the output here:
+Simulating the data as described above, and fitting the model in Panel
+\ref{search-encounter.panel.design1} produces the results in Table XXXXXXXXXXXXX:
 
-{\bf XXXx Will table-isze final results XXXXX}
-
+{\small
 \begin{verbatim}
 > wbout2
 Inference for Bugs model at "model0.txt", fit using jags,
@@ -694,8 +697,7 @@ DIC info (using the rule, pD = var(deviance)/2)
 pD = 507.5 and DIC = 1654.0
 DIC is an estimate of expected predictive error (lower deviance is better).
 \end{verbatim}
-
-
+}
 
 
 \subsection{Hard plot boundaries}
@@ -723,31 +725,45 @@ model).
 
 \section{Unstructured spatial surveys}
 
-
-
-
-
-Protocol 1d is ``unstructured survey data'' like
-from Thompson et al. or Russell et al., the line evolves in response
-to things. The idea suggested in this case is to chop up the region
-into grid cells that are larger than you think the dog team might be
+We identified a number of variations (``Protocols'') of the basic search-encounter
+situation based on a survey line
+(see Sec. \ref{searchencounter.sec.fixedpath}). 
+Protocol 1d is what we'll refer to as 
+ ``unstructured survey data'' and this seems to be fairly common in practice
+\citep{thompson_etal:2012, russell_etal:2012}. 
+In this protocol, the survey line evolves in response to information
+about animal presence, which could be both the number of unique
+individuals or the amount of sign in the local search area. The
+motivating problem has to do with dog-team searches in which the dogs
+usually wander around hunting scat, and their search path is based on
+how they perceive the environment and what they're smelling. 
+This violates the main assumptions that the line is placed a priori,
+independent of density and unrelated to detectability.
+The analysis framework implemented by
+\citet{thompson_etal:2012} and \citet{russell_etal:2012} is based on
+chopping the survey region into grid cells and using the center point
+of the grid cell as an effective trap.  The heuristic argument to
+support doing this is that if you pick the grid cells 
+ larger than you think the dog team might be
 responding to, and then treat the center point as a trap.  
+The deficiency with this approach is that some of the ``sub-grid''
+resolution information about movement is lost, so we probably lose
+precision about any parameters of the movement model. 
 
+\subsection{Mountain lions in Montana}
 
-
-(3) Status of mountain lions in the Blackfoot Mountains of  Montana.
-\citet{russell_etal:2012} mountain lions ({\it Puma
-  concolor}). Haphazard searching by hunters who would tranquilize
-treed lions and extract DNA.
-They used 5 km $\times$ 5 km grid cells for binning the encounters,
-and the length of the search path in each grid cell as a covariate of
-effort that each grid cell was searched.
-The model is the Gaussian hazard model with baseline encounter
-probability that depended on sex and effort in each grid cell, on the
-log scale:
+\citet{russell_etal:2012} analyzed mountain lion ({\it Puma concolor})
+encounter history data to assess the status of mountain lions in the
+Blackfoot Mountains of Montana.  The data collection was based on
+opportunistic searching by hunters who shoot them with a
+biopsy dart, and extract the DNA from the tissue sample. 
+ They used 5 km $\times$ 5 km grid cells for
+binning the encounters, and the length of the search path in each grid
+cell as a covariate of effort that each grid cell was searched.  The
+model is the Gaussian hazard model with baseline encounter probability
+that depended on sex and effort in each grid cell, on the log scale:
 \[
- log(\lambda_{0,ij}) =
-\alpha_{0} + \alpha_{2} log(C_{j}) + \alpha_{3} \mbox{Sex}_{i}
+ \log(\lambda_{0,ij}) = \alpha_{0} + \alpha_{2} \log(C_{j}) + \alpha_{3} \mbox{Sex}_{i}
 \]
 Note for grid cells that were not searched, $C_{j} =0$, and those
 probabilities were set to 0 in evaluation of the probability of

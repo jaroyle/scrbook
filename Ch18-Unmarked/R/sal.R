@@ -153,8 +153,8 @@ pars1 <- c("phi", "tau", "p", "Ntot")
 
 system.time({
     jm1 <- jags.model("sal1.jag", data=dat1, inits=init1, n.chains=1,
-                      n.adapt=100)
-    jc1 <- coda.samples(jm1, pars1, n.iter=100)
+                      n.adapt=500)
+    jc1 <- coda.samples(jm1, pars1, n.iter=15000)
 })
 
 plot(jc1, ask=TRUE)

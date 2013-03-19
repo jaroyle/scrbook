@@ -1,17 +1,17 @@
 
-tr <- seq(30, 70, length=10)
+tr <- seq(15, 85, length=10)
 X <- cbind(rep(tr, each=length(tr)),
            rep(tr, times=length(tr)))    # trap coords
 set.seed(10)
 xlim <- c(0, 100); ylim <- c(0, 100)     # S is [0,100]x[0,100] square
 A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1])/1e4 # area of S
-mu <- 75                                 # density (animals/unit area)
+mu <- 50                                 # density (animals/unit area)
 (N <- rpois(1, mu*A))                    # Generate N=75 as Poisson deviate
 s <- cbind(runif(N, xlim[1], xlim[2]), runif(N, ylim[1], ylim[2]))
 #plot(X, xlim=xlim, ylim=ylim, pch="+")
 #points(s, col=gray(0.5), pch=16)
 
-sigma <- 4
+sigma <- 5
 lam0 <- 0.4
 J <- nrow(X)
 K <- 5
@@ -52,8 +52,8 @@ library(coda)
 
 set.seed(4569)
 system.time({
-fm1 <- scrUN(n=n, X=X, M=300, niter=6000, xlims=xlim, ylims=ylim,
-             inits=list(lam0=0.3, sigma=5),
+fm1 <- scrUN(n=n, X=X, M=300, niter=250000, xlims=xlim, ylims=ylim,
+             inits=list(lam0=0.4, sigma=5),
              updateY=TRUE,
 #             priors=list(sigma=list("dgamma",
 #                                    list(shape=0.001, rate=0.001)),
@@ -61,17 +61,19 @@ fm1 <- scrUN(n=n, X=X, M=300, niter=6000, xlims=xlim, ylims=ylim,
 #                                   list(shape=0.001, rate=0.001)),
 #                         psi=list("dbeta",
 #                                  list(shape1=1, shape2=1))),
-             tune=c(0.1, 0.085, 5))
-}) # 39700 it/hr
+             tune=c(0.27, 0.08, 10))
+}) # 24000 it/hr
 
 mc1 <- mcmc(fm1$sims)
+
 plot(mc1)
-plot(window(mc1, start=8001))
+plot(window(mc1, start=1001))
+
 summary(mc1)
-summary(window(mc1, start=10001))
+summary(window(mc1, start=1001))
 
 rejectionRate(mc1)
-rejectionRate(window(mc1, start=10001))
+rejectionRate(window(mc1, start=1001))
 
 
 
@@ -95,8 +97,8 @@ ls()
 # No y updates
 set.seed(4569)
 system.time({
-fm2 <- scrUN(n=n, X=X, M=300, niter=60000, xlims=xlim, ylims=ylim,
-             inits=list(lam0=0.3, sigma=5),
+fm2 <- scrUN(n=n, X=X, M=300, niter=250000, xlims=xlim, ylims=ylim,
+             inits=list(lam0=0.4, sigma=5),
              updateY=FALSE,
 #             priors=list(sigma=list("dgamma",
 #                                    list(shape=0.001, rate=0.001)),
@@ -104,18 +106,19 @@ fm2 <- scrUN(n=n, X=X, M=300, niter=60000, xlims=xlim, ylims=ylim,
 #                                   list(shape=0.001, rate=0.001)),
 #                         psi=list("dbeta",
 #                                  list(shape1=1, shape2=1))),
-             tune=c(0.1, 0.85, 5))
+             tune=c(0.3, 0.6, 5))
 }) # 40463 it/hr
 
 
 mc2 <- mcmc(fm2$sims)
 plot(mc2)
-plot(window(mc2, start=10001))
+plot(window(mc2, start=1001))
+
 summary(mc2)
-summary(window(mc2, start=10001))
+summary(window(mc2, start=1001))
 
 rejectionRate(mc2)
-rejectionRate(window(mc2, start=10001))
+rejectionRate(window(mc2, start=1001))
 
 
 #save(mc2, file="scrUNmc2.gzip")
