@@ -24,10 +24,54 @@ apply(sal.n, c(1,3), sum, na.rm=TRUE)
 apply(sal.n, c(3), sum, na.rm=TRUE)
 
 
+# plots
+
+plot(coords.x2 ~ coords.x1, pt.data, asp=1)
+
+
+
+
+# Just use data from stream 27!!!!!!!!!
+stream27 <- pt.data[16:79,]
+plot(coords.x2 ~ coords.x1, stream27, asp=1)
+
+sal.n27 <- dfus11.rem[stream27$SiteName,,]
+
+
+pdf("../figs/saln27.pdf", width=6, height=4)
+par(mfrow=c(1,2), mai=c(0.1, 0.1, 0.2, 0.1))
+plot(coords.x2 ~ coords.x1, stream27, pch="+", cex=0.5, asp=1,
+     type="n",
+     axes=FALSE, frame=TRUE,
+     xlab="", ylab="",
+     main="Occasion 1")
+text(coords.x2 ~ coords.x1, stream27, cex=0.8,
+     label=rowSums(sal.n27[,,1], na.rm=TRUE))
+plot(coords.x2 ~ coords.x1, stream27, pch="+", cex=0.5, asp=1,
+     type="n",
+     axes=FALSE, frame=TRUE,
+     xlab="", ylab="",
+     main="Occasion 2")
+text(coords.x2 ~ coords.x1, stream27, cex=0.8,
+     label=rowSums(sal.n27[,,2], na.rm=TRUE))
+#plot(coords.x2 ~ coords.x1, stream27, pch="+", cex=0.5, asp=1,
+#     type="n",
+#     axes=FALSE, frame=TRUE,
+#     xlab="", ylab="",
+#     main="Occasion 3")
+#text(coords.x2 ~ coords.x1, stream27,
+#     label=rowSums(sal.n27[,,3], na.rm=TRUE))
+dev.off()
+system("open ../figs/saln27.pdf")
+
+
+
+
+
 # Coordinates of traps
 # In this case, every location in the state-space has a trap, so the number
 # of places in the state-space G is equal to the number of trap, i.e. G=J
-X <- data.matrix(pt.data[,c("coords.x1", "coords.x2")])
+X <- data.matrix(stream27[,c("coords.x1", "coords.x2")])
 G <- J <- nrow(X)
 
 # Distance between all locations in the state-space
@@ -46,8 +90,8 @@ seg <- 1:G # ID of each point in state-space
 # JAGS
 library(rjags)
 
-dat1 <- list(n=sal.n, distmat=distmat, seg=seg, PrSeg=rep(1/G, G),
-             J=J, G=G, K=3, M=500)
+dat1 <- list(n=sal.n27, distmat=distmat, seg=seg, PrSeg=rep(1/G, G),
+             J=J, G=G, K=3, M=200)
 str(dat1)
 
 n.jk <- apply(dat1$n, c(1,3), sum, na.rm=TRUE)
@@ -57,14 +101,6 @@ set.seed(53450)
 si <- sample(seg, dat1$M, replace=TRUE, prob=xxx)
 ui <- matrix(NA, dat1$M, 3)
 yi <- array(0L, c(dat1$M, dat1$G, 3))
-
-#for(i in 1:dat1$M) {
-#    PrU <- exp(-distmat[si[i],]^2/(2*800))
-#    ui[i,] <- sample(dat1$seg, 3, PrU, replace=TRUE)
-#    for(g in 1:dat1$G) {
-#        yi[i,g,] <- as.integer(ui[i,] == g)
-#    }
-#}
 
 
 
@@ -90,13 +126,6 @@ cbind(apply(yi, c(2,3), sum), n.jk)
 
 yi[1,,1]
 
-ui <- apply(yi, c(1,3), function(x) {
-    if(any(x > 0))
-        return(which(x==1))
-    else
-        return(sample(1:dat1$M, 1))
-})
-
 for(i in 1:dat1$M) {
     for(k in 1:dat1$K) {
         if(any(yi[i,,k]>0))
@@ -111,21 +140,102 @@ for(i in 1:dat1$M) {
 
 
 
-
-#for(i in 1:dat1$M) {
-#    for(k in 1:3) {
-#        g <- which(yi[i,,k] == 1)
-#        ui[i,k] <- which(
-
-
 init1 <- function() list(p=runif(1), psi=runif(1),
-                         tau=runif(1, 4000, 5000),
+                         tau=500, #runif(1, 10, 20),
+                         phi=runif(1),
                          s=si,
                          u=ui,
 #                         y=yi,
-                         z=rep(1, dat1$M))
+                         z=matrix(1, dat1$M, dat1$K))
 str(init1())
 
+pars1 <- c("phi", "tau", "p", "Ntot")
 
-jm1 <- jags.model("sal1.jag", data=dat1, inits=init1, n.chains=1,
-                  n.adapt=100)
+system.time({
+    jm1 <- jags.model("sal1.jag", data=dat1, inits=init1, n.chains=1,
+                      n.adapt=500)
+    jc1 <- coda.samples(jm1, pars1, n.iter=15000)
+})
+
+plot(jc1, ask=TRUE)
+
+
+system.time({
+    jc2 <- coda.samples(jm1, pars1, n.iter=1000)
+})
+
+
+summary(jc2)
+plot(jc2, ask=TRUE)
+
+summary(window(jc2, start=901), ask=TRUE)
+plot(window(jc2, start=901), ask=TRUE)
+
+
+
+system.time({
+    jc3 <- coda.samples(jm1, pars1, n.iter=1000)
+})
+
+summary(jc3)
+plot(jc3, ask=TRUE)
+
+
+
+
+
+
+
+
+# Output
+
+ss3 <- summary(jc3)
+
+out3 <- cbind(ss3$stat[,1:2], ss3$quant[,c(1,3,5)])
+
+write.table(format(out3, digits=2), quote=FALSE, sep=" & ", eol="\\\\\n")
+
+
+
+
+
+
+# unmarked
+
+library(unmarked)
+
+
+sal.n27mat <- matrix(sal.n27, 64)
+umf <- unmarkedFrameGMM(y=sal.n27mat,
+                        yearlySiteCovs=list(visit=
+                        matrix(c('1','2','3'), 64, 3,
+                               byrow=TRUE)),
+                        numPrimary=3, type="removal")
+
+
+fm1 <- gmultmix(~1, ~1, ~1, umf)
+fm1
+
+
+fm2 <- gmultmix(~1, ~visit, ~1, umf)
+fm2
+
+re2 <- ranef(fm2)
+plot(re2)
+
+re2mode <- bup(re2, "mode")
+
+
+
+
+
+
+
+# visit 1
+
+umf1 <- unmarkedFrameMPois(y=sal.n27[,,1], type="removal")
+
+fm1.1 <- multinomPois(~1~1, umf1)
+
+exp(0.86)*64
+

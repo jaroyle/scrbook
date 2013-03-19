@@ -1,18 +1,18 @@
 
-tr <- seq(0.3, 0.7, length=10)
+tr <- seq(15, 85, length=10)
 X <- cbind(rep(tr, each=length(tr)),
            rep(tr, times=length(tr)))    # trap coords
 set.seed(10)
-xlim <- c(0, 1); ylim <- c(0, 1)         # S is the unit square
-A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1]) # area of S
+xlim <- c(0, 100); ylim <- c(0, 100)     # S is [0,100]x[0,100] square
+A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1])/1e4 # area of S
 mu <- 50                                 # density (animals/unit area)
-(N <- rpois(1, mu*A))                    # Generate N=50 as Poisson deviate
+(N <- rpois(1, mu*A))                    # Generate N=75 as Poisson deviate
 s <- cbind(runif(N, xlim[1], xlim[2]), runif(N, ylim[1], ylim[2]))
 #plot(X, xlim=xlim, ylim=ylim, pch="+")
 #points(s, col=gray(0.5), pch=16)
 
-sigma <- 0.04
-lam0 <- 0.3
+sigma <- 5
+lam0 <- 0.4
 J <- nrow(X)
 K <- 5
 y <- array(NA, c(N, J, K))
@@ -33,8 +33,9 @@ dimnames(n) <- list(paste("trap", 1:J, sep=""),
                     paste("night", 1:K, sep=""))
 n[1:4,]
 
+table(n)
 
-plot(X, cex=rowSums(n), asp=1, xlim=c(0,1))
+plot(X, cex=rowSums(n), asp=1, xlim=xlim)
 points(X, pch="+", cex=.5)
 points(s, col=gray(0.5), pch=16)
 
@@ -51,26 +52,28 @@ library(coda)
 
 set.seed(4569)
 system.time({
-fm1 <- scrUN(n=n, X=X, M=300, niter=60000, xlims=xlim, ylims=ylim,
-             inits=list(lam0=0.3, sigma=0.01),
+fm1 <- scrUN(n=n, X=X, M=300, niter=250000, xlims=xlim, ylims=ylim,
+             inits=list(lam0=0.4, sigma=5),
              updateY=TRUE,
-             priors=list(sigma=list("dgamma",
-                                    list(shape=0.001, rate=0.001)),
-                         lam0=list("dgamma",
-                                   list(shape=0.001, rate=0.001)),
-                         psi=list("dbeta",
-                                  list(shape1=1, shape2=1))),
-             tune=c(0.004, 0.085, 0.05))
-}) # 39700 it/hr
+#             priors=list(sigma=list("dgamma",
+#                                    list(shape=0.001, rate=0.001)),
+#                         lam0=list("dgamma",
+#                                   list(shape=0.001, rate=0.001)),
+#                         psi=list("dbeta",
+#                                  list(shape1=1, shape2=1))),
+             tune=c(0.27, 0.08, 10))
+}) # 24000 it/hr
 
 mc1 <- mcmc(fm1$sims)
+
 plot(mc1)
-plot(window(mc1, start=8001))
+plot(window(mc1, start=1001))
+
 summary(mc1)
-summary(window(mc1, start=10001))
+summary(window(mc1, start=1001))
 
 rejectionRate(mc1)
-rejectionRate(window(mc1, start=10001))
+rejectionRate(window(mc1, start=1001))
 
 
 
@@ -94,27 +97,28 @@ ls()
 # No y updates
 set.seed(4569)
 system.time({
-fm2 <- scrUN(n=n, X=X, M=300, niter=60000, xlims=xlim, ylims=ylim,
-             inits=list(lam0=0.3, sigma=0.01),
+fm2 <- scrUN(n=n, X=X, M=300, niter=250000, xlims=xlim, ylims=ylim,
+             inits=list(lam0=0.4, sigma=5),
              updateY=FALSE,
-             priors=list(sigma=list("dgamma",
-                                    list(shape=0.001, rate=0.001)),
-                         lam0=list("dgamma",
-                                   list(shape=0.001, rate=0.001)),
-                         psi=list("dbeta",
-                                  list(shape1=1, shape2=1))),
-             tune=c(0.004, 0.088, 0.08))
+#             priors=list(sigma=list("dgamma",
+#                                    list(shape=0.001, rate=0.001)),
+#                         lam0=list("dgamma",
+#                                   list(shape=0.001, rate=0.001)),
+#                         psi=list("dbeta",
+#                                  list(shape1=1, shape2=1))),
+             tune=c(0.3, 0.6, 5))
 }) # 40463 it/hr
 
 
 mc2 <- mcmc(fm2$sims)
 plot(mc2)
-plot(window(mc2, start=10001))
+plot(window(mc2, start=1001))
+
 summary(mc2)
-summary(window(mc2, start=10001))
+summary(window(mc2, start=1001))
 
 rejectionRate(mc2)
-rejectionRate(window(mc2, start=10001))
+rejectionRate(window(mc2, start=1001))
 
 
 #save(mc2, file="scrUNmc2.gzip")
@@ -144,20 +148,20 @@ ls()
 
 set.seed(4569)
 system.time({
-fm3 <- scrUN(n=n, X=X, M=300, niter=60000, xlims=xlim, ylims=ylim,
+fm3 <- scrUN(n=n, X=X, M=300, niter=6000, xlims=xlim, ylims=ylim,
              inits=list(lam0=0.3, sigma=0.01),
              updateY=TRUE,
-             tune=c(0.0035, 0.09, 0.05))
+             tune=c(0.003, 0.06, 0.15))
 }) # 39700 it/hr
 
 mc3 <- mcmc(fm3$sims)
 plot(mc3)
-plot(window(mc3, start=50001))
+plot(window(mc3, start=4001))
 summary(mc3)
-summary(window(mc3, start=5001))
+summary(window(mc3, start=4001))
 
 rejectionRate(mc3)
-rejectionRate(window(mc3, start=5001))
+rejectionRate(window(mc3, start=4001))
 
 
 
@@ -173,10 +177,10 @@ save(mc3, file="scrUNmc3.gzip")
 # No y updates
 set.seed(4569)
 system.time({
-fm4 <- scrUN(n=n, X=X, M=300, niter=60000, xlims=xlim, ylims=ylim,
+fm4 <- scrUN(n=n, X=X, M=300, niter=6000, xlims=xlim, ylims=ylim,
              inits=list(lam0=0.3, sigma=0.01),
              updateY=FALSE,
-             tune=c(0.004, 0.09, 0.06))
+             tune=c(0.003, 0.06, 0.15))
 }) # 40463 it/hr
 
 
@@ -190,6 +194,7 @@ rejectionRate(mc4)
 rejectionRate(window(mc4, start=1001))
 
 
+save(mc4, file="scrUNmc4.gzip")
 
 
 
