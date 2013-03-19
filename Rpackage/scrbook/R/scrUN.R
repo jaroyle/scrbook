@@ -34,6 +34,7 @@ scrUN <- function(n, X, M, #obsmod=c("pois", "bern"),
 
     dist <- e2dist(s, X)
     lam <- lam0*exp(-(dist*dist)/(2*sigma*sigma))
+#    lam[lam == 0] <- 1e-10
 
     if(!("y" %in% ls())) {
         y <- array(0L, c(M, J, K))
@@ -63,6 +64,7 @@ scrUN <- function(n, X, M, #obsmod=c("pois", "bern"),
         sigma.prior <- function(sig) {
             prior.args <- priors[["sigma"]][[2]]
             prior.args$x <- sig
+            prior.args$log <- TRUE
             do.call(priors[["sigma"]][[1]], prior.args)
         }
     } else
@@ -72,6 +74,7 @@ scrUN <- function(n, X, M, #obsmod=c("pois", "bern"),
         lam0.prior <- function(lam0) {
             prior.args <- priors[["lam0"]][[2]]
             prior.args$x <- lam0
+            prior.args$log <- TRUE
             do.call(priors[["lam0"]][[1]], prior.args)
         }
     } else
@@ -184,23 +187,29 @@ scrUN <- function(n, X, M, #obsmod=c("pois", "bern"),
                          (scand[2] >= ylims[1] & scand[2] <= ylims[2])
                 if(!inbox)
                     next
-                dtmp <- sqrt((scand[1] - X[,1])^2 + (scand[2] - X[,2])^2)
+                dtmp <- sqrt((scand[1] - X[,1])^2 +
+                             (scand[2] - X[,2])^2)
                 lam.cand <- lam
                 lam.cand[i,] <- lam0*exp(-(dtmp*dtmp)/(2*sigma*sigma) )
-                ll <- sum(dpois(y[i,,], lam[i,]*z[i], log=TRUE))
-                llcand <- sum(dpois(y[i,,], lam.cand[i,]*z[i], log=TRUE))
+                if(z[i] == 0) {
+                    ll <- llcand <- 0
+                } else if(z[i] == 1) {
+                    ll <- sum(dpois(y[i,,], lam[i,]*z[i], log=TRUE))
+                    llcand <- sum(dpois(y[i,,], lam.cand[i,]*z[i],
+                                        log=TRUE))
+                }
                 if(runif(1) < exp(llcand - ll)) {
                     ll <- llcand
                     s[i,] <- scand
                     lam[i,] <- lam.cand[i,]
                     dist[i,] <- dtmp
-                    sups <- sups+1
+                    sups <- sups+z[i] # Only update for real guys
                 }
             }
             if(iter %% 100 == 0) {
                 cat("   Acceptance rates\n")
                 cat("     z =", zUps/M, "\n")
-                cat("     s =", sups/M, "\n")
+                cat("     s =", sups/sum(z), "\n")
             }
             out[iter,] <- c(sigma,lam0,psi,sum(z) )
         }
@@ -281,22 +290,28 @@ scrUN <- function(n, X, M, #obsmod=c("pois", "bern"),
                          (scand[2] >= ylims[1] & scand[2] <= ylims[2])
                 if(!inbox)
                     next
-                dtmp <- sqrt((scand[1] - X[,1])^2 + (scand[2] - X[,2])^2)
+                dtmp <- sqrt((scand[1] - X[,1])^2 +
+                             (scand[2] - X[,2])^2)
                 lam.cand <- lam
                 lam.cand[i,] <- lam0*exp(-(dtmp*dtmp)/(2*sigma*sigma) )
-                llcand <- sum(dpois(n, colSums(lam.cand*z), log=TRUE))
+                if(z[i] == 1) {
+                    ll <- sum(dpois(n, colSums(lam*z), log=TRUE))
+                    llcand <- sum(dpois(n, colSums(lam.cand*z), log=TRUE))
+                } else if(z[i] == 0) {
+                    ll <- llcand <- 0
+                }
                 if(runif(1) < exp(llcand - ll)) {
                     ll <- llcand
                     s[i,] <- scand
                     lam[i,] <- lam.cand[i,]
                     dist[i,] <- dtmp
-                    sups <- sups+1
+                    sups <- sups+z[i]
                 }
             }
             if(iter %% 100 == 0) {
                 cat("   Acceptance rates\n")
                 cat("     z =", zUps/M, "\n")
-                cat("     s =", sups/M, "\n")
+                cat("     s =", sups/sum(z), "\n")
             }
             out[iter,] <- c(sigma, lam0, psi, sum(z) )
         }
