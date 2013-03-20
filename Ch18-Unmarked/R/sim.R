@@ -111,7 +111,7 @@ ls()
 # No y updates
 set.seed(4569)
 system.time({
-fm2 <- scrUN(n=n, X=X, M=300, niter=25000, xlims=xlim, ylims=ylim,
+fm2 <- scrUN(n=n, X=X, M=300, niter=250000, xlims=xlim, ylims=ylim,
              inits=list(lam0=0.4, sigma=5),
              updateY=FALSE,
              priors=list(sigma=list("dgamma",
@@ -137,7 +137,8 @@ rejectionRate(window(mc2, start=1001))
 
 save(mc2, file="scrUNmc2.gzip")
 
-#save(mc2, file="scrUNmc2prior.gzip")
+mc2.prior <- mc2
+# save(mc2.prior, file="scrUNmc2prior.gzip")
 
 
 
@@ -149,11 +150,20 @@ ls()
 
 
 
-ss2 <- summary(mc2)
+ss2 <- summary(window(mc2, start=5001, end=25000))
 out2 <- cbind(ss2$stat[,1:2], ss2$quant[,c(1,3,5)])
 
 write.table(format(out2, digits=2), quote=FALSE, sep=" & ", eol="\\\\\n")
 
+
+ss2.prior <- summary(window(mc2.prior, start=5001, end=25000))
+out2.prior <- cbind(ss2.prior$stat[,1:2], ss2.prior$quant[,c(1,3,5)])
+
+write.table(format(out2.prior, digits=2),
+            quote=FALSE, sep=" & ", eol="\\\\\n")
+
+
+plot(mc2.prior)
 
 
 

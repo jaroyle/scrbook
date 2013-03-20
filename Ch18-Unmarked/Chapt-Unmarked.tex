@@ -179,7 +179,9 @@ is the objective. %Additionally, the spatial count model
 %uniquely identified, which is the focus of the next chapter.
 
 
-\section{Spatial Correlation as Information}
+\section{Spatial Correlation in Count Data}
+
+\subsection{Spatial correlation as information}
 \label{sect.corr-info}
 
 All of the previous methods require some sort of auxiliary information
@@ -274,19 +276,19 @@ Often, this type of spatial correlation can be dealt with by simply including
 the habitat covariate in the model. For example, a simple species
 distribution model with only a few habitat variables can result in a
 distribution map that reflects the spatial correlation in abundance
-\citep{sillett_etal:2012,royle_etal:2012}. In such a case, there is no
-need to use spatially-explicit models such as
-conditionally-autoregressive models or similar
-\citep{besag_kooperber:1995,lichstein_etal:2002}.  The reason is that the
+\citep{sillett_etal:2012,royle_etal:2012mee2}. In such a case, there is no
+need to use spatially-explicit models %such as
+%conditionally-autoregressive models or similar
+\citep{besag_kooperber:1995,lichstein_etal:2002,wikle:2010}.  The reason is that the
 relevant assumption of non-spatial models (e.g. GLMs) is that
 no spatial correlation exists in the \textit{residuals}, and often,
 any apparent spatial correlation can be accounted for using
 covariates. This may be obvious, but
 it is a point that seems to be frequently misunderstood.
 
-Where it does become
-important is account for environmentally-induced spatial correlation
-is in cases where correlation exists in the residuals
+When it does become
+important to account for environmentally-induced spatial correlation
+is in situations where correlation exists in the residuals
 \textit{after} accounting for covariate effects. This may be due to
 %movement, as we discuss in this chapter, or it may be due to
 unobserved covariates, and \citet{zuur_etal:2009} offer advice on
@@ -362,8 +364,17 @@ situation in which an individual can be encountered at multiple traps
 during a single time period, say one night during a camera-trapping
 study, and it can be detected multiple times at a single trap during
 an occasion. This is the Poisson encounter model (a.k.a. the proximity
-detector case) described in
-Chapt.~\ref{chapt.poisson-mn}. As before, we define $y_{ijk}$ as the
+detector case) described in Chapt.~\ref{chapt.poisson-mn}. Our
+experience with alternative observation models such as the
+Bernoulli and multinomial models
+%that is appropriate for hair snare data
+suggests that the parameters of the model may not be identifiable in
+these cases, % of the Bernoulli or binomial observation models,
+at least
+when no additional information is available. This is a subject of
+ongoing research.
+
+As before, we define $y_{ijk}$ as the
 encounter data for individual $i$ at trap $j$ on occasion $k$, which
 we model as:
 \begin{equation}
@@ -441,7 +452,7 @@ baseline encounter rate.
 %Furthermore,
 Formulating the model in terms of the aggregated count data
 demonstrates that the model can be
-applied to data from a single sampling occassion $J \equiv 1$, as has
+applied to data from a single sampling occassion ($J \equiv 1$) as has
 been noted elsewhere for standard SCR models
 \citep{efford_etal:2009ecol}. In the context of studying marked
 populations, the model parameters will only be identifiable in the
@@ -509,12 +520,12 @@ the model using MCMC, and they evaluated the model's performance with
 uniform priors on the three hyperparameters. They also discussed the
 possibilities and effects of including prior knowledge about $\sigma$
 into the model. In the next section, we explain how the model can be
-fit using \jags, but first we briefly contemplate the viability of classical
+implemented using \jags, but first we briefly contemplate the viability of classical
 analysis of this model.
 
 The obvious challenge faced when conducting a classical analysis of
 this model is that the number of latent variables in huge. In all SCR models, the activity centers are
-latent, but now even the encounter histories are latent.
+latent, but now, even the encounter histories are latent.
 Maximizing likelihoods with latent variables (random effects) involves
 integrating (or summing) over all possible values of the latent
 variables. For the activity centers, this is typically accomplished by
@@ -528,12 +539,13 @@ number of possible encounter histories
 %that could give rise to the count data
 will, in general, be too high to make the likelihood tractible,
 and thus we do not think that maximum likelihood is a viable option
-for analyzing this model. However, one might be able to obtain maximum
+for analyzing this model. However, one might be able to obtain
+approximate maximum
 likelihood estimates using simulation-based methods
 %\citep{doucet_etal:2002,lele_etal:2010},
 \citep{lele_etal:2010},
 which will typically be more computationally
-challenging than the MCMC-based Bayesian analysis.
+challenging than the Bayesian analysis.
 
 
 \section{Simulation Example}
@@ -604,7 +616,7 @@ trap3      1      0      0      1      0
 trap4      0      0      0      0      0
 \end{verbatim}
 \end{small}
-This displays the first 4 rows of the \verb+n+, the $J \times K$
+This displays the first 4 rows of \verb+n+, the $J \times K$
 matrix of counts. It is worth comtemplaing how common such count data
 is in
 ecology and how many different mechanisms might generate it. Although
@@ -644,17 +656,22 @@ supporting the conclusion that spatial correlation in the count data
 is sufficient for estimating density and encounter probability
 parameters. %Rather than repeating their simulation study, we present
 %a few options for fitting the model.
+However, in such cases where identifiability has not formally
+demonstrated, it may be wise to compare the results of models fit
+using both proper and improper priors, as we do below.
 
 At this point in time the SC model can only be fit using one of the
 \bugs~engines, or using custom software like the \R~code accompanying
 \citet{chandler_royle:2012}. Although \bugs~might provide the most
 flexible option for fitting the model, it is not
 straight-forward because of the
-constraints in the model. In \textbf{WinBUGS}, the contraints can be
+constraints in the model. In \textbf{WinBUGS}, the
+$n_{jk} = \sum_i y_{ijk}$
+contraint can be
 enforced using the so-called ``ones-trick'', but we prefer
 \jags~because it has a distribution
 called \verb+dsum+ that was designed for this type
-of situation where the observed data are a sum of random
+of situation in which the observed data are a sum of random
 variables. %Aside from being slow, \jags~works rather well for this
 %situation. %Another limitation of using \jags~is that
 %we can't mix data from marked and unmarked individuals because
@@ -749,14 +766,14 @@ init1 <- function() {
 pars1 <- c("lam0", "sigma", "N", "mu")
 \end{verbatim}
 \end{small}
-Fitting the model can then be done using the functions
-\verb+jags.model+ and \verb+coda.samples+.
+%Fitting the model can then be done using the functions
+%\verb+jags.model+ and \verb+coda.samples+.
 %, we use two functions. The first
-\verb+jags.model+ compiles the code and runs an adaptive phase to
-increase the efficency of the MCMC samplers. The second function
-\verb+coda.samples+ is one of several options for generating
-posterior samples. We like it because it returns the samples in the
-format required by the \texttt{coda} package.
+%\verb+jags.model+ compiles the code and runs an adaptive phase to
+%increase the efficency of the MCMC samplers. The second function
+%\verb+coda.samples+ is one of several options for generating
+%posterior samples. We like it because it returns the samples in the
+%format required by the \texttt{coda} package.
 
 The code in Panel~\ref{unmarked.panel.jags1} %represents the full
 %model in which the latent encounter histories are updated at each step
