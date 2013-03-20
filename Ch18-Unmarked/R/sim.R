@@ -169,6 +169,15 @@ plot(mc2.prior)
 
 
 
+par(mfrow=c(3,2))
+hist(mc1[,"N"])
+plot(as.matrix(mc1)[,"N"])
+autocorr.plot(mc1[,"N"], lag=500)
+hist(mc2[,"N"])
+plot(as.matrix(mc2)[,"N"])
+autocorr.plot(mc2[,"N"], lag=500)
+
+
 
 
 
