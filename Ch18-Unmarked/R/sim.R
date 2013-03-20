@@ -327,7 +327,7 @@ system.time({
 jm2 <- jags.model("SCmod2.jag", data=dat2, inits=init2, n.chain=1,
                  n.adapt=1000)
 jc2.1 <- coda.samples(jm2, pars2, n.iter=10000)
-}) # 14000 it/hr
+}) # 3827 it/hr
 
 plot(jc2.1)
 summary(jc2.1)
@@ -341,10 +341,16 @@ ls()
 ls()
 
 
+ss2jc <- summary(jc2.1)
+out2jc <- cbind(ss2jc$stat[,1:2], ss2jc$quant[,c(1,3,5)])
+
+write.table(format(out2jc, digits=2), quote=FALSE, sep=" & ",
+            eol="\\\\\n")
 
 
 
-jc2.2 <- coda.samples(jm2, pars2, n.iter=5000)
+
+jc2.2 <- coda.samples(jm2, pars2, n.iter=100000)
 plot(jc2.2)
 
 summary(jc2.2)

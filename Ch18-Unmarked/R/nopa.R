@@ -269,7 +269,7 @@ out2 <- clusterEvalQ(cl2, {
     jc <- coda.samples(jm, pars1, n.iter=2500)
     return(as.mcmc(jc))
 })
-}) # 6242
+}) # 3570 it/hr
 
 
 mc2i <- mcmc.list(out2)

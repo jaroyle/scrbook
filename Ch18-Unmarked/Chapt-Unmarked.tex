@@ -333,7 +333,7 @@ by ${\bf x}_j$. In some instances, additional data might be avialable such as
 trap-specific covariates, state-space covariates,
 information on the identities of a subset of individuals, or perhaps
 even distance data. We consider some of these model extensions in
-Sec.~\ref{unmarked.ext}, but for the time being we ignore these %extraneous
+Sec.~\ref{unmarked.sec.ext}, but for the time being we ignore these %extraneous
 possibilities so that we can focus on the basic model.
 
 %The duration of sampling
@@ -387,10 +387,13 @@ Gaussian, or half-normal, model:
 \lambda_{ij} = \lambda_0 \exp(\| {\bf x}_j - {\bf s}_i \| / 2\sigma^2)
 \]
 in which $\lambda_0$ is the baseline encounter rate,
-$\| {\bf x}_j - {\bf s}_i
-\|$ is the Euclidean distance between the trap and activity center, and $\sigma$ is the
+$\| {\bf x}_j - {\bf s}_i \|$ is the Euclidean distance between the
+trap and activity center, and $\sigma$ is the
 scale parameter determining the degree to which encounter rate decreases with
-distance.
+distance. In this context, $\sigma$ also determines the amount of
+correlation among the counts because if $\sigma$ is low relative to
+the trap spacing, then it is unlikely that an idividuals will be
+detected at multiple traps.
 
 When individuals cannot be uniquely identified, the encounter histories cannot
 be directly observed, which seems like a massively insurmountable
@@ -471,6 +474,34 @@ This is because
 uniquely identifiable individuals produce
 observations of some of the $y_{ijk}$ variables, which we elaborate
 on in the subsequent chapter.
+
+
+
+
+\section{How Much Correlation Is Enough?}
+
+$\sigma$ shouldn't be too small or too large relative to trap
+spacing or else the counts will be i.i.d. Poisson random variables. So
+how much correlation is enough? Phrased differently, what is the ideal
+ratio of $\sigma$ to trap spacing to ensure correlation and minimize
+the variance of the posterior distributions. We see two options for
+answering this questions, both of which are topics in need of
+additional research. The first approach is to use the methods
+described in Chapt.~\ref{chapt.design}, i.e. by either conducting
+simulation studies with various trap spacing to $\sigma$ ratios, or to
+ananlytically minimize a variance criterion for a given set of
+sampling conditions and effort. The former approach was used by
+\citet{chandler_royle:2012} whose limited simulation study indicated
+that an ideal ratio is approximately 2 . This agrees with
+findings from previous research on the optimal design of SCR studies
+(Chapt.~\ref{chapt.design}), as it should.
+
+A second approach that may be of use if a data set has already been
+collected is to use standard techniques from spatial statistics to
+determine if adequate correlation exists in the counts. For example,
+one might compute Ripley's $K$-statistic or generate (semi-)variograms
+\citep{illian_etal:2008}. We have not studied the utility of such
+approaches, but it seems worthy of investigation.
 
 
 
@@ -584,6 +615,7 @@ $N$ equals 50. % Once again, this highlights that fact that $N$ can be
 Now we can generate the encounter histories under the
 Poisson observation model. Let's suppose that sampling is conducted
 over $K=5$ nights.
+\begin{small}
 \begin{verbatim}
 > sigma <- 5
 > lam0 <- 0.4
@@ -598,7 +630,7 @@ over $K=5$ nights.
 +     }
 + }
 \end{verbatim}
-
+\end{small}
 The object \verb+y+ is the $N \times J \times K$ array of encounter
 data, which cannot be directly observed if the animals are unmarked.
 Converting the encounter data to count data can be accomplished using a single
@@ -628,7 +660,7 @@ model for the distribution of individuals in space \textit{and} it
 includes a model describing how detections are generated given the
 distance between traps and individual activity centers. It also
 provides a foundation for extending the model in many ways as we
-discuss in Sec.~\ref{unmarked.ext} and in the next chapter.
+discuss in Sec.~\ref{unmarked.sec.ext} and in the next chapter.
 
 The question now is: Is it possible to estimate the parameters? In our
 simulated dataset we have $J \times K = 500$ data points, but how many
@@ -827,16 +859,19 @@ ED <- (M*psi)/A # Expected density
 
 
 
-An even faster alternative is to use the \verb+scrUN+ function in
+An even faster (but perhaps less efficient) alternative is to use the
+\verb+scrUN+ function in
 \texttt{scrbook}.
 %which is a modified version of the code presented in
 %the Supplement of \citet{chandler_royle:2012}.
 The usage is as follows:
+\begin{small}
 \begin{verbatim}
 out1 <- scrUN(n=n, X=X, M=300, niter=25000, xlims=xlim, ylims=ylim,
                inits=list(lam0=0.3, sigma=rnorm(1, 5, 0.1)), updateY=TRUE,
                tune=c(0.004, 0.09, 0.35))
 \end{verbatim}
+\end{small}
 where \verb+n+ is the matrix of counts, \verb+X+ is the trap
 coordinate matrix, \verb+M+ sets the size of the data-augmented latent
 data, \verb+xlims+ and \verb+ylims+ define the
@@ -877,33 +912,45 @@ precision will be low, as noted by
 \citet{chandler_royle:2012}. Furthermore,
 as indicated by
 Fig.~\ref{unmarked.fig.Nsim}, the autocorrelation of the samples is
-high, and thus it may take
-many iterations to achieve convergence. We recommend assessing these
-issues using the diagnostic tools available in the \texttt{coda} package.
+high, and thus it may take many iterations to achieve convergence.
+Moreover, the algorithm that includes the latent encounter histories
+seems to have a hard time exploring the region of the posterior in
+which $N$ is low (). Given these technical diffiulties, we recommend
+using the \jags~implementation (based on
+Panel~\ref{unmarked.panel.jags2}), and it is always a good idea to use
+MCMC diagnostic tools such as those available in the \texttt{coda} package.
 
 \begin{table}
   \centering
-  \caption{Results from fitting the spatial count (``SC'') model to
-    to simulated data using \texttt{scrbook} and \jags. In both cases,
-    the latent encounter histories were not updated as part of the MCMC.}
+  \caption{Posterior summaries from the spatial count (``SC'') model
+    applied to simulated data using \texttt{scrbook} and \jags. 25000
+    samples were generated, but substantial Monte Carlo error is still
+    evident.}%, and in general we find
+%    that the \jags~implementation (based on
+%    Panel~\ref{unmarked.panel.jags2}) results in the best mixing of
+%    the Markov chains.} % The {\tt scrUN(..., updateY=TRUE)} algorithm
+%    appears to have a difficult time exploring the po}
   \begin{tabular}{lrrrrr}
     \hline
-    Parameter       & Mean   & SD     & 2.5\%  & 50\%   & 97.5\%  \\
+    Parameter        & Mean   & SD     & 2.5\%  & 50\%   & 97.5\%  \\
     \hline
-    \multicolumn{6}{c}{\tt scrUN(..., updateY=FALSE)}             \\
-    $\sigma$        & 4.718  & 0.922  & 3.239  & 4.615  & 6.833   \\
-    $\lambda_0$     & 0.500  & 0.136  & 0.268  & 0.489  & 0.793   \\
-    $N$             & 60.653 & 31.067 & 21.000 & 54.000 & 137.000 \\
+    \multicolumn{6}{c}{\tt scrUN(..., updateY=FALSE)}              \\
+    $\sigma=5$         & 4.718  & 0.922  & 3.239  & 4.615  & 6.833   \\
+    $\lambda_0=0.4$      & 0.500  & 0.136  & 0.268  & 0.489  & 0.793   \\
+    $N=50$              & 60.653 & 31.067 & 21.000 & 54.000 & 137.000 \\
     \hline
-    \multicolumn{6}{c}{\tt scrUN(..., updateY=TRUE)}              \\
-    $\sigma$        & 4.554  & 0.784  & 3.216  & 4.486  & 6.264   \\
-    $\lambda_0$     & 0.489  & 0.131  & 0.262  & 0.479  & 0.775   \\
-    $N$             & 64.772 & 30.162 & 26.000 & 59.000 & 140.000 \\
+    \multicolumn{6}{c}{\tt scrUN(..., updateY=TRUE)}               \\
+    $\sigma$         & 4.554  & 0.784  & 3.216  & 4.486  & 6.264   \\
+    $\lambda_0$      & 0.489  & 0.131  & 0.262  & 0.479  & 0.775   \\
+    $N$              & 64.772 & 30.162 & 26.000 & 59.000 & 140.000 \\
     \hline
-    \multicolumn{6}{c}{\jags}                                     \\
-    $\sigma=5$      & 4.90   & 0.93   & 3.53   & 4.78   & 7.30    \\
-    $\lambda_0=0.4$ & 0.49   & 0.13   & 0.27   & 0.48   & 0.75    \\
-    $N=50$          & 55.49  & 22.80  & 19.00  & 52.00  & 103.02  \\
+    \multicolumn{6}{c}{\jags~(without latent encounter histories)} \\
+    $\sigma$         & 4.70   & 0.88   & 3.24   & 4.66   & 6.63    \\
+    $\lambda_0$      & 0.52   & 0.14   & 0.27   & 0.52   & 0.80    \\
+    $N$              & 58.55  & 30.30  & 20.00  & 52.00  & 135.00  \\
+%    $\sigma=5$      & 4.90   & 0.93   & 3.53   & 4.78   & 7.30    \\
+%    $\lambda_0=0.4$ & 0.49   & 0.13   & 0.27   & 0.48   & 0.75    \\
+%    $N=50$          & 55.49  & 22.80  & 19.00  & 52.00  & 103.02  \\
     \hline
   \end{tabular}
   \label{unmarked.tab.sim}
@@ -923,7 +970,7 @@ issues using the diagnostic tools available in the \texttt{coda} package.
 \end{figure}
 
 
-The take-home message is that, even with simulated data
+The take-home message is that, even with simulated data,
 %-- data that meet all of the model assumptions --
 the precision of the posterior distributions is
 low and mixing is poor. This should be expected given that we are
@@ -1041,6 +1088,7 @@ package. First, the simple single-core code:
 
 
 \begin{table}%[t]
+  \centering
   \caption{Posterior summary statistics for spatial count
     model applied to the northern parula data. Two sets of priors were
     considered. }
@@ -1059,8 +1107,8 @@ package. First, the simple single-core code:
 %    $D$         & --             & 0.62  & 0.38  & 0.38  & 0.19   & 0.52  & 1.64   \\
     \hline
   \end{tabular}
-  \label{t:nopaPosts}
-\vspace{0.5cm}
+  \label{unmarked.tab.nopa}
+%\vspace{0.5cm}
 \end{table}
 
 
@@ -1074,6 +1122,19 @@ studies \citep{moldenhaer_regelski:1996}. As with any SCR model,
 we can produce a density surface map, as shown in Fig.~\ref{fig:nopaDen}
 
 
+Several aspects of this analysis could be improved via model
+extensions. In particular, we note that a more appropriate observation
+model would recognize the fact that detection in this case is the
+result of two processes. Specifically, an ideal encounter probability
+model would include a process describing the location of the bird (not
+just its home range center) as well as the probability of detecting
+it, given it's location during the survey. Essentially, the model we
+would like to fit could be thought of as a latent distance sampling
+model allowing for movement. As it turns out,
+a very rudimentary form of distance data were collected -- birds were
+determined to be either within 150 m or beyond 150 m from the
+observer. In Sec.~\ref{unmarked.sec.ext}, we
+propose a model to accomodate these auxiliary data.
 
 
 
@@ -1093,135 +1154,197 @@ we can produce a density surface map, as shown in Fig.~\ref{fig:nopaDen}
 %data simulated from the true model. This explains the low posterior
 %precision in the parula data.
 
-Indeed, extensive information on home range size has
+\citet{chandler_royle:2012} recommended two strategies for improving
+the precision of the posterior distributions obtained under the SC
+model: (1) mark a subset of individuals or (2) elicit informative
+priors from the published literature.
+The first option is the subject of the next chapter. The second option
+should be readily accomplished in many studies %of unmarked populations
+because extensive information on home range size has
 been compiled for many species in diverse habitats %\emph{e.g.}
 \citep[\emph{e.g.},][]{degraaf_yamasaki:2001}. It is
-easy to embody this information in a prior distribution as we
-demonstrated for the parula data.
+easy to embody this information as a prior distribution in Bayesian
+analyses (\citet{chandler_royle:2012}, Chapt.~\ref{chapt.scr0}).
+
+\begin{comment}
+  One benefit of a Bayesian analysis is that it can accommodate prior
+  information on the home range size and encounter rate parameters,
+  which are readily available for many species. To illustrate, we
+  analyzed the parula data using a new set of priors. Whereas in the
+  first analysis, all priors were improper, customary non-informative
+  priors (see Table \ref{t:nopaPosts}), in the second set we used an
+  informative prior for the scale parameter $\sigma \sim
+  \mbox{Gamma}(13,10)$. We arrived at this prior using the methods
+  described by \citet{royle_etal:2011mee} and published information on
+  the warbler's home range size and detection probability
+  \citep{moldenhaer_regelski:1996,simons_etal:2009}. More details on
+  this derivation are found in ??????. We briefly note here that this
+  prior includes the biologically-plausible range of values from
+  $\sigma$ suggested by the published literature.
 
 
-One benefit of a Bayesian analysis is that it can accommodate prior
-information on the home range size and encounter rate parameters,
-which are readily available for many
-species. To illustrate, we analyzed the parula data using a new set of
-priors. Whereas in the first analysis, all priors were
-improper, customary non-informative priors (see Table \ref{t:nopaPosts}),
-in the second set we used
-an informative prior for the scale parameter $\sigma \sim
-\mbox{Gamma}(13,10)$. We arrived at this prior using the methods
-described by \citet{royle_etal:2011mee} and published
-information on the warbler's home range size and detection probability
-\citep{moldenhaer_regelski:1996,simons_etal:2009}. More details on this
-derivation are found in ??????. We briefly note here that this prior
-includes the biologically-plausible range of values from $\sigma$
-suggested by the published literature.
+  This was true when considering both sets of priors, although
+  posterior precision was higher under the informative set of
+  priors. Specifically, the use of prior information reduced posterior
+  density at high, biologically implausible, values of $\sigma$, and
+  hence decreased the posterior mass for low values of $N$
+  (Fig.~\ref{fig:prior}).
+\end{comment}
 
-
-This was true when considering
-both sets of priors, although posterior precision was higher under the
-informative set of priors. Specifically, the use of prior information
-reduced posterior density at high, biologically implausible,
-values of $\sigma$, and hence decreased the posterior mass for
-low values of $N$ (Fig.~\ref{fig:prior}).
+In some cases, it may not be possible to mark any individuals, and no
+prior information may exist about encounter parameters; however, it
+may be possible to collect auxillary data, such as the distance
+measurements recorded in the parula study.
+Other sources of auxilliary data could include removal counts of
+double observer counts, which are routinely collected in
+wildlife studies. Extending the model to accomodate such data is
+treated in the next section.
 
 
 
 
-\section{Model Extensions}
-\label{unmarked.ext}
+\section{Extensions of the Spatial Count Model}
+\label{unmarked.sec.ext}
 
 %Noting the relatively low precision of the posterior distributions,
-\citet{chandler_royle:2012} recommended two strategies for improving
-the precision of the posterior distributions obtained under this
-model: mark a subset of individuals and/or elicit informative
-priors from the published literature. Both of these options should be
-feasible in many studies of unmarked populations, but in some cases a
-better alternative may be to collect
-additional data %in the form of %and here we describe an extension of the model meant
-%to accomodate data
-such as
-distance measurements, % or perhaps %other
-%commonly-collected data such as
-removal counts, or %perhaps
-double observer counts.
 
-In this section, we describe model extensions for accomodating
-auxiliary data as a means of increasing posterior precision. Buy why
-would we bother with the SC model at all when data
-such as distance measurements are available? Isn't density estimable
-using the distance data alone? Yes, it is, and in many situations a
+%In this section, we describe model extensions for accomodating
+%auxiliary data as a means of increasing posterior precision. Buy
+
+If ancillary data such as distance measurements exist, why
+%would we
+bother with the SC model at all?
+%at all when data such as distance measurements are available?
+Isn't density estimable
+using the distance data alone? Yes, in fact it is, and in many situations a
 simple distance sampling model will be sufficient. However, unlike the
 situation we described earlier in this chapter where we viewed spatial
 correlation as a good thing, the model extension we describe now
 provides a means of dealing with spatial correlation when it is
-unwanted or perhaps unavoidable.
+unwanted or perhaps unavoidable. In addition, extensions of this model
+We suspect that the SC model could
+can be used to make inferences about multiple processes in addition to
+spatial and temporal variation, such as home range size and movement.
+%extended to include
+%this ancillary data and thereby allow for inference about three
+%processes: density, home range size, and
+%distance-related heterogeneity in detection probability.
+%In addition
+%to providing information about multiple processes of interest, it
+%seems likely that the estimates would be more precise than those of
+%the basic model. Also, note that this provides a mechanism for
+%modeling spatial correlation in distance sampling, a topic which has
+%recieved little attention \citep{hedley_etal:1999,niemi_fernandez:2010}.
+%In Sec.~\ref{unmarked.sec.ext}, we
+%elaborate on similar model extensions.
+%In addition, extensions of this model
+%can be used studying spatial and temporal variation in density as well as
+%home range size and movement.
 
-As an example, consider the northern parula data analyzed by
-\citet{chandler_royle:2012}. These point count locations were spaced
-by only 50 m, and since the song of the parula can be easily heard
-from a distance of $>100$ m, the neighboring counts exhibit
-correlation. As it turns out, the data collected were more than just
-the simple counts -- the observers also recorded if each detected
+As an example, consider again the northern parula data.
+%analyzed by
+%\citet{chandler_royle:2012}. These point count locations were spaced
+%by only 50 m, and since the song of the parula can be easily heard
+%from a distance of $>100$ m, the neighboring counts exhibit
+%correlation.
+As it turns out, %the data collected were more than just
+%the simple counts -- the
+observers recorded rudimentary distance sampling data by determining
+if each detected
 individual was within or beyond 100 m. Although not ideal, distance
 data binned into 2 intervals are sufficient for estimating the scale
 parameter of a distance sampling detection function, and thus we
-should be able to use that information in our expanded model. Doing
-so, however, requires that we consider not only the activity centers,
+should be able to use that information to increase precision and
+develop a more realistic encounter model. % in our expanded model.
+Doing so requires that we consider not only the activity centers,
 but also the actual locations of individuals during each survey --
-much in the same way as is done in search-encounter models
+much like in search-encounter models
 (Chapt.~\ref{chapt.search-encounter}). %In fact, the model we are about
 %to describe is essentially a hybrid SC and search-encounter
 %model. First, consider another example.
 
-One possible model for such data that allows for movement-induced spatial
-correlation in distance sampling data is as follows.
+By including both activity centers ({\bf s}) and actual locations
+({\bf u}) in the model, abundance in any region
+$\mathcal{B}$ is given by
+\begin{equation}
+N(\mathcal{B}) = \sum_i I({\bf u}_i \in \mathcal{B}).
+\label{unmarked.eq.B}
+\end{equation}
+Thus, in the context of distance sampling studies in which the
+distance data are recorded in discrete intervals, the region
+$\mathcal{B}$ would be the area corresponding to a particular distance
+interval. The probability of detecting the individuals
+$N(\mathcal{B})$ would be the average detection probability $\bar{p}$,
+which is computed by integrating a distance-based detection function
+over the distance interval.
+
+In other contexts, such as when conducting removal surveys, the region
+$\mathcal{B}$ could be a fixed-area plot, such as a stream
+segment. Again, Eq.~\ref{unmarked.eq.B} could be used to model local
+abundance ($n(\mathcal{B})$), and detection probability within the region could be
+modeled conditional on $n(\mathcal{B})$. For instance, if a stream
+segment is uniformly surveyed using electrofishing equipment, then a
+standard non-spatial removal model could be used to estimate detection
+probability $p$, conditional on the spatially-explicit model of
+abundance. A reasonably general description of this model is as
+follows:
 \begin{gather*}
   {\bf s}_i \sim \text{Unif}(\mathcal{S}) \\
-  {\bf u}_{ik} \sim \text{Norm}({\bf s}_i, \tau) \\
-  y_{jkl} = \sum_{i=1}^M I({\bf u}_{ik} \in \mathcal{B}_l) \\
-  n_{jkl} \sim \text{Binomial}(y_{jk}, \bar{p}(\mathcal{B}_l)
+  {\bf u}_{ik} \sim \text{BiNormal}({\bf s}_i, \tau) \\
+  N(\mathcal{B}_{jk}) = \sum_{i=1}^M I({\bf u}_{ik} \in \mathcal{B}_{jk}) \\
+  n_{jkl} \sim \text{Binomial}(N(\mathcal{B}_{jkl}), p)
 \end{gather*}
-where $\mathcal{B}$ is the region associated with some distance
-interval used during data collection. For example, $\mathcal{B}_1$
-could be the region within 10 m of a survey point, or the annulus
-comprising the 10-20 m interval. Essentially, the $\tau$ parameter is
-a movement parameter describing the probability that an individual
-occurs at location $\bf u$ given it's activity center. The number of
-individuals that occur in each $\mathcal{B}$ are then detected with
-probability $\bar{p}$, which is computed
+%where $\mathcal{B}$ is the region associated with some distance
+%interval used during data collection. For example, $\mathcal{B}_1$
+%could be the region within 10 m of a survey point, or the annulus
+%comprising the 10-20 m interval.
+where $\tau$ is the parameter of a bivariate normal distribution (with
+correlation $\rho=0$) describing the locations of individuals on occasion
+$k$. The interpretatoin of the parameter $p$ will depend upon the
+survey protocol.
 
-We have considered the case where distance data are collected in
-intervals or are binned after the fact, but the model could be easily
-extended to allow for continuous distance measurements.
+\begin{comment}
+  a movement parameter describing the probability that an individual
+  occurs at location $\bf u$ given it's activity center. The number of
+  individuals that occur in each $\mathcal{B}$ are then detected with
+  probability $\bar{p}$, which is computed
 
-Another
-related extension applies to data collected in fixed area plots, such
-as fixed-radius point count studies, or area searches. In such
-studies, researchers often make multiple visits to a plot and record
-the number of individuals detected. In animal studies, a common
-problem is that individuals move on and off the plots and this, what
-is known as temporary emigration, makes it difficult to determine the
-effective sample size, just as in traditional non-spatial
-capture-recapture studies. When plots are far enough apart that
-individuals cannot move between them, extended $N$-mixture models
-allowing for temporary emigration provide an option for dealing with
-this form of non-closure \citep{chandler_etal:2011}. This approach
-requires that a robust design be used such that secondary samples are
-...
+  We have considered the case where distance data are collected in
+  intervals or are binned after the fact, but the model could be
+  easily extended to allow for continuous distance measurements.
+
+  Another related extension applies to data collected in fixed area
+  plots, such as fixed-radius point count studies, or area
+  searches. In such studies, researchers often make multiple visits to
+  a plot and record the number of individuals detected. In animal
+  studies, a common problem is that individuals move on and off the
+  plots and this, what is known as temporary emigration, makes it
+  difficult to determine the effective sample size, just as in
+  traditional non-spatial capture-recapture studies.
+\end{comment}
+
+When plots are far enough apart that
+individuals cannot move between them, the counts will be uncorrelated
+and the model can be approximated using a non-spatial $N$-mixture model
+allowing for temporary emigration \citep{chandler_etal:2011}.
+In the next example, we consider data in which the plots are obviously
+not independent.
+
 
 \section{The Maryland Dusky Salamander Study}
 
 The independence assumption of the \citet{chandler_etal:2011} model
-will not hold in some cases. A prime example is in studies of aquatic
+will not always hold. A prime example is in studies of aquatic
 species in stream networks. For example, consider the data depicted in
-Fig.~\ref{unmarked.fig.salct}. What is this spaghetti soup? These
-are streams of numbers -- counts of dusky salamanders
+Fig.~\ref{unmarked.fig.salct}. What is this spaghetti soup, you say? These
+are streams of numbers, i.e. counts of dusky salamanders
 (\textit{}) in 25-m stretches on a small stream in the Chesapeake and
 Ohio National Historick Park. The data were collected by E.H. Grant
 and colleagues with the objective of understanding the spatial and
-temporal dynamics of salamander populations as a function of stream
+temporal dynamics of salamander populations in response to seasonal
+and annual variations in stream
 hydrology. In addition, movement processes, including dispersal are
-studied between years.
+studied between years. See
 % \citep{grant_etal:2007}
 
 To sample the population, they conduct counts in numerous streams such
@@ -1541,14 +1664,6 @@ Ntot[3] <- sum(z[,3]) # Abundance, occasion 3
 
 
 %\section{Design issues}
-
-\section{How Much Correlation Is Enough?}
-
-$\sigma$ shouldn't be too small or too large relative to trap
-spacing.
-
-Can we test for correlation using K-functions or something?
-
 
 
 
