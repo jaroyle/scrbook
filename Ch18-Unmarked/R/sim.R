@@ -168,15 +168,28 @@ plot(mc2.prior)
 
 
 
-
-par(mfrow=c(3,2))
-hist(mc1[,"N"])
-plot(as.matrix(mc1)[,"N"])
-autocorr.plot(mc1[,"N"], lag=500)
-hist(mc2[,"N"])
-plot(as.matrix(mc2)[,"N"])
-autocorr.plot(mc2[,"N"], lag=500)
-
+pdf("../figs/mc1mc2.pdf", width=6, height=9)
+par(mfcol=c(3,2), mai=c(0.6, 0.6, 0.2, 0.2), omi=c(0, 0, 0.3, 0))
+hist(mc1[,"N"], xlab=expression(N), freq=FALSE, main="",
+     cex.lab=1.3, xlim=c(0, 300))
+abline(v=50, col=gray(0.5), lwd=2)
+plot(as.matrix(window(mc1, thin=50))[,"N"], type="l", cex.lab=1.3,
+     ylim=c(0,300),
+     xlab="Iteration (thinned by 50)", ylab=expression(N))
+abline(h=50, col=gray(0.5), lwd=2)
+autocorr.plot(mc1[,"N"], lag=500, auto.layout=FALSE, cex.lab=1.3)
+hist(mc2[,"N"], xlab=expression(N), freq=FALSE, main="", cex.lab=1.3,
+     xlim=c(0, 300))
+abline(v=50, col=gray(0.5), lwd=2)
+plot(as.matrix(window(mc2, thin=50))[,"N"], type="l", cex.lab=1.3,
+     ylim=c(0,300),
+     xlab="Iteration (thinned by 50)", ylab=expression(N))
+abline(h=50, col=gray(0.5), lwd=2)
+autocorr.plot(mc2[,"N"], lag=500, auto.layout=FALSE, cex.lab=1.3)
+mtext("With latent encounters", side=3, outer=TRUE, adj=0.17, cex=1.2)
+mtext("Without latent encounters", side=3, outer=TRUE, adj=0.93, cex=1.2)
+dev.off()
+system("open ../figs/mc1mc2.pdf")
 
 
 
