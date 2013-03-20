@@ -255,7 +255,9 @@ biological knowledge of the system.
 
 
 
-\section{Data}
+\section{Spatial Count Model}
+
+\subsection{Data}
 
 Whereas traditional SCR models require spatially-referenced
 encounter histories, this model requires simple count data.
@@ -282,7 +284,7 @@ possibilities so that we can focus on the basic model.
 %is assumed to be short enough such that the number of individuals
 %exposed to sampling does not change over time.
 
-\section{Model}
+\subsection{Model}
 
 The state model is exactly the same as the one we have dealt with
 throughout
@@ -482,39 +484,37 @@ Simulating data under the SC model proceeds by first simulating
 standard SCR encounter history data and then collapsing it into count
 data. The following blocks of \R~code generate data from
 the model shown in Sec.~\ref{unmarked.sec.N}, with parameters
-$\sigma=0.04$, $\lambda_0=0.3$, and $N=50$. The state-space is the unit
-square and a grid of 100 traps
-is centered in the middle. These simulated data might resemble actual
-data from a camera trap study in which an individual can be detected multiple
+$\sigma=5$, $\lambda_0=0.4$, and $N=50$. The state-space is a
+$[0, 100] \times [0, 100]$ square, and a grid of 100 traps
+is centered in the middle. These simulated data resemble actual
+data from camera trap studies in which individuals can be detected multiple
 times at a trap during a single occasion, and at multiple traps during
 an occasion. The first block of code generates the trap coordinates
 $X$ and the $N=50$ activity centers:
 \begin{verbatim}
-> tr <- seq(0.3, 0.7, length=10)
+> tr <- seq(15, 85, length=10)
 > X <- cbind(rep(tr, each=length(tr)),
 +            rep(tr, times=length(tr)))    # trap coords
 > set.seed(10)
-> xlim <- c(0, 1); ylim <- c(0, 1)         # S is the unit square
-> A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1]) # area of S
+> xlim <- c(0, 100); ylim <- c(0, 100)     # S is [0,100]x[0,100] square
+> A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1])/1e4 # area of S
 > mu <- 50                                 # density (animals/unit area)
-> (N <- rpois(1, mu*A))                    # Generate N=50 as Poisson deviate
+> (N <- rpois(1, mu*A))                    # Generate N=75 as Poisson deviate
 [1] 50
 > s <- cbind(runif(N, xlim[1], xlim[2]), runif(N, ylim[1], ylim[2]))
-> plot(X, xlim=xlim, ylim=ylim, pch="+")
-> points(s, col=gray(0.5), pch=16)
 \end{verbatim}
 We could have set $N=50$ directly, but instead we treated density
 as a fixed parameter ($\mu=50$) and generated $N$ as a random
 variable -- it just so happens that with the specified random seed,
-$N$ equals 50! % Once again, this highlights that fact that $N$ can be
+$N$ equals 50. % Once again, this highlights that fact that $N$ can be
 % regarded as either a fixed or a random variable.
 
 Now we can generate the encounter histories under the
 Poisson observation model. Let's suppose that sampling is conducted
 over $K=5$ nights.
 \begin{verbatim}
-> sigma <- 0.1
-> lam0 <- 0.5
+> sigma <- 5
+> lam0 <- 0.4
 > J <- nrow(X)
 > K <- 5
 > y <- array(NA, c(N, J, K))
@@ -538,14 +538,15 @@ Converting the encounter data to count data can be accomplished using a single
 +                     paste("night", 1:K, sep=""))
 > n[1:4,]
       night1 night2 night3 night4 night5
-trap1      0      0      0      0      0
-trap2      1      0      0      2      1
-trap3      0      0      1      2      0
-trap4      2      0      1      0      1
+trap1      1      0      0      0      0
+trap2      1      2      2      0      1
+trap3      1      0      0      1      0
+trap4      0      0      0      0      0
 \end{verbatim}
 \end{small}
-This object \verb+n+ is the $J \times K$ matrix of counts that we call
-$\bf n$. It is worth comtemplaing how common such count data is in
+This displays the first 4 rows of the \verb+n+, the $J \times K$
+matrix of counts. It is worth comtemplaing how common such count data
+is in
 ecology and how many different mechanisms might generate it. Although
 the list of possibilites is immense, the SC model has advantages over
 some alternatives
@@ -602,11 +603,13 @@ variables. %Aside from being slow, \jags~works rather well for this
 %situations considered in the next chapter, and thus we wrote our own
 %MCMC algorithm which overcomes these limitations, and it is somewhat
 %faster. Nonetheless,
-Panel~\ref{unmarked.panel.jags1} shows an implementation in \jags.
-Note that this code will not run as shown because we abbreviated the
-arguments to \verb+dsum+. In practice, you need to provide all $M$ of
-them, where $M \gg N$ is the size of augmented latent encounter
-array. The code looks slightly unwieldy if $M$ is large, but you can easily create
+Panel~\ref{unmarked.panel.jags1} shows the \jags~code, but
+%Note that this code will not run as shown because
+we abbreviated the
+arguments to \verb+dsum+ because in practice you need to provide all $M$ of
+them. %, where $M \gg N$ is the size of augmented latent encounter
+%array.
+The code looks slightly unwieldy if $M$ is large, but you can easily create
 it using the \verb+paste+ function in \R. Here is an example, with an
 unrealistically small value of $M=10$:
 \begin{small}
@@ -616,7 +619,7 @@ unrealistically small value of $M=10$:
 y[7,j,k], y[8,j,k], y[9,j,k], y[10,j,k]"
 \end{verbatim}
 \end{small}
-This output can be pasted directly into a \jags~model file.
+%This output can be pasted directly into a \jags~model file.
 %Maybe Martyn Plummer will throw us
 %a bone and allow for a vector as an argument. Anyhow,
 % XXXX
@@ -653,7 +656,6 @@ A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1]) # Area of state-space
 D <- N / A      # Realized density
 ED <- (M*psi)/A # Expected density
 }
-
 \end{verbatim}
 \end{small}
 \rule[0.15in]{\textwidth}{.03in}
@@ -753,8 +755,8 @@ An even faster alternative is to use the \verb+scrUN+ function in
 the Supplement of \citet{chandler_royle:2012}. The usage is as
 follows:
 \begin{verbatim}
-out1 <- scrUN(n=n, X=X, M=250, niter=250000, xlims=xlim, ylims=ylim,
-               inits=list(lam0=0.3, sigma=0.01), updateY=TRUE,
+out1 <- scrUN(n=n, X=X, M=300, niter=25000, xlims=xlim, ylims=ylim,
+               inits=list(lam0=0.3, sigma=rnorm(1, 5, 0.1)), updateY=TRUE,
                tune=c(0.004, 0.09, 0.35))
 \end{verbatim}
 where \verb+n+ is the matrix of counts, \verb+X+ is the trap
@@ -771,17 +773,43 @@ better. %since it may take longer to run and the
 %look under the MCMC hood and see the basis of the models and code
 %presented in the next chapter. Further details about the model
 %arguments and output are given on the function's help page.
-However, it can be important fiddle with the tuning parameters until the
+Even so, it can be important to fiddle with the tuning parameters until the
 acceptance rates are between 40--60\%. Otherwise, the Markov chains
 will exhibit high autocorrelation.
 
-We used the model with no latent encounter histories using both
+We fit the model with no latent encounter histories using both
 \jags~and \verb+scrUN+ to the simulated data, and the results
-are given in TableXXXX.
+are given in Table~\ref{unmarked.tab.sim}. The results of are
+summarizes of 10000 posterior draws, and they suggest that while the
+true parameter values are easily covered by the 95\% credible
+intervals, the intervals are rather wide. In many cases, knowing that
+there are between 21 and 113 individuals in an area will be considered
+relatively imprecise.
+This is not just a
+peculiarity of this particular data set -- in general, posterior
+precision will be low. Furthermore, as can be seen in
+Fig.~\ref{}, the mixing isn't so great either and thus it may take
+many iterations to achieve convergence.
 
-
-
-
+\begin{table}
+  \centering
+  \caption{Results from fitting the spatial count (``SC'') model to
+    to simulated data using \texttt{scrbook} and \jags. In both cases,
+    the latent encounter histories were not updated as part of the MCMC.}
+  \begin{tabular}{lrrrrr}
+    \hline
+    Parameter   & Mean   & SD     & 2.5\%  & 50\%   & 97.5\%  \\
+    \hline
+    \multicolumn{6}{c}{\tt scrbook} \\
+    $\sigma=5$    & 4.759  & 0.746  & 3.394  & 4.743  & 6.284   \\
+    $\lambda_0=0.4$ & 0.528  & 0.140  & 0.287  & 0.522  & 0.824   \\
+    $N=50$         & 54.237 & 25.076 & 21.000 & 48.000 & 113.000 \\
+    \hline
+    \multicolumn{6}{c}{\jags} \\
+    \hline
+  \end{tabular}
+  \label{unmarked.tab.sim}
+\end{table}
 
 
 
