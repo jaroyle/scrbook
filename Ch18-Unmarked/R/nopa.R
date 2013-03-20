@@ -291,6 +291,20 @@ out2 <- clusterEvalQ(cl2, {
 })
 
 
+mc2i.2 <- mcmc.list(out2)
+
+plot(mc2i.2)
+summary(mc2i.2)
+HPDinterval(mc2i.2)
+
+HPDinterval(mcmc(as.matrix(mc2i.2)))
+
+save(mc2i.2, file="mc2i2.gzip")
+
+Ntab <- table(as.matrix(mc2i.2)[,"N"])
+sort(Ntab)
+names(Ntab)[which.max(Ntab)]
+
 
 
 round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 0.001, 0.001), 3)
