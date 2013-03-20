@@ -83,9 +83,23 @@ rejectionRate(window(mc1, start=1001))
 
 
 
-#save(mc1, file="scrUNmc1.gzip")
+save(mc1, file="scrUNmc1.gzip")
 
-save(mc1, file="scrUNmc1prior.gzip")
+#save(mc1, file="scrUNmc1prior.gzip")
+
+
+
+ss1 <- summary(mc1)
+out1 <- cbind(ss1$stat[,1:2], ss1$quant[,c(1,3,5)])
+
+write.table(format(out1, digits=2), quote=FALSE, sep=" & ", eol="\\\\\n")
+
+
+
+
+
+
+
 
 
 
@@ -121,9 +135,9 @@ rejectionRate(mc2)
 rejectionRate(window(mc2, start=1001))
 
 
-#save(mc2, file="scrUNmc2.gzip")
+save(mc2, file="scrUNmc2.gzip")
 
-save(mc2, file="scrUNmc2prior.gzip")
+#save(mc2, file="scrUNmc2prior.gzip")
 
 
 
@@ -260,7 +274,7 @@ jc1.2 <- coda.samples(jm, pars1, n.iter=5000)
 
 
 library(rjags)
-dat2 <- list(n=n, X=X, J=J, K=K, M=250, xlim=xlim, ylim=ylim)
+dat2 <- list(n=n, X=X, J=J, K=K, M=300, xlim=xlim, ylim=ylim)
 init2 <- function() {
     list(sigma=runif(1, 1, 2), lam0=runif(1),
          z=rep(1, dat2$M))
@@ -270,7 +284,7 @@ pars2 <- c("lam0", "sigma", "N", "mu")
 system.time({
 jm2 <- jags.model("SCmod2.jag", data=dat2, inits=init2, n.chain=1,
                  n.adapt=1000)
-jc2.1 <- coda.samples(jm2, pars2, n.iter=50000)
+jc2.1 <- coda.samples(jm2, pars2, n.iter=20000)
 }) # 14000 it/hr
 
 plot(jc2.1)

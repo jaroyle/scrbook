@@ -91,7 +91,7 @@ seg <- 1:G # ID of each point in state-space
 library(rjags)
 
 dat1 <- list(n=sal.n27, distmat=distmat, seg=seg, PrSeg=rep(1/G, G),
-             J=J, G=G, K=3, M=200)
+             J=J, G=G, K=3, M=300)
 str(dat1)
 
 n.jk <- apply(dat1$n, c(1,3), sum, na.rm=TRUE)
@@ -141,7 +141,7 @@ for(i in 1:dat1$M) {
 
 
 init1 <- function() list(p=runif(1), psi=runif(1),
-                         tau=500, #runif(1, 10, 20),
+                         tau=runif(1, 100, 200),
                          phi=runif(1),
                          s=si,
                          u=ui,
@@ -154,10 +154,14 @@ pars1 <- c("phi", "tau", "p", "Ntot")
 system.time({
     jm1 <- jags.model("sal1.jag", data=dat1, inits=init1, n.chains=1,
                       n.adapt=500)
-    jc1 <- coda.samples(jm1, pars1, n.iter=15000)
-})
+    jc1 <- coda.samples(jm1, pars1, n.iter=5000)
+}) # 5000 it/hr
 
+summary(jc1)
 plot(jc1, ask=TRUE)
+
+
+save(jc1, file="sal27jc1.gzip")
 
 
 system.time({
