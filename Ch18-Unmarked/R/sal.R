@@ -193,11 +193,11 @@ plot(jc3, ask=TRUE)
 
 # Output
 
-ss3 <- summary(jc3)
+ss1 <- summary(window(jc1, start=3001))
 
-out3 <- cbind(ss3$stat[,1:2], ss3$quant[,c(1,3,5)])
+out1 <- cbind(ss1$stat[,1:2], ss1$quant[,c(1,3,5)])
 
-write.table(format(out3, digits=2), quote=FALSE, sep=" & ", eol="\\\\\n")
+write.table(format(out1, digits=2), quote=FALSE, sep=" & ", eol="\\\\\n")
 
 
 
