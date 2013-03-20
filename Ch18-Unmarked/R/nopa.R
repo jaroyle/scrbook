@@ -195,15 +195,19 @@ init2 <- function() {
     list(sigma=rnorm(1, 100), lam0=0.5, z=rep(1, dat2$M))
 }
 
+pars2 <- c("sigma", "lam0", "N", "psi")
+
+
+library(parallel)
 cl2 <- makeCluster(3) # Open 3 parallel R instances
 
-clusterExport(cl2, c("dat2", "init2", "pars1"))
+clusterExport(cl2, c("dat2", "init2", "pars2"))
 
 system.time({
 out2 <- clusterEvalQ(cl2, {
     library(rjags)
-    jm <- jags.model("nopa2.jag", dat2, init2, n.chains=1, n.adapt=500)
-    jc <- coda.samples(jm, pars1, n.iter=55500)
+    jm <- jags.model("nopa2.jag", dat2, init2, n.chains=1, n.adapt=1000)
+    jc <- coda.samples(jm, pars1, n.iter=50000)
     return(as.mcmc(jc))
 })
 })
@@ -304,6 +308,24 @@ save(mc2i.2, file="mc2i2.gzip")
 Ntab <- table(as.matrix(mc2i.2)[,"N"])
 sort(Ntab)
 names(Ntab)[which.max(Ntab)]
+
+
+
+
+
+
+
+system.time({
+out3 <- clusterEvalQ(cl2, {
+    jc <- coda.samples(jm, pars1, n.iter=50000)
+    return(as.mcmc(jc))
+})
+})
+
+
+
+
+
 
 
 
