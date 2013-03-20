@@ -277,12 +277,12 @@ individuals arrive into the population.  Therefore one of the main
 differences between the various models is how new entrants into the
 population are parameterized.
 
-While the JS model can be analyzed with sampling conducted only once
-between the occasions in which survival will be estimated,
-% XX RS: This first half of the sentence doesn't make sense to me - sampling once between occasions? Maybe a short intro here about how to sample for the JS would help; then you could say that with one sample per primary occasion you can apply the JS, but with several secondary occasions within each primary, you can use pollock's stuff. 
-% XX RS: Ok, I see this comes up below, but I think it would be helpful to explain it a little here, because up til now people don't know anything about sampling protocols for the open pop models. Maybe you can move the robust design description up, make it a subsection before starting with the JS part, and say that the number of times you sample within each primary occasion defines what kind of model you can use, or something like that. 
-\citet{pollock:1982} devised
- the robust design in order to allow for
+
+Traditionally, sampling for the JS model included only one data collection event per primary occasion 
+and this allowed for the estimation of survival and recruitment.  However, without repeated visits within
+a primary occasion, there is not enough data to allow for variation in detection and this lead to potentially
+inaccurate estimates of population size.
+This lead \citet{pollock:1982} to devise the robust design in order to allow for
 heterogeneity in capture probability (by sex, age, social status, etc.) and
 trap response under the JS model.  
 We present
@@ -580,9 +580,8 @@ secondary occasion by primary occasion, $M x K x T$.
 The ${\bf R}$ commands
 to organize the data in a way suitable for fitting a Jolly-Seber type
 model 
-are included in the \scrbook~ package and are not
+are included in the \scrbook~ package using the function \verb+ovenbirds.js()+ and are not
 shown here.
-%%% XXXX Beth: give the name of the script or help file or whatever.
 The key difference between our model and organization of the data here and that 
 in
 Chapt. \ref{chapt.poisson-mn} is that, here, we have to preserve
@@ -690,7 +689,6 @@ $t$ to $t+1$ as:
 \[
  z(i,t+1) \sim \mbox{Bern}( \phi_t z(i,t)  + \gamma_t (1-z(i,t)) ).
 \]
-
 Previously, in sec. \ref{open.sec.dataaugJS}, it was described how this formulation of the model uses a set
 of latent indicator variables $A(i,t)$ which describes if an individual
 is recruited into the population during time interval $(t-1, t)$.  We apply the same approach here, so that, as before,
@@ -719,7 +717,6 @@ in the \jags~code in Panel \ref{open.panel.spatialJS}.
 {\small
 \begin{verbatim}
 model {
-
 psi ~ dunif(0,1)       # Prior distributions
 phi ~ dunif(0,1)
 alpha0 ~ dnorm(0,10)
@@ -736,7 +733,6 @@ gamma[t] ~ dunif(0,1)  # Prior for time specific recruitment parameter
 
 for(i in 1:M){
   z[i,1] ~ dbern(psi)
-
   R[i,1]<- z[i,1]      # To estimate the number of recruits
   R[i,2]<-(1-z[i,1])*z[i,2]
   R[i,3]<- (1-z[i,1])*(1-z[i,2])*z[i,3]
@@ -744,10 +740,9 @@ for(i in 1:M){
   R[i,5] <-(1-z[i,1])*(1-z[i,2])*(1-z[i,3])*(1-z[i,4])*z[i,5]
 
   for(t in 1:T){
-  # Independent activity centers for each year
-  S[i,1,t] ~ dunif(xlim[1],xlim[2]) 
-  S[i,2,t] ~ dunif(ylim[1],ylim[2])
-
+     # Independent activity centers for each year
+     S[i,1,t] ~ dunif(xlim[1],xlim[2]) 
+     S[i,2,t] ~ dunif(ylim[1],ylim[2])
   for(j in 1:ntraps){
       d[i,j,t] <- pow(pow(S[i,1,t]-X[j,1],2) + pow(S[i,2,t]-X[j,2],2),1)
      }
@@ -761,11 +756,11 @@ for(i in 1:M){
     Ycat[i,k,t] ~ dcat(cp[i,k,,t])
   }
 }
-a[i,1]<-(1-z[i,1])
+  a[i,1]<-(1-z[i,1])
 for(t in 2:T){                   # For loop for years 2 to T
       a1[i,t] <- sum(z[i, 1:t])  # Sum across the alive states from 1 to t
        A[i,t] <- 1-step(a1[i,t] - 1)   
-   # A is the indicator if an individual is available to be recruited at time t
+   # A indicates if individual is available to be recruited at time t
        mu[i,t]<- (phi*z[i,t-1]) + (gamma[t]*A[i,t-1])
    # Alive state at t is dependent on phi and gamma
         z[i,t]~dbern(mu[i,t])
@@ -784,6 +779,7 @@ a spatial component to the encounter probability model. }
 
 
 {\flushleft \bf Ovenbird mist-netting study}
+
 In the previous analysis of the ovenbird data, we did not make use of
 the spatial location for each net the ovenbirds were captured in.
 However, there were 44 mist nets operational during each of the
@@ -797,7 +793,7 @@ and contains a $45$ if the individual was not captured. The code above describes
 history array is created, so we
 do not reproduce this piece of code here. To call the model, use the following
 \R~ code which sets the initial values for \mbox{\tt z[i,t]}, the parameters to
-monitor, and calls \jags.
+monitor, and calls \jags.  The code is also available in the \verb+ovenbirds.js()+ function.
 
 {\small 
 \begin{verbatim}
@@ -1069,7 +1065,10 @@ either and fish that pass may not be recorded at some times.
 
 To apply the basic CJS model, we create the
 encounter history for each individual for the 12 weeks and we also create
-a vector to indicate the period (week) of first capture.
+a vector to indicate the period (week) of first capture. The code is not shown here
+ but is availabe in the \scrbook~ packagae within the function \verb+shad.cjs()+.  This funtion
+ contains all of the code to fit the non-spatial, multi-state, and spatial CJS models
+ to the American shad dataset.
 % XXXX Do you have a map of the river with the receiver locations?
 % XXXX Beth: Is this map included?
 
@@ -1176,9 +1175,9 @@ Dead & 0 & 0 & 1\\ \hline
 
 Because individuals are not necessarily observed in their given state,
 detection should be estimated separately for each of the states.
-% XX RS: Is it right that there is no error in observing states, i.e., if the animal is observed, state is recorded correctly? Might be worth adding if that's true, to distinguish between these two possible observation errors.
 Hence, we also have $p^A$ and $p^B$, the probability of detecting an
-individual in State A and State B respectively.
+individual in State A and State B respectively.  Also, at this point, we assume that there is no error 
+in observed State (i.e., if the animal is observed, then the State is recorded correctly).  
 
 % XX RS: I have to say that I cannot follow the next 2 or 3 paragraphs. I find it confusing that s is not time dependent, although individuals can transition between states; I am not sure what psi is in either of the two formulations, and whether p_0 should be state specific, although it is not indexed as such. Is the symbol s, for state, chosen intentionally to be the same as the home range center? if so, why? 
 % XX RS - after reading on: Reading on, I think you might even delete this section, or just briefly mention the connection of spatial and multi state models, and go straight to the JAGS formulation. But I think if you keep it it needs some more context.
@@ -1190,9 +1189,8 @@ and $u_{it}$ as
 the state in which individual $i$ was observed during sample $t$.  In this two state example,
 $u_{it}$ can only take on values for being observed in A or B (i.e., 1 or 2).
 We can define a simplistic model as follows:
-% XX RS: Since psi is a vector, here is a way to make it bold within a math expression: \mbox{\boldmath$\psi$}
 \[
-u_{it} \sim  \mathrm{dcat}(\psi)
+u_{it} \sim  \mathrm{dcat}(\mbox{\boldmath$\psi$})
 \]
 % XX RS: Considering that you have obs. probabilities below, is that the model for s, rather than u? 
 where $\psi$ is a constant vector.
@@ -1207,7 +1205,7 @@ In an alternative formulation of this model,
 we can define ${\bf s}$
 as the index of which state
 an individual is in and then condition the observed locations, $u_{it}$
-as a function of the state an individual is in, ${\bf s}$. This
+as a function of the actual state, ${\bf s}$. This
 means that whether an individual moves or not, or where it moves to, is a function of where it is located.
 In this case, 
 successive movement outcomes 
@@ -1222,7 +1220,7 @@ formulation of the model, the state-transition
 probabilities are constant, conditional on ${\bf s}$.
 Other models for these transition probabilities
 are possible and we will discuss those later.
-% XX RS: Ok, this stuff below is helpful, but the context needs to be specified before starting on the states etc a few paragraphs before. 
+
 A slight modification of this model would define ${\bf s}$  as a
 ``home area'' 
 for each individual. Then the region the animal goes to is a function
@@ -1316,7 +1314,8 @@ period of first capture was also created.  Fish captured in more than
 one state during the week were assigned the state in which they were
 captured most during that week.  And the model assumes that individuals 
 observed in a state at consecutive primary periods did not move from that state
-within the primary period.
+within the primary period.  The data manipulation and model specification for the 
+multi-state CJS model is provided in the \scrbook~ packagae under the function \verb+shad.cjs()+.
 
 \begin{table}
 \centering
@@ -1435,6 +1434,7 @@ faster too!
 
 
 {\flushleft \bf Movement and survival of American shad in the New River}
+
 Going back to our American shad example, we can consider that this is
 exactly a spatial capture recapture problem.  In stream networks, the
 placement of PIT antennas along the stream mimics the type of spatial
@@ -1453,9 +1453,7 @@ and eliminate any need for explicit secondary occasions in the
 model. The result is a 3-D array instead of a 4-D array.  Given the
 structure of the encounters, we use a Poisson encounter model in this
 example shown in \ref{open.panel.spatialCJS}.  The code to carry out this
-model is provided in the script XXXX....
-
-%BETH - include script name and add it here!
+model is provided in the \scrbook~ packagae using the function \verb+shad.cjs()+.
 
 
 \begin{panel}[htp]
@@ -1561,8 +1559,8 @@ survival probability as constant, but there is reason to believe that
 it might vary by time (similar to detection) and we might consider
 this additional parameterization in a more complete analysis of the
 data set. The other parameter of interest is $\sigma$, the movement
-parameter, which had a posterior mean of 13.954.  
-% XX RS: what are the units? km? m?
+parameter, which had a posterior mean of 13.954.  Stream locations are 
+recorded in river kilometers (RKM), so $\sigma$ is in units of kms.
 Our system here is
 linear, so we do not think of fish as having a home range radius.
   However, $\sigma$ can still inform us about the linear
@@ -1573,9 +1571,7 @@ are different than found in \citet{raabe_diss:2012}.
 \section{Modeling movement and dispersal dynamics}
 \label{open.sec.ACdyanmics}
 
-% XX RS: I think an opening sentence here would be great. Something along the line of 'To fully specify the dynamics of a population, we also have to think about how the locations of activity centers evolve over time. We know that animal territories can shift and that other types of movement (migration, dispersal) can take place. In the framework of open population SCR models, such dynamics in individual locations need to be reflected in appropriate models for the distribution of the activity centers.' This is just a blurb, but I think people are so trained to think about alive-dead that it is worth pointing out that our process model has anothr component - location - and that we have to think about that part of the process too.
-
-To fully consider the dynamics of a population, it is also important to think about 
+To better understand the dynamics of a population, it is important to consider 
 how the locations of activity centers evolve over time. It is known that home ranges
 and territories of animals can shift and other types of movement (migration, dispersal) 
 can take place. In the framework of open population SCR models, these dynamics of 
@@ -1681,10 +1677,9 @@ where
 \mbox{log}(\tau) = \mu_{\tau} + \alpha_2 \mbox{Flow}_t.
 \]
 These are just a few thoughts on simple ways to model movement as a
-function of habitat variables.
+function of habitat variables which we have only started exploring on these data.
 As we discussed in the previous section, there
 are many other movement models that could be used.
-% XX RS: Did you run this model? Otherwise I'd say something about that this is just a mental experiment, or something
 
 \subsection{Modeling  dispersal}
 
@@ -1735,8 +1730,7 @@ to let $ds_{i,t} \sim \mbox{exponential}(L)$ where $L$ is the mean
 dispersal distance for individuals dispersing and let $\theta_{i,t}
 \sim \mbox{Uniform}(-\pi, \pi)$
 where $\pi$ is not a parameter in this case, but the mathematical 
-constant of the ratio of a circle's circumference to it's diameter 
-(i.e., $\pi = 3.14159...$).
+constant(i.e., $\pi = 3.14159 \ldots$).
 If all individuals are expected to
 move some distance between periods, then the $pd$ indicator could be
 removed.  A number of distributions exists for fitting these
