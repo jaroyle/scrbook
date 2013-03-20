@@ -84,6 +84,7 @@ sampling protocol. In later sections of this chapter we will explore some
 examples involving of some of these situations. 
 
 \subsection{Design 1: Fixed Search Path}
+\label{searchencounter.sec.fixedpath}
 
 The ideal situation is where we have a continuous search-path or
 line, or multiple such lines, in some region
@@ -414,7 +415,7 @@ Any model for encounter probability can be converted to a hazard model
 so that encounter probability based on total hazard can be derived.
 We introduced this model above:
 \[
-\log(h({\bf u}_{ik},{\bf x})) = \alpha_{0} + \alpha_{1}*dist({\bf u}_{ik},{\bf x}).
+\log(h({\bf u}_{ik},{\bf x})) = \alpha_{0} + \alpha_{1}*\mbox{dist}({\bf u}_{ik},{\bf x}).
 \]
 which is usually called the Gompertz hazard function in survival
 analysis, and it is most often written as $h(t) = a \exp( b*t)$ in which
@@ -423,13 +424,13 @@ case $log(h(t)) = log(a) + b*t$.
 Model 2 (squared-distance) is a
 quadratic function of distance
 \[
-\log(h({\bf u}_{ik},{\bf x})) = \alpha_{0} + \alpha_{1}*dist({\bf u}_{ik},{\bf x})^2.
+\log(h({\bf u}_{ik},{\bf x})) = \alpha_{0} + \alpha_{1}*\mbox{dist}({\bf u}_{ik},{\bf x})^2.
 \]
 We've used this type of Gaussian kernel model 
 quite a bit in the book, and it implies a
 bivariate normal hazard rate. \citet{borchers_efford:2008} use this model:
 \[
-h({\bf u}_{ik},{\bf x} ) = -log(1 - \mbox{expit}(\alpha_{0})
+h({\bf u}_{ik},{\bf x} ) = -\log(1 - \mbox{expit}(\alpha_{0})
 \exp( \alpha_{1}*\mbox{dist}({\bf u}_{ik},{\bf x})^2 ) )
 \]
 which produces a normal kernel model for {\it probability of
@@ -444,7 +445,7 @@ which is a Weibull hazard function.
 
 
 
-\subsection{Movement model}
+\subsection{Modeling movement outcomes}
 
 We have so far described the model for the encounter data in a manner
 that is conditional on the locations ${\bf u}_{ik}$, some of which are
@@ -484,12 +485,12 @@ to restrict the potential locations of ${\bf s}$.
 \subsection{Simulation and analysis in {\bf JAGS}}
 
 Here we will simulate a sample data set that goes with the situation
-desccribed in Fig. \ref{searchencounter.fig.snakeline} and then analyze the data in
-{\bf JAGS}.  We begin by defining the state-space containing all of
-the sample boxes in Fig. \ref{searchencounter.fig.snakeline} and a total population
-which is going to be 4 individuals per unit quadrat
-($1 \times 1$). We use a rectangular state-space here for
-convenience:
+desccribed in Fig. \ref{searchencounter.fig.snakeline} and then
+analyze the data in {\bf JAGS}.  We begin by defining the state-space
+containing all of the sample boxes in
+Fig. \ref{searchencounter.fig.snakeline} and a total population which
+is going to be 4 individuals per unit quadrat ($1 \times 1$). We use a
+rectangular state-space here for convenience:
 % XX RS: Either the numbers below are off or you mean a rectangular S
 % Andy sez:  yea I think so 
 \begin{verbatim}
@@ -527,15 +528,14 @@ regular mesh representation of the sample line is extracted from the
 \mbox{\tt regpoints} object which we just created:
 {\small
 \begin{verbatim}
-> set.seed(2013)
+> set.seed(2014)
 > sx <- runif(N,xlim[1],xlim[2])
 > sy <- runif(N,ylim[1],ylim[2])
 
-> sigma.move <- .25
-> sigma <- .15
-> alpha0 <- 0
+> sigma.move <- .35
+> sigma <-.4
+> alpha0 <- .8
 > alpha1 <- 1/(2*(sigma^2))
-
 > X <- regpoints@coords
 > J <- nrow(X)
 \end{verbatim}
@@ -544,30 +544,32 @@ regular mesh representation of the sample line is extracted from the
 Next we're going to simulate data. We do this basically in 2 steps:
 For each individual in the population and for each of $K$ sample
 occasions, we simulate the location of the individual as a bivariate
-normal random variable with mean ${\bf s}_i$ and $\sigma = 0.25$ ({\tt sigma.move} in the code above). Next, we compute the
-encounter probability model using
-Eq. \ref{search-encounter.eq.encounterprob}, and then retain the
-data objects corresponding to individuals that get captured at least once. All of this goes
-according to the following commands:
+normal random variable with mean ${\bf s}_i$ and $\sigma = 0.25$ ({\tt
+  sigma.move} in the code above). Next, we compute the encounter
+probability model using Eq. \ref{search-encounter.eq.encounterprob},
+with the bivariate normal hazard model, 
+and then retain the data objects corresponding to individuals that get
+captured at least once. All of this goes according to the following
+commands: 
 {\small
 \begin{verbatim}
-K<- 10   ##period study
-U<-array(NA,dim=c(N,K,2))
-y<-pmat<-matrix(NA,nrow=N,ncol=K)
-for(i in 1:N){
-for(k in 1:K){
-U[i,k,]<-c(rnorm(1,sx[i],sigma.move),rnorm(1,sy[i],sigma.move))
-dvec<-     sqrt( ( U[i,k,1] - X[,1])^2 + (U[i,k,2] - X[,2])^2  )
-loghaz<- alpha0 - alpha1*dvec*dvec
-H<- sum(exp(loghaz))
-pmat[i,k]<- 1-exp(-H)
-y[i,k]<- rbinom(1,1,pmat[i,k])
-}
-}
-Ux<-U[,,1]
-Uy<-U[,,2]
-Ux[y==0]<-NA
-Uy[y==0]<-NA
+> K <- 10   ##  Sample occasions = 10
+> U <- array(NA,dim=c(N,K,2))  ## Array to hold locations
+> y <- pmat <- matrix(NA,nrow=N,ncol=K)  ## Initialize
+> for(i in 1:N){
++ for(k in 1:K){
++   U[i,k,] <- c(rnorm(1,sx[i],sigma.move),rnorm(1,sy[i],sigma.move))
++   dvec <- sqrt( ( U[i,k,1] - X[,1])^2 + (U[i,k,2] - X[,2])^2  )
++   loghaz<- alpha0 - alpha1*dvec*dvec   
++   H <- sum(exp(loghaz))
++   pmat[i,k] <- 1-exp(-H)
++   y[i,k] <- rbinom(1,1,pmat[i,k])
+>   }
+> }
+> Ux <- U[,,1]
+> Uy <- U[,,2]
+> Ux[y==0] <- NA
+> Uy[y==0] <- NA
 \end{verbatim}
 }
 
@@ -577,7 +579,6 @@ observed locations of individuals during each occasion. Note that, if
 an individual is {\it not} captured, we set the value to \mbox{\tt
   NA}. We pass these partially observed objects to {\bf JAGS} to fit
 the model. 
-% XX RS: Maybe say something about the objects, at least U, which holds the locations; and we set U[y==0]<-NA because this is how we pass partially observed data to JAGS. I think that'll make the code more readable. Or bliefly give the names of the R objects in the simulation description before the code. Also, some of the verbatim stuff is set as {\small} and some isn't.
 
 Finally, we do the data augmentation and we make up some starting
 values for the location coordinates that are missing. 
@@ -588,29 +589,29 @@ activity center values. In practice, we might think about using the
 average of the observed locations.
 {\small
 \begin{verbatim}
-ncap<-apply(y,1,sum)
-y<-y[ncap>0,]
-Ux<-Ux[ncap>0,]
-Uy<-Uy[ncap>0,]
+> ncap <- apply(y,1,sum)
+> y <- y[ncap>0,]
+> Ux <- Ux[ncap>0,]
+> Uy <- Uy[ncap>0,]
 
-M<-200
-nind<-nrow(y)
-y<-rbind(y,matrix(0,nrow=(M-nrow(y)),ncol=ncol(y)))
-Namat<-matrix(NA,nrow=(M-nind),ncol=ncol(y))
-Ux<-rbind(Ux,Namat)
-Uy<-rbind(Uy,Namat)
-S<-cbind(runif(M,xlim[1],xlim[2]),runif(M,ylim[1],ylim[2]))
-for(i in 1:nind){
-S[i,]<-c( mean(Ux[i,],na.rm=TRUE),mean(Uy[i,],na.rm=TRUE))
-}
-Ux.st<-Ux
-Uy.st<-Uy
-for(i in 1:M){
-Ux.st[i,!is.na(Ux[i,])]<-NA
-Uy.st[i,!is.na(Uy[i,])]<-NA
-Ux.st[i,is.na(Ux[i,])]<-S[i,1]
-Uy.st[i,is.na(Uy[i,])]<-S[i,2]
-}
+> M <- 200
+> nind <- nrow(y)
+> y <- rbind(y,matrix(0,nrow=(M-nrow(y)),ncol=ncol(y)))
+> Namat <- matrix(NA,nrow=(M-nind),ncol=ncol(y))
+> Ux <- rbind(Ux,Namat)
+> Uy <- rbind(Uy,Namat)
+> S <- cbind(runif(M,xlim[1],xlim[2]),runif(M,ylim[1],ylim[2]))
+> for(i in 1:nind){
++     S[i,] <- c( mean(Ux[i,],na.rm=TRUE),mean(Uy[i,],na.rm=TRUE))
+> }
+> Ux.st <- Ux
+> Uy.st <- Uy
+> for(i in 1:M){
++     Ux.st[i,!is.na(Ux[i,])]<-NA
++     Uy.st[i,!is.na(Uy[i,])]<-NA
++     Ux.st[i,is.na(Ux[i,])]<-S[i,1]
++     Uy.st[i,is.na(Uy[i,])]<-S[i,2]
+> }
 \end{verbatim}
 }
 
@@ -662,18 +663,21 @@ N<-sum(z[])
 }
 \rule[-0.15in]{\textwidth}{.03in}
 \caption{
-{\bf BUGS} model specification for the search-encounter model similar
-to ..................XXXXXXXXXXXX
-help file \mbox{\tt ?snakeline} in the {\bf R} package \mbox{\tt scrbook}.
+{\bf BUGS} model specification for the search-encounter model, based
+on that from \citet{royle_etal:2011mee}. 
+See the 
+help file \mbox{\tt ?snakeline} for the {\bf R} code to simulate data
+and fit this model. 
 }
 \label{search-encounter.panel.design1}
 \end{panel}
 
 
-and this produces the output here:
+Simulating the data as described above, and fitting the model in Panel
+\ref{search-encounter.panel.design1} produces the results in Table
+XXXXXXXXXXXXX: (soon to table-ize)
 
-{\bf XXXx Will table-isze final results XXXXX}
-
+{\small
 \begin{verbatim}
 > wbout2
 Inference for Bugs model at "model0.txt", fit using jags,
@@ -694,8 +698,7 @@ DIC info (using the rule, pD = var(deviance)/2)
 pD = 507.5 and DIC = 1654.0
 DIC is an estimate of expected predictive error (lower deviance is better).
 \end{verbatim}
-
-
+}
 
 
 \subsection{Hard plot boundaries}
@@ -723,65 +726,89 @@ model).
 
 \section{Unstructured spatial surveys}
 
-
-
-
-
-Protocol 1d is ``unstructured survey data'' like
-from Thompson et al. or Russell et al., the line evolves in response
-to things. The idea suggested in this case is to chop up the region
-into grid cells that are larger than you think the dog team might be
+We identified a number of variations (``Protocols'') of the basic search-encounter
+situation based on a survey line
+(see Sec. \ref{searchencounter.sec.fixedpath}). 
+Protocol 1d is what we'll refer to as 
+ ``unstructured survey data'' and this seems to be fairly common in practice
+\citep{thompson_etal:2012, russell_etal:2012}. 
+In this protocol, the survey line evolves in response to information
+about animal presence, which could be both the number of unique
+individuals or the amount of sign in the local search area. The
+motivating problem has to do with dog-team searches in which the dogs
+usually wander around hunting scat, and their search path is based on
+how they perceive the environment and what they're smelling. 
+This violates the main assumptions that the line is placed a priori,
+independent of density and unrelated to detectability.
+The analysis framework implemented by
+\citet{thompson_etal:2012} and \citet{russell_etal:2012} is based on
+chopping the survey region into grid cells and using the center point
+of the grid cell as an effective trap.  The heuristic argument to
+support doing this is that if you pick the grid cells 
+ larger than you think the dog team might be
 responding to, and then treat the center point as a trap.  
+The deficiency with this approach is that some of the ``sub-grid''
+resolution information about movement is lost, so we probably lose
+precision about any parameters of the movement model. 
 
+\subsection{Mountain lions in Montana}
 
-
-(3) Status of mountain lions in the Blackfoot Mountains of  Montana.
-\citet{russell_etal:2012} mountain lions ({\it Puma
-  concolor}). Haphazard searching by hunters who would tranquilize
-treed lions and extract DNA.
-They used 5 km $\times$ 5 km grid cells for binning the encounters,
-and the length of the search path in each grid cell as a covariate of
-effort that each grid cell was searched.
-The model is the Gaussian hazard model with baseline encounter
-probability that depended on sex and effort in each grid cell, on the
-log scale:
+\citet{russell_etal:2012} analyzed mountain lion ({\it Puma concolor})
+encounter history data to assess the status of mountain lions in the
+Blackfoot Mountains of Montana.  The data collection was based on
+opportunistic searching by hunters who shoot them with a
+biopsy dart, and extract the DNA from the tissue sample. 
+ They used 5 km $\times$ 5 km grid cells for
+binning the encounters, and the length of the search path in each grid
+cell as a covariate of effort that each grid cell was searched.  The
+model is the Gaussian hazard model with baseline encounter probability
+that depended on sex and effort in each grid cell, on the log scale:
 \[
- log(\lambda_{0,ij}) =
-\alpha_{0} + \alpha_{2} log(C_{j}) + \alpha_{3} \mbox{Sex}_{i}
+ \log(\lambda_{0,ij}) = \alpha_{0} + \alpha_{2} \log(C_{j}) + \alpha_{3} \mbox{Sex}_{i}
 \]
 Note for grid cells that were not searched, $C_{j} =0$, and those
 probabilities were set to 0 in evaluation of the probability of
 encounter.
 
+\subsection{Tiger density in the Bandipur tiger reserve}
 
+\citet{gopalaswamy_etal:2012ecol} reported on a study in the Bandipur
+tiger reserve in India, where the objective was to obtain a population
+size estimate for the reserve based on camera trapping and DNA
+sampling of scats.  They had a camera trapping network, a standard
+type of passive detector array, and they also had scat searches along
+18 scat routes of a total length of 233.2 km. They created 237
+segments of approximately 1 km each and used the center points of
+these segments as traps. Effectively they mimic the search encounter
+design 1 but, here, scats are only obtained on survey routes.
+There is an issue of whether sampling along routes produces some kind
+of a bias but, generally speaking, tigers aren't producing scats
+randomly on the landscape according to the model either.
 
 \subsection{Sierra National Forest Fisher Study}
 
-
-A real example with data and an R script. 
-
-Thompson et al. did this fisher study which involved dogs searching
-space. This seems typical of many
-studies these days -- you have dog teams wander around more or less
-opportunistically finding scat
-(see also Russell et al. 2012) .... the seearch path is not laid out a
+Here we consider a more detailed example and provide the data and R
+script for this analysis. 
+The data come from an analysis of individual encounter histories of
+the fisher ({\it Martes pennanti} by \citet{thompson_etal:2012}. Data
+were collected by sniffer dogs searching space. The dogs were given
+considerably latitude to determine their route.
+Thus, the seearch path is not laid out a
 priori but rather evolves haphazardly.  Strictly speaking it is
 somewhat informed by what the dog senses at a very local scale. Maybe
-50 m or maybe 100 m, whatever.
+(hypothetically, lets say) 
+50 m or maybe 100 m.
 So the idea here is to ingore the actual search path information
 intentionally and do some spatial aggregation at a scale which we
 think is larger than what the dogs are queuing into.......
 
 Thompson et al. divided the region into 1 km polygons,
 
-\mbox{\tt SCRfisher  }
- 
+R function: \mbox{\tt SCRfisher  } produces the following results:
 
+%% KIMMY put this in a table
+{\small
 \begin{verbatim}
-[1] 3.125
-
-
-
 Inference for Bugs model at "modelfile.txt", fit using WinBUGS,
  3 chains, each with 6000 iterations (first 1000 discarded)
  n.sims = 15000 iterations saved
@@ -800,49 +827,20 @@ DIC info (using the rule, pD = var(deviance)/2)
 pD = 28.8 and DIC = 101.4
 DIC is an estimate of expected predictive error (lower deviance is better).
 \end{verbatim}
-
+}
 
 
 \section{Analysis of other protocols}
 
-
-
-(2) Tiger density in the Bandipur tiger reserve:
-\citet{gopalaswamy_etal:2012ecol} reported on a study in the Bandipur
-tiger reserve in India, where the objective was to obtain a population
-size estimate for the reserve based on camera trapping and DNA
-sampling of scats.  They had a camera trapping network, a standard
-type of passive detector array, and they also had scat searches along
-18 scat routes of a total length of 233.2 km. They created 237
-segments of approximately 1 km each and used the center points of
-these segments as traps. Effectively they mimic the search encounter
-design 1 but, here, scats are only obtained along survey routes.
-There is an issue of whether sampling along routes produces some kind
-of a bias but, generally speaking, tigers aren't producing scats
-randomly on the landscape so this is kind of an irrelevant point.
-
-\begin{verbatim}
- \item[] Protocol (1a). We know the search path and record the locations of individuals.
- \item[] Protocol (1b). We record the location of individuals and
-   the location on the transect where we first observed the individual.
- \item[] Protocol (1c). We record
-the closest perpendicular distance. This is a typical
-   distance sampling situation, and this is a type of hybrid CR-DS model.
- \item[] Protocol (1d). In this case, observations are restricted to
-   the line itself. We imagine that the line is evolving in response
-   to search activity. 
-\end{verbatim}
-
-We showed an analysis of what we call Protocol 1a which is the ideal
-situation. 
-We think there are a number of variations of this basic design that
-might arise in practice.
-
-In the situation elaborated on above, the sample path is used to
+We previousl identified 4 distinct protocols of the Design 1
+search-encounter model.
+In the situation elaborated on above (what we called ``Protocol 1a''), the sample path is used to
 locate individuals and, whether or not an individual is encountered,
 is a function of the total hazard to encounter along the whole line.
-A slight variation of this idea (what we called Protocol 1b) has us
-record location of individuals and also the location on the transect
+We think there are a number of variations of this basic design that
+might arise in practice.
+A slight variation (what we called Protocol 1b) is based on 
+recording location of individuals and also the location on the transect
 where we observed the individual.  The probability of encounter is the
 probability of encounter prior to point $x_{0}$ on the line
 \citep{skaug_schweder:1999} and there is a slight modification to the
@@ -856,17 +854,6 @@ shortest perpendicular distance. This is a classical distance sampling
 observation model, and it represents an intentional misspecification
 of the model but it seems that the effect of this is relatively minor,
 or, otherwise, we imagine people wouldn't do it.
-
-
-
-
-
-
-
-
-
-
-
 
 \section{Design 2: Uniform Search Intensity}
 
@@ -897,11 +884,11 @@ would be worth checkign that out).
 \label{searchencounter.fig.hornylizard}
 \end{figure}
 
-It is clear that this uniform search intensity model is a
-special case of the more general search encounter model in the sense
-that the probability of encounter of an individual is a constant
-$p_{0}$ {\it if} the individual is located in the polygon ${\cal X}$
-during sample occasion $k$,  i.e.,
+It is clear that this uniform search intensity model is a special case
+of the more general search encounter model in the sense that the
+probability of encounter of an individual is a constant $p_{0}$ {\it
+  if} the individual is located in the polygon ${\cal X}$ during
+sample occasion $k$, i.e.,
 \[
 p({\bf u}_{ik}) = p_{0} \mbox{I}({\bf u}_{ik} \in {\cal X})
 \]
@@ -918,8 +905,8 @@ For example, imagine a situation where the successive samples of a
 bounded sample polygont are relatively close together in time so that
 successive locations of individuals are not well-approximated by the
 independence model. Naturally we might consider using an
-auto-regressive or random-walk type of model in which
-the successive coordinate locations of individual $i$ behave as follows:
+auto-regressive or random-walk type of model in which the successive
+coordinate locations of individual $i$ behave as follows:
 \begin{eqnarray*}
  u_{1}(i,k) | u_{1}(i,k-1) &\sim &  \mbox{Normal}( u_{1}(i,k-1),  \sigma^{2}) \\
  u_{2}(i,k) | u_{2}(i,k-1) &\sim &  \mbox{Normal}( u_{2}(i,k-1),  \sigma^{2}) \\
@@ -937,37 +924,35 @@ which effectively takes the place of the model for ${\bf s}_{i}$ that
 we typically use. Under this model, individuals dont' have an activity
 center but, rather, they drift through space more-or-less randomly
 based just on their previous location. See \citet{ovaskainen:2004,
-ovaskainen:2008}
-see also our discussion of a similar model that might
-arise in acoustic  surveys (Sec. \ref{poisson-mn.sec.acoustic}).
+  ovaskainen:2008} see also our discussion of a similar model that
+might arise in acoustic surveys (Sec. \ref{poisson-mn.sec.acoustic}).
 
 We could allow for dependent movements about a central location ${\bf
-  s}_{i}$ by modifying the model to be an AR(1) or similar type of
+  s}_{i}$ using an AR(1) or similar type of
 model with parameter $\rho$, e.g.,
-\begin{eqnarray*}
- u_{1}(i,k) | {\bf s}_{i} &\sim &  \mbox{Normal}( \rho*( u_{1}(i,k-1)
- - s_{1}(i) ),  \sigma^{2}) \\
-\end{eqnarray*}
-(and similar for coordinate $u_{2}$).
+\[
+ {\bf u}(i,k) | {\bf s}_{i} \sim   \mbox{BVN}( \rho*( {\bf u}(i,k-1) - {\bf s}_{i} ),  \sigma^{2} {\bf I}).
+\]
 
-In the \mbox{\tt scrbook} package, we provide a script for
-simulating and fitting search-encounter data using the iid Gaussian
-model and also the random walk model. We encourage you to adapt these
-to fit the AR(1) movement model.   The {\bf BUGS} model specification
-is shown in Panel \ref{search-encounter.panel.uniform} for the random
-walk situation.  Of course we imagine that resouorce selection
-perhaps using similar ideas to those dexcribed in
-Chapt. \ref{chapt.rsf} could be parameterized in this movement model
-as well. In this case we set up the run with JAGS using the standard
-commands. We did not specific starting valules for the missing
-coordinate locations although we imagine that JAGS should perform
-better if we provide decent starting values. e.g., the last observed
-location or something.
+
+In the \mbox{\tt scrbook} package, we provide a script for simulating
+and fitting search-encounter data using the iid Gaussian model and
+also the random walk model. We encourage you to adapt these to fit the
+AR(1) movement model.  The {\bf BUGS} model specification is shown in
+Panel \ref{search-encounter.panel.uniform} for the random walk
+situation.  Of course we imagine that resouorce selection perhaps
+using similar ideas to those dexcribed in Chapt. \ref{chapt.rsf} could
+be parameterized in this movement model as well. In this case we set
+up the run with JAGS using the standard commands. We did not specific
+starting valules for the missing coordinate locations although we
+imagine that JAGS should perform better if we provide decent starting
+values. e.g., the last observed location or something.
 
 \begin{verbatim}
 R CODE FOR SIMULATING THIS SITUATION.....................?
-\end{verbatim}
 
+To be inserted
+\end{verbatim}
 
 
 \begin{panel}[htp]
@@ -1018,28 +1003,15 @@ In Chapt. \ref{chapt.open} we discuss many aspects of modeling open
 populations, including some aspects of modeling movement and dispersal
 and the relevance of SCR models to these problems. However, given the
 introduction of the search-encounter model above, this is celarly
-relevant to modeling movement and dispersal in open populations.
-In particular, the model described in Panel
+relevant to modeling movement and dispersal in open populations.  In
+particular, the model described in Panel
 \ref{search-encounter.panel.uniform} could easily be adapted to an
 open population by conditioning on the first, and introducing a latent
 ``alive state'' with survival parameter $\phi_{t}$. This would be a
-spatial version of the standard CJS model (REF TO CHAPTER 16 HERE).
-
-This model has clear relevance to modeling movement in open systems
-including dispersal of individuals. We can include a survival
-parameter $\phi$ here.... DO THIS..... cite Schaub and Royle XXXX and
-also some other work (Torbjorn's work maybe).
-
-Modeling dispersal distance directly would be cool.... but we don't
-know if that has been done yet.
-Idea is you model d and then derive the coordinates .......
-
-the problem is that we observe the coordinates and we cannot specify
-the observed data as a deterministic node to the best of our
-knkowledge so we haven't figured out a way to deal with this problem
-yet.
-
-
+spatial version of the standard Cormack-Jolly-Seber model
+(Chapt. \ref{open.sec.cjs})\footnote{Some work related to this is
+  currently being carried out by our colleagues Torbjorn Ergon and
+  Michael Schaub.}.
 
 \section{Designs 3 and 4: Partial Information}
 
@@ -1153,15 +1125,8 @@ Let $y_{ij}$ be  the number of times individual $i$ encountered in stand $j$.
 
 We imagine that models can be developed for
 situations where we neglect
-altogether to record location information within the sample unit. We
-further assume the design was such that the sample units represent
-contiguous quadrats or at least close enough together so that
-individuals may be counted in multiple units. The idea here is that by
-being exposed to multiple units, there is a spatial dependence induced
-and this spatial dependence provides a little bit more of information
-about model parameters.
-
-We have two specific cases here:
+altogether to record location information within the sample unit.
+We see two specific cases here:
 Imagine we have a bunch of quadrats or segments that are contiguous or
 in close proximity
 and we do the surveys like above and record counts PER individual  but
@@ -1179,14 +1144,17 @@ This model is precisely the one considered by
 
 \section{Summary and Outlook}
 
-While capture-recapture studies are commonplace in studies of animal
+While the use of capture-recapture methods
+is commonplace in studies of animal
 populations, this includes the classical notion of capture-recapture
 based on organized arrays of traps but also a large swath of
-``designs'' which are more informal, based on organized or haphazard
-searches of areas, well-defined or not. For these situations, sampling
-is often ad hoc or unstructured in comparison to normal trapping
-(e.g., camera trapping) that are based on random sampling and
-standardized protocols.  In this chapter we showed that SCR models are
+``designs'' which are based on organized or haphazard
+searches of areas, well-defined or not. For these situations.
+Spatial sampling in these ``search-encounter'' situations is distinct
+from the classical capture-reapture methods
+(e.g., camera trapping) that are based on fixed trap locations.
+
+ In this chapter we showed that SCR models are
 relevant to these ``unstructured'' sampling problems in the same way
 as ordinary SCR data from trap arrays. One of the key conceptual
 points is that, with these search-encounter types of designs, the
@@ -1197,19 +1165,17 @@ path.  Because we can obtain direct observations of location --
 outcomes of movement -- for individuals, it is possible to resolve
 explicit models of movement from search-encounter data.  
 
-
-Key features of search-encounter is  (1) a model for how space is
-sampled, conditional on locations of individuals and (2) a model that
-describes how locations are distributed in space. 
+Key features of what we refer to as ``search-encounter models'' are: 
+(1) They contain a model for how space is
+sampled, conditional on locations of individuals; and (2) they contain 
+a model that
+describes how observable animal locations are distributed in space.
+We interpret the observable locations as outcomes from a movement
+model.  
 The models
 are somewhat more general than the standard SCR models where
-observations are restricted to a priori fixed locations. As a result...
+observations are restricted to a priori fixed locations. 
 
-A key feature of the search encounter models is that they condition
-explicitly on ``movement outcomes'', the ${\bf u}_{ik}$ variables,
-even though sometimes they might not be observable.
-The search-encounter sampling designs usually ............
-They involve an explicit movement model. 
 We 
 considered the simple case of the independent bivariate normal
 movement model, and also a random walk type model, which can easily be
@@ -1219,9 +1185,11 @@ opportunities to pursue this and in most practical capture-recapture
 studies, we will probably be limited by sparse data in the complexity
 of the movement models that could be consideered. 
 
-
-Searching space for scat is , we imagine, the future of all animal
-sampling.
+We think the search-encounter models will prove to be enormously
+useful in future studies of animal populations because so many new
+methods of obtaining encounter history data can be be based on DNA
+extracted from animal tissue or scat, which is easy to obtain by
+searching space and collecting it opportunistically. 
 
 
 SCR/DS?

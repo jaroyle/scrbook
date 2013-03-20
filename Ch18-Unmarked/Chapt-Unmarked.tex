@@ -255,7 +255,9 @@ biological knowledge of the system.
 
 
 
-\section{Data}
+\section{Spatial Count Model}
+
+\subsection{Data}
 
 Whereas traditional SCR models require spatially-referenced
 encounter histories, this model requires simple count data.
@@ -282,7 +284,7 @@ possibilities so that we can focus on the basic model.
 %is assumed to be short enough such that the number of individuals
 %exposed to sampling does not change over time.
 
-\section{Model}
+\subsection{Model}
 
 The state model is exactly the same as the one we have dealt with
 throughout
@@ -482,39 +484,39 @@ Simulating data under the SC model proceeds by first simulating
 standard SCR encounter history data and then collapsing it into count
 data. The following blocks of \R~code generate data from
 the model shown in Sec.~\ref{unmarked.sec.N}, with parameters
-$\sigma=0.04$, $\lambda_0=0.3$, and $N=50$. The state-space is the unit
-square and a grid of 100 traps
-is centered in the middle. These simulated data might resemble actual
-data from a camera trap study in which an individual can be detected multiple
+$\sigma=5$, $\lambda_0=0.4$, and $N=50$. The state-space is a
+$[0, 100] \times [0, 100]$ square, and a grid of 100 traps
+is centered in the middle. These simulated data resemble actual
+data from camera trap studies in which individuals can be detected multiple
 times at a trap during a single occasion, and at multiple traps during
 an occasion. The first block of code generates the trap coordinates
 $X$ and the $N=50$ activity centers:
+\begin{small}
 \begin{verbatim}
-> tr <- seq(0.3, 0.7, length=10)
+> tr <- seq(15, 85, length=10)
 > X <- cbind(rep(tr, each=length(tr)),
-+            rep(tr, times=length(tr)))    # trap coords
++            rep(tr, times=length(tr)))    # 100 trap coords
 > set.seed(10)
-> xlim <- c(0, 1); ylim <- c(0, 1)         # S is the unit square
-> A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1]) # area of S
+> xlim <- c(0, 100); ylim <- c(0, 100)     # S is [0,100]x[0,100] square
+> A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1])/1e4 # area of S
 > mu <- 50                                 # density (animals/unit area)
 > (N <- rpois(1, mu*A))                    # Generate N=50 as Poisson deviate
 [1] 50
 > s <- cbind(runif(N, xlim[1], xlim[2]), runif(N, ylim[1], ylim[2]))
-> plot(X, xlim=xlim, ylim=ylim, pch="+")
-> points(s, col=gray(0.5), pch=16)
 \end{verbatim}
+\end{small}
 We could have set $N=50$ directly, but instead we treated density
 as a fixed parameter ($\mu=50$) and generated $N$ as a random
 variable -- it just so happens that with the specified random seed,
-$N$ equals 50! % Once again, this highlights that fact that $N$ can be
+$N$ equals 50. % Once again, this highlights that fact that $N$ can be
 % regarded as either a fixed or a random variable.
 
 Now we can generate the encounter histories under the
 Poisson observation model. Let's suppose that sampling is conducted
 over $K=5$ nights.
 \begin{verbatim}
-> sigma <- 0.1
-> lam0 <- 0.5
+> sigma <- 5
+> lam0 <- 0.4
 > J <- nrow(X)
 > K <- 5
 > y <- array(NA, c(N, J, K))
@@ -538,14 +540,15 @@ Converting the encounter data to count data can be accomplished using a single
 +                     paste("night", 1:K, sep=""))
 > n[1:4,]
       night1 night2 night3 night4 night5
-trap1      0      0      0      0      0
-trap2      1      0      0      2      1
-trap3      0      0      1      2      0
-trap4      2      0      1      0      1
+trap1      1      0      0      0      0
+trap2      1      2      2      0      1
+trap3      1      0      0      1      0
+trap4      0      0      0      0      0
 \end{verbatim}
 \end{small}
-This object \verb+n+ is the $J \times K$ matrix of counts that we call
-$\bf n$. It is worth comtemplaing how common such count data is in
+This displays the first 4 rows of the \verb+n+, the $J \times K$
+matrix of counts. It is worth comtemplaing how common such count data
+is in
 ecology and how many different mechanisms might generate it. Although
 the list of possibilites is immense, the SC model has advantages over
 some alternatives
@@ -602,11 +605,13 @@ variables. %Aside from being slow, \jags~works rather well for this
 %situations considered in the next chapter, and thus we wrote our own
 %MCMC algorithm which overcomes these limitations, and it is somewhat
 %faster. Nonetheless,
-Panel~\ref{unmarked.panel.jags1} shows an implementation in \jags.
-Note that this code will not run as shown because we abbreviated the
-arguments to \verb+dsum+. In practice, you need to provide all $M$ of
-them, where $M \gg N$ is the size of augmented latent encounter
-array. The code looks slightly unwieldy if $M$ is large, but you can easily create
+Panel~\ref{unmarked.panel.jags1} shows the \jags~code, but
+%Note that this code will not run as shown because
+we abbreviated the
+arguments to \verb+dsum+ because in practice you need to provide all $M$ of
+them. %, where $M \gg N$ is the size of augmented latent encounter
+%array.
+The code looks slightly unwieldy if $M$ is large, but you can easily create
 it using the \verb+paste+ function in \R. Here is an example, with an
 unrealistically small value of $M=10$:
 \begin{small}
@@ -616,7 +621,7 @@ unrealistically small value of $M=10$:
 y[7,j,k], y[8,j,k], y[9,j,k], y[10,j,k]"
 \end{verbatim}
 \end{small}
-This output can be pasted directly into a \jags~model file.
+%This output can be pasted directly into a \jags~model file.
 %Maybe Martyn Plummer will throw us
 %a bone and allow for a vector as an argument. Anyhow,
 % XXXX
@@ -653,7 +658,6 @@ A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1]) # Area of state-space
 D <- N / A      # Realized density
 ED <- (M*psi)/A # Expected density
 }
-
 \end{verbatim}
 \end{small}
 \rule[0.15in]{\textwidth}{.03in}
@@ -753,8 +757,8 @@ An even faster alternative is to use the \verb+scrUN+ function in
 the Supplement of \citet{chandler_royle:2012}. The usage is as
 follows:
 \begin{verbatim}
-out1 <- scrUN(n=n, X=X, M=250, niter=250000, xlims=xlim, ylims=ylim,
-               inits=list(lam0=0.3, sigma=0.01), updateY=TRUE,
+out1 <- scrUN(n=n, X=X, M=300, niter=25000, xlims=xlim, ylims=ylim,
+               inits=list(lam0=0.3, sigma=rnorm(1, 5, 0.1)), updateY=TRUE,
                tune=c(0.004, 0.09, 0.35))
 \end{verbatim}
 where \verb+n+ is the matrix of counts, \verb+X+ is the trap
@@ -765,26 +769,94 @@ and \verb+updateY+ determines if the latent encounter histories are
 updated as part of the MCMC algorithm. In general, %there is no reason
 %to set
 we recommend using the option
-\verb+updateY=FALSE+ because we find that the Markov chains mix
-better. %since it may take longer to run and the
+\verb+updateY=FALSE+ because the Markov chains tend to mix
+better. %This is to be expected as the p
+%since it may take longer to run and the
 %mixing may be poorer, but we provide both options so that readers can
 %look under the MCMC hood and see the basis of the models and code
 %presented in the next chapter. Further details about the model
 %arguments and output are given on the function's help page.
-However, it can be important fiddle with the tuning parameters until the
+Even so, it can be important to fiddle with the tuning parameters until the
 acceptance rates are between 40--60\%. Otherwise, the Markov chains
-will exhibit high autocorrelation.
+will exhibit high autocorrelation. This is one reason to favor
+\jags~over our implementatin in \texttt{scrbook} since \jags~finds
+suitable tuning parameters automatically during the adaptive phase
+(when using Metropolis updates).
 
-We used the model with no latent encounter histories using both
+We fit the model with no latent encounter histories using both
 \jags~and \verb+scrUN+ to the simulated data, and the results
-are given in TableXXXX.
+are given in Table~\ref{unmarked.tab.sim}. The results of are
+summarizes of 10000 posterior draws, and they suggest that while the
+true parameter values are easily covered by the 95\% credible
+intervals, the intervals are rather wide. In many cases, knowing that
+there are between 21 and 113 individuals in an area will be considered
+relatively imprecise.
+This is not just a
+peculiarity of this particular data set -- in general, posterior
+precision will be low, as noted by
+\citet{chandler_royle:2012}. Furthermore,
+as indicated by
+Fig.~\ref{}, the mixing isn't so great either and thus it may take
+many (perhaps ten thousand or a million) iterations to achieve convergence.
+
+\begin{table}
+  \centering
+  \caption{Results from fitting the spatial count (``SC'') model to
+    to simulated data using \texttt{scrbook} and \jags. In both cases,
+    the latent encounter histories were not updated as part of the MCMC.}
+  \begin{tabular}{lrrrrr}
+    \hline
+    Parameter       & Mean   & SD     & 2.5\%  & 50\%   & 97.5\%  \\
+    \hline
+    \multicolumn{6}{c}{\tt scrUN()}                               \\
+    $\sigma=5$      & 4.759  & 0.746  & 3.394  & 4.743  & 6.284   \\
+    $\lambda_0=0.4$ & 0.528  & 0.140  & 0.287  & 0.522  & 0.824   \\
+    $N=50$          & 54.237 & 25.076 & 21.000 & 48.000 & 113.000 \\
+    \hline
+    \multicolumn{6}{c}{\jags}                                     \\
+    $\sigma=5$      & 4.90   & 0.93   & 3.53   & 4.78   & 7.30    \\
+    $\lambda_0=0.4$ & 0.49   & 0.13   & 0.27   & 0.48   & 0.75    \\
+    $N=50$          & 55.49  & 22.80  & 19.00  & 52.00  & 103.02  \\
+    \hline
+  \end{tabular}
+  \label{unmarked.tab.sim}
+\end{table}
+% XXXX Need to update these results, the scrUN was just 10K
+% iterations, and the JAGS model was just 2K
+
+
+We see that, even with simulated data -- data that meets all of the
+model assumptions -- the precision of the posterior distributions is
+low and mixing is poor. This should be expected given that we are
+asking so much from so little data. In essence we are trying to fit a
+point process model being twice removed from the actual point
+(activity center) locations. These difficulties may warrant the investigation of simpler
+models, but in many cases, the simplificat... Another option is to
+figure out ways of improving model precision.
+
+
+So why not just collect distance data or something? If you can, great---
+we are not arguing against the use of other methods. But in many
+cases, other models are not applicable. For instance, our model could
+be applied to camera trapping data collected on species without
+natural marks, such as pumas or coyotes. In addition, this
+model provides an important foundation for modeling data where other
+methods do not apply, and the underlying state model is so damn cool
+because it corresponds to what we think is happening in the field.
+Furthermore, the potential generalizations are numerous as we
+will see later in this chapter and in the next chapter. In sum, the
+model can be applied where no other models can, and it provides the
+foundation for important extensions, but how can we improve precision?
+
+Indeed, extensive information on home range size has
+been compiled for many species in diverse habitats %\emph{e.g.}
+\citep[\emph{e.g.},][]{degraaf_yamasaki:2001}. It is
+easy to embody this information in a prior distribution as we
+demonstrated for the parula data.
 
 
 
-
-
-
-
+\begin{comment}
 
 \section{The Northern Parula Study}
 
@@ -863,44 +935,19 @@ we can produce a density surface map, as shown in Fig.~\ref{fig:nopaDen}
 
 
 
-
-We see that, even with simulated data -- data that meets all of the
-model assumptions -- the precision of the posterior distributions is
-low and mixing is poor. This should be expected given that we are
-asking so much from so little data. In essence we are trying to fit a
-point process model being twice removed from the actual point
-locations. These difficulties may warrant the investigation of simpler
-models, but in many cases, the simplificat... Another option is to
-figure out ways of improving model precision.
+\end{comment}
 
 
-\section{Improving Precision with Prior Information}
+\section{Improving Precision}
 \label{Sect.precision}
 
-We are asking a lot of a little data. Because both the activity
-centers and the encounter histories are latent variables, there is
-inherently high uncertainty in the data, even if it is ``perfect''
-data simulated from the true model. This explains the low posterior
-precision in the parula data.
+\subsection{Prior information}
 
-So why not just collect distance data or something? If you can, great---
-we are not arguing against the use of other methods. But in many
-cases, other models are not applicable. For instance, our model could
-be applied to camera trapping data collected on species without
-natural marks, such as pumas or coyotes. In addition, this
-model provides an important foundation for modeling data where other
-methods do not apply, and the underlying state model is so damn cool
-because it corresponds to what we think is happening in the field.
-Furthermore, the potential generalizations are numerous as we
-will see later in this chapter and in the next chapter. In sum, the
-model can be applied where no other models can, and it provides the
-foundation for important extensions, but how can we improve precision?
-
-Indeed, extensive information on home range size has
-been compiled for many species in diverse habitats %\emph{e.g.}
-\citep[\emph{e.g.},][]{degraaf_yamasaki:2001}. It is
-easy to embody this information in a prior distribution as we
-demonstrated for the parula data.
+%We are asking a lot of a little data. Because both the activity
+%centers and the encounter histories are latent variables, there is
+%inherently high uncertainty in the data, even if it is ``perfect''
+%data simulated from the true model. This explains the low posterior
+%precision in the parula data.
 
 
 One benefit of a Bayesian analysis is that it can accommodate prior
@@ -930,9 +977,7 @@ low values of $N$ (Fig.~\ref{fig:prior}).
 
 
 
-
-
-\section{Improving Precision Using Ancillary Data}
+\section{Ancillary Data}
 \label{unmarked.ext}
 
 %Noting the relatively low precision of the posterior distributions,
@@ -961,7 +1006,7 @@ correlation as a good thing, the model extension we describe now
 provides a means of dealing with spatial correlation when it is
 unwanted or perhaps unavoidable.
 
-As an example, consider the norther parula data analyzed by
+As an example, consider the northern parula data analyzed by
 \citet{chandler_royle:2012}. These point count locations were spaced
 by only 50 m, and since the song of the parula can be easily heard
 from a distance of $>100$ m, the neighboring counts exhibit
@@ -974,38 +1019,134 @@ should be able to use that information in our expanded model. Doing
 so, however, requires that we consider not only the activity centers,
 but also the actual locations of individuals during each survey --
 much in the same way as is done in search-encounter models
-(Chapt.~\ref{chapt.search-encounter}). In fact, the model we are about
-to describe is essentially a hybrid SC and search-encounter
-model. First, consider another example.
+(Chapt.~\ref{chapt.search-encounter}). %In fact, the model we are about
+%to describe is essentially a hybrid SC and search-encounter
+%model. First, consider another example.
 
-The parula data were
-intentionally collected in such a way as to ensure spatial
-correlation. This was done
-so that the SC model could be evaluated using data other than junk
-simulated on our computers. In other cases, spatial correlation occurs
-because we need to establish many survey locations in a relatively
-small area, and as a result, some individuals may occur at multiple
-plots. An example of this is demonstrated in Fig.~\ref{}. These data
-are northern dusky salamanders \textit{} in a small stream
-network. Rather than sample a few plots in the stream, the entire
-stream was surveyed. Actually, several such stream networks were
-surveyed in this way, although we will retrict our attention to the
-data shown in the figure. This method of sampling makes sense as it
-results in many detections and it provides a thorough picture of the
-entire stream network.
+One possible model for such data that allows for movement-induced spatial
+correlation in distance sampling data is as follows.
+\begin{gather*}
+  {\bf s}_i \sim \text{Unif}(\mathcal{S}) \\
+  {\bf u}_{ik} \sim \text{Norm}({\bf s}_i, \tau) \\
+  y_{jkl} = \sum_{i=1}^M I({\bf u}_{ik} \in \mathcal{B}_l) \\
+  n_{jkl} \sim \text{Binomial}(y_{jk}, \bar{p}(\mathcal{B}_l)
+\end{gather*}
+where $\mathcal{B}$ is the region associated with some distance
+interval used during data collection. For example, $\mathcal{B}_1$
+could be the region within 10 m of a survey point, or the annulus
+comprising the 10-20 m interval. Essentially, the $\tau$ parameter is
+a movement parameter describing the probability that an individual
+occurs at location $\bf u$ given it's activity center. The number of
+individuals that occur in each $\mathcal{B}$ are then detected with
+probability $\bar{p}$, which is computed
 
+We have considered the case where distance data are collected in
+intervals or are binned after the fact, but the model could be easily
+extended to allow for continuous distance measurements.
+
+Another
+related extension applies to data collected in fixed area plots, such
+as fixed-radius point count studies, or area searches. In such
+studies, researchers often make multiple visits to a plot and record
+the number of individuals detected. In animal studies, a common
+problem is that individuals move on and off the plots and this, what
+is known as temporary emigration, makes it difficult to determine the
+effective sample size, just as in traditional non-spatial
+capture-recapture studies. When plots are far enough apart that
+individuals cannot move between them, extended $N$-mixture models
+allowing for temporary emigration provide an option for dealing with
+this form of non-closure \citep{chandler_etal:2011}. This approach
+requires that a robust design be used such that secondary samples are
+...
+
+\section{The Maryland Dusky Salamander Study}
+
+The independence assumption of the \citet{chandler_etal:2011} model
+will not hold in some cases. A prime example is in studies of aquatic
+species in stream networks. For example, consider the data depicted in
+Fig.~\ref{unmarked.fig.salct}. What is this spaghetti soup? These
+are streams of numbers -- counts of dusky salamanders
+(\textit{}) in 25-m stretches on a small stream in the Chesapeake and
+Ohio National Historick Park. The data were collected by E.H. Grant
+and colleagues with the objective of understanding the spatial and
+temporal dynamics of salamander populations as a function of stream
+hydrology. In addition, movement processes, including dispersal are
+studied between years.
+% \citep{grant_etal:2007}
+
+To sample the population, they conduct counts in numerous streams such
+as the one illustrated in Fig.~\ref{unmarked.fig.salct}, and in each
+25-m stretch, the conduct a ``temporary'' removal study in which they
+make 3 passes, capturing and removing salamanders as they go. The
+salamanders are place in a watery bucket for the brief 10-20 min
+duration of sampling, and then they are released at the location of
+capture. In a subset of streams and years, individuals
+are marked, but in general it is too expensive to mark the entire
+population, and we focus on data from the unmarked individuals.
+The entire process is repeated 3-4 times per season (May-Aug).
 
 \begin{figure}
   \centering
   \includegraphics[width=0.8\textwidth]{Ch18-Unmarked/figs/saln27}
-  \caption{Stream segment counts of northern dusky salamanders along a
-    stream in the Chesapeak and Ohio National Historic Park,
-    VA/MD. Each segment is a 25-m stretch in which 3 removal passes
-    are made on 3 occasions each summer (only 2 occasions are shown
+  \caption{Stream segment counts of northern dusky salamanders
+    in the Chesapeak and Ohio National Historic Park,
+    VA/MD. Each number is the count associated with a 25-m stretch in which 3 removal passes
+    were made on 3 occasions each summer (only 2 occasions are shown
     here). Notice the consistency of the spatial correlation between
     occasions and the temporal decline in the counts.}
   \label{unmarked.fig.salct}
 \end{figure}
+
+
+The resulting data are repeated removal sampling data, which may be
+thought of as belonging to the robust design variety, with
+``occasions'' (typically 1 day) being the primary period, and
+secondary samples being the removal passes within the primary
+periods. An obvious feature of these data is that the neighboring
+counts are spatially correlated. In this case, we have reason to
+believe that this correlation is the result of habitat preferences,
+with individuals actively selecting habitat in the upper reaches of
+the streams. This could be modeled as a function of a covariate
+describing the distance from the mouth of the stream. Another obvious
+feature of this data is that the pattern of spatial correlation
+remains consistent between occasions, but the overall counts decline
+markedly. What can explain this? As it turns out, the salamanders have
+relatively small home ranges, and this may explain why the pattern of
+correlation -- the overall pattern of their distribution -- appears
+similar among occasions. Futhremore, as the season progresses, the
+streams dry out, and many individuals move underground.
+
+Given the importance of movement within home ranges, which determines
+the correlation among occasions, and movement underground, which
+results in a decreasing number of individuals being available for
+sampling, it would be nice to have a model that both describes these
+processes and allows for evaluation of hypotheses regarding the
+effects of environmental variables. For example, one might ask how
+stream flow is related to the probability that an individual remains
+active. A model describing this process could be used to predict
+activity levels under future conditions. Although we do not
+investigate covariate effects in this section, we do present a general
+model allowing for movement among occasions, and for decreasing
+availability over the season.
+
+
+\begin{comment}
+  The parula data were intentionally collected in such a way as to
+  ensure spatial correlation. This was done so that the SC model could
+  be evaluated using data other than junk simulated on our
+  computers. In other cases, spatial correlation occurs because we
+  need to establish many survey locations in a relatively small area,
+  and as a result, some individuals may occur at multiple plots. An
+  example of this is demonstrated in Fig.~\ref{}. These data are
+  northern dusky salamanders \textit{} in a small stream
+  network. Rather than sample a few plots in the stream, the entire
+  stream was surveyed. Actually, several such stream networks were
+  surveyed in this way, although we will retrict our attention to the
+  data shown in the figure. This method of sampling makes sense as it
+  results in many detections and it provides a thorough picture of the
+  entire stream network.
+\end{comment}
+
 
 
 
@@ -1099,163 +1240,163 @@ Ntot[3] <- sum(z[,3]) # Abundance, occasion 3
 \end{table}
 
 
+\begin{comment}
+  \subsection{Similarity to other data augmentation schemes}
 
-\subsection{Similarity to other data augmentation schemes}
+  By including the $w$ variables in the model, we have made use of the
+  data augmentation technique introduced by \citet{royle_etal:2007}
+  and developed by \citep{royle:2009} and
+  \citep{royle_dorazio:2010}. However, including the latent encounter
+  histories in the model can also be viewed as another form of data
+  augmentation, which was in fact, first proposed as a general model
+  of spatial dependence in count data \citep{wolpert_ickstadt:1998}.
 
-By including the $w$ variables in the model, we have made use of the
-data augmentation technique introduced by \citet{royle_etal:2007} and
-developed by \citep{royle:2009} and
-\citep{royle_dorazio:2010}. However, including the latent encounter
-histories in the model can also be viewed as another form of data
-augmentation, which was in fact, first proposed as a general model of
-spatial dependence in count data
-\citep{wolpert_ickstadt:1998}.
+  The model of \citet{wolpert_ickstadt:1998} is slighly different than
+  the SC model in that they defined $\{{\bf s}_1, \ldots, {\bf s}_N\}$
+  not as a realization from a spatial point process, but rather as
+  locations of a dense array of points, typically a fine grid covering
+  the $J$ survey locations. The purpose of this grid is to introduce
+  random spatial noise into the system, which is then smoothed using
+  what, in our case, is the encounter model. In their case, the
+  encounter model is simply a smoothing kernel that determines the
+  spatial covariance structure -- if $\sigma$ is high relative to the
+  ``trap'' spacing, the counts will be highly correlated, and vice
+  versa. Similar ideas have been used to model spatial dependence in
+  temperature data \citep{higdon:1998}. In the SC model, $\sigma$ and
+  the encounter model also determine the spatial correlation, but it
+  has an explicit connection to correlation as information about the
+  number and location of the activity centers.
 
-The model of
-\citet{wolpert_ickstadt:1998} is slighly different than the SC model
-in that they defined $\{{\bf s}_1, \ldots, {\bf s}_N\}$ not as a
-realization from a spatial point process, but rather as locations of a
-dense array of points, typically a fine grid covering the $J$ survey
-locations. The purpose of this grid is to introduce random spatial noise into the system,
-which is then smoothed using what, in our case, is the encounter
-model. In their case, the encounter model is simply a smoothing
-kernel that determines the spatial covariance structure -- if $\sigma$
-is high relative to the ``trap'' spacing, the counts will be highly
-correlated, and vice versa. Similar ideas have been used to model
-spatial dependence in temperature data \citep{higdon:1998}. In the SC
-model, $\sigma$ and the encounter model also determine the spatial
-correlation, but it has an explicit connection to
-correlation as information about the number and location of the
-activity centers.
-
-In addition to the fact that they fixed
-the locations of the $\bf s$'s, their model also differs from the SC
-model in that they also fix $N$, it being chosen to create a suitably
-fine grid for generating the white noise.
+  In addition to the fact that they fixed the locations of the $\bf
+  s$'s, their model also differs from the SC model in that they also
+  fix $N$, it being chosen to create a suitably fine grid for
+  generating the white noise.
 
 
 
 
-\section{Design issues}
+  \section{Design issues}
 
-\subsection{How Much Correlation Is Enough?}
+  \subsection{How Much Correlation Is Enough?}
 
-$\sigma$ shouldn't be too small or too large relative to trap spacing.
+  $\sigma$ shouldn't be too small or too large relative to trap
+  spacing.
 
-Can we test for correlation using K-functions or something?
+  Can we test for correlation using K-functions or something?
 
-\subsection{Linear Designs}
+  \subsection{Linear Designs}
 
-Survey points are not always located on a grid with even spacing---in
-fact, it is rare to see a perfect 10$\times$10 grid of points in any
-study because of habitat patchiness or rugged terrain or what have
-you. Instead, points are often distributed haphazardly or using some form of
-probability sampling. Such designs can still produce data amenable to
-the models we consider in this chapter if individuals can be
-encountered at multiple points, and none of the considerations
-discussed above need to be modified. But what about linear designs?
+  Survey points are not always located on a grid with even
+  spacing---in fact, it is rare to see a perfect 10$\times$10 grid of
+  points in any study because of habitat patchiness or rugged terrain
+  or what have you. Instead, points are often distributed haphazardly
+  or using some form of probability sampling. Such designs can still
+  produce data amenable to the models we consider in this chapter if
+  individuals can be encountered at multiple points, and none of the
+  considerations discussed above need to be modified. But what about
+  linear designs?
 
-In bird studies, point counts are often placed on linear transects. For
-example, the Breeding Bird Survey involves surveying 50 points spaced
-by 0.5 miles. The mountain-top bird survey in the White Mountain
-National Forest involves surveying 42 transects, each with 20? points
-spaced by 250-m \citep{king_etal:2008}. For many species, the 0.5 mile
-spacing of the BBS will ensure that individuals are not detected at
-multiple points. However, in the moutain-top survey, it's easy to
-imagine that a Bicknell's Thrush (\emph{Catharus bicknelli}) could
-easily be heard from adjacent points. So can we apply our model to
-obtain density estimates with such simple counts?
-
-
-
-%\subsection{Quadrat counts}
-
+  In bird studies, point counts are often placed on linear
+  transects. For example, the Breeding Bird Survey involves surveying
+  50 points spaced by 0.5 miles. The mountain-top bird survey in the
+  White Mountain National Forest involves surveying 42 transects, each
+  with 20? points spaced by 250-m \citep{king_etal:2008}. For many
+  species, the 0.5 mile spacing of the BBS will ensure that
+  individuals are not detected at multiple points. However, in the
+  moutain-top survey, it's easy to imagine that a Bicknell's Thrush
+  (\emph{Catharus bicknelli}) could easily be heard from adjacent
+  points. So can we apply our model to obtain density estimates with
+  such simple counts?
 
 
 
-
-\section{Alternative Observation Models}
-\label{Sect.alt-obsmods}
-
-\citet{chandler_royle:2012} focused exclusively on the Poisson
-observation model, but noted that alternative models such as the
-Bernoulli model or the multinomial model (Chapt. \ref{chapt.poisson-mn}) should
-be easily accomodated. Unfortunately, our experimentation with these models
-indicates that the base-line encounter probability parameter $p_0$ is
-not identifiable. At this point in time, it is not clear why this
-would be so. However, this situation is similar to that of traditional
-mark-resight models where the unmarked individuals provide no
-information about the parameters of the capture process. Under these
-models, capture or re-sight probability can only be estimated by
-marking a subset of the population. In the next chapter we demonstrate
-how data from marked and unmarked individuals can be combined to
-improve precision and allow for the estimation of parameters under the
-alternative observation models.
+  % \subsection{Quadrat counts}
 
 
 
-\subsection{Spatial point process models}
 
 
-Our model has some direct linkages to existing point process
-models. We note that the observation intensity function (i.e.,
-corresponding to the observation
-locations) is a compound Gaussian kernel similar to
-that of the Thomas process
-\citep[pp. 61-62]{thomas:1949, moller_waagepetersen:2004}.
-Also, the Poisson-Gamma Convolution models
-\citep{wolpert_ickstadt:1998} are structurally similar (see also \cite{higdon:1998}
-and \cite{best_etal:2000}).
- In particular, our model is such a model but
-with a {\it constant} basal encounter rate $\lambda_{0}$
-and {\it unknown} number and location of ``support points'', which in
-our case are the animal activity centers, $\bf{s_i}$.
-We can thus regard our model as a model for
-{\it estimating} the location and local density of support points in
-such models, which we believe could be useful in the application of
-convolution models.  \citet{best_etal:2000} devise an MCMC algorithm for the
-Poisson-Gamma model based on data augmentation, which is
-similar to the component of our algorithm for
-updating the $z$ variables in
-the conditional-on-$z$ formulation of the model.  We emphasize that
-our model is distinct from these Poisson-Gamma models
-in that the number {\it and} location of such
-support points are estimated.
+  \section{Alternative Observation Models}
+  \label{Sect.alt-obsmods}
+
+  \citet{chandler_royle:2012} focused exclusively on the Poisson
+  observation model, but noted that alternative models such as the
+  Bernoulli model or the multinomial model
+  (Chapt. \ref{chapt.poisson-mn}) should be easily
+  accomodated. Unfortunately, our experimentation with these models
+  indicates that the base-line encounter probability parameter $p_0$
+  is not identifiable. At this point in time, it is not clear why this
+  would be so. However, this situation is similar to that of
+  traditional mark-resight models where the unmarked individuals
+  provide no information about the parameters of the capture
+  process. Under these models, capture or re-sight probability can
+  only be estimated by marking a subset of the population. In the next
+  chapter we demonstrate how data from marked and unmarked individuals
+  can be combined to improve precision and allow for the estimation of
+  parameters under the alternative observation models.
 
 
-If individuals were perfectly observable then the resulting point
-process of locations is clearly a standard Poisson or Binomial (fixed
-$N$) cluster process or Neyman-Scott process.
-If detection is uniform over space but
-imperfect, then the basic process is unaffected by this random thinning.
-Our model can therefore be viewed formally as a Poisson (or Binomial)
-cluster process model but one in which the thinning is
-non-uniform, governed by the encounter model which dictates that
-thinning rate increases with distance from the observation points. In
-addition, our inference objective is, essentially, to estimate the
-number of parents in the underlying Poisson cluster
-process,
-where the observations are biased by an incomplete sampling apparatus
-(points in space).
+
+  \subsection{Spatial point process models}
 
 
-As a model of a thinned point process, our model has much in common
-with classical distance sampling models \citep{buckland_etal:2001}.
-The main distinction is that our data structure does {\it not} include
-observed distances, although the underlying observation model is
-fundamentally the same as in distance sampling if there is only a
-single replicate sample and $\bf{s}_i$ is defined as an individual's
-location at an instant in time. For replicate samples, our model preserves
-(latent) individuality across samples and traps which is not a feature
-of distance sampling. We note that error in measurement of distance is
-not a relevant consideration in our model, and we explicitly do not
-require the standard distance sampling assumption that the probability
-of detection is 1 if an individual occurs at the survey point. More
-importantly, distance sampling models cannot be applied to data from
-many of the sampling designs for which our model is relevant. For
-example, many rare and endangered species can only be
-effectively surveyed using methods such as hair snares and camera
-traps that do not produce distance data \citep{oconnell_etal:2010}.
+  Our model has some direct linkages to existing point process
+  models. We note that the observation intensity function (i.e.,
+  corresponding to the observation locations) is a compound Gaussian
+  kernel similar to that of the Thomas process
+  \citep[pp. 61-62]{thomas:1949, moller_waagepetersen:2004}.  Also,
+  the Poisson-Gamma Convolution models \citep{wolpert_ickstadt:1998}
+  are structurally similar (see also \cite{higdon:1998} and
+  \cite{best_etal:2000}).  In particular, our model is such a model
+  but with a {\it constant} basal encounter rate $\lambda_{0}$ and
+  {\it unknown} number and location of ``support points'', which in
+  our case are the animal activity centers, $\bf{s_i}$.  We can thus
+  regard our model as a model for {\it estimating} the location and
+  local density of support points in such models, which we believe
+  could be useful in the application of convolution models.
+  \citet{best_etal:2000} devise an MCMC algorithm for the
+  Poisson-Gamma model based on data augmentation, which is similar to
+  the component of our algorithm for updating the $z$ variables in the
+  conditional-on-$z$ formulation of the model.  We emphasize that our
+  model is distinct from these Poisson-Gamma models in that the number
+  {\it and} location of such support points are estimated.
+
+
+  If individuals were perfectly observable then the resulting point
+  process of locations is clearly a standard Poisson or Binomial
+  (fixed $N$) cluster process or Neyman-Scott process.  If detection
+  is uniform over space but imperfect, then the basic process is
+  unaffected by this random thinning.  Our model can therefore be
+  viewed formally as a Poisson (or Binomial) cluster process model but
+  one in which the thinning is non-uniform, governed by the encounter
+  model which dictates that thinning rate increases with distance from
+  the observation points. In addition, our inference objective is,
+  essentially, to estimate the number of parents in the underlying
+  Poisson cluster process, where the observations are biased by an
+  incomplete sampling apparatus (points in space).
+
+
+  As a model of a thinned point process, our model has much in common
+  with classical distance sampling models \citep{buckland_etal:2001}.
+  The main distinction is that our data structure does {\it not}
+  include observed distances, although the underlying observation
+  model is fundamentally the same as in distance sampling if there is
+  only a single replicate sample and $\bf{s}_i$ is defined as an
+  individual's location at an instant in time. For replicate samples,
+  our model preserves (latent) individuality across samples and traps
+  which is not a feature of distance sampling. We note that error in
+  measurement of distance is not a relevant consideration in our
+  model, and we explicitly do not require the standard distance
+  sampling assumption that the probability of detection is 1 if an
+  individual occurs at the survey point. More importantly, distance
+  sampling models cannot be applied to data from many of the sampling
+  designs for which our model is relevant. For example, many rare and
+  endangered species can only be effectively surveyed using methods
+  such as hair snares and camera traps that do not produce distance
+  data \citep{oconnell_etal:2010}.
+
+\end{comment}
+
 
 
 \section{Summary and Outlook}
