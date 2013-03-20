@@ -985,48 +985,83 @@ this one observation was not included in the analysis.
   \label{fig:nopaDat}
 \end{figure}
 
-We used both versions of the code to fit the
-model to the parula data. In our analyses, we defined the point process
-state-space by buffering the grid of point count locations by 250 m,
-and we set $M=200$. For inference, we generated three Markov chains,
-each consisting of 300000 iterations after discarding the initial 10000
-draws. %Convergence was satisfactory, as indicated by an $\hat{R}$
+We fit the model using \jags~and the code from
+Panel~\ref{unmarked.panel.jags2}, which does not include the latent
+encounter histories. For comparative purposes, we used proper priors
+rather than the improper priors used \citet{chandler_royle:2012}, but
+all other aspects of the analysis were the same, including $M=300$ and
+%used both versions of the code to fit the model to the parula data.
+%In our analysis, we defined the point process
+a state-space created by buffering the grid of point count
+locations by 250 m.
+%and we set $M=200$.
+%For inference, we generated three Markov chains,
+%each consisting of 300000 iterations after discarding the initial 10000
+%draws. %Convergence was satisfactory, as indicated by an $\hat{R}$
 %statistic of $<$ 1.02 \citep{gelman_rubin:1992}.
+To reduce computation time, we used the \texttt{parallel} package and
+distrubted 3 chains to 3 seperate cores. The entire example can be
+reproduced using the code on the help page for \verb+nopa+ in our
+\R~package \texttt{scrbook}. The following illustrates the essential
+elements:
 \begin{small}
 \begin{verbatim}
 library(scrbook)
 library(rjags)
-data(nopa)
-dat1 <- list(n = nopa$n, X = nopa$X, M=200, J=nrow(nopa$n), K=ncol(nopa$n),
+dat2 <- list(n = nopa$n, X = nopa$X, M=300, J=nrow(nopa$n), K=ncol(nopa$n),
              xlim=c(-600, 600), ylim=c(-400, 400))
-init1 <- function() {
-    n <- dat1$n
-    J <- nrow(n); K <- ncol(n); M <- dat1$M
-    y <- array(0L, c(M, J, K))
-    for(j in 1:J) {
-        for(k in 1:K) {
-            y[sample(1:M, n[j,k]),j,k] <- 1
-        }
-    }
-    list(y = y, sigma=rnorm(1, 100), lam0=0.5, z=rep(1, M))
+init2 <- function() {
+    list(sigma=rnorm(1, 100), lam0=runif(1), z=rep(1, dat2$M))
 }
-pars1 <- c("sigma", "lam0", "N", "ED")
-jm1 <- jags.model("nopa1.jag", dat1, init1, n.chains=3, n.adapt=500)
-jc1 <- coda.samples(jm1, pars1, n.iter=31000)
+cl2 <- makeCluster(3) # Open 3 parallel R instances
+clusterExport(cl2, c("dat2", "init2", "pars1")) # send objects to 3 cores
+system.time({
+out2 <- clusterEvalQ(cl2, { # executes the folowing command on each core
+    library(rjags)
+    jm <- jags.model("nopa2.jag", dat2, init2, n.chains=1, n.adapt=500)
+    jc <- coda.samples(jm, pars1, n.iter=2500)
+    return(as.mcmc(jc))
+})
+}) # 6242
+mc2 <- mcmc.list(out2) # put the 3 chains together
+plot(mc2)
+summary(mc2)
 \end{verbatim}
 \end{small}
 
 
-
-
+\begin{comment}
 Because these models can take so long to run, we show \R~commands for
 fitting the model using a single processor, and code for parallel
 processing, which allows us to run 1 chain on each core. Obviously
 your computer must have $>1$ core to do this, and you must have a
 relatively recent version of \R~so that you can use the {\tt parallel}
 package. First, the simple single-core code:
+\end{comment}
 
 
+\begin{table}%[t]
+  \caption{Posterior summary statistics for spatial count
+    model applied to the northern parula data. Two sets of priors were
+    considered. }
+%  \small
+  \begin{tabular}{l l rrrrrr}
+    \hline
+    Par          & Prior          & Mean  & SD    & Mode  & 2.5\% & 50\% & 97.5\% \\
+    \hline
+    $\sigma$     & $U(0, \infty)$ & 2.15  & 1.22  & 1.23  & 0.90   & 1.67  & 5.17   \\
+    $\lambda_0$  & $U(0, \infty)$ & 0.28  & 0.15  & 0.21  & 0.08   & 0.26  & 0.67   \\
+    $N$          & $U(0, M)$      & 40.95 & 38.07 & 4.00  & 3.00   & 31.00 & 143.00 \\
+    \hline
+%    $\sigma$    & $G(13, 10)$    & 1.30  & 0.26  & 1.23  & 0.90   & 1.27  & 1.91   \\
+%    $\lambda_0$ & $U(0, \infty)$ & 0.30  & 0.13  & 0.24  & 0.10   & 0.28  & 0.60   \\
+%    $N$         & $U(0, M)$      & 59.32 & 36.49 & 36.00 & 18.00  & 50.00 & 157.00 \\
+%    $D$         & --             & 0.62  & 0.38  & 0.38  & 0.19   & 0.52  & 1.64   \\
+    \hline
+  \end{tabular}
+  \label{t:nopaPosts}
+\vspace{0.5cm}
+\end{table}
 
 
 XXXX THE RESULTS OF THE TWO ANALYSES LOOK VERY SIMILAR AS EXPECTED XXXX
@@ -1037,6 +1072,10 @@ credible interval (Table \ref{t:nopaPosts}). Nonetheless, the interval
 for density, $D$, includes estimates reported from more intensive field
 studies \citep{moldenhaer_regelski:1996}. As with any SCR model,
 we can produce a density surface map, as shown in Fig.~\ref{fig:nopaDen}
+
+
+
+
 
 
 
