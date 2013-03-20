@@ -577,7 +577,7 @@ we do this by using the \mbox{\tt unique}() function
 on the row names
 for each year of our 3-D array and use \mbox{\tt pmatch}()
 to associate the data to the correct column).  The resulting array is individual by 
-secondary occasion by primary occasion, $M x K x T$.
+secondary occasion by primary occasion, $M$ x $K$ x $T$.
 The ${\bf R}$ commands
 to organize the data in a way suitable for fitting a Jolly-Seber type
 model 
@@ -607,7 +607,7 @@ are used:
 > zst <- c(rep(1,M/2),rep(0,M/2))
 > zst <- cbind(zst,zst,zst,zst,zst)
 
-> inits <- function(){list(z=zst,sigma=runif(1,25,100),gamma=runif(5,0,1))}
+> inits <-function(){list(z=zst,sigma=runif(1,25,100),gamma=runif(5,0,1))}
 > parameters <- c("psi","N","phi", "p.mean", "gamma")
 > data <- list (K=10,Y=Ybin,M=M)
 
@@ -703,9 +703,9 @@ The number of recruits into the
 population is calculated based on the alive state of the previous time steps ($1, 2 \dots, t-1$) and the current time
 step ($t$).
 For example, to estimate the number of recruits from time period 1 to 2, we count those
-individuals not in the population at time 1 ($z_{i,1} = 0$) but alive at time 2 ($z_{i,2} = 1$).
+individuals not in the population at time 1 ($z(i,1) = 0$) but alive at time 2 ($z(i,2) = 1$).
 We can determine if individual $i$ has entered the population at time $t=2$ by using the formula:
- $R_{i,2}=(1-z_{i,1})z_{i,2}$ and then sum
+ $R_{i,2}=(1-z(i,1))z(i,2)$ and then sum
 $R_{i,2}$ over $M$ to get the total number of recruits.
 We can do this for all the primary periods in our study,
 as shown
@@ -759,7 +759,7 @@ for(i in 1:M){
 }
   A[i,1]<-(1-z[i,1])
 for(t in 2:T){                   # For loop for years 2 to T
-      a1[i,t] <- sum(z[i, 1:t])  # Sum across the alive states from 1 to t
+      a1[i,t] <- sum(z[i, 1:t])  # Sum over alive states from 1 to t
        A[i,t] <- 1-step(a1[i,t] - 1)   
    # A indicates if individual is available to be recruited at time t
        mu[i,t]<- (phi*z[i,t-1]) + (gamma[t]*A[i,t-1])
@@ -977,17 +977,17 @@ function of the state at the previous time step $t-1$.   Because
 we condition on the first capture, the initial
 state is set to one:
 \[
- z_{i f_i} = 1
+ z(i, f_i) = 1
 \]
 where $f_i$ indicates the primary occasion in which individual $i$ is
 captured and the model for the transition of individual states from $t$ to $t+1$ for
 all $t > f_i$ is
 \[
- z_{i t} \sim \mbox{Bernoulli}( \phi z_{i,t-1}).
+ z(i, t) \sim \mbox{Bernoulli}( \phi z(i, t-1)).
 \]
-Because we start with $z_{i f_i} = 1$, the individual survives with
+Because we start with $z(i, f_i) = 1$, the individual survives with
 probability $\phi$ to time $f_i + 1$ and so forth.  Once an individual
-leaves the population (i.e., $z_{it} = 0$), there is no mechanism for
+leaves the population (i.e., $z(i, t) = 0$), there is no mechanism for
 the individual to return.  This means that under this specification
 individuals cannot temporarily emigrate.  In the CJS model we are not
 estimating $N_t$, so we do not need to make use of data augmentation
@@ -1147,8 +1147,8 @@ In the simplest version of the multi-state model we have just two states.  Thus,
 can be marked and recaptured in one of two states (we'll call them A and B here).
 We will assume that the two ``states'' are different
 geographic sites.
-In our single-state model above, an individual $i$ was either alive ($z_{it}=1$) at time $t$
-or dead ($z_{it}=0$).  Now, we must consider that the individual could be alive in a given state or
+In the single-state model above, an individual $i$ was either alive ($z(i,t)=1$) at time $t$
+or dead ($z(i,t)=0$).  Now, we must consider that the individual could be alive in a given state or
 dead and that individuals can transition between states.  An easy way to think about this is to look at
 the state transition matrix in Table \ref{open.tab.CJSmulti-matrix}.
 Here, $\phi^A$ 
@@ -1241,8 +1241,8 @@ To describe this model for \jags, we use a slightly different
 formulation which combines $u_{it}$ and $y_{it}$ as
 defined above into one observation matrix such that $y_{it} = 1, 2,$
 or $3$ where 3 indicates ``not observed''.  Additionally, we use
-$z_{it}$ to indicate the true state of individual $i$ such that
-$z_{it} = 1, 2,$ or $3$ where 1 indicates alive and in state 1, 2
+$z(i,t)$ to indicate the true state of individual $i$ such that
+$z(i,t) = 1, 2,$ or $3$ where 1 indicates alive and in state 1, 2
 indicates alive and in state 2, and 3 indicates ``not alive''.  Using
 this delineation, we just need to set up the transition matrix based
 on Table \ref{open.tab.CJSmulti-matrix} and define each item within
@@ -1421,16 +1421,16 @@ state at first capture to one:
 and for the transition of an individual's alive state from $t$ to $t+1$, for
 all $t > f_i$, we have
 \[
-z_{it} \sim \mbox{Bernoulli}( \phi z_{i,t-1}).
+z(i,t) \sim \mbox{Bernoulli}( \phi z(i,t-1)).
 \]
 An individual survives with probability
 $\phi$ from one time step to the next.  It is easy to see that we can let
 survival be time specific by allowing $\phi$ to vary with each time step:
 \[
- z_{it} \sim \mbox{Bernoulli}( \phi_t z_{i,t-1}).
+ z(i,t) \sim \mbox{Bernoulli}( \phi_t z(i,t-1)).
 \]
 In either case, once an individual leaves the
-population (i.e., $z_{it} = 0$), there is no recruitment so individuals cannot
+population (i.e., $z(i,t)=0$), there is no recruitment so individuals cannot
 return.  Again, we are not estimating $N_t$ in this model, hence we do not need
 any data augmentation.  This conveniently makes the model run
 faster too!
