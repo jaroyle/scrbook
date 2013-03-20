@@ -111,15 +111,15 @@ ls()
 # No y updates
 set.seed(4569)
 system.time({
-fm2 <- scrUN(n=n, X=X, M=300, niter=250000, xlims=xlim, ylims=ylim,
+fm2 <- scrUN(n=n, X=X, M=300, niter=25000, xlims=xlim, ylims=ylim,
              inits=list(lam0=0.4, sigma=5),
              updateY=FALSE,
-#             priors=list(sigma=list("dgamma",
-#                                    list(shape=0.001, rate=0.001)),
-#                         lam0=list("dgamma",
-#                                   list(shape=0.001, rate=0.001)),
-#                         psi=list("dbeta",
-#                                  list(shape1=1, shape2=1))),
+             priors=list(sigma=list("dgamma",
+                                    list(shape=0.001, rate=0.001)),
+                         lam0=list("dgamma",
+                                   list(shape=0.001, rate=0.001)),
+                         psi=list("dbeta",
+                                  list(shape1=0.001, shape2=1))),
              tune=c(0.3, 0.6, 5))
 }) # 40463 it/hr
 
@@ -144,6 +144,16 @@ save(mc2, file="scrUNmc2.gzip")
 ls()
 # load("scrUNmc2.gzip")
 ls()
+
+
+
+
+
+ss2 <- summary(mc2)
+out2 <- cbind(ss2$stat[,1:2], ss2$quant[,c(1,3,5)])
+
+write.table(format(out2, digits=2), quote=FALSE, sep=" & ", eol="\\\\\n")
+
 
 
 
@@ -284,7 +294,7 @@ pars2 <- c("lam0", "sigma", "N", "mu")
 system.time({
 jm2 <- jags.model("SCmod2.jag", data=dat2, inits=init2, n.chain=1,
                  n.adapt=1000)
-jc2.1 <- coda.samples(jm2, pars2, n.iter=20000)
+jc2.1 <- coda.samples(jm2, pars2, n.iter=10000)
 }) # 14000 it/hr
 
 plot(jc2.1)
