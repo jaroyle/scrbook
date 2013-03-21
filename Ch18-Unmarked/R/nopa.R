@@ -262,7 +262,7 @@ system.time({
 out3 <- clusterEvalQ(cl3, {
     library(rjags)
     jm <- jags.model("nopa2i.jag", dat2, init2, n.chains=1, n.adapt=1000)
-    jc <- coda.samples(jm, pars1, n.iter=150000)
+    jc <- coda.samples(jm, pars2, n.iter=150000)
     return(as.mcmc(jc))
 })
 }) # 3570 it/hr
