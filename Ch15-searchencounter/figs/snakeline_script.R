@@ -17,7 +17,7 @@ p7<-cbind(basex+2,basey)
 pp<-rbind(p1,p2,p3,p4,p5,p6,p7,base)
 
 png("snakeline.png",width=7,height=7, units="in", res=400)
-plot(pp,xlab="easting",ylab="northing",pch=" ")
+plot(pp,xlab="Easting",ylab="Northing",pch=" ",cex.axis=1.5,cex=2,cex.lab=1.5)
 polygon(p1)
 polygon(p2)
 polygon(p3)

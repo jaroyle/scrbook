@@ -26,7 +26,7 @@ save("fisher",file="fisher.Rda")
 load("fisher.Rda")
 ###source("fisher.R")
 
-ni<- 6000
+ni<- 11000
 nb<-1000
 nthin<-1
 nc<-3
@@ -37,7 +37,7 @@ Ygen<-fisher$Ygen
 mask<-fisher$mask
 grid<-fisher$grid
 
-nz<- 500
+nz<- 750
 delta<-0  # grid is already buffered
 Xl<-min(grid[,1] - delta)
 Xu<-max(grid[,1] + delta)
