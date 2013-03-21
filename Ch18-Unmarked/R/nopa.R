@@ -207,7 +207,7 @@ system.time({
 out2 <- clusterEvalQ(cl2, {
     library(rjags)
     jm <- jags.model("nopa2.jag", dat2, init2, n.chains=1, n.adapt=1000)
-    jc <- coda.samples(jm, pars1, n.iter=50000)
+    jc <- coda.samples(jm, pars2, n.iter=50000)
     return(as.mcmc(jc))
 })
 })
@@ -323,10 +323,17 @@ out3 <- clusterEvalQ(cl2, {
 })
 
 
+mc2.3 <- mcmc.list(out3)
+
+plot(mc2.3)
+summary(mc2.3)
 
 
+Ntab <- table(as.matrix(mc2.3)[,"N"])
+sort(Ntab)
+names(Ntab)[which.max(Ntab)]
 
-
+save(mc2.3, file="mc2.3.gzip")
 
 
 round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 0.001, 0.001), 3)
