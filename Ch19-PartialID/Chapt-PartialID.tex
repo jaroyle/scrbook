@@ -490,7 +490,9 @@ Under this formulation, in order to do MCMC,
 $y_{ijk}$ in our model, which  is more efficient in terms of
 computing. However, we can also formulate the model as conditional on
 the latent $y_{ijk}$. This is useful because if we have $m$
-individually known animals in our study population, than those $m$
+%individually known
+marked
+animals in our study population, then those $m$
 $y_{ijk}$ are no longer latent, but fully observed and can easily be
 included in the analysis to provide information on detection parameters.
 
@@ -504,21 +506,33 @@ and
 \[
 \lambda _{ij} = \lambda_0  \mbox{exp}(-d_{ij}^2/(2 \sigma^2))
 \]
-
-
+in the case of a Poisson encounter model.
 Unobserved $y_{ijk}$ are treated as missing data and have to be
 updated as part of the MCMC procedure. We can do that by using their
 full conditional distribution, which is multinomial with sample size
-$n_{jk}$. Let \textbf{u} be an index vector of the $M-m$ hypothetical
-unmarked individuals, $u=m+1, m+2, \ldots, M$, and let $\mathbf{y_{ujk}}$ be the vector of observations of {\emph all} individuals in $\mathbf{u}$ at $j$ and $k$. Then
+$n_{jk}$.
+% XXXX RC: I think the "index vector" notation is more of an R thing,
+% than something you see in the stats literature. If you order the
+% indviduals such that the m guys come first, then the notation can be
+% simplified a bit. Plus, we ususally reserve "u" for the location of
+% a guy... at least in the search-encounter context
+%Let \textbf{u} be an index vector of the $M-m$ hypothetical
+%unmarked individuals, $u=m+1, m+2, \ldots, M$, and let $\mathbf{y_{ujk}}$ be the vector of observations of %{\emph all} individuals in $\mathbf{u}$ at $j$ and $k$. Then
+Specificall, let $\{y_{1jk}, \ldots, y_{mjk}\}$ be the encounter history data for
+the $m$ marked individuals, then the full-conditional distribution is
 \[
-\mathbf{y_{ujk}} \sim \mbox{Multinomial} (n_{jk}, \mathbf{\lambda_{uj}})
+%\mathbf{y_{ujk}} \sim \mbox{Multinomial} (n_{jk}, \mathbf{\lambda_{uj}})
+\{y_{1jk}, \ldots, y_{mjk}\}|\cdot \sim \mbox{Multinomial} (n_{jk}, \{\lambda_{1jk}, \ldots, \lambda_{mjk}\}).
 \]
 
-While in the non-spatial mark-resight analysis known individuals
-provide direct information about individual detection probability (or
-rate), in the spatial setting they also inform
-$\sigma$. Including known individuals into the analysis helps estimate
+%While
+Whereas unmarked individuals %in the non-spatial mark-resight analysis known individuals
+provide no direct information about individual detection probability (or
+rate) in non-spatial mark-resign models, in the spatial setting they
+%also
+inform $\sigma$, as described in
+Chapt.~\ref{chapt.scr-unmarked}. Including known individuals into the
+analysis helps estimate
 model parameters more accurately and precisely. We will address the
 relationship between the number of marked individuals and accuracy of
 the estimated parameters in Sec. \ref{partialID.sec.info}.
@@ -530,7 +544,14 @@ trivial, since the program does not accept partially observed
 multivariate nodes (in this case the partially observed individual
 encounter histories which we model as coming from a multinomial
 distribution). We can, however, work around that by separating the marked from the unmarked data. The {\bf JAGS} code for the model with a known number of marked individuals is shown in Panel \ref{partialID.panel.knownm}. You see that data augmentation is only applied to the unmarked part of the population, and $N$ is the sum of the estimated number of unmarked individuals ({\tt sum(z[])}) and the number of marked individuals, which is known. Also, to reduce run time, we summed observations of marked individuals across occasions and account for that by multiplying $\lambda_{ij}$ with $K$. Although the two data sets are separated, both parts of the population, marked and unmarked, have the same prior uniform distribution of activity centers.
-A last noteworthy detail in this code is the {\tt dsum()} function. This function is specific to {\bf JAGS} (i.e., you cannot run this model in {\bf BUGS}) and allows you to model data -- here the counts of unmarked individuals, $n_{jk}$ -- as the sum of a number of latent variables -- here the latent erncounter histories of unmarked individuals. While it can be a pain writing out all the arguments of {\tt dsum()}, it is this function that allows us to implement SMR models in {\bf JAGS}.
+A last noteworthy detail in this code is the {\tt dsum()}
+distribution. %function.
+This distribution %function
+is specific to {\bf JAGS} (i.e., you cannot run this model in {\bf
+  BUGS}), and allows you to model data -- here the counts of unmarked
+individuals, $n_{jk}$ -- as the sum of a number of latent variables,
+which in this case are
+the latent erncounter histories of unmarked individuals. While it can be a pain writing out all the arguments of {\tt dsum()}, it is this function that allows us to implement SMR models in {\bf JAGS}.
 
 \begin{panel}[htp]
 \centering
@@ -585,7 +606,11 @@ N <- sum(z[])+m
 %\end{minipage}
 \rule[-0.15in]{\textwidth}{.03in}
 \caption{
-{\bf JAGS} code for SMR model with known number of marked individuals. In this example, $M$, the size of the augmented unmarked data set, is 80. Note that the arguments yu[4,j,k] to yu[78,j,k] of the {\tt dsum()} function are omitted from the code for space reasons.
+{\bf JAGS} code for SMR model with known number of marked
+individuals. In this example, $M$, the size of the augmented unmarked
+data set, is 80. Note that the arguments yu[4,j,k] to yu[78,j,k] of
+the {\tt dsum()} function are omitted from the code to conserve
+space. %for space reasons.
 }
 \label{partialID.panel.knownm}
 \end{panel}
@@ -648,8 +673,12 @@ out2<-scrPID(n=n, X=X, y=dat$Yknown, M=M+m, obsmod = "pois", niters=5800,
 		xlims=xlims, ylims=ylims,inits=inits2(),delta=c(0.1,0.1,0.5))
 \end{verbatim}
 }
-You can look at the two sets of output invoking {\tt summary(out)} for the {\bf JAGS} analysis and {\tt summary(window(mcmc(out2),start=801))} for the custom MCMC algorithm, excluding the first 800 iterations (analogous to the adaptive phase in {\bf JAGS}). We summarized the results in Table \ref{partialID.tab.knownm}. We see that there is some positive bias in estimates of $N$, but credible intervals overlap the true value (80). As expected, estimates from both implementations are very similar; slight differences are probably the result of the relatively low number of iterations.
-You will find that sometimes, {\bf JAGS} produces an error message, upon trying to compile the model, saying that some of the observed $y$ are inconsistent with parent nodes at initialization. We have mentioned before that  {\bf JAGS} is very sensitive to initial values and we believe this is what is happening here. If this error occurs, just repeat the {\tt jags.model} command, usually, model compilation is successful on a second attempt (assuming, of course, that you followed the code above correctly). We further find that the custom MCMC alorithm tends to be faster than {\bf JAGS}, which is why the examples and simulation studies shown in the following sections were run solely in {\bf R}.
+You can look at the two sets of output invoking {\tt summary(out)} for the {\bf JAGS} analysis and {\tt summary(window(mcmc(out2),start=801))} for the custom MCMC algorithm, excluding the first 800 iterations (analogous to the adaptive phase in {\bf JAGS}). We summarized the results in Table \ref{partialID.tab.knownm}.
+%We see that there is some positive bias in estimates of $N$,
+The posterior mean is slightly higher than the data-generating value of $N=80$, but it falls comfortably within the credible intervals. % overlap the true value (80).
+As expected, estimates from both implementations are very similar; slight differences are probably the result of the relatively low number of iterations.
+You will find that sometimes, {\bf JAGS} produces an error message, upon trying to compile the model, saying that some of the observed $y$ are inconsistent with parent nodes at initialization. We have mentioned before that  {\bf JAGS} cannot always auto-generate acceptable %is very sensitive to
+initial values, and we believe this is what is happening here. If this error occurs, just repeat the {\tt jags.model} command, usually, model compilation is successful on a second attempt (assuming, of course, that you followed the code above correctly). We further find that the custom MCMC alorithm tends to be faster than {\bf JAGS}, which is why the examples and simulation studies shown in the following sections were run solely in {\bf R}.
 
 \begin{table}
 \label{partialID.tab.knownm}
@@ -657,21 +686,22 @@ You will find that sometimes, {\bf JAGS} produces an error message, upon trying 
   \caption{Posterior summaries of the spatial mark-resight model with known number of marks, analyzed in JAGS and using {\tt scrPID}.}
   \begin{tabular}{lcccccc}
              \hline
-  Implementation & Parameter &   Mean &   SD &  2.5\% & 50\% & 97.5\% \\
+  Implementation & Parameter   & Mean  & SD   & 2.5\% & 50\% & 97.5\% \\
            \hline
-{\bf JAGS} & $N$      & 88.72 & 6.75 & 77 & 88 & 103 \\
-			& $\lambda_0$  &  0.53 & 0.08 & 0.39 & 0.53 & 70 \\
-			& $\sigma$ &  1.29 & 0.02 & 1.26 & 1.30 & 1.32 \\
-			& $\psi$    & 0.47   & 0.03  & 0.45  & 0.47 & 0.53  \\
+{\bf JAGS}       & $N$         & 88.72 & 6.75 & 77    & 88   & 103    \\
+		 & $\lambda_0$ & 0.53  & 0.08 & 0.39  & 0.53 & 70     \\
+		 & $\sigma$    & 1.29  & 0.02 & 1.26  & 1.30 & 1.32   \\
+		 & $\psi$      & 0.47  & 0.03 & 0.45  & 0.47 & 0.53   \\
 		\hline
-{\tt scrPID}& $N$      & 86.01 & 7.58 & 73 & 85 & 102 \\
-			& $\lambda_0$  &  0.54 & 0.08 & 0.39 & 0.53 & 0.72 \\
-			& $\sigma$ &  0.48 & 0.03 & 0.42 & 0.48 & 0.53 \\
-			& $\psi$    & 0.51   & 0.11  & 0.32  & 0.51 & 0.73 \\
+{\tt scrPID}     & $N$         & 86.01 & 7.58 & 73    & 85   & 102    \\
+		 & $\lambda_0$ & 0.54  & 0.08 & 0.39  & 0.53 & 0.72   \\
+		 & $\sigma$    & 0.48  & 0.03 & 0.42  & 0.48 & 0.53   \\
+		 & $\psi$      & 0.51  & 0.11 & 0.32  & 0.51 & 0.73   \\
 			\hline
   \end{tabular}
 \end{table}
 
+% XXXX RC stopped here on 3/21
 
 \section {Unknown number of marked individuals}
 \label{partialID.sec.unknown}
