@@ -199,6 +199,7 @@ pars2 <- c("sigma", "lam0", "N", "psi")
 
 
 library(parallel)
+
 cl2 <- makeCluster(3) # Open 3 parallel R instances
 
 clusterExport(cl2, c("dat2", "init2", "pars2"))
@@ -207,7 +208,7 @@ system.time({
 out2 <- clusterEvalQ(cl2, {
     library(rjags)
     jm <- jags.model("nopa2.jag", dat2, init2, n.chains=1, n.adapt=1000)
-    jc <- coda.samples(jm, pars2, n.iter=50000)
+    jc <- coda.samples(jm, pars2, n.iter=150000)
     return(as.mcmc(jc))
 })
 })
@@ -251,32 +252,24 @@ stopCluster(cl2)
 
 
 
+# Model with informative priors, no latent y's
 
+cl3 <- makeCluster(3) # Open 3 parallel R instances
 
-
-dat2 <- list(n = nopa$n, X = nopa$X, M=300, J=nrow(nopa$n), K=ncol(nopa$n),
-             xlim=c(-600, 600), ylim=c(-400, 400))
-
-
-init2 <- function() {
-    list(sigma=rnorm(1, 100), lam0=runif(1), z=rep(1, dat2$M))
-}
-
-cl2 <- makeCluster(3) # Open 3 parallel R instances
-
-clusterExport(cl2, c("dat2", "init2", "pars1"))
+clusterExport(cl3, c("dat2", "init2", "pars2"))
 
 system.time({
-out2 <- clusterEvalQ(cl2, {
+out3 <- clusterEvalQ(cl3, {
     library(rjags)
-    jm <- jags.model("nopa2i.jag", dat2, init2, n.chains=1, n.adapt=500)
-    jc <- coda.samples(jm, pars1, n.iter=2500)
+    jm <- jags.model("nopa2i.jag", dat2, init2, n.chains=1, n.adapt=1000)
+    jc <- coda.samples(jm, pars2, n.iter=150000)
     return(as.mcmc(jc))
 })
 }) # 3570 it/hr
 
 
-mc2i <- mcmc.list(out2)
+#mc2i <- mcmc.list(out2)
+mc3 <- mcmc.list(out3)
 
 plot(mc2i)
 summary(mc2i)
