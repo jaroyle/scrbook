@@ -360,13 +360,7 @@ H({\bf u}_{ik}) =  \exp(\alpha_{0}) \left\{ \sum_{x_{j}}  \exp(\alpha_{1}*dist({
 where ${\bf x}_{j}$ is the $j^{th}$ row of ${\bf X}$ defining the
 survey path as a collection of line segments which can be arbitrarily
 dense, but should be regularly spaced.  Then the probability of
-encounter on a given sampling occasion  
-% XX RS: .. on a given occasion? That just made me think... would an
-% occasion here be a repeated survey of the same search path? Might be
-% good to define or discuss what occasions can mean in this context
-% briefly. I geuss it could be a repeat visit, or a visit later in
-% time to a different quadrat?
-is
+encounter on a given sampling occasion  is
 \begin{equation}
 p_{ik} \equiv p({\bf u}_{ik}) = 1- \exp(-H({\bf u}_{ik})).
 \label{search-encounter.eq.encounterprob}
@@ -419,16 +413,13 @@ We introduced this model above:
 \]
 which is usually called the Gompertz hazard function in survival
 analysis, and it is most often written as $h(t) = a \exp( b*t)$ in which
-case $log(h(t)) = log(a) + b*t$.  
+case $\log(h(t)) = \log(a) + b*t$.  
 % XX RS: I really don't know anything about these models, so excuse my ignorance... but do these survival models use any kind of covariate (where we use distance)? Here it sounds like they use distance as a covariate, which is not very intuitive...
-Model 2 (squared-distance) is a
-quadratic function of distance
+The Gaussian model has a  squared-distance term:
 \[
 \log(h({\bf u}_{ik},{\bf x})) = \alpha_{0} + \alpha_{1}*\mbox{dist}({\bf u}_{ik},{\bf x})^2.
 \]
-We've used this type of Gaussian kernel model 
-quite a bit in the book, and it implies a
-bivariate normal hazard rate. \citet{borchers_efford:2008} use this model:
+ \citet{borchers_efford:2008} use this model:
 \[
 h({\bf u}_{ik},{\bf x} ) = -\log(1 - \mbox{expit}(\alpha_{0})
 \exp( \alpha_{1}*\mbox{dist}({\bf u}_{ik},{\bf x})^2 ) )
@@ -675,6 +666,8 @@ Simulating the data as described above, and fitting the model in Panel
 \ref{search-encounter.panel.design1} produces the results in Table
 XXXXXXXXXXXXX: (soon to table-ize)
 
+%%% Kimmy: put below in a table but remove the columns for 25% and 75%
+%% put all of the header text and footer text into a caption. Thanks!
 {\small
 \begin{verbatim}
 > wbout2
@@ -773,7 +766,7 @@ encounter.
 
 \begin{figure}
 \centering
-\includegraphics[height=4in]{Ch15-searchencounter/figs/mountain_lion.jpg}
+\includegraphics[height=3in]{Ch15-searchencounter/figs/mountain_lion.jpg}
 \caption{
 Mountain lion.
 Run!
@@ -818,7 +811,7 @@ Thompson et al. divided the region into 1 km polygons,
 
 R function: \mbox{\tt SCRfisher  } produces the following results:
 
-%% KIMMY put this in a table
+%%% Andy: need to rerun
 {\small
 \begin{verbatim}
 Inference for Bugs model at "modelfile.txt", fit using WinBUGS,
@@ -943,8 +936,6 @@ center but, rather, they drift through space more-or-less randomly
 based just on their previous location. See \citet{ovaskainen:2004,
   ovaskainen:2008} for development and applications of similar
 movement models in the context of capture-recapture data,
-% XX RS: For what exactly? More details on that kind of movement model?
-% andy sez: I added a phrase to clarify
 and also our discussion of a similar model that might arise in
 acoustic surveys (Sec. \ref{poisson-mn.sec.acoustic}).  We could allow
 for dependent movements about a central location ${\bf s}_{i}$ using a
@@ -959,26 +950,75 @@ $\rho$, e.g.,
 
 In the \mbox{\tt scrbook} package, we provide a script for simulating
 and fitting search-encounter data using the iid Gaussian model and
-also the random walk model. 
- The {\bf BUGS} model specification is shown in
-Panel \ref{search-encounter.panel.uniform} for the random walk
-situation. We encourage you to adapt this model and the simulation
-code for the
-auto-regression movement model. 
-To fit this model to data, 
-we set
-up the run with {\bf JAGS}using the standard commands. We did not specify
-starting values for the missing coordinate locations although we
-imagine that {\bf JAGS} should perform better if we provide decent starting
-values, e.g., the last observed location or some other reasonable location.
- We imagine that resource selection  could
-be parameterized in this movement model as well, perhaps
-using similar ideas to those described in Chapt. \ref{chapt.rsf}. 
+also the random walk model.  The {\bf BUGS} model specification is
+shown in Panel \ref{search-encounter.panel.uniform} for the random
+walk situation. We encourage you to adapt this model and the
+simulation code for the auto-regression movement model.  To fit this
+model to data, we set up the run with {\bf JAGS}using the standard
+commands. We did not specify starting values for the missing
+coordinate locations although we imagine that {\bf JAGS} should
+perform better if we provide decent starting values, e.g., the last
+observed location or some other reasonable location.  We imagine that
+resource selection could be parameterized in this movement model as
+well, perhaps using similar ideas to those described in
+Chapt. \ref{chapt.rsf}.
+
+The following script simulates a population of N individuals and their
+locations at each of 4 times to see if they are in a square [3,13] or
+not.
+This simulates a random walk thing so we imagine that the sampling
+occasions are close together in time.  The initial state is assumed to
+be uniformly distributed on the square. 
+XXX NOTE: This is dumb. SHoudl be the whole state-space right?
 
 \begin{verbatim}
-R CODE FOR SIMULATING THIS SITUATION.....................?
+N<-100
+nocc<- 4
+Sx<-Sy<-matrix(NA,nrow=N,ncol=nocc)
+sigma.move<- .25
 
-To be inserted
+# simulate initial coordinates on the square:
+Sx[,1]<-runif(N,3,13)
+Sy[,1]<-runif(N,3,13)
+
+for(t in 2:nyear){
+Sx[,t]<- rnorm(N,Sx[,t-1],sigma.move)
+Sy[,t]<- rnorm(N,Sy[,t-1],sigma.move)
+}
+
+# now we generate encounter histories:
+f<-rep(NA,N)
+Y<-matrix(0,nrow=N,ncol=nyear)
+for(i in 1:N){
+for(t in 1:nyear){
+  # see here: IF individual is IN THE SQUARE we can capture it:
+ if( Sx[i,t] > 3 & Sx[i,t]< 13 & Sy[i,t]>3 & Sy[i,t]<13 )
+ Y[i,t]<-rbinom(1,1,.5)
+}
+ # f[i] = 1 period of 1st capture, NA if never captured
+ if(sum(Y[i,])>0)
+  f[i]<-  min((1:nyear)[Y[i,]==1][1])
+
+}
+
+# subset data. If a guy is never captured, cannot have him in our data set
+Y<-Y[!is.na(f),]
+Sx<-Sx[!is.na(f),]
+Sy<-Sy[!is.na(f),]
+
+Sx[Y==0]<-NA
+Sy[Y==0]<-NA
+
+## data augmentation
+M<-200
+Y<-rbind(Y,matrix(0,nrow=(M-nrow(Y)),ncol=nyear))
+Sx<- rbind(Sx,matrix(NA,nrow=(M-nrow(Sx)),ncol=nyear))
+Sy<- rbind(Sy,matrix(NA,nrow=(M-nrow(Sy)),ncol=nyear))
+
+# make 3-d array of coordinates
+G<-array(NA,dim=c(M,nyear,2))
+G[,,1]<-Sx
+G[,,2]<-Sy
 \end{verbatim}
 
 
@@ -1084,9 +1124,12 @@ plot.
 
 \subsection{Capricaillie status in Switzerland}
 
-Variations on this theme have appeared in a number of papers.  (1)
+Variations of models with partial information  have appeared in a
+number of papers.  
 \citet{mollet_etal:2012}, who obtained a population size estimate of a
-large forest grouse species known as the capracaillie ({\it Tetrao
+large forest grouse species 
+(Fig. \ref{searchencounter.fig.capercaillie})
+known as the capracaillie ({\it Tetrao
   urogallus}) in Switzerland.  The base SCR model is the Poisson model
 (Chapt. \ref{chapt.poisson-mn}). Forest stands were searched by
 observers for scat, which was analyzed for DNA identification of
@@ -1094,7 +1137,9 @@ individuals.  A total of 78 spatial units of a few ha each were
 searched.  In this example, forest stands were searched but the search
 path data was not available, only the unit in which each scat was
 found.  It was searched in an expert manner, and it was believed that
-a uniform search intensity model could be reasonable.  Importantly,
+a uniform search intensity model could be reasonable.  
+
+Importantly,
 the sample units are actually large forest patches on the order of
 tens of ha each, but variable in size. Data were {\it not} collected
 by coordinates of observations but rather just recorded to the
@@ -1127,8 +1172,8 @@ particular patch.
 }
 \end{figure}
 
-A key point of the model is that it assumed a discrete model for the
-activity centers: activity centers were uniformly distributed to each
+A discrete state-space model was used in which 
+activity centers were uniformly distributed to each
 of the 78 fragments in proportion to area of the forest patch within
 which each fragment was located.  This is similar to the multi-session
 formulation of the model where, in this case, the ``sessions'' are
@@ -1136,7 +1181,7 @@ discrete forest fragments but, unlike the multi-session models above,
 the encounters of an individual can occur in multiple sessions.  The
 authors assumed that
 \[
- N_{frag} \sim Poisson( A_{frag} \lambda_{0} )
+ N_{frag} \sim \mbox{Poisson}( A_{frag} \lambda_{0} )
 \]
 which implies (see Chapt. \ref{chapt.hscr}):
 \[
