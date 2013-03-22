@@ -12,13 +12,27 @@ observed directly by searching space (often delineated by a polygon)
 in some fashion, rather than restricted to fixed trap locations.  In
 all the cases addressed in this chapter, both detection probability
 and parameters related to movement can be estimated using such models.
+To formalize this notion a little bit using some of the ideas we've
+introduced in previous chapter, most of the SCR models we've talked about in the book involve just two
+components of a hierarchical model, the observation component, which
+we denote  by $[y|{\bf s}]$, and the process component describing
+the activity center model $[{\bf s}]$.  The search-encounter models
+described here involve an additional component for the locations
+conditional on the activity centers. We write this as follows: The
+observation model has the form $[y|{\bf u}]$, and the process model
+has two components, $[{\bf u}|{\bf s}]$ and $[{\bf s}]$. Because we
+can resolve parameters of the $[{\bf u}|{\bf s}]$ component, 
+search-encounter models are slightly more complicated, and also 
+more biologically realistic. 
 Conversely, when we have an array of fixed trap locations, the
 movement process is completely confounded with the encounter process
 because the list of potential observation locations is prescribed, a
-priori, indendent of any underlying movement process.  The models we
-differentiate here depend on a number of things related to data
-structure or survey protocol -- basically whether or not we record the
-exact location and how we record it.
+priori, indendent of any underlying movement process.  
+
+%The models we
+%differentiate here depend on a number of things related to data
+%structure or survey protocol -- basically whether or not we record the
+%exact location and how we record it.
 
 A few distinct types of situations exist where these models come in
 handy. The prototypical, maybe ideal, situation
@@ -41,8 +55,6 @@ referred to as models for {\it polygon detectors}.
 %generalization of the polygon search model, as we describe below.
 % XX RS: You also gonna describe the transect model? Might be nice to add, if so. Something like in the other chapters, like, 'in this chapter... blabla'
 
-% XXXX RC: You might formalize some of this by saying that in standard
-% SCR, we use [y|s][s] but in search-encounter we use [y|u][u|s][s]
 
 \begin{comment}
 %%## This argument here is basically true, but i'm not sure how to
@@ -59,7 +71,7 @@ in terms of the structure of the observable data.
 \end{comment}
 
 
-\section{Search-encounter sampling designs}
+\section{Search-encounter designs}
 
 Before we discuss models for search-encounter data, we'll introduce some
 types of sampling situations that produce individual location data
@@ -258,10 +270,11 @@ path.
 This is a reasonably intuitive type of encounter probability model in
 that the probability of encounter is large when an individual's
 location ${\bf u}_{ik}$ is close to the line in the average sense
-defined by Eq. \ref{eq.totalhazard}, and vice versa.
-Further, consider the case of a single survey point, i.e., ${\bf X} \equiv {\bf
+defined by Eq. \ref{eq.totalhazard}, and vice versa.  Further,
+consider the case of a single survey point, i.e., ${\bf X} \equiv {\bf
   x}$, which we might think of as a camera trap location.  In this
-case note that Eq. (\ref{search-encounter.eq.encounterprob}) is equivalent to
+case note that Eq. (\ref{search-encounter.eq.encounterprob}) is
+equivalent to
 \[
 \log(-\log(1-p_{ik})) = \alpha_{0} + \alpha_{1}*||{\bf u}_{ik}-{\bf x}||
 \]
@@ -340,11 +353,6 @@ normal model (but see below for alternatives):
  {\bf u}_{ik} | {\bf s}_{i} \sim \mbox{BVN}({\bf s}_{i}, \sigma^{2}{\bf I}),
 \]
 where ${\bf I}$ is the $2\times 2$ identity matrix.
-% XX RS: In the partial ID chapter we use a different notation for the
-% BVN model; we use \Sigma, and then define that as a 2x2 matrix with
-% 0 and sigma^2.... thinking about it, these two notations are pretty
-% similar... do you think we should point out that they're the same?
-%%% Andy sez: I will start using BVN( )
 This is a primitive model of individual movements about their home
 range but we believe it will be adequate in many capture-recapture
 studies which are often limited by sparse data.
@@ -454,13 +462,11 @@ the value to \mbox{\tt NA}. We pass these partially observed objects
 to {\bf JAGS} to fit the model.
 
 Finally, we do the data augmentation and we make up some starting
-values for the location coordinates that are missing.
- For these, we
+values for the location coordinates that are missing.  For these, we
 cheat a little bit (for convenience and hopefully to improve the
 efficiency of the MCMC for the simulated data sets) and use the actual
 activity center values. In practice, we might think about using the
-average of the observed locations.
-{\small
+average of the observed locations.  {\small
 \begin{verbatim}
 > ncap <- apply(y,1,sum)
 > y <- y[ncap>0,]
@@ -518,21 +524,21 @@ model {
 
  for(i in 1:M){ # Loop over individuals
    z[i]~dbern(psi)
-   s[i,1]~dunif(xlim[1],xlim[2])
+   s[i,1]~dunif(xlim[1],xlim[2])   # Activity center model
    s[i,2]~dunif(ylim[1],ylim[2])
-   for(k in 1:K){ # Loop over temporal replicates
-      ux[i,k] ~ dnorm(s[i,1],tau)
+   for(k in 1:K){ # Loop over sample occasions
+      ux[i,k] ~ dnorm(s[i,1],tau)  # Movement outcome model
       uy[i,k] ~ dnorm(s[i,2],tau)
       for(j in 1:J){ # Loop over each point defining line segments
         d[i,k,j]<-  pow(pow(ux[i,k]-X[j,1],2) + pow(uy[i,k]-X[j,2],2),0.5)
         h[i,k,j]<-exp(alpha0-alpha1*d[i,k,j]*d[i,k,j])
      }
-    H[i,k]<-sum(h[i,k,1:J])
+    H[i,k]<-sum(h[i,k,1:J])  # Total hazard H
     p[i,k]<- z[i]*(1-exp(-H[i,k]))
     y[i,k] ~ dbern(p[i,k])
   }
 }
- # Derived quantity
+ # Population size is a derived quantity
  N<-sum(z[])
 }
 \end{verbatim}
@@ -555,17 +561,19 @@ and fit this model.
 \begin{table}[ht]
 \caption{Posterior summary statistics for the simulated
   search-encounter data. These are based on 3 chains, 
-and a total of 9000 posterior samples. 
+and a total of 9000 posterior samples.  The data generating parameter values
+were $N=100$, $\sigma_{move} = 0.35$, $\sigma = 0.4$, and $\alpha_{0}
+= 0.8$. The parameter $\alpha_{1} = 1/(2\sigma^{2})$. 
 }
-\begin{tabular}{rrrrrrrr} \hline \hline
-                & Mean     & SD     & 2.5\%    & 50\%     & 97.5\%   & Rhat  & n.eff \\ \hline
-$N$             & 117.626  & 5.675  & 107.000  & 117.000  & 129.000  & 1.015 & 160   \\
-$\alpha_0$      & 1.305    & 0.494  & 0.425    & 1.280    & 2.387    & 1.009 & 330   \\
-$\alpha_1$      & 3.806    & 0.423  & 3.050    & 3.777    & 4.733    & 1.008 & 310   \\
-$\psi$         & 0.587    & 0.044  & 0.501    & 0.588    & 0.673    & 1.006 & 400   \\
-$\sigma_{move}$  & 0.347    & 0.008  & 0.332    & 0.347    & 0.364    & 1.023 & 97    \\
-$\sigma$       & 0.364  &  0.020 &  0.325     &  0.364   & 0.405    &
-1.008 & 320 \\  \hline
+\begin{tabular}{rrrrrrr} \hline \hline
+                & Mean     & SD     & 2.5\%    & 50\%     & 97.5\%   & Rhat   \\ \hline
+$N$             & 117.626  & 5.675  & 107.000  & 117.000  & 129.000  & 1.015   \\
+$\alpha_0$      & 1.305    & 0.494  & 0.425    & 1.280    & 2.387    & 1.009   \\
+$\alpha_1$      & 3.806    & 0.423  & 3.050    & 3.777    & 4.733    & 1.008   \\
+$\sigma_{move}$  & 0.347    & 0.008  & 0.332    & 0.347    & 0.364    & 1.023   \\
+$\sigma$       & 0.364  &  0.020 &  0.325     &  0.364   & 0.405    & 1.008  \\  
+$\psi$         & 0.587    & 0.044  & 0.501    & 0.588    & 0.673    & 1.006    \\
+\hline
 \end{tabular}
 \label{searchencounter.tab.simtable}
 \end{table}
@@ -684,10 +692,15 @@ Note for grid cells that were not searched, $C_{j} =0$ and, for those,
 the constraint $\lambda_{0,ij}=0$ was imposed so that the probability
 of encounter was identically 0.
 
-\citet{russell_etal:2012} looked at group structure, and some other things............
-XXXX RESULTS XXXXXXXXXXXXXXX
-% XXXX RC: Any interesting results to report?
-
+One problem encounered by \citet{russell_etal:2012} in their analysis
+is the possibility of dependence in encounters because of group
+structure in the data (usually, juveniles in associatiation with their
+mother). In this situation, in addition to dependence of encounter,
+multiple individuals have effectively the same activity center, thus
+violating a number of assumptions related to the ordinary SCR model.
+To resolve this problem, the authors made some assumptions about group
+association and fitted models where group served as the functional
+individual.
 
 \begin{figure}
 \centering
@@ -699,26 +712,6 @@ Run!
 }
 \label{searchencounter.fig.lion}
 \end{figure}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 \subsection{Sierra National Forest Fisher Study}
 
@@ -740,35 +733,13 @@ We provide the
 data from this study
 data(fisherdata) and the 
 \R~function: \mbox{\tt SCRfisher} which produces the posterior summary
-statistics shown in Table. XXXXXXX.
-
+statistics shown in Table
+\ref{searchencounter.table.fisher}.
+One thing is relatively poor mixing of the Markov chains here due to
+sparse data and a fairly long run is probably necessary.
 Conclusions, thoughts, recommendations about this study...
 What does this study show.............
 
-
-%%% Kimmy can you table this according to the normal rules?
-{\small
-\begin{verbatim}
-> print(out,digits=3)
-Inference for Bugs model at "modelfile.txt", fit using WinBUGS,
- 3 chains, each with 11000 iterations (first 1000 discarded)
- n.sims = 12570 iterations saved
-            mean      sd   2.5%     25%     50%     75%   97.5%  Rhat n.eff
-psi        0.413   0.300  0.016   0.132   0.366   0.674   0.964 1.131    23
-sigma      4.745   2.909  0.163   2.212   4.650   7.231   9.704 1.020   220
-N        315.889 230.041 12.000 100.000 280.000 516.000 738.775 1.133    23
-lam0       0.003   0.033  0.000   0.000   0.000   0.001   0.016 1.097    28
-alpha      0.188   0.170  0.005   0.060   0.138   0.268   0.641 1.002  2000
-deviance  71.665  11.129 45.822  65.220  74.355  80.030  86.730 1.130    25
-
-For each parameter, n.eff is a crude measure of effective sample size,
-and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
-
-DIC info (using the rule, pD = var(deviance)/2)
-pD = 56.4 and DIC = 128.1
-DIC is an estimate of expected predictive error (lower deviance is better).
-\end{verbatim}
-}
 
 \begin{table}
 \caption{Inference for Bugs model at (``modelfile.txt''), fit using WinBUGS,
@@ -778,18 +749,21 @@ DIC is an estimate of expected predictive error (lower deviance is better).
  and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
  DIC info (using the rule, pD = var(deviance)/2)
  pD = 56.4 and DIC = 128.1
- DIC is an estimate of expected predictive error (lower deviance is better).}
+ DIC is an estimate of expected predictive error (lower deviance is
+ better).
+here lambda_{0} = exp(\alpha_{0})
+}
 \begin{tabular}{rrrrrrrrrr}\hline \hline
          &   mean  &    sd   &   2.5\%  &    50\%  &   97.5\%  &  Rhat   &  n.eff \\ \hline
+N        & 315.889 & 230.041 &  12.000  & 280.000  & 738.775   &  1.133  &   23   \\
 psi      &   0.413 &   0.300 &   0.016  &   0.366  &   0.964   &  1.131  &   23   \\ 
 sigma    &   4.745 &   2.909 &   0.163  &   4.650  &   9.704   &  1.020  &  220   \\
-N        & 315.889 & 230.041 &  12.000  & 280.000  & 738.775   &  1.133  &   23   \\
-lam0     &   0.003 &   0.033 &   0.000  &   0.000  &   0.016   &  1.097  &   28   \\ 
-alpha    &  0.188  &   0.170 &   0.005  &   0.138  &   0.641   &  1.002  & 2000   \\ 
+$\lambda_0$     &   0.003 &   0.033 &   0.000  &   0.000  &   0.016   &  1.097  &   28   \\ 
+$\alpha_1$    &  0.188  &   0.170 &   0.005  &   0.138  &   0.641   &  1.002  & 2000   \\ 
 deviance & 71.665  &  11.129 &  45.822  &  74.355  &  86.730   &  1.130  &   25   \\ \hline
 
 \end{tabular}
-\label{scrfisher.table}
+\label{searchencounter.table.fisher}
 \end{table}
 
 
