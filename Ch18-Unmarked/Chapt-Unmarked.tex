@@ -789,9 +789,10 @@ parameters. %Rather than repeating their simulation study, we present
 % XX RS: Don't really see the link between lack of data to estimate
 % parameters, and proper vs improper priors. Improper priors could
 % lead to improper posteriors even if we had boatloads of data, no?
-However, in such cases where identifiability has not formally been
-demonstrated, it may be wise to compare the results of models fit
-using both proper and improper priors, as we do below.
+% RC: Yeah, good point these are 2 distinct issues
+%However, in such cases where identifiability has not formally been
+%demonstrated, it may be wise to compare the results of models fit
+%using both proper and improper priors, as we do below.
 
 At this point in time the SC model can only be fit using one of the
 \bugs~engines, or using custom software like the \R~code accompanying
@@ -806,20 +807,11 @@ enforced using the so-called ``ones-trick'', but we prefer
 called \verb+dsum+ that was designed for this type
 of situation in which the observed data are a sum of random
 variables. %Aside from being slow, \jags~works rather well for this
-%situation. %Another limitation of using \jags~is that
-%we can't mix data from marked and unmarked individuals because
-%\verb+dsum+ requires that we sum over unobserved quantities, not a mix
-%of observed and unobserved nodes. Thus, we can't use \jags~for the
-%situations considered in the next chapter, and thus we wrote our own
-%MCMC algorithm which overcomes these limitations, and it is somewhat
-%faster. Nonetheless,
+%situation.
 Panel~\ref{unmarked.panel.jags1} shows the \jags~code, but
-%Note that this code will not run as shown because
 we abbreviated the
 arguments to \verb+dsum+ because in practice you need to provide all $M$ of
-them. %, where $M \gg N$ is the size of augmented latent encounter
-%array.
-The code looks slightly unwieldy if $M$ is large, but you can easily create
+them. The code looks slightly unwieldy if $M$ is large, but you can easily create
 it using the \verb+paste+ function in \R. Here is an example, with an
 unrealistically small value of $M=10$:
 \begin{small}
@@ -829,11 +821,7 @@ unrealistically small value of $M=10$:
 y[7,j,k], y[8,j,k], y[9,j,k], y[10,j,k]"
 \end{verbatim}
 \end{small}
-%This output can be pasted directly into a \jags~model file.
-%Maybe Martyn Plummer will throw us
-%a bone and allow for a vector as an argument. Anyhow,
-% XXXX
-%The entire analysis is shown on the ???XX help page in \scrbook.
+
 
 \begin{panel}[ht]
 \centering
@@ -858,7 +846,7 @@ for(i in 1:M) {
    }
 for(j in 1:J) {
    for(k in 1:K) {
-       n[j,k] ~ dsum(y[1,j,k], y[2,j,k], ..., y[200,j,k]) # Code abbreviated!!
+       n[j,k] ~ dsum(y[1,j,k], y[2,j,k], ..., y[200,j,k])
        }
    }
 N <- sum(z[])   # Realized population size
@@ -870,7 +858,8 @@ ED <- (M*psi)/A # Expected density
 \end{small}
 \rule[0.15in]{\textwidth}{.03in}
 \caption{\jags~code defining the spatial count model. This version
-  includes the latent encounter histories.}
+  includes the latent encounter histories. Note the abbreviated
+  arguments to dsum().}
 \label{unmarked.panel.jags1}
 \end{panel}
 % XX RS: the 'code abbreviated' line is a little too wide. You could put that info in the panel legend instead.
@@ -946,9 +935,6 @@ for(j in 1:J) {
        }
    }
 N <- sum(z[])
-A <- (xlim[2]-xlim[1])*(ylim[2]-ylim[1]) * 10000 # Area of state-space (ha)
-D <- N / A      # Realized density
-ED <- (M*psi)/A # Expected density
 }
 \end{verbatim}
 \end{small}
@@ -962,8 +948,7 @@ ED <- (M*psi)/A # Expected density
 
 
 An even faster (but perhaps less efficient) alternative is to use the
-\verb+scrUN+ function in
-\texttt{scrbook}.
+\verb+scrUN+ function in \texttt{scrbook}.
 %which is a modified version of the code presented in
 %the Supplement of \citet{chandler_royle:2012}.
 The usage is as follows:
@@ -979,9 +964,7 @@ coordinate matrix, \verb+M+ sets the size of the data-augmented latent
 data, \verb+xlims+ and \verb+ylims+ define the
 rectangular state-space, \verb+inits+ is a list of starting values,
 and \verb+updateY+ determines if the latent encounter histories are
-updated as part of the MCMC algorithm. In general, %there is no reason
-%to set
-we recommend using the option
+updated as part of the MCMC algorithm. In general, we recommend using the option
 \verb+updateY=FALSE+ because the Markov chains tend to mix
 better. %This is to be expected as the p
 %since it may take longer to run and the
@@ -997,11 +980,11 @@ suitable tuning parameters automatically during the adaptive phase
 (when using Metropolis updates).
 
 We fit the model to the simulated data using both formulations -- with and without
-the latent encounter histories -- %using both
-%\jags~and \verb+scrUN+,
-and the results
-are given in Table~\ref{unmarked.tab.sim} and
-Fig.~\ref{unmarked.fig.Nsim}.
+the latent encounter histories -- using both
+\jags~and \verb+scrUN+.
+%and the results
+%are given in Table~\ref{unmarked.tab.sim} and
+%Fig.~\ref{unmarked.fig.Nsim}.
 Table~\ref{unmarked.tab.sim} shows % The results of are
 summaries of 10000 posterior draws, and suggests that while the
 true parameter values are easily covered by the 95\% credible
@@ -1020,7 +1003,8 @@ seems to have a hard time exploring the region of the posterior in
 which $N$ is low. Given these technical difficulties, we recommend
 using the \jags~implementation (based on
 Panel~\ref{unmarked.panel.jags2}), and it is always a good idea to use
-MCMC diagnostic tools such as those available in the \texttt{coda} package.
+MCMC diagnostic tools such as those available in the \texttt{coda}
+package (Chapt.~\ref{chapt.mcmc}).
 % XX RS: maybe ref back to MCMC chapter where coda is introduced?
 
 \begin{table}
@@ -1028,11 +1012,7 @@ MCMC diagnostic tools such as those available in the \texttt{coda} package.
   \caption{Posterior summaries from the spatial count (``SC'') model
     applied to simulated data using \texttt{scrbook} and \jags. 25000
     samples were generated, but substantial Monte Carlo error is still
-    evident.}%, and in general we find
-%    that the \jags~implementation (based on
-%    Panel~\ref{unmarked.panel.jags2}) results in the best mixing of
-%    the Markov chains.} % The {\tt scrUN(..., updateY=TRUE)} algorithm
-%    appears to have a difficult time exploring the po}
+    evident.}
   \begin{tabular}{lrrrrr}
     \hline
     Parameter        & Mean   & SD     & 2.5\%  & 50\%   & 97.5\%  \\
@@ -1067,7 +1047,7 @@ MCMC diagnostic tools such as those available in the \texttt{coda} package.
   \caption{MCMC results for the parameter $N$ from the two algorithms
     (with and without the latent encounter histories). The first
     row contains the histograms of the posterior distributions, the second row
-    contains the history plots, the third row shows the
+    contains the history (or trace) plots, the third row shows the
     autocorrelation plots.}
   \label{unmarked.fig.Nsim}
 \end{figure}
@@ -1085,24 +1065,6 @@ figure out ways of improving model precision -- options we discuss in
 Sec.~\ref{unmarked.sec.precision}. Before doing so, we re-analyze the
 Northern Parula ({\it Parula americana}) data
 described in \citet{chandler_royle:2012}
-
-
-\begin{comment}
-  So why not just collect distance data or something? If you can,
-  great--- we are not arguing against the use of other methods. But in
-  many cases, other models are not applicable. For instance, our model
-  could be applied to camera trapping data collected on species
-  without natural marks, such as pumas or coyotes. In addition, this
-  model provides an important foundation for modeling data where other
-  methods do not apply, and the underlying state model is so damn cool
-  because it corresponds to what we think is happening in the field.
-  Furthermore, the potential generalizations are numerous as we will
-  see later in this chapter and in the next chapter. In sum, the model
-  can be applied where no other models can, and it provides the
-  foundation for important extensions, but how can we improve
-  precision?
-\end{comment}
-
 
 
 
