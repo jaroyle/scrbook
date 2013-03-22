@@ -1080,7 +1080,8 @@ species' spatial ecology and behavior. In the context of spatial
 mark-resight models, the actual locations
 collected by telemetry tags can provide detailed information on individual location and movement, and being able to incorporate this information directly into the SMR model should improve estimates of these parameters, especially when resighting information is sparse.
 
-So how could we combine resighting data and telemetry data in a unified mark-resight model? Recall that the basic SCR model underlying all the SMR models we discuss here uses a Gaussian kernel (or `half-normal') to describe the trap encounter model.
+So how could we combine resighting data and telemetry data in a unified mark-resight model? Recall that the basic SCR model underlying all the SMR models we discuss here uses a Gaussian kernel %(or `half-normal')
+to describe the trap encounter model.
 By using this function, we can relate the parameters $\sigma$ and ${\bf s}_{i}$ directly to those from a bivariate normal model of space usage, with mean = ${\bf s}_{i}$, and variance-covariance matrix $\Sigma$, where the variance in both dimensions is $\sigma^2$ and the covariance is 0. Ordinarily, these parameters are estimated directly from the spatial distribution of individual captures/resightings. Telemetry data, however, provide more detailed information on individual location and movement, since the resolution and extent of the data are not limited by the trapping grid and potentially more locations can be accumulated through telemetry than resighting (depending on the monitoring frequency and resighting rates of individuals).
 
 By assuming that the $R_i$ locations of individual $i$, ${\bf l}_{i}$ (consisting of a pair of x and y coordinates, $l_{ix}$ and $l_{iy}$), are a bivariate normal random variable:
@@ -1099,9 +1100,12 @@ and
 For the unmarked individuals
 ${\bf s}_{i}$ are estimated as described before conditional on their
 latent encounter histories.
-Note that the bivariate normal model assumes that locations are independent of each other. If you have frequent telemetry fixes, for example from GPS collars that report animal locations every few hours or more, this assumption seems unrealistic and it might be advisable to thin your telemetry data (maybe to daily fixes) in order to approximate independence. Not all marked individuals need to be
+Note that the bivariate normal model assumes that locations are independent of each other. If you have frequent telemetry fixes, for example from GPS collars that report animal locations every few hours or more, this assumption seems unrealistic and it might be advisable to thin your telemetry data (maybe to daily fixes) in order to approximate independence.
+% XXXX RC: I would add something like "alternatively, movement models could be used that acknowledge the temporal correlation in location data (cite a bunch of the recent movement papers and teh search-encounter chapter, where Andy added a few ideas.
+Not all marked individuals need to be
 telemetry-tagged, but telemetry data
 should correspond to the period over which resighting surveys were conducted (as we discussed in Chapt. \ref{chapt.scr0}, both the ${\bf s}_i$ and $\sigma$ should only be interpreted against the specific sampling period).
+% XXXX RC: Should emphasize that the telemetry data need to be independent of the capture data.
 
 Again, implementation of this model extension is straight-forward, both in {\bf JAGS} and {\bf R}. Take the SMR model description for the case where $m$ is known (Panel \ref{partialID.panel.knownm}). Then, all we have to do is add a description of the bivariate normal model for the telemetry locations, here {\tt locs}, into the loop over the $m$ marked individuals:
 {\small
@@ -1180,22 +1184,28 @@ In this study, although a large number of raccoons were tagged, photographic dat
 
 
 \section{Marked animals are not a random sample from the state-space}
-As discussed in sec. \ref{partialID.sec.random}, all the previously developed SMR models assume that marked individuals are a random sample, both spatially and demographically, from the population of the state-space. For many studies it may not be feasibly to strive to meet or approximate this assumption and it is thus important to generalize SMR models to situations where marking does not take place throughout ${\cal S}$. If you think about it, even if you set up marking traps throughout the state-space, individuals at the border of ${\cal S}$ would be exposed to fewer traps and be less likely to be caught, thus creating a gradient in the proportion of marked to unmarked animals (although if ${\cal S}$ is large enough this is probably negligible). Here, we will develop one tentative approach to dealing with this situation, by having marked individuals be a random (uniformly distributed) sample from a smaller region within ${\cal S}$, say ${\cal B}$.
+As discussed in sec. \ref{partialID.sec.random}, all the previously developed SMR models assume that marked individuals are a random sample, both spatially and demographically, from the population of the state-space. For many studies it may not be feasible to strive to meet or approximate this assumption and it is thus important to generalize SMR models to situations where marking does not take place throughout ${\cal S}$. If you think about it, even if you set up marking traps throughout the state-space, individuals at the border of ${\cal S}$ would be exposed to fewer traps and be less likely to be caught, thus creating a gradient in the proportion of marked to unmarked animals (although if ${\cal S}$ is large enough this is probably negligible).
+% XXXX RC: This last sentence doesn't seem to get at the key point, i.e. that the marked guys can almost never be assumed to be uniformly distributed in S.
+ Here, we will develop one tentative approach to dealing with this situation, by having marked individuals be a random (uniformly distributed) sample from a smaller region within ${\cal S}$, say ${\cal B}$.
 The central point of this approach is that it establishes a spatial context for the marked part of the population. This spatial context is independent of ${\cal S}$ -- ${\cal B}$ remains constant -- and it provides a formal distribution of marked animals -- uniform in ${\cal B}$, none outside of ${\cal B}$ -- so that unmarked animals can be distributed in a way that overall density is constant.
-
 
 
 \subsection{Marked animals are uniformly distributed in a smaller area}
 Imagine we perform an area search in a square, ${\cal B}$, for some species we want to study, maybe a reptile, and we mark all individuals we encounter. We conduct our sampling in a way that we can assume that the individuals we marked are uniformly distributed in ${\cal B}$. This also entails the assumption that ${\cal B}$ can be clearly defined. We will come back to these assumptions in a minute. We then perform resighting surveys of some sort in an area that overlaps ${\cal B}$, so that, when we set a state-space around our resighting locations, ${\cal B}$ is completely contained within ${\cal S}$ (Figure \ref{partialID.fig.Box}), and we assume that the number of marked animals, $m$, is known. We further assume that individuals that were marked in ${\cal B}$ continue to live within ${\cal B}$ when resighting surveys are conducted, i.e. their activity centers do not shift during the complete mark-resight study. That means that we assume population closure across both the marking and the resighting part of the study.
+% XXXX RC: This also assumes that there are no marked activity centers outside of B, which I think will be impossible and should be mentioned... again.
 
 Let the total population of ${\cal B}$ be $N_B$.
 Under the conditions specified above, the number of marked animals $m$ can be described as the outcome of a binomial random variable
 \[
 m \sim \mbox{Binomial}(\theta, N_B)
 \]
-where $\theta$ is the probability that an animal living in ${\cal B}$ is marked. Remember that, by definition, all marked animals live inside ${\cal B}$. We now have to make sure that unmarked individuals get distributed across ${\cal S}$ and ${\cal B}$ so that \emph{overall} density is constant.
-Let ${\cal A}$ be ${\cal S} - {\cal B}$, i.e., the area of ${\cal S}$ \emph{not} covered by ${\cal B}$ (Figure \ref{partialID.fig.Box}). Then, the proportion of $N$ that should fall inside ${\cal B}$, say $\pi_B$, can be expressed as ${\cal B}/({\cal A}+{\cal B})$. Consequently, the proportion of $N$ in ${\cal A}$, $\pi_A$, is ${\cal A}/({\cal A}+{\cal B})$.
-Conditioning $\pi_B$ on being an unmarked animal, we obtain
+where $\theta$ is the probability that an animal living in ${\cal B}$ is marked. Remember that, by definition, all marked animals live inside ${\cal B}$. We now have to make sure that unmarked individuals get distributed across ${\cal S}$ and ${\cal B}$ so that \emph{overall} density is constant. % XXXX RC: I think this should be stated as a (possibly) reasonable assumption, instead of something that "we have to make sure" is true
+Let ${\cal A}$ be ${\cal S} - {\cal B}$, % XXXX RC: instead of a "minus" sign, I think you want $S \ni B$ or whatever the appropriate geometric symbol is.
+i.e., the area of ${\cal S}$ \emph{not} covered by ${\cal B}$ (Figure \ref{partialID.fig.Box}). Then, the proportion of $N$ that should fall inside ${\cal B}$, say $\pi_B$, can be expressed as ${\cal B}/({\cal A}+{\cal B})$. Consequently, the proportion of $N$ in ${\cal A}$, $\pi_A$,
+% XXXX RC: You need to distinguish between S and the area of S, which could be denoted A(S) or something.
+is ${\cal A}/({\cal A}+{\cal B})$.
+Conditioning $\pi_B$ on being an unmarked animal, % XXXX RC: rephrase
+we obtain
 \[
  \pi_B | unmarked = \frac{(1-\theta)* \pi_B}{U/N}
 \]
