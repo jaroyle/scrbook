@@ -56,9 +56,6 @@ referred to as models for {\it polygon detectors}.
 % XX RS: You also gonna describe the transect model? Might be nice to add, if so. Something like in the other chapters, like, 'in this chapter... blabla'
 
 
-% XXXX RC: You might formalize some of this by saying that in standard
-% SCR, we use [y|s][s] but in search-encounter we use [y|u][u|s][s]
-
 \begin{comment}
 %%## This argument here is basically true, but i'm not sure how to
 %%package the idea yet.
@@ -527,21 +524,21 @@ model {
 
  for(i in 1:M){ # Loop over individuals
    z[i]~dbern(psi)
-   s[i,1]~dunif(xlim[1],xlim[2])
+   s[i,1]~dunif(xlim[1],xlim[2])   # Activity center model
    s[i,2]~dunif(ylim[1],ylim[2])
-   for(k in 1:K){ # Loop over temporal replicates
-      ux[i,k] ~ dnorm(s[i,1],tau)
+   for(k in 1:K){ # Loop over sample occasions
+      ux[i,k] ~ dnorm(s[i,1],tau)  # Movement outcome model
       uy[i,k] ~ dnorm(s[i,2],tau)
       for(j in 1:J){ # Loop over each point defining line segments
         d[i,k,j]<-  pow(pow(ux[i,k]-X[j,1],2) + pow(uy[i,k]-X[j,2],2),0.5)
         h[i,k,j]<-exp(alpha0-alpha1*d[i,k,j]*d[i,k,j])
      }
-    H[i,k]<-sum(h[i,k,1:J])
+    H[i,k]<-sum(h[i,k,1:J])  # Total hazard H
     p[i,k]<- z[i]*(1-exp(-H[i,k]))
     y[i,k] ~ dbern(p[i,k])
   }
 }
- # Derived quantity
+ # Population size is a derived quantity
  N<-sum(z[])
 }
 \end{verbatim}
@@ -564,17 +561,19 @@ and fit this model.
 \begin{table}[ht]
 \caption{Posterior summary statistics for the simulated
   search-encounter data. These are based on 3 chains, 
-and a total of 9000 posterior samples. 
+and a total of 9000 posterior samples.  The data generating parameter values
+were $N=100$, $\sigma_{move} = 0.35$, $\sigma = 0.4$, and $\alpha_{0}
+= 0.8$. The parameter $\alpha_{1} = 1/(2\sigma^{2})$. 
 }
-\begin{tabular}{rrrrrrrr} \hline \hline
-                & Mean     & SD     & 2.5\%    & 50\%     & 97.5\%   & Rhat  & n.eff \\ \hline
-$N$             & 117.626  & 5.675  & 107.000  & 117.000  & 129.000  & 1.015 & 160   \\
-$\alpha_0$      & 1.305    & 0.494  & 0.425    & 1.280    & 2.387    & 1.009 & 330   \\
-$\alpha_1$      & 3.806    & 0.423  & 3.050    & 3.777    & 4.733    & 1.008 & 310   \\
-$\psi$         & 0.587    & 0.044  & 0.501    & 0.588    & 0.673    & 1.006 & 400   \\
-$\sigma_{move}$  & 0.347    & 0.008  & 0.332    & 0.347    & 0.364    & 1.023 & 97    \\
-$\sigma$       & 0.364  &  0.020 &  0.325     &  0.364   & 0.405    &
-1.008 & 320 \\  \hline
+\begin{tabular}{rrrrrrr} \hline \hline
+                & Mean     & SD     & 2.5\%    & 50\%     & 97.5\%   & Rhat   \\ \hline
+$N$             & 117.626  & 5.675  & 107.000  & 117.000  & 129.000  & 1.015   \\
+$\alpha_0$      & 1.305    & 0.494  & 0.425    & 1.280    & 2.387    & 1.009   \\
+$\alpha_1$      & 3.806    & 0.423  & 3.050    & 3.777    & 4.733    & 1.008   \\
+$\sigma_{move}$  & 0.347    & 0.008  & 0.332    & 0.347    & 0.364    & 1.023   \\
+$\sigma$       & 0.364  &  0.020 &  0.325     &  0.364   & 0.405    & 1.008  \\  
+$\psi$         & 0.587    & 0.044  & 0.501    & 0.588    & 0.673    & 1.006    \\
+\hline
 \end{tabular}
 \label{searchencounter.tab.simtable}
 \end{table}
@@ -693,10 +692,15 @@ Note for grid cells that were not searched, $C_{j} =0$ and, for those,
 the constraint $\lambda_{0,ij}=0$ was imposed so that the probability
 of encounter was identically 0.
 
-\citet{russell_etal:2012} looked at group structure, and some other things............
-XXXX RESULTS XXXXXXXXXXXXXXX
-% XXXX RC: Any interesting results to report?
-
+One problem encounered by \citet{russell_etal:2012} in their analysis
+is the possibility of dependence in encounters because of group
+structure in the data (usually, juveniles in associatiation with their
+mother). In this situation, in addition to dependence of encounter,
+multiple individuals have effectively the same activity center, thus
+violating a number of assumptions related to the ordinary SCR model.
+To resolve this problem, the authors made some assumptions about group
+association and fitted models where group served as the functional
+individual.
 
 \begin{figure}
 \centering
@@ -708,26 +712,6 @@ Run!
 }
 \label{searchencounter.fig.lion}
 \end{figure}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 \subsection{Sierra National Forest Fisher Study}
 
@@ -749,35 +733,13 @@ We provide the
 data from this study
 data(fisherdata) and the 
 \R~function: \mbox{\tt SCRfisher} which produces the posterior summary
-statistics shown in Table. XXXXXXX.
-
+statistics shown in Table
+\ref{searchencounter.table.fisher}.
+One thing is relatively poor mixing of the Markov chains here due to
+sparse data and a fairly long run is probably necessary.
 Conclusions, thoughts, recommendations about this study...
 What does this study show.............
 
-
-%%% Kimmy can you table this according to the normal rules?
-{\small
-\begin{verbatim}
-> print(out,digits=3)
-Inference for Bugs model at "modelfile.txt", fit using WinBUGS,
- 3 chains, each with 11000 iterations (first 1000 discarded)
- n.sims = 12570 iterations saved
-            mean      sd   2.5%     25%     50%     75%   97.5%  Rhat n.eff
-psi        0.413   0.300  0.016   0.132   0.366   0.674   0.964 1.131    23
-sigma      4.745   2.909  0.163   2.212   4.650   7.231   9.704 1.020   220
-N        315.889 230.041 12.000 100.000 280.000 516.000 738.775 1.133    23
-lam0       0.003   0.033  0.000   0.000   0.000   0.001   0.016 1.097    28
-alpha      0.188   0.170  0.005   0.060   0.138   0.268   0.641 1.002  2000
-deviance  71.665  11.129 45.822  65.220  74.355  80.030  86.730 1.130    25
-
-For each parameter, n.eff is a crude measure of effective sample size,
-and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
-
-DIC info (using the rule, pD = var(deviance)/2)
-pD = 56.4 and DIC = 128.1
-DIC is an estimate of expected predictive error (lower deviance is better).
-\end{verbatim}
-}
 
 \begin{table}
 \caption{Inference for Bugs model at (``modelfile.txt''), fit using WinBUGS,
@@ -787,18 +749,21 @@ DIC is an estimate of expected predictive error (lower deviance is better).
  and Rhat is the potential scale reduction factor (at convergence, Rhat=1).
  DIC info (using the rule, pD = var(deviance)/2)
  pD = 56.4 and DIC = 128.1
- DIC is an estimate of expected predictive error (lower deviance is better).}
+ DIC is an estimate of expected predictive error (lower deviance is
+ better).
+here lambda_{0} = exp(\alpha_{0})
+}
 \begin{tabular}{rrrrrrrrrr}\hline \hline
          &   mean  &    sd   &   2.5\%  &    50\%  &   97.5\%  &  Rhat   &  n.eff \\ \hline
+N        & 315.889 & 230.041 &  12.000  & 280.000  & 738.775   &  1.133  &   23   \\
 psi      &   0.413 &   0.300 &   0.016  &   0.366  &   0.964   &  1.131  &   23   \\ 
 sigma    &   4.745 &   2.909 &   0.163  &   4.650  &   9.704   &  1.020  &  220   \\
-N        & 315.889 & 230.041 &  12.000  & 280.000  & 738.775   &  1.133  &   23   \\
-lam0     &   0.003 &   0.033 &   0.000  &   0.000  &   0.016   &  1.097  &   28   \\ 
-alpha    &  0.188  &   0.170 &   0.005  &   0.138  &   0.641   &  1.002  & 2000   \\ 
+$\lambda_0$     &   0.003 &   0.033 &   0.000  &   0.000  &   0.016   &  1.097  &   28   \\ 
+$\alpha_1$    &  0.188  &   0.170 &   0.005  &   0.138  &   0.641   &  1.002  & 2000   \\ 
 deviance & 71.665  &  11.129 &  45.822  &  74.355  &  86.730   &  1.130  &   25   \\ \hline
 
 \end{tabular}
-\label{scrfisher.table}
+\label{searchencounter.table.fisher}
 \end{table}
 
 
