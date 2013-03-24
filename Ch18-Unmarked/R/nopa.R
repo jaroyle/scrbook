@@ -221,6 +221,10 @@ summary(mc2)
 
 sort(table(as.matrix(mc2)[,"N"]))
 
+plot(table(as.matrix(mc2)[,"N"]))
+
+
+
 
 save(mc2, file="nopamc2.gzip")
 
@@ -334,6 +338,42 @@ sort(Ntab)
 names(Ntab)[which.max(Ntab)]
 
 save(mc2.3, file="mc2.3.gzip")
+
+
+
+
+
+
+
+
+
+
+
+
+# Compare results 2 and 3
+
+load("nopamc3.gzip")
+
+
+ss2 <- summary(mc2)
+ss3 <- summary(mc3)
+
+nopaout <- rbind(cbind(Prior=1, ss2$stat[,1:2], ss2$quant[,c(1,3,5)]),
+                 cbind(Prior=1, ss3$stat[,1:2], ss3$quant[,c(1,3,5)]))
+
+write.table(format(nopaout, digits=1, sci=FALSE), quote=FALSE, sep=" & ",
+            eol="\\\\\n")
+
+
+
+
+
+
+
+
+
+
+
 
 
 round(qgamma(c(0.025, 0.25, 0.5, 0.75, 0.975), 0.001, 0.001), 3)
