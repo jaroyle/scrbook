@@ -211,7 +211,7 @@ out2 <- clusterEvalQ(cl2, {
     jc <- coda.samples(jm, pars2, n.iter=150000)
     return(as.mcmc(jc))
 })
-})
+}) # 3500 it/hr
 
 
 mc2 <- mcmc.list(out2)
@@ -221,6 +221,8 @@ summary(mc2)
 
 sort(table(as.matrix(mc2)[,"N"]))
 
+
+save(mc2, file="nopamc2.gzip")
 
 
 system.time({
@@ -265,17 +267,22 @@ out3 <- clusterEvalQ(cl3, {
     jc <- coda.samples(jm, pars2, n.iter=150000)
     return(as.mcmc(jc))
 })
-}) # 3570 it/hr
+}) # 3240 it/hr
 
 
 #mc2i <- mcmc.list(out2)
 mc3 <- mcmc.list(out3)
 
-plot(mc2i)
-summary(mc2i)
-HPDinterval(mc2i)
+plot(mc3)
+summary(mc3)
+HPDinterval(mc3)
 
 summary(mc2)
+
+
+
+save(mc3, file="nopamc3.gzip")
+
 
 autocorr.plot(mc2i)
 crosscorr.plot(mc2i)
@@ -365,6 +372,28 @@ stopCluster(cl2)
 
 
 
+
+
+
+
+
+
+
+mN <- function(n=10000, M=100, a=1, b=1) {
+    psi <- rbeta(n, a, b)
+    N <- rbinom(n, M, psi)
+    return(N)
+}
+
+hist(mN())
+
+sort(table(mN()))
+
+hist(mN(a=0.001, b=1))
+
+sort(table(mN(a=0.001, b=1)))
+
+plot(table(mN(a=0.001, b=1)))
 
 
 
