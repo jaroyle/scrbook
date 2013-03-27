@@ -20,7 +20,7 @@ w <- rbinom(N, 1, PrMark)
 co <- seq(0.8, 3.2, len=6)
 X <- cbind(rep(co, each=length(co)), rep(co, times=length(co)))
 
-plot(xlimS, ylimS, xlab="X", ylab="Y", cex=1.3, cex.lab=1.5, cex.axis=1.5, pch="")
+plot(xlimS, ylimS, xlab="Easting", ylab="Northing", cex=1.3, cex.lab=1.5, cex.axis=1.5, pch="")
 points(s[w==0,], col="grey", pch=16, cex=1.3)
 points(s[w==1,], col="black", pch=16, cex=0.8)
 points(X, pch="+", cex=1.6)
