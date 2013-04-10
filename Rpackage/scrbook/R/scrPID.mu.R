@@ -206,7 +206,8 @@ scrPIDu<-function (n, X, y, M, mmax, obsmod = c("pois", "bern"),niters, npics,
         if (iter%%100 == 0) {
             cat("   Acceptance rates\n")
             cat("     z =", zUps/M, "\n")
-            cat("     S =", Sups/M, "\n")
+            cat("     zm =", zUpsm/mmax, "\n")
+            cat("     S =", Sups/(M+mmax), "\n")
         }
         out[iter, ] <- c(sigma, lam0, crat, psi, psim, sum(z[marked]), sum(z))
     }
