@@ -1,0 +1,36 @@
+model {
+phi ~ dbeta(1,1)      # "availability" parameter
+tau ~ dunif(0, 1000)  # "movement parameter" of Gaussian kernel model
+p ~ dbeta(1,1)        # detection prob
+psi ~ dbeta(1,1)      # data augmentation parameter
+for(i in 1:M) {
+  z[i,1] ~ dbern(psi)        # is the guy real?
+  z[i,2] ~ dbern(z[i,1]*phi) # and still alive?
+  z[i,3] ~ dbern(z[i,2]*phi) # still kicking
+  s[i] ~ dcat(PrSeg[]) # location (stream segment) of activity center
+  for(g in 1:G) {
+    PrU[i,g] <- exp(-distmat[s[i],g]^2/(2*tau^2)) # Pr(u | s)
+    }
+  for(k in 1:K) {
+    u[i,k] ~ dcat(PrU[i,]) # location of guy i at time k
+    for(g in 1:G) {
+      y[i,g,k] <- (u[i,k] == g)*z[i,k] # was guy at u==g?
+      }
+    }
+  }
+for(j in 1:J) {
+  for(k in 1:K) {
+    N[j,k] <- sum(y[,seg[j],k]) # Number of individuals in seg j at time k
+    # removal model:
+    n[j,1,k] ~ dbin(p, N[j,k])
+    N2[j,k] <- N[j,k] - n[j,1,k]
+    n[j,2,k] ~ dbin(p, N2[j,k])
+    N3[j,k] <- N2[j,k] - n[j,2,k]
+    n[j,3,k] ~ dbin(p, N3[j,k])
+    }
+  }
+Ntot[1] <- sum(z[,1]) # Abundance, occasion 1
+Ntot[2] <- sum(z[,2]) # Abundance, occasion 2
+Ntot[3] <- sum(z[,3]) # Abundance, occasion 3
+}
+

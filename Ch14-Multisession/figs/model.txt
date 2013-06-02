@@ -1,0 +1,51 @@
+
+model {
+ # year-specific N parameterized in DA parameter 
+
+alpha0 ~ dnorm(0,.01)
+sigma ~ dunif(0,200)
+alpha1 <- 1/(2*sigma*sigma)
+psi<- sum(lambda[])/bigM
+beta1 ~ dnorm(0,.1)
+
+A <- ((xlim[2]-xlim[1]))*((ylim[2]-ylim[1]))
+for(t in 1:5){
+for(i in 1:bigM){
+ingroup[i,t]<- yrid[i] == t
+ingroup2[i,t]<- z[i]*ingroup[i,t]
+}
+N[t] <- sum(ingroup2[,t])   ####inprod(z[1:bigM],yrdummy[,t])
+D[t] <- (N[t]/A)*10000  # put in units of per ha
+pi[t]<- lambda[t]/sum(lambda[])
+}
+
+lagged[1]<- 0
+for(t in 2:5){
+lagged[t]<- D[t-1]
+}
+trend ~ dbern(.5)
+
+for(t in 1:5){
+log(lambda[t])<- beta0[1] + trend*beta1*(t-3)
+beta0[t] ~ dnorm(0,0.01)
+} 
+for(i in 1:bigM){
+   
+  z[i] ~ dbern(psi)
+  yrid[i] ~ dcat(pi[])
+  S[i,1] ~ dunif(xlim[1],xlim[2])
+  S[i,2] ~ dunif(ylim[1],ylim[2])
+
+  for(j in 1:ntraps){
+      d2[i,j] <- pow(pow(S[i,1]-X[j,1],2) + pow(S[i,2]-X[j,2],2),1)
+   }
+  for(k in 1:K){
+     Ycat[i,k] ~ dcat(cp[i,k,])
+    for(j in 1:ntraps){
+      lp[i,k,j] <- exp(alpha0 - alpha1*d2[i,j])*z[i]*(1-died[i,k])        
+      cp[i,k,j] <- lp[i,k,j]/(1+sum(lp[i,k,1:ntraps]))
+    }
+    cp[i,k,ntraps+1] <- 1-sum(cp[i,k,1:ntraps])  # last cell = not captured
+  }
+}
+}

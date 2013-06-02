@@ -1,0 +1,69 @@
+source("V:\\Chris_working_folder\\SCR_Designs_FINAL\\fix_some_sites.R")
+if(!"water" %in% ls()){
+water 	<- shapefile("V:\\Chris_working_folder\\GIS\\Simulations\\Streams_clipped.shp")
+water2 	<- water[water@data$Study_Area=="Hudson",]
+}
+
+#############
+## Part 1
+
+ # CLUSTERS AS CLUSTERS
+  wd<-"V:/Chris_working_folder/SCR_Designs_FINAL/Hudson"
+  source(paste(wd,"/Hudson_data.Rd",sep=""))
+  source(paste(wd,"/H.des.Clust.R",sep=""))
+  TT  <- which(H.des.Clust$Qvec==min(H.des.Clust$Qvec[H.des.Clust$Svec==90]))
+  Xfix <- H.des.Clust$Xlst[[TT[1]]] *1000
+  Xfix$k <- 1
+  
+  tmpmerge <- merge(sites,Xfix,by=c("X","Y"),all.x=TRUE)
+  
+  S <- G
+  fix <- tmpmerge[tmpmerge$k%in%1,]
+  C <- tmpmerge[!tmpmerge$k%in%1,]
+  
+  par(mfrow=c(1,3))
+  plot(water2,col=4,asp=1)
+  points(sites[,c("X","Y")],pch=21,bg="grey",cex=2)
+  plot(water2,col=4,asp=1)
+  points(sites[,c("X","Y")],pch=21,bg="grey",cex=1)
+  points(C[,c("X","Y")],pch=21,bg=2,cex=2)
+  plot(water2,col=4,asp=1)
+  points(sites[,c("X","Y")],pch=21,bg="grey",cex=1)
+  points(fix[,c("X","Y")],pch=21,bg=3,cex=2)
+  
+  C.clusters <- matrix(NA,nrow=length(unique(drop.levels(C$Clust))),ncol=nrow(C))
+  rownames(C.clusters) <- unique(C$Clust)
+  colnames(C.clusters) <- C$Trap_ID
+   for(i in 1:nrow(C.clusters)){
+    x <- rownames(C.clusters)[i]
+    C.clusters[i,] <- C$Trap_ID %in% C$Trap_ID[C$Clust==x] + 0
+   }
+  C.clust.mids <- data.frame(Cl=unique(C$Clust),midX=NA,midY=NA)
+   for ( i in C.clust.mids$Cl){
+     x<- C[which(C$Clust%in%i),]
+    if(nrow(x)>1){
+     C.clust.mids[which(C.clust.mids$Cl%in%i),2:3] <- pam(cbind(x$X,x$Y),1)$medoids/1000
+    }else{
+     C.clust.mids[which(C.clust.mids$Cl%in%i),2:3] <- x[,c("X","Y")]/1000
+   }
+   }
+  C <- C[,c("X","Y")]/1000
+  fix <- fix[,c("X","Y")]/1000
+
+ #So:
+ beta0 <- 1.005
+ beta1 <- exp(2.445368)
+ sigma <- sqrt(1/(beta1/1))
+ par(mfrow=c(1,1))
+ plot(water2,col=4)
+ H.HSdes <- SCRdesign(S=S,C=C,clusters=C.clusters,fix=fix,
+                      clust.mids=C.clust.mids,
+                      ntraps=25,ndesigns=5,nn=5,
+                      sigma=sigma,beta0=beta0, crit=6)
+
+ s.vec <- NULL
+ for(i in 1:length(H.HSdes$Xlst)){
+   tmpmerge <- merge(H.HSdes$Xlst[[i]]*1000,sites,by=c("X","Y"))
+   s.vec <- c(s.vec,length(unique(tmpmerge$Site_ID)))
+ }
+ H.HSdes$Svec <- c(s.vec)

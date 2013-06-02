@@ -1,0 +1,399 @@
+
+
+
+# Simulate data for "m unknown" case
+
+#M <- 100
+#psi <- 0.5
+#EN <- M*psi
+#omega <- 0.3
+#Em <- M*omega
+
+M <- 200
+N <- 60
+m <- 40
+
+
+# You can be in one of three states: marked, unmarked, or faker
+# Here are categorical probs:
+#pi <- c(Em/M, (EN-Em)/M, (M-EN)/M)
+pi <- c(m/M, (N-m)/M, (M-N)/M)
+sum(pi)
+
+
+# Which state is a guy in
+set.seed(545)
+h <- rmultinom(M, 1, pi)
+w <- h[1,]
+u <- h[2,]
+z <- w+u
+
+(N <- sum(z))   # pop size
+(m <- sum(w))   # marked guys
+(U <- sum(u))   # unmarked guys
+
+# Constraints. Should be true
+N == m + U
+M == m + U + sum(h[3,])
+
+# set.seed(5459)
+#z <- w <- rep(0, M)
+#z1 <- sample(1:M, N)
+#z[z1] <- 1
+#w1 <- sample(z1, m)
+#w[w1] <- 1
+
+cbind(z, w, u)
+
+#z <- rbinom(M, 1, psi)
+#q <- rbinom(M, 1, omega*z)
+#(N <- sum(z))
+#(m <- sum(q))
+
+# Activity centers
+s <- cbind(runif(M), runif(M))
+
+co <- seq(0.3, 0.7, len=5)
+X <- cbind(rep(co, each=5), rep(co, times=5))
+
+plot(s, xlim=c(0,1), ylim=c(0,1), cex=1.3)
+points(s[z==1,], col="grey", pch=16, cex=1.3)
+points(s[w==1,], col="blue", pch=16, cex=0.8)
+points(X, pch="+", cex=2)
+
+
+J <- nrow(X)
+K <- 5
+
+lam0 <- 0.5
+sigma <- 0.1
+
+
+yM <- yU <- array(NA, c(M, J, K)) # Capture data
+lambda <- dist <- matrix(NA, M, J)
+for(i in 1:M) {
+    for(j in 1:J) {
+        dist[i,j] <- sqrt((s[i,1]-X[j,1])^2 + (s[i,2]-X[j,2])^2)
+        lambda[i,j] <- lam0*exp(-dist[i,j]^2/(2*sigma^2))
+        yM[i,j,] <- rpois(K, lambda[i,j] * w[i])
+        yU[i,j,] <- rpois(K, lambda[i,j] * u[i])
+    }
+}
+
+
+# Observed data
+y <- yM[rowSums(yM)>0,,]
+dim(y)
+nind <- nrow(y)
+
+nU <- apply(yU, c(2,3), sum)
+
+# Augment data
+
+nz <- 100
+
+yz <- array(0, c(nind+nz, J, K))
+yz[1:nind,,] <- y
+
+
+
+
+# JAGS
+
+paste("yu[", (nind+1):(nind+nz), ",j,k]",
+      sep="", collapse=",")
+
+library(rjags)
+
+
+dat1 <- list(y=yz, nU=nU, X=X, M=nind+nz, J=J, K=K,
+             xlim=c(0, 1), ylim=c(0,1))
+
+yui <- array(0, c(dat1$M, J, K))
+for(j in 1:J) {
+    for(k in 1:K) {
+        yui[sample((nind+1):dat1$M, dat1$nU[j,k]),j,k] <- 1
+    }
+}
+yui[1:nind,,] <- 0
+
+wi <- ifelse(rowSums(dat1$y)>0, 1, 0)
+ui <- 1-wi
+hi <- cbind(wi, ui, 0)
+
+init1 <- function() list(omega=0.2,
+#                         h=hi,
+                         H=apply(hi==1, 1, which),
+                         yu=yui,
+                         psi=0.3)
+#z=rep(1, dat1$M),
+#                         u=c(),
+#                         yu=yui,
+#                         w=c(rep(1, nind), rep(0,dat1$M-nind)))
+#                         w=c(rep(NA, nind), rep(0, nz)))
+
+
+
+
+str(dat1)
+str(init1())
+
+
+pars1 <- c("N", "m", "U", "sigma", "lam0")
+
+jm1 <- jags.model("munknown2.jag", dat1, init1, n.chains=1,
+                  n.adapt=100)
+
+mc1 <- coda.samples(jm1, pars1, n.iter=500)
+mc2 <- coda.samples(jm1, pars1, n.iter=500)
+
+
+plot(mc1, ask=TRUE)
+summary(mc1)
+
+plot(mc2, ask=TRUE)
+summary(mc2)
+
+
+N
+m
+
+
+
+
+
+# Try again with different state-space
+
+
+# Augment data
+
+nz <- 150
+
+yz <- array(0, c(nind+nz, J, K))
+yz[1:nind,,] <- y
+
+
+dat2 <- dat1
+dat2$xlim=c(-1, 2)
+dat2$ylim=c(-1, 2)
+dat2$y <- yz
+dat2$M <- nrow(dat2$y)
+str(dat2)
+
+
+yui <- array(0, c(dat2$M, J, K))
+for(j in 1:J) {
+    for(k in 1:K) {
+        yui[sample((nind+1):dat2$M, dat2$nU[j,k]),j,k] <- 1
+    }
+}
+yui[1:nind,,] <- 0
+
+wi <- ifelse(rowSums(dat2$y)>0, 1, 0)
+ui <- 1-wi
+hi <- cbind(wi, ui, 0)
+
+init2 <- function() list(omega=0.2,
+#                         h=hi,
+                         H=apply(hi==1, 1, which),
+                         yu=yui,
+                         psi=0.3)
+
+str(dat2)
+str(init2())
+
+
+
+paste("yu[", (nind+1):(nind+nz), ",j,k]",
+      sep="", collapse=",")
+
+
+
+jm2 <- jags.model("munknown2.jag", dat2, init2, n.chains=1,
+                  n.adapt=100)
+
+mc2.1 <- coda.samples(jm2, pars1, n.iter=500)
+mc2.2 <- coda.samples(jm2, pars1, n.iter=500)
+
+
+plot(mc2.1, ask=TRUE)
+summary(mc2.1)
+
+plot(mc2.1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Simulate data for "m known" case
+
+#M <- 100
+#psi <- 0.5
+#EN <- M*psi
+#omega <- 0.3
+#Em <- M*omega
+
+M <- 125
+D <- 50
+A <- 1
+N <- 50
+m <- 40
+
+
+
+# Which state is a guy in
+set.seed(545)
+z <- w <- rep(0, M)
+z1 <- sample(1:M, N)
+z[z1] <- 1
+w1 <- sample(z1, m)
+w[w1] <- 1
+u <- z*(1-w)
+
+cbind(z, w, u)
+colSums(cbind(z, w, u))
+
+#z <- rbinom(M, 1, psi)
+#q <- rbinom(M, 1, omega*z)
+#(N <- sum(z))
+#(m <- sum(q))
+
+# Activity centers
+s <- cbind(runif(M), runif(M))
+
+co <- seq(0.3, 0.7, len=5)
+X <- cbind(rep(co, each=5), rep(co, times=5))
+
+plot(s, xlim=c(0,1), ylim=c(0,1), cex=1.3)
+points(s[z==1,], col="grey", pch=16, cex=1.3)
+points(s[w==1,], col="blue", pch=16, cex=0.8)
+points(X, pch="+", cex=2)
+
+
+J <- nrow(X)
+K <- 5
+
+lam0 <- 0.5
+sigma <- 0.1
+
+
+yM <- yU <- array(NA, c(M, J, K)) # Capture data
+lambda <- dist <- matrix(NA, M, J)
+for(i in 1:M) {
+    for(j in 1:J) {
+        dist[i,j] <- sqrt((s[i,1]-X[j,1])^2 + (s[i,2]-X[j,2])^2)
+        lambda[i,j] <- lam0*exp(-dist[i,j]^2/(2*sigma^2))
+        yM[i,j,] <- rpois(K, lambda[i,j] * w[i])
+        yU[i,j,] <- rpois(K, lambda[i,j] * u[i])
+    }
+}
+
+
+# Observed data
+y <- yM[w==1,,]
+dim(y)
+nind <- nrow(y)
+
+nU <- apply(yU, c(2,3), sum)
+
+# Augment data
+
+nz <- 100
+
+yz <- array(0, c(nind+nz, J, K))
+yz[1:nind,,] <- y
+
+rowSums(yz)
+
+
+# JAGS
+
+paste("yu[", (nind+1):(nind+nz), ",j,k]",
+      sep="", collapse=",")
+
+library(rjags)
+
+
+dat1 <- list(y=yz, nU=nU, X=X, M=nind+nz, J=J, K=K,
+             w=c(rep(1, nind), rep(0, nz)),
+             xlim=c(0, 1), ylim=c(0,1))
+
+yui <- array(0, c(dat1$M, J, K))
+for(j in 1:J) {
+    for(k in 1:K) {
+        yui[sample((nind+1):dat1$M, dat1$nU[j,k]),j,k] <- 1
+    }
+}
+yui[1:nind,,] <- 0
+
+init1 <- function() list(omega=0.2,
+                         z=rep(1, dat1$M),
+#                         h=hi,
+#                         H=apply(hi==1, 1, which),
+                         yu=yui,
+                         psi=0.3)
+#z=rep(1, dat1$M),
+#                         u=c(),
+#                         yu=yui,
+#                         w=c(rep(1, nind), rep(0,dat1$M-nind)))
+#                         w=c(rep(NA, nind), rep(0, nz)))
+
+
+
+
+str(dat1)
+str(init1())
+
+
+pars1 <- c("N", "m", "U", "sigma", "lam0", "D")
+
+jm1 <- jags.model("mknown.jag", dat1, init1, n.chains=1,
+                  n.adapt=100)
+
+mc1 <- coda.samples(jm1, pars1, n.iter=100)
+mc2 <- coda.samples(jm1, pars1, n.iter=500)
+
+
+plot(mc1, ask=TRUE)
+summary(mc1)
+
+plot(mc2, ask=TRUE)
+summary(mc2)
+
+
+N
+m

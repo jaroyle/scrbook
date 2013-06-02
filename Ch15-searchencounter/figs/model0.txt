@@ -1,0 +1,33 @@
+
+model {
+
+# Priors
+alpha0~dunif(-25,25)
+alpha1~dunif(0,60)
+sigma<- sqrt(1/(2*alpha1))
+lsigma~dunif(-5,5)
+sigma.move<-exp(lsigma)
+tau<-1/(sigma.move*sigma.move)
+psi~dunif(0,1)
+
+# Likelihood
+for(i in 1:M){ # Loop over individuals
+ z[i]~dbern(psi)
+ s[i,1]~dunif(xlim[1],xlim[2])
+ s[i,2]~dunif(ylim[1],ylim[2])
+ for(k in 1:K){ # Loop over temporal replicates
+    u[i,k] ~ dnorm(s[i,1],tau) 
+    v[i,k] ~ dnorm(s[i,2],tau) 
+    for(j in 1:J){ # Loop over each point defining line segments
+      d[i,k,j]<-  pow(pow(u[i,k]-X[j,1],2) + pow(v[i,k]-X[j,2],2),0.5)
+      h[i,k,j]<-exp(alpha0-alpha1*d[i,k,j]*d[i,k,j])
+   }
+   H[i,k]<-sum(h[i,k,1:J])
+   p[i,k]<- z[i]*(1-exp(-H[i,k]))
+   y[i,k] ~ dbern(p[i,k])
+ }
+}
+
+# Derived quantity
+N<-sum(z[])
+}

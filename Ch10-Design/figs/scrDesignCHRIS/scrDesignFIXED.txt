@@ -1,0 +1,175 @@
+library(scrbook)
+library(cluster)
+library(raster)
+library(rgdal)
+library(MASS)
+library(gdata)
+
+ SCRdesign<-function( S=S,C=C,clusters=NULL,fix=NULL,clust.mids=clust.mids,
+                      ntraps=9,ndesigns=10,nn=19,beta0=-0.6,sigma=2,crit=6){
+
+  ngrid<-nrow(S)
+  if(is.null(clusters)){
+    Cd <- round(e2dist(C,C),8)
+    NN2 <- NN <- matrix(0,nrow=nrow(Cd),ncol=ncol(Cd))
+   for(i in 1:nrow(Cd)){
+     xx<-Cd[i,]
+     NN[i,]  <- (xx>0 & xx<= sort(xx)[nn]) # select nearest nn neighbors
+     NN2[i,] <- (xx>0 & xx<= sort(xx)[3])  # select nearest 3 neighbors
+   }
+  }
+ # if using clusters
+ if(!is.null(clusters)){
+   Cd <- round(e2dist(clust.mids[,-1],clust.mids[,-1]),8)
+   NN2 <- NN <- matrix(0,nrow=nrow(Cd),ncol=ncol(Cd))
+  for(i in 1:nrow(Cd)){
+    xx<-Cd[i,]
+    NN[i,] <- (xx>0 & xx<= sort(xx)[nn])
+    NN2[i,] <- (xx>0 & xx<= sort(xx)[3])
+  }
+ }
+
+ if(is.null(fix)){  X <- C }
+ if(!is.null(fix)){ X <- rbind(C,fix) }
+
+ S <- S
+ N <- 100
+
+ Qfn<-function(X,S,N=100){
+  beta0 <- beta0
+  beta1 <-  -1*( 1/(sigma^2) )
+  dmat  <-e2dist(X,S)^2   # ntraps x nstatespace points
+  lammat <- exp(beta0 + beta1 * dmat)                    # capts per trap | s
+  lamvec <- exp(beta0 + beta1 * dmat[1:length(dmat)])    # c(lammat)
+  lamJ <- as.vector( t(lammat)%*%rep(1,nrow(X)))         # sum of pr(c) across all traps | s
+  pbar <- as.vector( 1-exp(-t(lammat)%*%rep(1,nrow(X)))) #
+  pbar<-mean(pbar)
+  M1  <- rep(1,ntraps*nrow(S)) # DM[,1]: the intercept
+  M2  <- dmat[1:length(dmat)]  # DM[,2]: X (in Y = b_0 + b_1*X)
+  I11 <- (1/nrow(S))*sum(lamvec)        # Y
+  I12 <- (1/nrow(S))*sum(lamvec*M2)     # YX         | Y  | YX  |
+  I21 <- (1/nrow(S))*sum(lamvec*M2)     # YX         | YX | YXX |
+  I22 <- (1/nrow(S))*sum(lamvec*M2*M2)  # YXX
+  I <- matrix(c(I11,I12,I21,I22),nrow=2,byrow=TRUE)
+  I <- N*pbar*I
+  V <- solve(I)
+  Q1 <- sum(diag(V))
+  sumsJ <- as.vector(
+             t( lammat*lammat*(diag(V)[1] + (dmat^2) * diag(V)[2] -2*dmat*V[1,2]) ) %*%rep(1,nrow(X)))
+  var.pbar <- ((1/nrow(S))^2)*sum(exp(-lamJ)*exp(-lamJ)*sumsJ) # Q4
+  part1 <- (N*N*var.pbar)  ### /(pbar*pbar)
+  part2 <-  N*(1-pbar)/pbar
+  total <-  part1+part2
+  newpart2 <- N*(1-pbar)*(var.pbar + 1)/pbar
+  old <- N*N*var.pbar + newpart2
+  fixed <-  N*pbar*( (1-pbar) + N*pbar)*( var.pbar/(pbar^4) )  # Q2
+  Q1 <- part1; Q2 <- newpart2; Q3 <- total; Q4 <- Q1
+  Q5 <- fixed; Q6 <- 1 - pbar; Q7 <- var.pbar
+  c(Q1,Q2,Q3,Q4,Q5,Q6,Q7)
+  }
+ Dlist <- list()
+ Qhistory <- NULL
+ for(m in 1:ndesigns){
+  Qbest<-10^10
+  if(is.null(clusters)){
+    X.current <- sample( 1:nrow(C),ntraps)
+   if(is.null(fix)){  X <- C[X.current,]
+   }else{
+     X <- rbind(C[X.current,],fix)
+     }
+  } else{
+     # or clusters:
+     X.current <- sample(1:nrow(clusters),ntraps)         # pick 'ntraps' clusters
+     which.sites <- apply(clusters[X.current,],2,sum)>0   # which sites are is the design
+      if(is.null(fix)){  X <- C[which.sites,]
+      } else {
+         X <- rbind(C[which.sites,],fix) }
+    }
+  Q <- Qfn(X,S)[crit]             # evaluate Qfn|X
+  Qhistory <- c(Qhistory,Q)       # store Q
+  cat("Initial Q: ",Q,fill=TRUE)  # print starting Q
+  if(is.nan(Q)){
+   Dlist[[m]]<- list(Q=NA, X=X,X.current=X.current)
+   next # go back to the top and start the 'm' loop again
+ }
+ repeat{ # repeat until 'break' is satisfied i.e. [Qbest == Q]
+  for(i in 1:ntraps){                      # here we will replace each site with [nn] alternatives
+    # chk is a vector of 1s for sites that can be swapped with a focal site/cluster
+    chk <- NN[X.current[i],]               # chk is a vector of [1 = a near neighbour]
+    chk[X.current] <- 0                    # remove any sites already in the design
+    x.consider <- (1:ncol(NN))[chk==1]     # these are the alternatives to consider
+    qtest <- rep(10^10,length(x.consider))
+   if(length(x.consider)>0){
+     for(j in 1:length(x.consider)){
+       Xtest.current <- X.current         # this is just a list of clusters thats all.
+       Xtest.current[i] <- x.consider[j]  # switch focal with alternative site
+      if(!is.null(clusters)){
+        which.test <- apply(clusters[Xtest.current,],2,sum)>0 # new design
+       ifelse(is.null(fix),
+              Xtest <- C[which.test,],
+              Xtest <- rbind(C[which.test,],fix))
+       } else {
+       ifelse(is.null(fix),
+              Xtest <- C[Xtest.current,],
+              Xtest <- rbind(C[Xtest.current,],fix))
+              }
+      points(rbind(C,fix)*1000,pch=21,bg="grey",cex=1)
+      points(fix*1000,pch=21,bg="green",cex=1)
+      points(C[which.test,]*1000,pch=21,bg="red",cex=1)
+      xxxx <- Qfn(Xtest,S)     # evaluate Qfn|NEW_X
+      qtest[j] <- xxxx[crit]   # store the criteria of interest
+     }} else {qtest <- NaN}
+   if(any(is.nan(qtest))){
+     Dlist[[m]] <- list(Q=NA, X=X,X.current=X.current)
+    next
+   }
+   if(min(qtest) < Q){
+     Q <- min(qtest)                    # best switch
+     kp <- qtest==min(qtest)            # which switch resulted in the best swith
+     X.current[i] <- x.consider[kp][1]  # make the switch permanent
+   # now to deal with clusters
+    if(is.null(clusters)){
+      X <- C[X.current,]
+    } else{
+      which.sites <- apply(clusters[X.current,],2,sum)>0
+      X <- C[which.sites,]
+    }
+#   cat("new Q: ",Q,fill=TRUE)
+   #plot(S,pch=".")
+  }}
+#  cat("Current value after all J points: ", Q, fill=TRUE)
+  if(Qbest == Q){                         #
+  break                                   #
+  }                                       #
+  if(Q<Qbest) Qbest<-Q                    #
+  if(Q>Qbest) cat("ERROR",fill=TRUE)      ### checks whether and better switches can be made
+  Qhistory<-c(Qhistory,Q)
+  }
+
+ Dlist[[m]]<- list(Q = Qbest, # final Q value
+                   X = X,     # starting desgin
+                   X.current = X.current # final/best design
+                   )
+ m <- m+1
+ }
+ # post processing
+ Qvec <- rep(NA,length(Dlist))
+ Xid <- matrix(NA,nrow=ntraps,ncol=length(Dlist))
+ Xlst <- list()
+
+  for(i in 1:length(Dlist)){
+   Qvec[i] <- Dlist[[i]]$Q
+   Xid[,i] <- Dlist[[i]]$X.current
+   Xlst[[i]] <- Dlist[[i]]$X
+  }
+ od <- order(Qvec)
+ tmp <- list()
+  for(i in 1:length(od)){
+   tmp[[i]] <- Xlst[[od[i]]]
+  }
+ Qvec <- Qvec[od]
+ Xid <- Xid[,od]
+ Xlst <- tmp
+ output <- list(Qvec = Qvec,Xid = Xid,Xlst = Xlst,C = C,S = S,Qhistory = Qhistory)
+ return(output)
+ }

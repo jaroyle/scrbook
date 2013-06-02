@@ -1,0 +1,22 @@
+
+model {
+# This version constrains psi with 
+#   the intercept parameter
+  p ~ dunif(0,1)
+  beta0 ~ dnorm(0,.1)
+  beta1 ~ dnorm(0,.1)
+  psi<- sum(lam[])/M
+  for(j in 1:G){
+    log(lam[j]) <- beta0+ beta1*x[j]
+    gprobs[j]<- psi*lam[j]/sum(lam[1:G])
+  }
+  gprobs[G+1]<- (1-psi)
+
+  for(i in 1:M){
+    g[i] ~ dcat(gprobs[])
+    z[i] <- 1 - (g[i] == (G+1))
+    y[i] ~ dbin(mu[i],K)
+    mu[i] <- z[i]*p
+  }
+  N <- sum(z[1:M]) 
+}

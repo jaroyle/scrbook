@@ -1,0 +1,1689 @@
+\chapter{Open Population Models}
+\markboth{Open Populations}{}
+\label{chapt.open}
+
+
+\vspace{0.3cm}
+
+
+\section{Introduction}
+
+In the previous chapters we focused mostly on closed population models
+for estimating density and for inference about spatial variation in
+density and space usage.  However, a thorough understanding of
+population dynamics requires information about both spatial {\it and}
+temporal variation in population density and demographic parameters.
+In this chapter, we discuss modeling the processes governing spatial
+and temporal population dynamics, namely survival, recruitment, and
+movement over larger temporal scales (e.g., migration, dispersal,
+etc...).  The ability to estimate these parameters is critical to both
+basic and applied ecological research
+\citep{knape_deValpine:2012}. For example, testing hypotheses about
+life history trade-offs requires accurate estimates of both survival
+and fecundity \citep{caswell:1989, nichols_etal:1994}.  Inference
+about density-dependent population regulation, which has fascinated
+theoretical ecologists for well over a century, is likewise best
+accomplished by directly studying the factors affecting survival and
+fecundity, rather than the more common approach of modeling time
+series data \citep{nichols_etal:2000}.  A mechanistic understanding of
+population changes, which is essential for basic ecological and
+conservation related questions, requires useful models of vital
+rates. Furthermore, if we know how environmental variables affect
+demographic parameters, we can make predictions about population
+changes under different future scenarios. We can also assess the
+sensitivity of parameters such as population growth rate to variation
+in survival or fecundity. Although matrix population models are often
+used for these purposes \citep{caswell:1989,saether_bakke:2000}, the
+same objectives can be accomplished by computing posterior predictive
+distributions of projected population sizes as part of the MCMC
+algorithm.
+
+The modeling framework we will develop in this chapter is based on a
+formulation of the classical Cormack-Jolly-Seber (CJS) and Jolly-Seber
+(JS) type models \citep{cormack:1964, jolly:1965, seber:1965} that are
+amenable to modeling individual effects, including individual
+covariates.  There is a long history of use of these models in
+fisheries, wildlife, and ecology studies \citep{pollock_etal:1990,
+  lebreton_etal:1992, pradel:1996, williams_etal:2002,
+  schwarz_arnason:2005, gimenez:2007}.  Additionally, there have been
+many modifications and developments of the CJS and JS models including
+dealing with individuals that do not have a well defined home range
+but instead are moving through the sampled area (transients), dealing
+with more than one site or state (multi-state models, where states
+maybe geographic units, reproductive stage, etc.), and addressing
+individual movement through spatially implicit models.
+ 
+For the first time, these models can fully integrate the movement of
+individuals in the vicinity of the trap array with their encounter
+histories to simultaneously estimate density, survival, and
+recruitment in a spatial model.  For many species, such as those that
+are rare or not often observed by researchers, this allows inferences
+to be made about survival and recruitment without having to physically
+capture individuals.  Additionally, another reason for extending SCR
+models to open populations arises purely from a sampling perspective.
+Longer time periods are often needed to sample rare or elusive species
+to ensure that enough captures and recaptures are produced.  This
+extended time frame can quickly lead to violations in the assumption
+of population closure (see also Chapt. \ref{chapt.design}).  For
+example, the European wildcat study that was mentioned in
+Chapt. \ref{chapt.covariates} (see \citet{kery_etal:2011} for details)
+was conducted over a year-long period.  While the researchers in that
+study used a closed population model, they did model variation in
+detection as a function of time to account for seasonal variation in
+behavior.  Another approach would have been to use an open population
+model to account for possible changes in the population over time
+(however, the spatial capture recapture open models had not been
+developed at the time of the wildcat study, so we'll forgive the
+authors for not having used this more appropriate model).
+
+In this chapter, we present the traditional JS model and the spatial
+version, demonstrating both with an example of mist-netting of
+ovenbirds, which was also analyzed in Chapt. \ref{chapt.poisson-mn}.
+Then we review the traditional CJS, multi-state CJS, and then describe
+the spatial model.  In this section, we will use a an example of
+American shad.  Finally, we end by discussing some of the new
+approaches to dynamics of activity centers including correlated
+movement and dispersal.
+
+
+\subsection{Brief overview of population dynamics}
+
+The most basic formulation of models for population growth stems from
+an idea originally used in accounting, the balance sheet (see
+\citet[][Chapt. 3]{conroy_carroll:2009} for a more complete
+description).  To gain a mechanistic understanding of population
+dynamics, it is important to understand four fundamental processes
+that drive population size: births and immigrants (i.e., population
+``credits'') and deaths and emigrants (i.e., population ``debits'').
+The population at time $t+1$ is a function of these four components:
+\[
+N(t+1) = N(t) + B(t) + I(t) - D(t) - E(t)
+\]
+where $N(t)$ is the population size at time $t$, $B(t)$ and $I(t)$ are
+the credits (additions) from births and immigrants at time $t$, and
+$D(t)$ and $E(t)$ are the debits (losses) due to deaths and
+emigration.  This balance equation model is known as the ``BIDE
+model''.  A simple population growth model under density independence,
+assuming no immigration or emigration, can be derived as:
+\[
+N(t+1) = N(t) + N(t)r(t)
+\]
+where $r(t) = b(t) - d(t)$.  Here, $b(t)$ and $d(t)$ are the
+per-capita birth and death rates and thus $r(t)$ is the per-capita
+growth rate. Models which are based only on the intrinsic population
+growth rate, `$r$', however, do not retain much information about the
+underlying drivers of the population dynamics.  Density-dependent, age
+structured, stochastic effects on growth, spatially structured, and
+competition models (e.g., Lotka-Volterra) all are derivations of the
+basic BIDE model.
+
+In closed population models, we focus on estimating the population
+size, $N$, but in open population models we are interested in the
+dynamics that arise between years or seasons and thus we focus not
+only on $N(t)$ but on the processes that drive population changes.
+By taking the basic parameters in the BIDE model and reconceptualizing
+them, they can then be related to the commonly used parameters in JS
+and CJS models, described in more detail throughout this chapter. In
+the absence of movement, deaths (D) can be estimated in the CJS model
+and both D and B (births) can be estimated in the JS model.  However,
+in considering movement, it becomes difficult to distinguish births
+from immigrants and deaths from emigrants because data are usually only 
+collected in one area and when the animal leave that area we 
+cannot determine it's fate.
+ 
+For example, survival ($\phi(t)$) is defined as the probability of an
+individual surviving from time $t$ to $t+1$, and often this is called
+`\textit{apparent} survival' because deaths and emigration cannot be
+separated. Mortality, the probability of dying from time $t$ to $t+1$,
+is $1-\phi(t)$.  Recruitment ($\gamma$) is the probability of a new
+individual entering the population between $t$ to $t+1$, which
+includes both those born into the population and immigrants. This
+inability to distinguish between the different forms of losses and
+gains does not allow researchers to test specific hypotheses about
+population dynamics.  To address this, \citet{nichols_pollock:1990}
+applied the robust design to a two age class situation in order to
+separate estimates of recruitment into immigration and {\it in situ }
+reproduction.  While models that focus on the population growth rate
+tend to lose important information on population dynamics, more recent
+work has been done to estimate the contributions of survival and
+recruitment to the per capita growth rate, `$r$', using
+capture-recapture data and a reverse-time modeling approach
+\citep{pradel:1996, nichols_etal:2000a}.  All of these model
+improvements have provided invaluable information in the study of
+population dynamics, but none explicitly incorporate animal movement.
+
+
+\subsection{Animal movement related to population demography}
+
+
+One issue that arises frequently in traditional open population models
+is that movement can make it difficult to distinguish survival from
+emigration.  For example, we know that movement of transients and
+temporary emigration will affect the estimates of survival, causing us
+to refer to estimates as ``apparent survival''
+\citep{lebreton_etal:1992}.  This is because an animal that appears in
+the population for a short period of time and then leaves is going to
+appear as though it has died.  Due to this problem, there has been a
+significant amount of work developing models to deal with temporary
+emigration and transients in both closed and open capture-recapture
+models \citep{kendall_etal:1997, pradel_hines:1997, hines_etal:2003,
+  clavel_etal:2008, gilroy_etal:2012,chandler_etal:2011}.  Because
+movement is modeled directly within the SCR framework, we can better
+understand the impact of animals moving onto and off of the trap array
+and hence we can improve our estimates of survival by combining the
+traditional CJS and JS models with the SCR model.
+
+While demographic parameters such as survival rates, population
+growth, etc. are influenced by density \citep{fowler:1981,
+  murdoch:1994, saether_etal:2002}, it is also likely that movement
+of individuals can influence these parameters.  It is generally
+accepted that population structure (i.e., age, stage, or size
+distribution) can affect both population size and growth over time
+\citep{caswell_werner:1978}.  We also know that how animals distribute
+themselves in space can directly influence the age or stage structure
+of a population -- this can be behavioral, habitat related, or some
+combination of factors.  For example, if habitat is limited, some
+younger members of the population might have trouble finding and/or
+defending a territory.  Ultimately, this may lower survival for a
+certain age class in the population directly impacting the population
+structure.
+
+Dispersal can also affect population structure.  In population
+ecology, dispersal can be related with access to reproduction,
+population regulation, habitat quality, as well as the linking of
+local populations in metapopulation ecology \citep{clobert_etal:2001,
+  ovaskainen:2004, ovaskainen_etal:2008}.  It is known that dispersal
+may be influenced by density-dependence \citep{matthysen:2005}; for
+example, competition may cause individuals to be more likely to
+emigrate from an area, or individuals may leave an area in search of a
+mate or partner.  We discuss modeling dispersal with capture recapture
+data a bit further in Sec. \ref{open.sec.ACdyanmics} at the end of the
+chapter.
+
+
+\section{Jolly-Seber Models}
+
+\subsection{Traditional Jolly-Seber models}
+
+The JS model was developed as a way to estimate not only detection and
+abundance, but survival and recruitment (new individuals coming into
+the population) based on capture-recapture data \citep{jolly:1965,
+  seber:1965}.  There are a number of ways that researchers have
+formulated the JS model \citep{cooch_white:2006} and while all are
+slightly different, the resulting estimates of abundance and the
+driving parameters such as survival and some form of recruitment
+should be equivalent.  Commonly used formulations are the Link-Barker
+\citep{link_barker:2005}, Pradel-recruitment \citep{pradel:1996},
+Burnham JS \citep{burnham:1997}, and the super-population formulation
+of \citet{schwarz_arnason:1996}.  In all of these models, the
+parameter of interest is recruitment, or how new individuals arrive
+into the population.  Therefore one of the main differences between
+the various models is how new entrants into the population are
+parameterized.
+
+
+Traditionally, sampling for the JS model included only one data
+collection event per primary occasion and this allowed for the
+estimation of survival and recruitment.  However, without repeated
+visits within a primary occasion, there is not enough data to allow
+for variation in detection and this lead to potentially inaccurate
+estimates of population size.  This lead \citet{pollock:1982} to
+devise the robust design in order to allow for heterogeneity in
+capture probability (by sex, age, social status, etc.) and trap
+response under the JS model.  We present the robust design approach as
+it is more flexible and generalizing to the spatial version of the JS
+model will be much simpler.  The basic idea is that there are primary
+occasions (e.g., years, seasons) and we allow the population to be
+``open'' between the primary occasions.  This means that individuals
+can enter and leave the population (i.e., births, deaths, immigration,
+emigration can occur) between the primary occasions and within a
+primary occasion, the population is assumed to be closed to these
+processes.  The standard JS model does not allow for variation in
+detection probability between individuals or within a primary occasion
+because only one sample is collected per primary period.  However,
+when multiple samples are taken within a primary occasion (we call
+these ``secondary occasions''), then variation in detection
+probability can be modeled and thus our estimates of $N$ can be
+improved.  To that extent, we can envision the data as arising from
+repeated sampling over seasons or years (or {\it primary} periods)
+within which one or more samples (e.g., trap nights) might be taken
+({\it secondary} periods). Fig. \ref{open.figs.robustdesign}
+demonstrates the sampling process graphically.  Comparing this with
+all of our previous work, the sample occasions (e.g., trap nights,
+weeks, etc$\dots$) described in the closed population chapters are
+called {\it secondary} sampling occasions in the context of open
+population models.
+
+
+
+\begin{figure}[h]
+\centering
+\includegraphics[height=2in,width=2.5in]{Ch16-Open/figs/RobustDesign.pdf}
+\caption{Schematic of the robust design with $T$ primary sampling periods and $K$ secondary periods. The populations
+are considered open between primary periods and closed within each.}
+\label{open.figs.robustdesign}
+\end{figure}
+
+We can easily formulate a non-spatial JS model using the robust
+design. We define $y_{ikt}$ as the encounter history for individual
+$i$ at secondary occasion $k$ during primary occasion $t$.  If we have
+a Bernoulli encounter process then we can describe the observation
+model, specified conditional on the ``alive state'', $z(i,t)$, for
+individual $i$ at primary time $t$, as:
+ \[
+  y_{ikt}|z(i,t) \sim
+\mbox{Bernoulli}(p_t z(i,t)).
+\]
+(Note: throughout this chapter we will focus on changes in the 
+alive state, so we will index $z$ using parentheses in order to make the notation easier to read,
+where $z(i,t)$ is equivalent to $z_{it}$).
+Thus, if individual $i$ is alive at time $t$ ($z(i,t)=1$), then the
+observations are Bernoulli with detection probability $p$ as before.  Conversely, if the individual is
+not alive ($z(i,t)=0$), then the observations must be fixed zeros with
+probability 1. Note our distinct use of the variable $z$ here as
+representing the state of individuals (alive/dead) instead of our
+previous use of $z$ as the data augmentation variable. 
+
+Survival and recruitment in the open population are manifest in a
+model for the latent state variables $z(i,t)$ describing individual
+mortality and recruitment events.  An important aspect of the
+hierarchical formulation of the model that we adopt here is that the
+model for the state variables is described conditional on the total
+number of individuals ever alive during the study (a parameter which
+we label $N$) based on $T$ periods, as in
+\citet{schwarz_arnason:1996}.  Data augmentation induces a special
+interpretation on the latent state variables $z(i,t)$.  In particular,
+``not alive'' includes individuals that have died, or individuals that
+have not yet been recruited.  \citet{royle_dorazio:2008} showed that
+using this formulation simplifies the state model and also allows it
+to be implemented directly in the \textbf{BUGS} language.  For
+example, considering the case $T=2$, the state model is composed of
+the following two components: First, the initial state is described
+by:
+\[
+ z(i,1) \sim \mbox{Bernoulli}(\psi)
+\]
+and then a model describing the transition of individual states from
+$t=1$ to $t=2$:
+\[
+ z(i,2) \sim \mbox{Bernoulli}( \phi z(i,1)  + \gamma (1-z(i,1)) ).
+\]
+If $z(i,1)=1$, then the individual may survive to time $t=2$ with
+probability $\phi$ whereas, if $z(i,1)=0$, then the
+``pseudo-individual'' may be recruited with probability $\gamma$.
+
+We can then generalize this model for $T>2$ time periods and allow
+survival and recruitment to be time dependent.  Initialize the model
+for time $T=1$ as we have done above and then the model describing the
+transition of individual states from $t$ to $t+1$ is:
+\[
+ z(i,t+1) \sim \mbox{Bernoulli}( \phi_t z(i,t)  + \gamma_t (1-z(i,t)) ).
+\]
+
+This parameterization results in $T-1$ survival and recruitment
+parameters.  The main difference here from the CJS model, described
+below, is that we include recruitment and are interested in estimating
+$N$ for each $t$.  Since this state model described above is
+conditional-on-$N$, we must deal with the fact that $N$ is unknown,
+which is done through data augmentation similar to how we used it in
+the closed population models.
+
+
+\subsection{Data augmentation for the Jolly-Seber model}
+\label{open.sec.dataaugJS}
+
+The fundamental challenge in carrying out a Bayesian analysis of this
+model is that the parameter $N$ (the total number of individuals alive
+during the study) is not known.  We have discussed and demonstrated
+data augmentation in many previous chapters; however, with the open
+population model, we have to take care that two issues are addressed:
+(1) the data augmentation is large enough to accommodate all potential
+individuals alive in the population during the entire study and (2)
+that individuals cannot die and then re-enter the population.
+\citet{royle_dorazio:2008} (see also \citet{kery_schaub:2011})
+describe this formulation for open population models, including the
+non-spatial JS and robust design models.
+
+To begin, let's consider the role of recruitment, $\gamma$, in the
+model when we use data augmentation to estimate $N$.
+Data augmentation formally reparameterizes the model, replacing $N$,
+the number of individuals ever alive with $M$, where we
+assume $N \sim \mbox {Binomial}(M, \psi)$.  
+That is, the expected value of $N$ under the model is equal to $\psi
+M$.  As a result of this repararameterization, the recruitment
+parameters $\gamma_{t}$ are also relative to the number of ``available
+recruits'' on the data augmented list of size $M$, and not directly
+related to the population size.  This can be dealt with by deriving
+$N_t$, and $R_{t}$, the population size and number of recruits in year
+$t$, as a function of the latent state variables $z(i,t)$.  For
+example, the total number of individuals alive at time $t$ is
+\[
+N_{t} = \sum_{i=1}^{M} z(i,t)
+\]
+and the number of recruits is
+\[
+R_{t} = \sum_{i=1}^{M} (1-z(i,t-1))z(i,t)
+\]
+which is the number of individuals {\it not} alive at time $t-1$ but
+alive at time $t$.
+
+In the case of just two primary periods, this process is
+straightforward.  When the number of primary sample occasions is
+greater than 2, we must formulate the model for recruitment by
+introducing another latent variable, in order to ensure that an
+individual can only be recruited once into the population.  Here, this
+formulation of the model uses a set of latent indicator variables,
+which we label $A(i,t)$, which describe the time interval $(t-1, t)$
+at which individual is recruited into the population.  Let $A(i,t) =
+1$ if individual $i$ is recruited in time interval $(t-1, t)$
+otherwise $A(i,t)=0$.  To construct the recruitment process we make
+use of the standard conditional binomial construction of a removal
+process (\citealt{royle_dorazio:2008}).  The initial state is given
+by:
+\[
+   A(i,1) \sim \mbox{Bernouli}(\gamma_{1})
+\]
+for $i=1,2,\ldots,N$. Then, for $t>1$
+\[
+ A(i,t)|A(i, t-1) \dots A(i, 1) \sim \mbox{Bernoulli}((1 - \sum_{\tau=1}^{t-1} A(i, \tau) ) \gamma_{t})
+\]
+where $\gamma_1$ is equivalent to $\psi$ in the description of the 2
+primary occasion version open population model above and $\tau$ is
+just a counter for times 1 to $t-1$.  Each recruitment variable is
+conditional on whether the individual was ever previously recruited
+and this construction forces the recruitment variable after initial
+recruitment to be degenerate (have a sample size of 0).  This ensures
+that an individual cannot be recruited again after initial
+recruitment.  Then, we can describe the state variables $z(i,t)$ by a
+1st order Markov process.  For $t=1$, the initial states are fixed:
+\[
+z(i,1) \equiv A(i,1)
+\]
+and,
+ for subsequent states, we have
+\[
+z(i,t)|z(i,t\,-\,1),A(i,t)
+ \sim \mbox{Bernoulli} (\phi_{t} z(i,t\,-\,1)) \,+ \,  A(i,t).
+\]
+Thus, if an individual is in the population at time $t$ (i.e., $z(i,t)
+= 1$), then that individual's status at time $t+1$ is the outcome of a
+Bernoulli random variable with parameter (survival probability)
+$\phi_{t}$.  If the individual, however, is not in the population at
+time $t$ (i.e., $z(i,t) = 0$), then the outcome is a Bernoulli random
+variable with probability $\gamma_{t}$, a parameter that is related to
+{\it per capita} recruitment.  Recall that we use $A$ to describe if
+an individual is available for recruitment and this is directly
+related to $z$ as described above.  We carry out this process in
+\jags~ by using the \mbox{\tt sum}() and \mbox{\tt step}() functions
+together to ascertain if a particular individual $i$ was ever
+previously alive.  The \mbox{\tt step}() function is a logical test in
+\jags~ for $x \geq 0$ such that \mbox{\tt step}($x \geq 0$) returns a
+$1$, otherwise $0$.  Individuals that were ever previously alive are
+no longer eligible to be ``recruited'' into the population.  The
+implementation of this model in \jags~is shown in panel
+\ref{open.panel.nsJS}.
+
+
+\begin{panel}[htp]
+\centering
+\rule[0.1in]{\textwidth}{.03in}
+{\small
+\begin{verbatim}
+model{
+
+psi ~ dunif(0,1)
+phi ~ dunif(0,1)
+p.mean ~ dunif(0,1)
+
+for(t in 1:T){
+N[t] <- sum(z[1:M,t])
+gamma[t] ~ dunif(0,1)
+ }
+
+for(i in 1:M){
+  z[i,1] ~ dbern(psi)	          # Alive state for the first year
+ cp[i,1] <- z[i,1]*p.mean
+  Y[i,1] ~ dbinom(cp[i,1], K)     # Y are the number of encounters
+  A[i,1] <- (1-z[i,1])
+
+  for(t in 2:T){                   # For loop for years 2 to T
+      a1[i,t] <- sum(z[i, 1:t])    # Sum over the alive states from 1 to t
+       A[i,t] <- 1-step(a1[i,t] - 1)  
+  # A is the indicator if an individual is available to be recruited
+       mu[i,t]<- (phi*z[i,t-1]) + (gamma[t]*A[i,t-1])
+  # Alive state at t is dependent on phi and gamma
+        z[i,t] ~ dbern(mu[i,t])   
+       cp[i,t] <- z[i,t]*p.mean
+        Y[i,t] ~ dbinom(cp[i,t], K)
+           }  
+       } 
+} 
+\end{verbatim}
+}
+
+\rule[-0.1in]{\textwidth}{.03in}
+\caption{
+\jags~model specification for the non-spatial Jolly-Seber model using
+data augmentation. }
+\label{open.panel.nsJS}
+\end{panel}
+
+
+{\flushleft \bf Ovenbird mist-netting study}
+
+We now return to the ovenbird data collected using mist-nets at
+Patuxent Wildlife Research Center. We introduced these data in
+Chapts. \ref{chapt.poisson-mn} and \ref{chapt.hscr}, and they are
+provided with the \secr~package (see, \citet{efford_etal:2004,
+  borchers_efford:2008}). To refresh your memory: 44 mist nets spaced
+30 m apart on the perimeter of a 600-m x 100-m rectangle (see
+Fig. \ref{open.figs.ovenbirdlocs}) were operated on 9 or 10
+non-consecutive days in late May and June for 5 years from 2005-2009.
+
+\begin{figure}
+\centering
+\includegraphics[height=2in,width=2.5in]{Ch16-Open/figs/ovenbirds.pdf}
+\caption{Arrangement of the mist nests in the ovenbird study.  The nets are arranged in a 600-m by 100m
+rectangle, spaced 30 m apart. }
+\label{open.figs.ovenbirdlocs}
+\end{figure}
+
+
+In Chapts. \ref{chapt.poisson-mn} and \ref{chapt.hscr}, we dealt with
+this dataset as a type of spatial ``multi-session'' model where
+abundances in each year, $N_{t}$, were regarded as independent random
+variables either with a Poisson prior (as implemented in \mbox{\tt
+  secr}, or a binomial prior if analyzed using {\bf BUGS} with data
+augmentation.  This is the simplest approach for modeling data
+collected over multiple years, but it does not allow for inference
+about demographic processes, as does the JS model.
+
+In the spatial multi-session model (S-MS) we were not interested in
+individual identity across years; however, we need to maintain the
+order of individuals across years to estimate the survival and
+recruitment of individuals into the population.  We organize the data
+set so that each row in the array represents just one individual
+across all primary periods.  For the ovenbird dataset, we can organize
+the data by creating a master list of all individuals captured during
+the entire study.  From this list, we can assign each individual a
+unique row in our dataset (in the \R~ commands, we do this by using
+the \mbox{\tt unique}() function on the row names for each year of our
+3-D array and use \mbox{\tt pmatch}() to associate the data to the
+correct column).  The resulting array is individual by secondary
+occasion by primary occasion, $M$ x $K$ x $T$.  The ${\bf R}$ commands
+to organize the data in a way suitable for fitting a Jolly-Seber type
+model are included in the \scrbook~ package using the function
+\verb+ovenbirds.js()+ and are not shown here.  The key difference
+between our model and organization of the data here and that in
+Chapt. \ref{chapt.poisson-mn} is that, here, we have to preserve
+individual identity across years (in the model and data structure).
+
+The data augmentation must be large enough to include individuals
+alive during any of the time periods and to account for that, we set
+$M=200$.  There were 70 unique individuals captured over the 5 year
+period.  For this example, we hold survival constant but allow
+recruitment to be time dependent (since $\gamma$ is essentially a
+function of the data augmentation process as described above, it does
+not make sense to hold recruitment constant and we therefore make it
+time specific).
+
+To implement the model in Panel \ref{open.panel.nsJS}, the following commands
+are used:
+
+{\small
+\begin{verbatim}
+ # Set initial values for the alive state, z
+> zst <- c(rep(1,M/2),rep(0,M/2))
+> zst <- cbind(zst,zst,zst,zst,zst)
+
+> inits <-function(){list(z=zst,sigma=runif(1,25,100),gamma=runif(5,0,1))}
+> parameters <- c("psi","N","phi", "p.mean", "gamma")
+> data <- list (K=10,Y=Ybin,M=M)
+
+> library("rjags")
+> out1 <- jags.model("modelNSJS.txt",data,inits,n.chains=3,n.adapt=500)
+> out2NSJS <- coda.samples(out1,parameters,n.iter=20000)
+\end{verbatim}
+}
+
+In this non-spatial JS model, $N_t$ is estimated to be between about
+22 and 33 for each of the 5 years (see Table \ref{open.tab.JSmulti}
+for results).  The posterior mean for detection (\mbox{\tt p.mean} in
+the model) was 0.14.  We did not include \mbox{\tt p.mean} in the
+table because the SCR models do not have a parameter that directly
+corresponds to it.  Instead, SCR models have a detection function that
+is related to distance.
+
+
+{\flushleft \bf Shortcomings of the traditional JS models}
+
+One of the biggest shortcomings of the non-spatial JS model is that we
+estimate $N$ but have no explicit spatial area associated with it (so,
+in Table \ref{open.tab.JSmulti}, the density estimate from the
+non-spatial JS model is listed as NA).  Ignoring the spatial
+information in the data makes the estimation of density an informal
+process.  As we saw in the closed models, the explicit incorporation
+of spatial information in the model will allow us to make an explicit
+estimate of density.  This improvement should also carry through in
+our estimation of other demographic parameters such as survival and
+recruitment as the movement of individuals is directly accounted for
+in the model.
+
+
+\subsection{Spatial Jolly-Seber models}
+
+To parameterize the spatial JS models, we follow all of the same steps
+as the non-spatial model but also include the trap location
+information into our detection function.  Basically, we are using the
+closed population SCR model to estimate the detection parameters and
+initial population size, and the open component is carried out in the
+process of how we model the transition of $z(i,t)$ to $z(i, t+1)$
+which is the same as in the non-spatial JS model.  To do so, we
+describe the Bernoulli observation model, specified conditional on
+$z(i,t)$, as has been done throughout the book:
+\[
+  y_{ijkt}|z(i,t) \sim
+\mbox{Bernoulli}(p_{ijk} z(i,t)).
+\]
+with
+\begin{equation}
+p_{ijk} = p_{0}*\exp(-\alpha_{1} d_{ij}^2)
+\label{scr0.eq.norm}
+\end{equation}
+where $d_{ij}$ = $||{\bf x}_{j}-{\bf s}_{i}||$, the distance between
+activity center ${\bf s}_{i}$ and trap ${\bf x}_{j}$. As before,
+$p_{0}$ is the baseline encounter probability, for an individual with
+home range center located precisely at a trap, and $\alpha_{1} =
+(1/(2\sigma^2))$ where $\sigma$ is the scale parameter in this
+Gaussian encounter probability model.
+
+
+If individual $i$ is alive at time $t$ ($z(i,t)=1$), then the
+observations are Bernoulli.  Conversely, if the individual is not
+alive ($z(i,t)=0$), then the observations must be fixed zeros with
+probability 1.  As always, other observation models can be considered
+in the context of a fully open JS type model, such as the Poisson or
+multinomial models described in Chapt. \ref{chapt.poisson-mn}, and we
+can consider many alternative models of encounter probability.
+
+We initialize the
+model for time $T=1$
+and then model the transition of individual states from
+$t$ to $t+1$ as:
+\[
+ z(i,t+1) \sim \mbox{Bern}( \phi_t z(i,t)  + \gamma_t (1-z(i,t)) ).
+\]
+Previously, in sec. \ref{open.sec.dataaugJS}, it was described how
+this formulation of the model uses a set of latent indicator variables
+$A(i,t)$ which describes if an individual is recruited into the
+population during time interval $(t-1, t)$.  We apply the same
+approach here, so that, as before, $A(i,t) = 1$ if individual $i$ is
+recruited in time interval $(t-1, t)$; otherwise $A(i,t)=0$.
+
+The number of recruits into the population is calculated based on the
+alive state of the previous time steps ($1, 2 \dots, t-1$) and the
+current time step ($t$).  For example, to estimate the number of
+recruits from time period 1 to 2, we count those individuals not in
+the population at time 1 ($z(i,1) = 0$) but alive at time 2 ($z(i,2) =
+1$).  We can determine if individual $i$ has entered the population at
+time $t=2$ by using the formula: $R_{i,2}=(1-z(i,1))z(i,2)$ and then
+sum $R_{i,2}$ over $M$ to get the total number of recruits.  We can do
+this for all the primary periods in our study, as shown in the
+\jags~code in Panel \ref{open.panel.spatialJS}.
+
+
+\begin{panel}[htp]
+\centering
+\rule[0.1in]{\textwidth}{.03in}
+{\small
+\begin{verbatim}
+model {
+psi ~ dunif(0,1)       # Prior distributions
+phi ~ dunif(0,1)
+alpha0 ~ dnorm(0,10)
+sigma ~ dunif(0,200)
+alpha1 <- 1/(2*sigma*sigma)
+A <- ((xlim[2]-xlim[1]))*((ylim[2]-ylim[1]))  # Area of state-space
+
+for(t in 1:T){
+N[t] <- sum(z[1:M,t])  # Calculate abundance for each year
+D[t] <- N[t]/A	       # Calculate density for each year
+R[t] <- sum(R[1:M,t])    # Calculate the recruits for each year
+gamma[t] ~ dunif(0,1)  # Prior for time specific recruitment parameter
+}
+
+for(i in 1:M){
+  z[i,1] ~ dbern(psi)
+  R[i,1] <- z[i,1]      # To estimate the number of recruits
+  R[i,2] <- (1-z[i,1])*z[i,2]
+  R[i,3] <- (1-z[i,1])*(1-z[i,2])*z[i,3]
+  R[i,4] <- (1-z[i,1])*(1-z[i,2])*(1-z[i,3])*z[i,4]
+  R[i,5] <- (1-z[i,1])*(1-z[i,2])*(1-z[i,3])*(1-z[i,4])*z[i,5]
+
+  for(t in 1:T){
+     # Independent activity centers for each year
+     S[i,1,t] ~ dunif(xlim[1],xlim[2]) 
+     S[i,2,t] ~ dunif(ylim[1],ylim[2])
+  for(j in 1:ntraps){
+      d[i,j,t] <- pow(pow(S[i,1,t]-X[j,1],2) + pow(S[i,2,t]-X[j,2],2),1)
+     }
+  for(k in 1:K){
+     for(j in 1:ntraps){
+        lp[i,k,j,t] <- exp(alpha0 - alpha1*d[i,j,t])*z[i,t]
+        cp[i,k,j,t] <- lp[i,k,j,t]/(1+sum(lp[i,k,,t]))
+     }
+    cp[i,k,ntraps+1,t] <- 1-sum(cp[i,k,1:ntraps,t]) 
+    # Here, the last cell indicates not captured
+    Ycat[i,k,t] ~ dcat(cp[i,k,,t])
+  }
+}
+  A[i,1]<-(1-z[i,1])
+for(t in 2:T){                   # For loop for years 2 to T
+      a1[i,t] <- sum(z[i, 1:t])  # Sum over alive states from 1 to t
+       A[i,t] <- 1-step(a1[i,t] - 1)   
+   # A indicates if individual is available to be recruited at time t
+       mu[i,t] <- (phi*z[i,t-1]) + (gamma[t]*A[i,t-1])
+   # Alive state at t is dependent on phi and gamma
+        z[i,t] ~ dbern(mu[i,t])
+          }
+     }
+}
+\end{verbatim}
+}
+\rule[-0.1in]{\textwidth}{.03in}
+\caption{
+\jags~model specification for the fully spatial Jolly-Seber
+model. This extends the ordinary Jolly-Seber model by the inclusion of
+a spatial component to the encounter probability model. }
+\label{open.panel.spatialJS}
+\end{panel}
+
+
+{\flushleft \bf Ovenbird mist-netting study}
+
+In the previous analysis of the ovenbird data, we did not make use of
+the spatial location for each net the ovenbirds were captured in.
+However, there were 44 mist nets operational during each of the
+sampling occasions.  We already organized the data above so that our
+3-D encounter histories are set up.  The data set is then $M=200$
+individuals by $K=10$ secondary occasions by $T=5$ primary occasions.
+In the non-spatial version, we reduced the data to captured or
+not-captured; however, the encounter history array, \mbox{\tt Yarr},
+contains the number of the net that each individual was captured in
+and contains a $45$ if the individual was not captured. The code above
+describes how the encounter history array is created, so we do not
+reproduce this piece of code here. To call the model, use the
+following \R~ code which sets the initial values for \mbox{\tt
+  z[i,t]}, the parameters to monitor, and calls \jags.  The code is
+also available in the \verb+ovenbirds.js()+ function.
+
+{\small 
+\begin{verbatim}
+> zst <- c(rep(1,n),rep(0,M-n))
+> zst <- cbind(zst,zst,zst,zst,zst)
+
+> inits <- function(){list(z=zst,sigma=runif(1,25,100),
+              gamma=runif(5,0,1), S=Sst,alpha0=runif(1,-2,-1))}
+> parameters <- c("psi", "alpha0", "alpha1", "sigma", "N",
+                       "D", "phi", "gamma", "R")
+> data <- list(X=as.matrix(X[[1]]), K=10, Ycat=Yarr,
+               M=M, ntraps=ntraps, ylim=ylim, xlim=xlim)
+> library("rjags")
+> out1 <- jags.model("modelJS.txt", data, inits, n.chains=3,
+             n.adapt=500)
+> out2JS <- coda.samples(out1,parameters,n.iter=10000)
+\end{verbatim}
+}
+
+
+\begin{table}
+\centering
+\caption{
+Posterior mean of model parameters for the non-spatial Jolly-Seber 
+model (NS-JS), the spatial Jolly-Seber model (S-JS),
+and the spatial multi-session model (S-MS) fitted to the
+ovenbird data set.  Density shown in individuals per hectare.
+}
+
+\begin{tabular}{crrr}
+\hline \hline
+    &   NS-JS &   S-JS   &   S-MS \\  \hline
+D[1]    &  NA & 0.96 &  0.93   \\
+D[2]     & NA & 1.00 &  1.00  \\
+D[3]   &   NA & 1.10 &  1.20  \\
+D[4]   &   NA & 1.10 &  0.89 \\
+D[5]   &   NA & 0.79  & 0.76  \\
+N[1]   &  26.5 &  33 &  32.4  \\
+N[2]   &  30.2 &  36 &  35.8  \\
+N[3]    & 33.1 &  39 &  42.1 \\
+N[4]   &  29.5 &  37 &  30.8 \\
+N[5]   &   21.7 & 28 &  26.2 \\
+alpha0 &   NA & -2.9 & -2.88  \\
+alpha1  &   NA & 1.2e-04 & 1.22e-04  \\
+sigma  &   NA &  6.4 & 6.44 \\
+gamma[1]  & 0.50 &  0.50 & NA \\
+gamma[2] &  0.09  & 0.09 & NA \\
+gamma[3] &  0.11 & 0.13 & NA \\
+gamma[4] &  0.13 & 0.16 & NA \\
+gamma[5] &  0.07 & 0.08 & NA \\
+phi   &  0.48 &   0.53 & NA \\
+psi   &  0.14 &  0.17 & NA \\
+R2    &  NA &   15 & NA \\
+R3    &   NA &   19 & NA \\
+R4    &   NA &   8.3 & NA \\  
+R5    &   NA &   8.3 & NA \\ \hline
+\end{tabular}
+\label{open.tab.JSmulti}
+\end{table}
+
+Our results for density, $\alpha_0$, and $\alpha_1$ are rather similar
+to those found in the multi-season analysis from
+Chapt. \ref{chapt.poisson-mn}.  Since all of our parameters including
+$\alpha_0$ and $\alpha_1$ are shared between seasons, we would expect
+these results to be similar between the multi-season model and the JS
+model (see Table \ref{open.tab.JSmulti}).  There are some slight
+differences in the parameter estimates, for example, the density is
+lower in year 4 in the multi-season model than in the JS model.  This
+may be due to a smaller sample size in that year; due to the Markovian
+relationship between abundances, the JS model is able to make use of
+the data more efficiently.  Because we have defined the same state
+space for the spatial JS model and multi-season, our estimates of
+$N_t$ are directly comparable.  However, the estimates of $N_t$ under
+the non-spatial JS model are not directly comparable as we do not have
+a well-defined effective trapping area.  We see from Table
+\ref{open.tab.JSmulti} that $N_t$ is smallest for the non-spatial JS
+model across all years.  This suggests that the actual effective
+trapping area is smaller than our state-space, but we cannot know how
+much relative to the state-space to make useful comparisons between
+the $N_t$s.
+
+\begin{figure}
+\centering
+\includegraphics[height=2in,width=2.5in]{Ch16-Open/figs/Nhat5ovenbird.pdf}
+\caption{Posterior distribution of $N_5$ from the spatial JS model for
+  the ovenbird dataset.  This figure
+suggests that there is no truncation of the posterior of $N_5$ by $M$. }
+\label{open.figs.ovenbirdN5hist}
+\end{figure}
+
+
+In the JS formulation of the model, we also estimate the recruitment
+for each year, and we can look at our derived values for recruitment
+(R2, R3, R4, and R5).  R2 is the number of new recruits from primary
+period 1 to 2; R3 is the number of new recruits from primary period 2
+to 3; and so forth.  R2 and R3 are almost double that of R4 and R5,
+suggesting that less animals were recruited into the population in the
+latter years of the study.  The density in the last year of the study
+was lower than previous years.  It is good to check your results when
+you see a pattern like this -- the number of recruits declining each
+year -- because this could be an indication that the data augmentation
+was not large enough.  In this example, we checked to make sure that
+M=200 was sufficiently large by examining the recruitment parameter,
+$\gamma$.  If $\gamma$ is close to 1 during any of the time periods,
+then there are not enough augmented individuals in the overall
+dataset.  In this case, the 97.5\% quantile of $\gamma_5$, the
+recruitment probability in the final year of the study, was 0.14 and
+none of the other $\gamma$'s were close to 1 either.  You can also
+look at the posterior distributions of $N_t$ to make sure they are not
+truncated, Fig. \ref{open.figs.ovenbirdN5hist} shows that the
+posterior distribution of $N_5$ is not truncated. The posterior mean
+for survival, $\phi$, was 0.53.  Although we did not do that in this
+example, it should be easy to see that we could allow survival to vary
+by time, as we did with recruitment.  Our estimates of survival seem
+reasonable when compared with the ovenbird literature.  Some studies
+have found annual male ovenbird survival to be around 0.62
+\citep{porneluzi_faaborg:1999, bayne_hobson:2002}, whereas female
+ovenbird survival is much lower (0.21, \cite{bayne_hobson:2002}). With
+more individuals, we could run this model with survival estimated for
+each sex separately.  However, researchers should be careful not to
+over-parameterize models based on the amount of data available.  The
+results indicate that the posterior mean estimate of $\phi$ was
+greater in the SCR model (0.53) than the non-spatial model (0.48)
+which suggests that the SCR model is starting to separate movement
+from survival in order to estimate the true rather than apparent
+survival.
+
+
+
+\section{Cormack-Jolly-Seber models}
+\label{open.sec.cjs}
+
+\subsection{Traditional CJS models}
+Cormack-Jolly-Seber (CJS) models are used extensively to estimate
+survival probabilities.  There are two common ways to fit these
+models, using either a multinomial likelihood approach
+\citep{lebreton_etal:1992} or a state-space formulation of the model
+\citep{gimenez:2007, royle:2008}.
+The multinomial likelihood approach is based on summarizing the data
+to counts of unique encounter histories, which have a multinomial
+distribution. The data are summarized over individuals and so it is
+not feasible to build general models that contain individual
+covariates. On the other hand, the state-space formulation of the
+model preserves individual identity and, therefore, parameters can be 
+modeled at the individual level, and individual effects (covariates or
+heterogeneity) can be included. In the present context of spatial
+capture-recapture models, we naturally think about including
+individual locations, or activity centers, as individual covariates. 
+
+
+We can adopt a simple state-space parameterization of the
+basic single state, non-spatial CJS model in which the observation model is
+described conditional on the latent state variables $z(i,t)$ -- the
+``alive state'' which indicates whether individual $i$ is
+alive ($z(i,t)=1$) or not ($z(i,t)=0$) during each of $t=1,2,\ldots,T$
+{\it primary} periods.
+Let $y_{it}$ indicate the observed
+encounter data of individual $i$ in primary period $t$. The
+model, specified conditional on $z(i,t)$, is:
+\[
+  y_{it}|z(i,t) \sim \mbox{Bernoulli}(p_{t}z(i,t)).
+\]
+Analogous to the JS model, if individual $i$ is alive at time $t$
+($z(i,t)=1$), then the observations are Bernoulli with probability of
+detection $p_t$.  
+
+If the individual is not alive ($z(i,t)=0$), then the observations
+must be fixed zeros with probability 1.  Contrary to the JS model, in
+the CJS model we condition on first capture, which means that
+$z(i,t)$ will be 1 when $t$ is the primary period individual $i$ is
+first captured in.  We denote this $z(i, f_i)$, where $f_i$ indicates
+the primary occasion in which individual $i$ is first captured, which
+can vary from $1 \dots T$.  This ensures that each individual is alive
+upon entering the model, and is also the reason that recruitment is
+not estimated in the model.
+
+The ``alive state'' at time $t$ for each individual is a function of
+the state at the previous time step $t-1$.  Because we condition on
+the first capture, the initial state is set to one:
+\[
+ z(i, f_i) = 1
+\]
+where $f_i$ indicates the primary occasion in which individual $i$ is
+captured and the model for the transition of individual states from
+$t$ to $t+1$ for all $t > f_i$ is
+\[
+ z(i, t) \sim \mbox{Bernoulli}( \phi z(i, t-1)).
+\]
+Because we start with $z(i, f_i) = 1$, the individual survives with
+probability $\phi$ to time $f_i + 1$ and so forth.  Once an individual
+leaves the population (i.e., $z(i, t) = 0$), there is no mechanism for
+the individual to return.  This means that under this specification
+individuals cannot temporarily emigrate.  In the CJS model we are not
+estimating $N_t$, so we do not need to make use of data augmentation
+here in order to account for uncaptured individuals (remember: we
+explicitly condition on first capture).  This version of the model is
+easy to construct in the \bugs~ (or \jags) language which is shown in
+Panel \ref{open.panel.nsCJS}.  Variations on this basic model and
+associated code for fitting the model in \bugs~ are described in
+detail in \citet[][Chapts. 7-9]{kery_schaub:2011}.
+
+\begin{panel}[htp]
+\centering
+\rule[0.1in]{\textwidth}{.03in}
+{\small
+\begin{verbatim}
+  model{
+    phi ~ dunif(0,1)  # Survival (constant over time)
+    
+    for(t in 1:T){
+      p[t] ~ dunif(0, 1)  # Detection (varies with time)
+    }
+
+   for(i in 1:M){
+      z[i,first[i]] ~ dbern(1)
+      for (t in (first[i]+1):T){
+          tmp[i,t] <- z[i,t]*p[t]
+            y[i,t] ~ dbern(tmp[i,t])
+        phiUP[i,t] <- z[i,t-1]*phi
+            z[i,t] ~ dbern(phiUP[i,t])
+      }
+    }
+  }
+\end{verbatim}
+}
+\rule[-0.1in]{\textwidth}{.03in}
+\caption{ \jags~ model specification for the non-spatial basic
+  Cormack-Jolly-Seber (CJS) model. Note that the first alive state of
+  each individual, \mbox{\tt z[i,first[i]]}, is not stochastic. It is
+  equal to 1 with probability 1.}
+\label{open.panel.nsCJS}
+\end{panel}
+
+
+\begin{figure}
+\centering
+\includegraphics[height=2in,width=4.43in]{Ch16-Open/figs/American_Shad_Raabe.jpg}
+\caption{American shad caught in North Carolina, U.S.A.  {\it
+Credit: Joshua Raabe, North Carolina State University}  
+}
+\label{open.figs.shadpic}
+\end{figure}
+
+{\flushleft \bf Movement and survival of American shad in the Little River}
+
+As an example for the CJS model, we use data collected on American
+shad (\textit{Alosa sapidissima}) in the Little River in North Carolina,
+U.S.A. (see photo in Fig. \ref{open.figs.shadpic}).  The Little River
+is a tributary to the Neuse River and the confluence is near
+Goldsboro, North Carolina about 212 river kilometers from the Pamlico
+Sound.  The motivation for this example stems from an interest in
+better understanding survival and movement of migratory fish.
+American shad are an anadromous fish that use rivers for spawning.
+The data were collected and analyzed as described in
+\citet{raabe_diss:2012}.  Using a resistance board weir near the river
+mouth, 315 fish were tagged with passive integrated transponders (PIT)
+in the spring of 2010. An array of 7 upstream PIT antennas passively
+recaptured individuals during upstream and downstream migrations.
+Each time a fish passed over the antenna, it was recorded and the data
+were summarized weekly for 12 weeks.  The fish do not necessarily move
+past all antennae and may remain in the river between antennae for
+more than a week, thus they are not all detected at each time period.
+The antennae do not always operate perfectly either and fish that pass
+may not be recorded at some times.
+
+To apply the basic CJS model, we create the encounter history for each
+individual for the 12 weeks and we also create a vector to indicate
+the period (week) of first capture. The code is not shown here but is
+availabe in the \scrbook~ packagae within the function
+\verb+shad.cjs()+.  This funtion contains all of the code to fit the
+non-spatial, multi-state, and spatial CJS models to the American shad
+dataset.
+ 
+
+\begin{table}
+\centering
+\caption{Results of the basic non-spatial CJS model for the American shad dataset.
+}
+\begin{tabular}{crrrrr}
+\hline \hline
+&    Mean   &  SD  &  2.5 \%   &   50 \%    &  97.5 \% \\
+p[1] & 0.499 & 0.289 & 0.026 & 0.499 & 0.975 \\
+p[2] & 0.627 & 0.058 & 0.511 & 0.628 & 0.738 \\
+p[3] & 0.762 & 0.036 & 0.689 & 0.763 & 0.829 \\
+p[4] & 0.880 & 0.025 & 0.828 & 0.882 & 0.925 \\
+p[5] & 0.548 & 0.043 & 0.465 & 0.548 & 0.633 \\
+p[6] & 0.259 & 0.038 & 0.190 & 0.258 & 0.337 \\
+p[7] & 0.126 & 0.031 & 0.072 & 0.124 & 0.194 \\
+p[8] & 0.236 & 0.045 & 0.155 & 0.234 & 0.332 \\
+p[9] & 0.237 & 0.049 & 0.148 & 0.234 & 0.341 \\
+p[10]& 0.589 & 0.072 & 0.447 & 0.590 & 0.728  \\
+p[11]& 0.834 & 0.063 & 0.700 & 0.839 & 0.942 \\
+p[12]& 0.468 & 0.072 & 0.330 & 0.466 & 0.614 \\
+$\phi$  & 0.824 & 0.011 & 0.802 & 0.825 & 0.846 \\
+\hline
+\end{tabular}
+\label{open.tab.simple-shad}
+\end{table}
+
+Table \ref{open.tab.simple-shad} shows the estimated detection
+probabilities for each of the 12 primary periods in the study.  The
+posterior mean for detection probabilities ranges from 0.126 to 0.880,
+which could potentially be due to variation in water flow, stream
+depth, storms, etc$\dots$ The weekly survival probability, $\phi$, had
+a posterior mean estimate of 0.824.  This estimate could be considered
+low for a weekly probability, but is likely due to the fact that the
+migration upstream can be quite energetically taxing and the fish are
+likely to only feed minimally in rivers
+\citep{leggett_carscadden:1978, leonard_mccormick:1999}.
+Additionally, the CJS model is only estimating apparent survival and
+some fish may have left the stream temporally or permanently heading
+back to the ocean or possibly to other tributaries that are not
+monitored.  We demonstrate in Panel \ref{open.panel.nsCJS} how to
+allow $p$ to vary by time, but we could also allow survival, $\phi$ to
+vary by time by implementing it exactly as we do for $p$.  As we move
+into the multi-state model, we can test for movement and survival by
+state, which allows more specific biological questions to be
+addressed.
+
+
+\subsection{Multi-state CJS models}
+
+The basic version of the CJS model only allows for estimation of
+survival and detection probabilities.  However, researchers are often interested in
+addressing other ecological questions such as age-dependent survival
+rates, habitat based movements, etc.  Multi-state models allow
+researchers to directly address such questions by incorporating more
+than one state that an individual may potentially be in
+\citep{arnason:1972,arnason:1973, brownie_etal:1993}.  These possible
+states can be geographic location, age class, or reproductive status
+among many others.  Instead of just having an encounter history for an
+individual, we will also have auxiliary information on the state of
+that individual at capture (e.g., breeder or non-breeder).  Since our
+interest is in movement of individuals, here we will consider states
+that represent spatial units or geographic locations.  Generally
+speaking, we might think that the transition rates between locations
+could be due to habitat features (or quality) and we can use
+multi-state models to help us address such a question.  In addressing
+movement through a multi-state modeling approach, the movement is
+often parameterized as random or Markovian between patches
+\citep{arnason:1972,arnason:1973, schwarz_etal:1993}.
+
+In the simplest version of the multi-state model we have just two
+states.  Thus, individuals can be marked and recaptured in one of two
+states (we'll call them A and B here).  We will assume that the two
+``states'' are different geographic sites.  In the single-state model
+above, an individual $i$ was either alive ($z(i,t)=1$) at time $t$ or
+dead ($z(i,t)=0$).  Now, we must consider that the individual could be
+alive in a given state or dead and that individuals can transition
+between states.  An easy way to think about this is to look at the
+state transition matrix in Table \ref{open.tab.CJSmulti-matrix}.
+Here, $\phi^A$ is the probability of surviving in State A from time
+$t$ to $t+1$ and $\phi^B$ is the analogous parameter for State B.  The
+movement parameters are $\psi^{AB}$ and $\psi^{BA}$, where $\psi^{AB}$
+is the probability that an individual, survives from $t$ to $t+1$ and
+moves to State B just before $t+1$ and vice versa for $\psi^{BA}$.
+The movement could also be defined as ocurring before the survival;
+i.e., $\psi^{AB}$ is the probability that an individual moves from
+State A to State B shortly after time $t$ and then survives to time
+$t+1$ in State B.
+
+\begin{table}[htb!]
+\centering
+\caption{
+Transition matrix for a multi-state model with just two states.
+}
+\begin{tabular}{crrr}
+\hline \hline
+    &   State A &   State B   &   Dead \\  \hline
+State A & $\phi^A(1-\psi^{AB})$ & $\phi^A \psi^{AB}$ & 1 - $\phi^A$ \\
+State B & $\phi^B \psi^{BA}$ & $\phi^B(1-\psi^{BA})$ & 1 - $\phi^B$ \\
+Dead & 0 & 0 & 1\\ \hline
+\end{tabular}
+\label{open.tab.CJSmulti-matrix}
+\end{table}
+
+Because individuals are not necessarily observed in their given state,
+detection should be estimated separately for each of the states.
+Hence, we also have $p^A$ and $p^B$, the probability of detecting an
+individual in State A and State B respectively.  Also, at this point,
+we assume that there is no error in observed State (i.e., if the
+animal is observed, then the State is recorded correctly).
+
+In the next few paragraphs, we show how the formulation of the 2 state
+multi-state capture recapture presented above can be related directly
+to SCR models.  To start, define ${\bf s}$ as the index of which state
+an individual is actually in and $u_{it}$ as the state in which
+individual $i$ was observed during sample $t$.  In this two state
+example, $u_{it}$ can only take on values for being observed in A or B
+(i.e., 1 or 2).  We can define a simplistic model as follows:
+\[
+u_{it} \sim  \mathrm{dcat}(\mbox{\boldmath$\psi$})
+\]
+where $\psi$ is a constant vector.
+
+We observe an individual with probability $p_{0}$, that is:
+\[
+ \Pr(y_{it} = 1| u_{it} )  = p_{0}
+\]
+The state-transition probabilities are constant.
+
+In an alternative formulation of this model, we can define ${\bf s}$
+as the index of which state an individual is in and then condition the
+observed locations, $u_{it}$ as a function of the actual state, ${\bf
+  s}$. This means that whether an individual moves or not, or where it
+moves to, is a function of where it is located.  In this case,
+successive movement outcomes are $iid$ and we can write the model
+according to:
+\[
+u_{it} \sim  \text{dcat}( {\psi}({\bf s}_{i}) )
+\]
+Conditional on the state in which individual $i$ is located, the
+probability of observing the individual is the same as above, $p_{0}$.
+However, in this formulation of the model, the state-transition
+probabilities are constant, conditional on ${\bf s}$.  Other models
+for these transition probabilities are possible and we will discuss
+those later.
+
+A slight modification of this model would define ${\bf s}$ as a ``home
+area'' for each individual. Then the region the animal goes to is a
+function not of where it was last time, but which region is its home
+area.  This model is only slightly different from the Markovian model
+and, as was shown in Chapt. \ref{chapt.poisson-mn} for closed
+populations models, is how we make the technical transition from
+multi-state models to SCR models.  Essentially increasing to a large
+number of strata, this formulation of the multi-state model becomes an
+SCR model where the ``area of activity'' ${\bf s}$ becomes the
+``activity center'' for each individual. In this case, the vector
+$\psi({\bf s}_{i})$ is a $J \times 1$ vector, corresponding to the
+probability of observation in each trap, given the individual's
+activity center.  Therefore, SCR models are closely related to
+classical multi-state models where the state-variable is ``space.''
+
+To describe this model for \jags, we use a slightly different
+formulation which combines $u_{it}$ and $y_{it}$ as defined above into
+one observation matrix such that $y_{it} = 1, 2,$ or $3$ where 3
+indicates ``not observed''.  Additionally, we use $z(i,t)$ to indicate
+the true state of individual $i$ such that $z(i,t) = 1, 2,$ or $3$
+where 1 indicates alive and in state 1, 2 indicates alive and in state
+2, and 3 indicates ``not alive''.  Using this delineation, we just
+need to set up the transition matrix based on Table
+\ref{open.tab.CJSmulti-matrix} and define each item within the model
+specification, shown in Panel \ref{open.panel.msCJS}.  Note that this
+can become quite cumbersome when dealing with models that have many
+states.
+
+
+\begin{panel}[htp]
+\centering
+\rule[0.1in]{\textwidth}{.03in}
+{\small
+\begin{verbatim}
+model{
+
+# r is an index for state (excluding the 'not alive' state)
+for(r in 1:2){
+   phi[r] ~ dunif(0,1)
+   psi[r] ~ dunif(0,1)
+   p[r] ~ dunif(0,1)
+}    
+
+for (i in 1:M){
+    z[i,first[i]] <- y[i, first[i]]
+for (t in (first[i]+1):T){
+    z[i,t] ~ dcat(ps[z[i,t-1], i, ])
+    y[i,t] ~ dcat(po[z[i,t], i, ])
+   }
+	ps[1, i, 1] <- phi[1] * (1-psi[1])
+	ps[1, i, 2] <- phi[1] * psi[1]
+	ps[1, i, 3] <- 1-phi[1]
+	ps[2, i, 1] <- phi[2] * (1-psi[2])
+	ps[2, i, 2] <- phi[2] * psi[2]
+	ps[2, i, 3] <- 1-phi[2]
+	ps[3, i, 1] <- 0
+	ps[3, i, 2] <- 0
+	ps[3, i, 3] <- 1
+
+	po[1, i, 1] <- p[1]
+	po[1, i, 2] <- 0
+	po[1, i, 3] <- 1-p[1]
+	po[2, i, 1] <- 0
+	po[2, i, 2] <- p[2]
+	po[2, i, 3] <- 1-p[2]
+	po[3, i, 1] <- 0
+	po[3, i, 2] <- 0
+	po[3, i, 3] <- 1
+ }
+}
+\end{verbatim}
+}
+\rule[-0.1in]{\textwidth}{.03in}
+\caption{
+\jags~ model specification for a two-state version of the multi-state
+CJS model. Code modified 
+from \cite[][Chapt. 9]{kery_schaub:2011}. }
+\label{open.panel.msCJS}
+\end{panel}
+
+{\flushleft \bf Movement and survival of American shad in the Little River}
+
+Previously, we analyzed the American shad data using a basic (i.e., non-spatial) CJS
+model.  However, the researchers were interested in movement of fish
+during migration and so we classified the stream into 2 states
+(regions) -- ``downstream'' and ``upstream''.  Each antenna was assigned
+to a state based on the location, those below 20 river kilometers were
+considered in the downstream state.  Each fish has an encounter
+history including whether or not the fish was detected during each
+week of the 12 week study, but also the ``state'' of capture
+(``downstream'' or ``upstream'').  A vector to indicate the
+period of first capture was also created.  Fish captured in more than
+one state during the week were assigned the state in which they were
+captured most during that week.  And the model assumes that individuals 
+observed in a state at consecutive primary periods did not move from that state
+within the primary period.  The data manipulation and model specification for the 
+multi-state CJS model is provided in the \scrbook~ packagae under the function \verb+shad.cjs()+.
+
+\begin{table}
+\centering
+\caption{
+  Results of the multi-state CJS model for the migratory fish example.  $p^A$ is the detection probability in the first state (A), which in this case is the down stream area.  $\phi^A$ is the weekly survival probability in state A and $\psi^{AB}$ is the probability that an individual, which survived from $t$ to $t+1$ in Site A, moves to State B just
+  before $t+1$.
+}
+\begin{tabular}{crrrrr}
+\hline \hline
+&       Mean   &  SD  &  2.5 \%   &   50 \%    &  97.5 \%  \\  \hline
+$p^A$ & 0.777 & 0.045 & 0.689  & 0.777  & 0.866 \\
+$p^B$  & 0.434  & 0.027 & 0.382 & 0.434  & 0.489 \\
+$\phi^A$  & 0.850 & 0.022 & 0.807  & 0.851  & 0.893  \\
+$\phi^B$  & 0.782  & 0.019 & 0.743  & 0.782& 0.820  \\
+$\psi^{AB}$ & 0.421 & 0.034 & 0.356  & 0.421 &  0.489 \\
+$\psi^{BA}$& 0.927 & 0.014 & 0.897  & 0.937 &  0.952  \\
+\hline
+\end{tabular}
+\label{open.tab.multi-shad}
+\end{table}
+
+Survival between the two areas was quite different (see Table
+\ref{open.tab.multi-shad}).  This might suggest that fish moving
+further upstream are expending more energy and are more likely to die.
+While survival in the two states was different, it is intuitive that
+the average of the survival probabilities for A and B is essentially
+the same as that from the basic non-spatial CJS ($\phi = 0.82$, see
+Table \ref{open.tab.simple-shad}).  Also, it should be noted that
+$\psi^{BA}$ was very high, indicating that fish in this study are
+returning downstream after spawning in the upstream area.  These
+results highlight the utility in using a multi-state model to
+understand movement between states; here, we used spatial states, but
+age, class, breeding status, etc. are all possibilities.  We did have
+to reduce the  
+dataset however to fit this model and information on exact spatial location of detections
+was lost in creating just two states, downstream and upstream.  Losing
+information is one potential effect of using a multi-state model;
+additionally when states are hidden or unknown (e.g., when animals are
+in a region not exposed to sampling or the state is misclassified),
+these models can be difficult to fit (see \citet{conn_cooch:2009} for
+an overview of these problems).  Not losing information and unknown
+states are two issues that can be resolved using the fully spatial CJS
+model.  Misclassification of state (or even individual) is a difficult
+problem to solve and current approaches \citep{link_etal:2010,
+  mcclintock_etal:inpress} are in development for SCR models.  
+
+
+
+\subsection{Spatial CJS models}
+
+In Chapt. \ref{chapt.poisson-mn}, we suggested that SCR models are 
+essentially a type of multi-state model with spatially structured
+transition probabilities.  As we noted, individuals can appear in $>1$
+states simultaneously, which is not directly analogous to a standard
+multi-state model.  However, building on the state-space and
+multi-state CJS models, we can explicitly incorporate individual
+movement as an individual covariate model \citep{royle_indcov:2007}.
+To move from the basic and multi-state CJS models to the SCR version,
+we need only make a few changes to the model.  We will
+not have discrete states and thus the biggest difference is that
+individuals do not ``transition'' between a finite set of states, but
+instead are allowed to move in continuous space.
+
+We may consider the same basic encounter
+models as described previously (i.e., Poisson, Bernoulli, or
+multinomial). In particular, let $y_{ijkt}$ indicate the observed
+encounter data of individual $i$ in trap $j$, during interval
+(secondary period or sub-sample) $k=1,2,\ldots,K$ and primary period $t$. We note that in
+some cases we may have intervals ($K=1$) which correspond to the
+design underlying a standard CJS or JS models whereas the case $K>1$
+corresponds to the ``robust design'' (\citealt{pollock:1982}).  The
+Poisson observation model, specified conditional on $z(i,t)$, is:
+ \[
+  y_{ijkt}|z(i,t) \sim  \mbox{Poisson}(\lambda_0 g_{ij} z(i,t))
+\]
+where $\lambda_{0}$ is the baseline encounter rate and $g_{ij}$ is the
+detection model as a function of distance.  If the individual is not
+alive ($z(i,t)=0$), then the observations must be fixed zeros with
+probability 1.  Remember that in the CJS formulation, we condition on
+first capture which means that $z(i,t)$ will be 1 when $t$ is the
+first primary period of capture.  As before in the non-spatial CJS
+model, we can denote this as $z(i, f_i)$ where $f_i$ indicates the
+primary occasion in which individual $i$ is first captured.
+
+Modeling time-effects either within or across primary periods is
+straightforward. For that, we define $\lambda_{0} \equiv
+\lambda_{0}(k,t)$ and then develop models for $\lambda_{0}(k,t)$ as in
+our closed SCR models (we note that trap-specific effects could be
+modeled analogously).
+
+We follow the same model for survival as described in the non-spatial
+version of the CJS.  The model is initialized by setting the alive
+state at first capture to one:
+\[
+ z(i,f_i) = 1
+\]
+and for the transition of an individual's alive state from $t$ to
+$t+1$, for all $t > f_i$, we have
+\[
+z(i,t) \sim \mbox{Bernoulli}( \phi z(i,t-1)).
+\]
+An individual survives with probability $\phi$ from one time step to
+the next.  It is easy to see that we can let survival be time specific
+by allowing $\phi$ to vary with each time step:
+\[
+ z(i,t) \sim \mbox{Bernoulli}( \phi_t z(i,t-1)).
+\]
+In either case, once an individual leaves the population (i.e.,
+$z(i,t)=0$), there is no recruitment so individuals cannot return.
+Again, we are not estimating $N_t$ in this model, hence we do not need
+any data augmentation.  This conveniently makes the model run faster
+too!
+
+{\flushleft \bf Movement and survival of American shad in the Little River}
+
+Going back to our American shad example, we can consider that this is
+exactly a spatial capture recapture problem.  In stream networks, the
+placement of PIT antennas along the stream mimics the type of spatial
+data collected in terrestrial passive detector arrays such as camera
+traps, hair snares, acoustic recording devices, etc.  The difference
+is that for fish and aquatic species, the stream constrains the
+movement of individuals to a linear network.  Using the data from the
+array of 7 PIT antennas and the number of times each fish passed over
+the antenna, we can apply the SCR CJS model to evaluate movement up
+and downstream of these fish.  When we look at the individuals
+encountered at each antenna for each of the primary periods, the
+dimensions of the data are 315 individuals by 7 antennas by 12 sample
+occasions. Individuals can encounter any antenna any number of times
+during the week, which means we just sum the encounters over the week
+and eliminate any need for explicit secondary occasions in the
+model. The result is a 3-D array instead of a 4-D array.  Given the
+structure of the encounters, we use a Poisson encounter model in this
+example shown in \ref{open.panel.spatialCJS}.  The code to carry out
+this model is provided in the \scrbook~ packagae using the function
+\verb+shad.cjs()+.
+
+
+\begin{panel}[htp]
+\centering
+\rule[0.1in]{\textwidth}{.03in}
+{\small
+\begin{verbatim}
+model {
+# Priors
+sigma ~ dunif(0,80)
+sigma2 <- sigma*sigma
+lam0 ~ dgamma(0.1, 0.1)
+phi ~ dunif(0, 1)   # Survival (constant across time)
+tauv~dunif(0, 30)
+tau<-1/(tauv*tauv)
+
+for (i in 1:M){
+  z[i,first[i]] <- 1
+  S[i,first[i]] ~ dunif(0,50)   #Fish enter the stream at 0, thus the
+			                 #first AC is set to the lower stream end
+
+for(j in 1:nantenna) {
+	  D2[i,j,first[i]] <- pow(S[i,first[i]]-antenna.loc[j], 2)
+       lam[i,j,first[i]]<-  lam0*exp(- D2[i,j,first[i]]/(2*sigma2))
+       tmp[i,j,first[i]] <- lam[i,j,first[i]]
+         y[i,j,first[i]] ~ dpois(tmp[i,j,first[i]])
+      }
+
+   for (t in first[i]+1:T) {
+	          S[i,t] ~ dunif(xl, xu) 
+         for(j in 1:nantenna) {
+		        D2[i,j,t] <- pow(S[i,t]-antenna.loc[j], 2)
+               lam[i,j,t] <- lam0 * exp(-D2[i,j,t]/(2*sigma2))
+	           tmp[i,j,t] <- z[i,t]*lam[i,j,t]
+		         y[i,j,t] ~ dpois(tmp[i,j,t])
+		 }
+ 	   phiUP[i,t] <-  z[i,t-1]*phi
+	       z[i,t] ~ dbern(phiUP[i,t])
+	}
+	}
+}
+\end{verbatim}
+}
+\rule[-0.1in]{\textwidth}{.03in}
+\caption{
+\jags~ model specification for the spatial
+Cormack-Jolly-Seber (CJS) model for the American shad dataset. Note that the first alive state of
+each individual, \mbox{\tt z[i,first[i]]}, is not stochastic. It is
+equal to 1 with probability 1.}
+\label{open.panel.spatialCJS}
+\end{panel}
+
+
+
+
+
+\begin{table}
+\centering
+\caption{
+Results of the spatial Cormack-Jolly-Seber model fitted to the 
+American shad data set.
+}
+\begin{tabular}{crrrrr}
+\hline \hline
+&       Mean   &  SD  &  2.5 \%   &   50 \%    &  97.5 \% \\
+\hline
+lam0[1] &  5.555& 0.224  & 5.125 & 5.553 	& 6.003 \\
+lam0[2] &  4.442& 0.155  & 4.143 & 4.437  & 4.752 \\
+lam0[3] &  1.892& 0.068  & 1.763 & 1.891  & 2.031 \\
+lam0[4] &  1.126& 0.055  & 1.021 & 1.125  & 1.238 \\
+lam0[5] &  0.949& 0.058  & 0.838 & 0.948 & 1.067 \\
+lam0[6] &  0.359& 0.040  & 0.284 & 0.357 & 0.443 \\
+lam0[7] &  0.188& 0.031  & 0.133 & 0.186 &  0.254 \\
+lam0[8] &  0.309 &0.044  & 0.230  & 0.307  & 0.402 \\
+lam0[9]  & 0.363 &0.052 &  0.269 &  0.361 & 0.471 \\
+lam0[10] & 0.627 &0.072  & 0.493  & 0.625  & 0.777 \\
+lam0[11] & 1.611 &0.109  & 1.408  & 1.607  & 1.835 \\
+lam0[12] & 0.939 &0.139 & 0.697  & 0.929  & 1.241 \\
+$\phi$  &  0.784 &0.012  & 0.760  & 0.785  & 0.807 \\
+$\sigma$ & 13.954& 0.197  & 13.573 & 13.950  & 14.350\\
+\hline
+\end{tabular}
+\label{open.tab.shad1}
+\end{table}
+
+The baseline encounter rate, $\lambda_0$, was allowed to vary by week
+and ranged from 0.188 to 5.555.  We use the Poisson encounter model in
+this spatial CJS example rendering $\lambda_0$ not directly comparable
+to $p_0$ from the non-spatial and multi-state versions, which arises as
+the detection probability under the Binomial encounter model.
+The posterior mean for $\phi$ was 0.784 (see Table
+\ref{open.tab.shad1}), again showing that the weekly survival
+probability is rather low, just as we saw in the two previous example
+analyses of these data.  Here, we are modeling survival probability as
+constant, but there is reason to believe that it might vary by time
+(similar to detection) and we might consider this additional
+parameterization in a more complete analysis of the data set. The
+other parameter of interest is $\sigma$, the movement parameter, which
+had a posterior mean of 13.954.  Stream locations are recorded in
+river kilometers (RKM), so $\sigma$ is in units of kms.  Our system
+here is linear, so we do not think of fish as having a home range
+radius.  However, $\sigma$ can still inform us about the linear
+distance fish are moving.  One final note about this example, we have
+simplified the dataset for analysis here and some parameter estimates
+are different than found in \citet{raabe_diss:2012}.
+
+\section{Modeling movement and dispersal dynamics}
+\label{open.sec.ACdyanmics}
+
+To better understand the dynamics of a population, it is important to
+consider how the locations of activity centers evolve over time. It is
+known that home ranges and territories of animals can shift and other
+types of movement (migration, dispersal) can take place. In the
+framework of open population SCR models, these dynamics of individual
+locations can be reflected in appropriate models for the distribution
+of the activity centers.  To begin, a plausible ``null model'' for the
+distribution of individual activity centers is to assume they are
+static over time and do not change across periods, i.e., ${\bf s}_{i}
+\sim \mbox{Uniform}({\cal S})$.  This model may be appropriate for
+territorial species where the primary sampling periods are relatively
+close together in time or the overall time frame of the study is
+limited.  It might seem more likely that activity centers change over
+time but are independent from year to year for a given individual such
+${\bf s}_{i} \sim \mbox{Uniform}({\cal S})$.  This is also how the
+spatial version of the JS and CJS models were formulated above and
+this might a reasonable model when there are large time lags between
+surveys, or if the individuals redistribute themselves frequently in
+the study population.
+
+An intermediate option would be to assume that ${\bf s}(i,t) \sim
+\mbox{Normal}({\bf s}(i,t-1), \tau^{2} {\bf I})$ for $t > 1$ so that
+individual home range centers are perturbed randomly from their
+previous value.  This is possibly the the most realistic model for
+many cases.  For example, many migratory passerines, like the
+ovenbird, return to the same location, or nearly so each year.
+
+We could use also use models of the activity centers to look at
+patterns of animal distribution with regard to habitat.  For example,
+if the primary period is a season, it may be expected that individuals
+move as the available food sources change. Using telemetry data and/or
+capture recapture models a number of developments have been made to
+understand animal movement patterns relative to habitat or dynamic
+systems (e.g., \cite{jonsen_etal:2005, hooten_wikle:2010}).
+Similarly, if we have an indicator of habitat that varies by season,
+then in SCR models we can model the location of activity centers as a
+function of the change in habitat.  There are a number of options for
+modeling variation in activity centers or animal locations as a
+function of covariates such as habitat, season, or behavior.  Other
+approaches to analyzing movement in a mark-recapture framework include
+but are not limited to diffusion and auto-regressive models
+\citep{ovaskainen:2004, ovaskainen_etal:2008}), agent-based
+\citep{grimm_etal:2005, hooten_etal:2010} and dispersal kernels
+\citep{fujiwara_etal:2006}.  For example, we define ${\bf u}_{ikt}$ as
+the individual's observed location at secondary period $k$ in primary
+period $t$.  Then ${\bf u}_{ikt} \sim \mbox{Normal}({\bf s}(i,t),
+\Sigma_t)$ where $\Sigma_t$ is the variance-covariance matrix at time
+$t$.  This is a model we have used quite frequently throughout the
+book, i.e., that individual observed locations are assumed to follow a
+bivariate normal distribution about the activity center, ${\bf s}$.
+This is similar to
+the Guassian and Laplace dispersal kernels.  We could further allow the
+observed locations to follow an auto-regressive model such that ${\bf
+  u}_{ikt} \sim \mbox{Normal}(\rho ({\bf u}_{i,k,t-1} - {\bf
+  s}(i,t-1)), \Sigma^{*}_t)$.  These are just a few simple examples; as
+more information becomes available and data are collected over longer
+time periods, we will be able to use more complex movement models in open SCR models.
+
+
+{\flushleft \bf Cautionary note}: 
+
+Using such Markovian models for the
+change in location of activity centers across primary periods,
+activity centers are no longer bound by the limits of the state-space.
+Imagine an individual living at the very edge of S at time $t$ --
+there is some probability that, under the perturbation model, the
+location of ${\bf s}$ at $t+1$ could be outside ${\cal S}$.  When
+activity centers are no longer bound to the state-space, the way we
+have determined density (i.e., $D = N/||{\cal S}||$) no longer
+directly applies.  This is not an issue in the CJS models where only
+survival and detection are of interest.  But in the JS model, if
+individuals can move outside the state-space and remain alive, then
+the density must be recalculated such that we only count those
+individuals with activity centers {\it within} the state-space.  This
+was previously not an issue because the prior on the activity centers
+constrained all individuals to the state-space at all times.
+
+\subsection{Thoughts on movement of American shad}
+
+In our American shad example above, we had reason to believe that
+individual movement is directly related to stream flow.  When the
+stream flow is low, we might expect that the fish move very little,
+and when the stream flow is high, they might move upstream to
+spawn. In this case, we could model the effect of stream flow in two
+ways.  First, we might allow $\sigma$ to be a function of flow and to
+vary for each primary occasion, according to:
+\[
+ \mbox{log}(\sigma_t) = \mu_{\sigma} + \alpha_2 \mbox{Flow}_t
+\]
+But if we think that the change in activity centers between primary
+periods might be related to the general pattern of fish migrating
+upstream more during high flow or staying closer to the same location
+in low flow, then we could allow the correlation in activity centers
+to be a function of flow.  In this case, for example, a low flow
+period might indicate that activity centers are more correlated to the
+previous time period because fish are not actively migrating during
+such a time.  This means that we assume the activity centers are
+correlated so we have
+\[
+{\bf s}(i,t) \sim \mbox{Normal}({\bf
+  s}(i,t-1), \tau^{2} {\bf I})
+\]
+where
+\[
+\mbox{log}(\tau) = \mu_{\tau} + \alpha_2 \mbox{Flow}_t.
+\]
+These are just a few thoughts on simple ways to model movement as a
+function of habitat variables which we have only started exploring on
+these data.  As we discussed in the previous section, there are many
+other movement models that could be used.
+
+\subsection{Modeling  dispersal}
+
+Dispersal is a well studied area in population ecology and is often of
+heightened interest because it relates directly to population
+regulation, habitat quality, and linking of local populations.
+However, studying dispersal with capture-recapture data can be
+difficult for a few reasons.  One common issue with using
+capture-recapture data for dispersal estimation is that short
+distances are sampled more frequently than long distances.  This is
+particularly true if we consider that most trap arrays are not large
+relative the potential dispersal distances of animals.  In some cases,
+such as with small mammals, we may be able to capture both short and
+long distance dispersals in one trap array; in other cases, we may
+have discrete study sites set up across a larger area which capture
+individuals within and between sites.  Either way, data are likely to
+be sparse for long distance dispersal events and this is particularly
+true if there are different habitat types which are sampled with
+different levels of effort \citep{ovaskainen_etal:2008}, thus causing
+more difficulty in fitting models to data where much information is
+missing.  In addition to that, determining if an individual has left
+an area or died can be difficult if the sampling does not cover the
+area an individual has moved to or if the sampling method has failed
+(e.g., a band or tag falls off or a mark is lost).
+
+Irregardless of these common sampling limitations, let's look at an
+optimal the situation where we have the trap array large enough to
+observe some dispersal events (or possibly multiple trap arrays on the
+landscape where an individual is observed in different arrays).  We
+sketch out a possible dispersal model but note that this is a simple
+example.  In this case, each individual could have some probability of
+dispersing, say $\eta$ where $pd_{i,t} \sim \mbox{Bernoulli}(\eta)$
+indicates if an individual disperses at time $t$ and then
+\[
+s_{i,t+1,1}= s_{i,t,1} + pd_{i,t} (ds_{i, t} \mbox{cos}(\theta_{i,t}))
+\]
+\[
+s_{i,t+1,2}= s_{i,t,2} + pd_{i,t} (ds_{i,t} \mbox{sin}(\theta_{i,t}))
+\]
+where $ds_i$ is the dispersal distance for individual $i$ and $\theta$
+is the dispersal direction (in radians).  Thus when $pd_i =0$, then
+the activity centers remain the same as the previous time step and if
+$pd_i = 1$ then the individual disperses to a new activity center.
+For this specification, we have to provide a model for dispersal
+distance.  One option is to let $ds_{i,t} \sim \mbox{exponential}(L)$
+where $L$ is the mean dispersal distance for individuals dispersing
+and let $\theta_{i,t} \sim \mbox{Uniform}(-\pi, \pi)$ where $\pi$ is
+not a parameter in this case, but the mathematical constant(i.e., $\pi
+= 3.14159 \ldots$).  If all individuals are expected to move some
+distance between periods, then the $pd$ indicator could be removed.  A
+number of distributions exists for fitting these parameters (e.g., the
+von Mises is commonly used for angles) and more complex models with
+compoents like weighted directional movement and various movement
+states could be fit (see \cite{jonsen_etal:2005, johnson_etal:2008b,
+  mcclintock_etal:2012})
+
+
+\section{Summary and Outlook}
+
+In this chapter we have described a framework for making inference not
+only about spatial and temporal variation in population density, but
+also demographic parameters including survival, recruitment, and
+movement. The ability to model population vital rates is essential for
+ecology, management, and conservation; and the models described here
+allow researchers to examine the spatial and temporal dynamics
+governing those population parameters.  While we have covered a lot of ground
+in this chapter, but there are many variations of the basic JS and CJS models, such as dead recovery models
+or models that address transiency that we have not explicitly 'converted' to a spatial framework, 
+and these areas provide a broad field of further model development.
+
+As open models are further developed, mechanisms for dealing directly
+with dispersal and transients will provide improved inference
+frameworks for understanding movement as well as the potential to
+estimate {\it true} survival instead of only {\it apparent survival}.
+This is a function of explicitly modeling movement, which means we can
+separate movement from mortality, as we sketched out in the model
+above for dispersal, providing a huge advantage over traditional
+models.  Also, models of individual dispersal can be used to examine
+dynamics of population dynamics relative to habitat,
+density-dependence, or climatic events.
+
+Birth and death processes, as well as movement, all have the potential
+to be related to the space usage of animals in the landscape.
+Understanding the impact of spatially varying density on survival and
+recruitment will provide insights into the basic ecology of species.
+With the advent of non-invasive techniques, like camera trapping and
+genetic analysis of tissue, we can start to understand the population
+dynamics of species that are rarely observed in the wild.  As more and
+more data are collected, we can use the models to explore the
+spatio-temporal patterns of survival, recruitment, density, and
+movement of species, providing incredibly useful biological and
+ecological information as we face broad changes in climate, land-use,
+habitat fragmentation, etc.  \citet{rathbun_cressie:1994} articulate a
+model for marked point processes where they separate out the spatial
+birth, growth, and survival processes for longleaf pine trees.
+Because of the application, these demographic parameters are slightly
+different than how they are often considered in wildlife and ecology,
+but still, there are analogies.  Allowing birth, growth, and survival as well
+as density to arise from different spatially varying processes is the
+next stage in development of the open SCR models.
+
+
