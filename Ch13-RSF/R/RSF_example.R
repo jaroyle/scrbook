@@ -61,21 +61,41 @@ for(i in 1:Ntel){
 }
 
 
-#png("habitat.png",width=7,height=7, units="in", res=400)
+png("habitat.png",width=7,height=7, units="in", res=400)
 par(mfrow=c(1,1),mar=c(3,3,3,6))
-image(1:40,1:40,rot(matrix(z,40,40,byrow=FALSE)),col=terrain.colors(10),xlab=" ",ylab=" ")
-image.scale(z,col=terrain.colors(10))
+image(1:40,1:40,rot(matrix(z,40,40,byrow=FALSE)),col=gray( (0:8)/8 ),xlab=" ",ylab=" ")
+image.scale(z,col=gray( (0:8)/8) )
 points(s,pch=20)
-#dev.off()
+dev.off()
 
 
-#png("homeranges8.png",width=7,height=7, units="in", res=400)
-par(mfrow=c(1,1))
+png("homeranges8.png",width=7,height=7, units="in", res=400)
+par(mfrow=c(1,1),mar=c(3,3,3,6))
 tot<- apply(lammat,1,sum)
 lammat<-lammat/tot
 lamtot<-apply(lammat,2,sum)
 image(1:40,1:40,rot(matrix(lamtot,40,40,byrow=FALSE)),col=terrain.colors(10),xlab=" ",ylab=" ")
 points(s,pch=20)
-#dev.off()
+image.scale(lamtot,col=terrain.colors(10))
+
+dev.off()
+
+
+png("homeranges8.png",width=7,height=7, units="in", res=400)
+
+par(mfrow=c(1,1),mar=c(3,3,3,6))
+tot<- apply(lammat,1,sum)
+lammat<-lammat/tot
+lamtot<-apply(lammat,2,sum)
+image(1:40,1:40,rot(matrix(lamtot,40,40,byrow=FALSE)),col=gray( (0:8)/8 ),xlab=" ",ylab=" ")
+points(s,pch=20)
+image.scale(lamtot,col=gray( (0:8)/8 ))
+dev.off()
+
+
+
+
+
+
 
 }
