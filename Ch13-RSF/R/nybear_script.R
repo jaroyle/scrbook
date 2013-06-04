@@ -77,18 +77,35 @@ par(mar=c(3,3,3,6))
 spatial.plot(gr,Dhat)
 #dev.off()
 
-png("elev_captures_bw.png",width=7,height=7,units="in",res=400)
+png("elev_captures_bw_revised.png",width=7,height=7,units="in",res=400)
 par(mar=c(3,3,3,6))
-spatial.plot(gr,z)
+spatial.plot2(gr,z)
 tmp<-X[col(y)[y>0],]
 tmp<-tmp + rnorm(prod(dim(tmp)),0,.1)
 totals<-apply(y>0,2,sum)
 #points(tmp,lwd=2,pch=20)  # traps where captures happened.
+points(X[totals==0,],pch="+",cex=1.5,col="white")
+
 points(X[totals>0,],pch=20,cex=totals[totals>0]/2 +1)
-points(X[totals==0,],pch="0")
+legend(24,467.2,legend=1:4,pch=rep(20,4),pt.cex=c(1.5,2,2.5,3))
+
 dev.off()
 
 
+ spatial.plot2<-
+function (x, y, add = FALSE, cx = 1, col = "gray") 
+{
+    nc <- as.numeric(cut(y, 10))
+    if (!add) 
+        plot(x, pch = " ", asp = 1)
+    if (col == "gray") {
+        cc <- seq(3, 17, , 10)/20
+        cc <- gray(cc)
+    }
+    else cc <- terrain.colors(10)
+    points(x, pch = 15, col = cc[nc], cex = cx)
+    image.scale(y, col = cc)
+}
 
 
 
