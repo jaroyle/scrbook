@@ -77,7 +77,7 @@ par(mar=c(3,3,3,6))
 spatial.plot(gr,Dhat)
 #dev.off()
 
-png("elev_captures_bw.png",width=7,height=7,units="in",res=400)
+png("elev_captures_bw_revised.png",width=7,height=7,units="in",res=400)
 par(mar=c(3,3,3,6))
 spatial.plot2(gr,z)
 tmp<-X[col(y)[y>0],]
