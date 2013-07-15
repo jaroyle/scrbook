@@ -88,13 +88,13 @@ SinPoly<-over(Scoord,SSp)# check if scand is within the polygon
 
 if(is.na(SinPoly[i])==FALSE) {
 
-                dtmp <- sqrt((Scand[1] - X[,1])^2 + (Scand[2] - X[,2])^2)
+                dtmp <- sqrt((Scand[i,1] - X[,1])^2 + (Scand[i,2] - X[,2])^2)
                 lam.cand<- lam0*exp(-(dtmp*dtmp)/(2*sigma*sigma) )
 
                 llS <- sum(dpois(y[i,], lam[i,]*z[i], log=TRUE)) 
                 llcand <- sum(dpois(y[i,], lam.cand*z[i], log=TRUE)) 
                 if(runif(1) < exp(llcand - llS)) {
-                    S[i,] <- Scand
+                    S[i,] <- Scand[i,]
                     lam[i,] <- lam.cand
                     d[i,] <- dtmp
                     Sups <- Sups+1
