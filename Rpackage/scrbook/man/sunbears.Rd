@@ -1,5 +1,5 @@
-\name{nybears}
-\alias{nybears}
+\name{sunbears}
+\alias{sunbears}
 \docType{data}
 \title{
 Black bear data from Cat Sun and Angela Fuller, USGS and Cornell University%%   ~~ data name/kind ... ~~
@@ -10,7 +10,7 @@ Encounter history data from 33 individuals encountered by an array of
 covariate "elevation", and additional auxiliary information. 
 %%  ~~ A concise (1-5 lines) description of the dataset. ~~
 }
-\usage{data(nybears)}
+\usage{data(sunbears)}
 \format{
   The format is:
 List of 6
