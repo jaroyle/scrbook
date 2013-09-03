@@ -28,18 +28,18 @@ alpha1~dnorm(0,.1)
 psi~dunif(0,1)
 
 for(g in 1:nG){
-probs[g]<- 1/nG
+  probs[g]<- 1/nG
 }
 
 for(i in 1:M){
  z[i]~dbern(psi)
-s[i] ~ dcat(probs[1:nG])
+ s[i]~dcat(probs[1:nG])
 for(j in 1:J){
-y[i,j] ~ dbin(pnew[i,j],K)
-  d2[i,j]<- pow(S[s[i],1]-X[j,1],2) + pow(S[s[i],2]-X[j,2],2)
-p[i,j]<- exp(alpha0)*exp(-alpha1*d2[i,j])
-pnew[i,j]<-p[i,j]*z[i]
-}
+   y[i,j] ~ dbin(pnew[i,j],K)
+   d2[i,j]<- pow(S[s[i],1]-X[j,1],2) + pow(S[s[i],2]-X[j,2],2)
+   p[i,j]<- exp(alpha0)*exp(-alpha1*d2[i,j])
+   pnew[i,j]<-p[i,j]*z[i]
+ }
 }
 N<-sum(z[])
 }
@@ -52,7 +52,7 @@ inits <- function(){
   list (alpha0=rnorm(1,-2.5,.4),alpha1=rnorm(1,2,.5),psi=runif(1),z=zst ,s=sst)
 }
 
-parameters <- c("alpha","beta","psi","N")
+parameters <- c("alpha0","alpha1","psi","N")
 nthin<-1
 nc<-3
 nb<-nb
