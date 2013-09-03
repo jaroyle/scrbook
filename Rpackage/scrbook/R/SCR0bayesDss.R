@@ -23,8 +23,8 @@ sst<-S[sample(1:nrow(S),M,replace=TRUE),]
 
 cat("
 model {
-alpha~dnorm(0,.1)
-beta~dnorm(0,.1)
+alpha0~dnorm(0,.1)
+alpha1~dnorm(0,.1)
 psi~dunif(0,1)
 
 for(g in 1:nG){
@@ -37,7 +37,7 @@ s[i] ~ dcat(probs[1:nG])
 for(j in 1:J){
 y[i,j] ~ dbin(pnew[i,j],K)
   d2[i,j]<- pow(S[s[i],1]-X[j,1],2) + pow(S[s[i],2]-X[j,2],2)
-p[i,j]<- exp(alpha)*exp(-beta*d2[i,j])
+p[i,j]<- exp(alpha0)*exp(-alpha1*d2[i,j])
 pnew[i,j]<-p[i,j]*z[i]
 }
 }
@@ -49,7 +49,7 @@ sst<-sample(1:nG,M,replace=TRUE)
 zst<-c(rep(1,nind),rep(0,M-nind))
 data <- list (y=y,X=X,K=K,M=M,J=J,S=S,nG=nG)
 inits <- function(){
-  list (alpha=rnorm(1,-2.5,.4),beta=rnorm(1,2,.5),psi=runif(1),z=zst ,s=sst)
+  list (alpha0=rnorm(1,-2.5,.4),alpha1=rnorm(1,2,.5),psi=runif(1),z=zst ,s=sst)
 }
 
 parameters <- c("alpha","beta","psi","N")

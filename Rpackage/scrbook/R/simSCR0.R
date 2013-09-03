@@ -1,5 +1,5 @@
 simSCR0 <-
-function(discard0=TRUE,array3d=FALSE,rnd=2013){
+function(N=100,K=20,discard0=TRUE,array3d=FALSE,rnd=2013){
 set.seed(rnd)
 
 # make trapping grid. Normally you would provide a 2-dimensional matrix
@@ -23,10 +23,10 @@ Yu<-max(traplocs[,2] + delta)
 # in what follows I am simulating data to demonstrate the basic data
 # structure. In particular, I'll suppose N=100 individuals
 ##N<-round((100/144)*(Xu-Xl)*(Yu-Yl),0)
-N<-100
+#N<-100
 
 # K = number of NIGHTS trapping ("effort")
-K<- 20
+#K<- 20
 
 # activity centers are latent variables, estimated from the model. But,
 # to simulate data we have to start with some activity centers
@@ -39,16 +39,16 @@ D<- e2dist(S,traplocs)
 
 alpha0<- -2.5
 sigma<- 0.5
-beta<- 1/(2*sigma*sigma)
+alpha1<- 1/(2*sigma*sigma)
 
-#cloglog.probcap<- alpha0  - beta*D*D
+#cloglog.probcap<- alpha0  - alpha1*D*D
 #probcap<- 1-exp(-exp(cloglog.probcap))
 
 # this is logit model here:
 
-#probcap<- expit(-2.5 - beta*D)
+#probcap<- expit(-2.5 - alpha1*D)
 
-probcap<-plogis(alpha0)*exp(-beta*D*D)
+probcap<-plogis(alpha0)*exp(-alpha1*D*D)
 # now generate the encounters of every individual in every trap
 Y<-matrix(NA,nrow=N,ncol=ntraps)
 for(i in 1:nrow(Y)){
@@ -86,7 +86,6 @@ Y2d<- apply(Y,c(1,3),sum)
 ## which individuals were captured?
 ncaps<-apply(Y2d,1,sum)
 ## keep those ones that were captured
-
 Y<-Y[ncaps>0,,]
 }
 
@@ -94,5 +93,5 @@ Y<-Y[ncaps>0,,]
 
 
 list(Y=Y,traplocs=traplocs,xlim=c(Xl,Xu),ylim=c(Yl,Yu),N=N,alpha0=alpha0,
-beta=beta,sigma=sigma,K=K)
+alpha1=alpha1,sigma=sigma,K=K)
 }
