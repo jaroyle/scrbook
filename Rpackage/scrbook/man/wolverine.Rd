@@ -5,13 +5,16 @@
 wolverine data from Audrey Magoun
 }
 \description{
-  An R list with
-  5 components: wcaps which is the encounter data file (EDF), 
-and also the trap deployment file (TDF) "wtraps" which has x,y coordinates
+  An R list with 5 components (see Section 5.9 of the SCR book):
+
+  wcaps which is the encounter data file (EDF), 
+
+  wtraps is the trap deployment file (TDF) which has x,y coordinates 
 of traps and a MASK of which trap was operating (1) or not (0) during
 each day of the study.
-Also has 3 grid components: grid8 grid4 and grid2: which are 8x8
-4x4 and 2x2 state-space grids.
+
+ 3 discrete state-space grids are provided: grid8 grid4 and grid2 which are 8x8
+4x4 and 2x2 state-space grids, respectively.
 
 
 %%  ~~ A concise (1-5 lines) description of the dataset. ~~
@@ -55,10 +58,23 @@ List of 5
 %%  ~~ If necessary, more details than the __description__ above ~~
 }
 \source{
-%%  ~~ reference to a publication or URL from which the data were obtained ~~
+  Data are described in detail here:
+  
+  Magoun, A. J., Long, C. D., Schwartz, M. K., Pilgrim, K. L., Lowell,
+  R. E., and Valkenburg, P. (2011). Integrating motion-detection cameras
+  and hair snags for wolverine identification. The Journal of Wildlife
+  Management, 75(3), 731-739.
+  
+  Royle, J. A., Magoun, A. J., Gardner, B., Valkenburg, P., and Lowell,
+  R. E. (2011). Density estimation in a wolverine population using
+  spatial capture-recapture models. The Journal of Wildlife Management,
+  75(3), 604-611.
+  %%  ~~ reference to a publication or URL from which the data were obtained ~~
 }
 \references{
-%%  ~~ possibly secondary sources and usages ~~
+  SCR book, Section 5.9
+
+  %%  ~~ possibly secondary sources and usages ~~
 }
 \examples{
 data(wolverine)

@@ -4,11 +4,13 @@
 fit SCR0 to wolverine data using discrete state-space
 }
 \description{
-  JAGS has extremely wierd results which I Cannot figure out
+  Experimental.
+  JAGS seems to fail in a lot of cases, seems like an inability to do
+  the MCMC properly.
   BUGS takes forever but seems to work.
 }
 \usage{
-wolvSCR0Dss(y3d, traps, nb = 1000, ni = 2000, M = 200, Sgrid = wolverine$grid8, engine = "bugs", area = 8)
+wolvSCR0Dss(y3d, traps, nb = 1000, ni = 2000, M = 200, Sgrid = wolverine$grid8, engine = "bugs", area = 8,coord.scale=10000)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -34,6 +36,9 @@ wolvSCR0Dss(y3d, traps, nb = 1000, ni = 2000, M = 200, Sgrid = wolverine$grid8, 
 %%     ~~Describe \code{engine} here~~
 }
   \item{area}{
+%%     ~~Describe \code{area} here~~
+}
+  \item{coord.scale}{
 %%     ~~Describe \code{area} here~~
 }
 }
@@ -69,7 +74,7 @@ data(wolverine)
 traps<-wolverine$wtraps
 y3d <-SCR23darray.fn(wolverine$wcaps,wolverine$wtraps)
 g<-as.matrix(wolverine$grid8)
-bln<-wolvSCR0Dss(y3d,traps,nb=1000,ni=2000,M=100,Sgrid=g,engine="jags",area=8)
+bln<-wolvSCR0Dss(y3d,traps,nb=1000,ni=2000,M=100,Sgrid=g,engine="jags",area=8,coord.scale=10000)
 
 }
 
