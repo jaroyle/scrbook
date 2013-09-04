@@ -81,13 +81,13 @@ Andy Royle, aroyle@usgs.gov%%  ~~who you are~~
 \note{
 %%  ~~further notes~~
 }
-
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 \section{Warning}{
  !!!!!!!!!!!!!!WARNING!!!!!!!!!!!! We believe JAGS does not usually work effectively when
   a discrete state-space is used. WinBUGS seems to always work, but
   runtime increases about linearly with the size of the state-space. 
-\seealso{
+}
+  \seealso{
 SCR0bayes, simSCR0, SCR0pois
   %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
