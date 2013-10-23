@@ -3,7 +3,6 @@ function(nb=1000,ni=2000,buffer=2,M=200,model=1,parm="a"){
 # parm a = effect on log(sigma)
 # parm b = effect on 1/(2*sigma*sigma)
 
-library("R2WinBUGS")
 library("R2jags")
 library("scrbook")
 data(wolverine)

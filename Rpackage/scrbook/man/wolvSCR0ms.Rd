@@ -2,33 +2,24 @@
 \alias{wolvSCR0ms.fn}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-fits multiple models to wolverine data
-}
-\description{
-fits sex-specific models to wolverine data.....
-}
-\usage{
-wolvSCR0ms(y3d, traps, wsex, nb = 1000, ni = 2000, buffer = 2, M = 200, model = 1,parm="a")
-}
+An R script that fits multiple models to the wolverine data.  }
+\description{ 
+Fits sex-specific models to wolverine data using the
+jags() function of the R2jags package.  This is a one-trick pony -- it
+works only for the wolverine data and is provided as an example. It is
+not meant to be a general-purpose function.  } \usage{ wolvSCR0ms(nb =
+1000, ni = 2000, buffer = 2, M = 200, model = 1,parm="a")
+ }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{y3d}{
-%%     ~~Describe \code{y3d} here~~
-}
-  \item{traps}{
-%%     ~~Describe \code{traps} here~~
-}
-  \item{wsex}{
-%%     ~~Describe \code{wsex} here~~
-}
   \item{nb}{
-%%     ~~Describe \code{nb} here~~
+number of MCMC iterations to be discarded as burn-in
 }
   \item{ni}{
-%%     ~~Describe \code{ni} here~~
+total number of MCMC iterations 
 }
   \item{buffer}{
-%%     ~~Describe \code{delta} here~~
+size of the buffer in scaled units (relevant to the wolverine example)%%     ~~Describe \code{delta} here~~
 }
   \item{M}{
 %%     ~~Describe \code{M} here~~
@@ -84,20 +75,21 @@ wolvSCR0ms(y3d, traps, wsex, nb = 1000, ni = 2000, buffer = 2, M = 200, model = 
 
 # summary function to extract DIC info
 dev.smy<-function(a){
-b<-print(a)
-dev<-mean(a$BUGSoutput$sims.list$deviance)
-c(dev,b$pD,b$DIC,a$BUGSoutput$DICbyR)
+  b<-print(a)
+  dev<-mean(a$BUGSoutput$sims.list$deviance)
+  c(dev,b$pD,b$DIC,a$BUGSoutput$DICbyR)
 }
 
 # make a table
 rbind(dev.smy(toad0),dev.smy(toad1),dev.smy(toad2),dev.smy(toad3),dev.smy(toad4))
 
 # summary function for parameters
+
 parms.smy<-function(a){
-b<-print(a)
-b<- b$summary[,1:2]
-nam<-c("D","N","alpha0","alpha.sex","beta","beta.sex","sigma","psi","psi.sex","deviance")
-round(b[nam,],2)
+  b<-print(a)
+  b<- b$summary[,1:2]
+  nam<-c("D","N","alpha0","alpha.sex","beta","beta.sex","sigma","psi","psi.sex","deviance")
+  round(b[nam,],2)
 }
 
 # make a table

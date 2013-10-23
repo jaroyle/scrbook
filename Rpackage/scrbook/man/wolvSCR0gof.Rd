@@ -73,7 +73,7 @@ traplocs<-traplocs/10000
 set.seed(2013)
 # crop tight to trap grid. Buffer = .4 (Remember the buffer for fitting
 # was 2 units.
-SCRgof(bugsout.h,5,5,traplocs=traplocs,buffer=.4)
+SCRgof(bugsout,5,5,traplocs=traplocs,buffer=.4)
 
 
 }

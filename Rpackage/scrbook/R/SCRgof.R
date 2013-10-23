@@ -38,7 +38,7 @@ N<- sum(z[i,])
 D<- N/area
 E<- N/( (nx-1)*(ny-1) )
 
-inside  <- (Sxout[i,] < Xu & Sxout[i,] > Xl) & (Syout[i,] < Yu & Syout[i,] < Yl)
+inside  <- (Sxout[i,] < Xu) & (Sxout[i,] > Xl) & (Syout[i,] < Yu) & (Syout[i,] > Yl)
 
 Dn<- table(cut(Sxout[i,][z[i,]==1 &inside],breaks=xg),cut(Syout[i,][z[i,]==1 &inside],breaks=yg))
 Dnv<-Dn[1:length(Dn)]
