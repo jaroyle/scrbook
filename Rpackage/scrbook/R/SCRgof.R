@@ -33,20 +33,22 @@ stat2<-statsim2<-stat<-statsim<-rep(NA,niter)
 
 
 for(i in 1:niter){
-#### this is wrong
+
 N<- sum(z[i,])
 D<- N/area
 E<- N/( (nx-1)*(ny-1) )
 
-Dn<- table(cut(Sxout[i,][z[i,]==1],breaks=xg),cut(Syout[i,][z[i,]==1],breaks=yg))
+inside  <- (Sxout[i,] < Xu & Sxout[i,] > Xl) & (Syout[i,] < Yu & Syout[i,] < Yl)
+
+Dn<- table(cut(Sxout[i,][z[i,]==1 &inside],breaks=xg),cut(Syout[i,][z[i,]==1 &inside],breaks=yg))
 Dnv<-Dn[1:length(Dn)]
 
 E<-mean(Dnv)
 stat[i]<-  (var(Dnv)/mean(Dnv))
 stat2[i]<-   sum(   (sqrt(Dnv) - sqrt(E))^2 )
 
-Sxsim<-runif(sum(z[i,]),Xl,Xu)
-Sysim<-runif(sum(z[i,]),Yl,Yu)
+Sxsim<-runif(sum(z[i,][inside]),Xl,Xu)
+Sysim<-runif(sum(z[i,][inside]),Yl,Yu)
 
 Dnsim<- table(cut(Sxsim,breaks=xg),cut(Sysim,breaks=yg))
 Dnsimv<-Dnsim[1:length(Dnsim)]
