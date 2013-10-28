@@ -26,17 +26,20 @@ Syout2<-cut(Syout[z==1],breaks=yg)
 
 Dn<-table(Sxout2,Syout2)/niter
 
+op<-par(mar=c(4,4,4,6))
+on.exit(par(op))
+
 image(xg,yg,Dn,col=terrain.colors(10))
 image.scale(Dn,col=terrain.colors(10))
-
+title("Local population size (individuals per bin)")
 stat2<-statsim2<-stat<-statsim<-rep(NA,niter)
 
 
 for(i in 1:niter){
 
-N<- sum(z[i,])
-D<- N/area
-E<- N/( (nx-1)*(ny-1) )
+#N<- sum(z[i,])
+#D<- N/area
+#E<- N/( (nx-1)*(ny-1) )
 
 inside  <- (Sxout[i,] < Xu) & (Sxout[i,] > Xl) & (Syout[i,] < Yu) & (Syout[i,] > Yl)
 
@@ -55,11 +58,11 @@ Dnsimv<-Dnsim[1:length(Dnsim)]
 statsim[i]<- (var(Dnsimv)/mean(Dnsimv))
 statsim2[i]<-  sum(   (sqrt(Dnsimv) - sqrt(E))^2)
 
-
 }
+
 out<-cbind(data=stat2,newdata=statsim2)
-cat("Cluster index observed: ",mean(stat),fill=TRUE)
-cat("Cluster index simulated: ",mean(statsim),fill=TRUE)
+cat("Index of dispersion observed: ",mean(stat),fill=TRUE)
+cat("Index of dispersion simulated: ",mean(statsim),fill=TRUE)
 cat("P-value  index of dispersion: ",mean(statsim>stat),fill=TRUE)
 cat("P-value2 freeman-tukey: ",mean(statsim2>stat2),fill=TRUE)
 invisible(out)

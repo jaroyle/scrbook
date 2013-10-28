@@ -2,10 +2,13 @@
 \alias{wolvSCRMb}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-fit Mb (trap level) to wolverine data %%  ~~function to do ... ~~
+fit local behavioral response (model Mb, trap level) to wolverine data %%  ~~function to do ... ~~
 }
 \description{
-fit Mb (trap level) to wolverine data  %%  ~~ A concise (1-5 lines) description of what the function does. ~~
+  This is a complete R script to load and organize the wolverine data,
+  produce a BUGS model script and fit the behavioral response model
+  using WinBUGS. The model is the "local behavioral" response which
+  operates at the trap level. 
 }
 \usage{
 wolvSCRMb(nb = 1000, ni = 2000, buffer = 2, M = 200)
@@ -13,16 +16,18 @@ wolvSCRMb(nb = 1000, ni = 2000, buffer = 2, M = 200)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{nb}{
-%%     ~~Describe \code{nb} here~~
+MCMC iterations to be discarded as burn-in. 
 }
   \item{ni}{
-%%     ~~Describe \code{ni} here~~
+Total MCMC iterations. 
 }
   \item{buffer}{
-%%     ~~Describe \code{buffer} here~~
+    Buffer width of a rectangular state-space enclosing the trap array.
+    Standardized units of 10 km (e.g., buffer = 2 is 20 km). 
+    %%     ~~Describe \code{buffer} here~~
 }
   \item{M}{
-%%     ~~Describe \code{M} here~~
+ Size of the augmented data set.%%     ~~Describe \code{M} here~~
 }
 }
 \details{
@@ -36,10 +41,10 @@ wolvSCRMb(nb = 1000, ni = 2000, buffer = 2, M = 200)
 %% ...
 }
 \references{
-%% ~put references to the literature/web site here ~
+SCR book section 8.4.3 %% ~put references to the literature/web site here ~
 }
 \author{
-%%  ~~who you are~~
+  Andy Royle, aroyle@usgs.gov 
 }
 \note{
 %%  ~~further notes~~
@@ -51,9 +56,10 @@ wolvSCRMb(nb = 1000, ni = 2000, buffer = 2, M = 200)
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
+
+# This takes 20-30 hours to run on a very fast desktop.
+# To calibrate on your computer set
+# nb=100, ni=200 and M=100.
 
 wolv.Mb<-wolvSCRMb(nb=1000,ni=6000,buffer=2,M=200)
 

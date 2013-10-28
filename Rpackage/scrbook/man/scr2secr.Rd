@@ -2,10 +2,12 @@
 \alias{scr2secr}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Converts trap deployment file with operation history to secr format
+Converts trap deployment file with operation history to secr format.
 }
 \description{
-yea does that%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Converts trap deployment file with operation history to secr
+format. Requires the function read.traps() from the 'secr' package. 
+
 }
 \usage{
 scr2secr(scrtraps, type = "proximity")
@@ -13,10 +15,13 @@ scr2secr(scrtraps, type = "proximity")
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{scrtraps}{
-%%     ~~Describe \code{scrtraps} here~~
+Standard trap deployment file (TDF) with columns 'trap id' 'x-coord'
+'y-coord' and columns [,4:(noccasions + 3)] being the trap operation
+information. %%     ~~Describe \code{scrtraps} here~~
 }
   \item{type}{
-%%     ~~Describe \code{type} here~~
+The type of encounter device recobnized by 'secr'. e.g., proximity
+detectors correspond to type="proximity"  
 }
 }
 \details{
@@ -30,10 +35,10 @@ scr2secr(scrtraps, type = "proximity")
 %% ...
 }
 \references{
-%% ~put references to the literature/web site here ~
+SCR book, sec. 6.5.2 %% ~put references to the literature/web site here ~
 }
 \author{
-%%  ~~who you are~~
+Andy Royle, aroyle@usgs.gov %%  ~~who you are~~
 }
 \note{
 %%  ~~further notes~~
@@ -45,19 +50,31 @@ scr2secr(scrtraps, type = "proximity")
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
+# required package 'secr'
 library("secr")
+
+# load package 'scrbook' and the wolverine data
 library("scrbook")
 data("wolverine")
-traps<-as.matrix(wolverine$wtraps)   #[,1:3]
+
+# grab the trap deployment file
+traps<-as.matrix(wolverine$wtraps)   
+
+# provide suitable names required by 'secr'
 dimnames(traps)<-list(NULL,c("trapID","x","y",paste("day",1:165,sep="")))
 
-trapfile2<-scr2secr(scrtraps=traps,type="proximity")
+# convert to a 'secr' trapfile
+trapfile<-scr2secr(scrtraps=traps,type="proximity")
 
+# grab the encounter data file 
 wolv.dat<-wolverine$wcaps
+
+# provide suitable names required by 'secr' and convert to a dataframe
 dimnames(wolv.dat)<-list(NULL,c("Session","ID","Occasion","trapID"))
 wolv.dat<-as.data.frame(wolv.dat)
 
-wolvcapt2<-make.capthist(wolv.dat,trapfile2,fmt="trapID",noccasions=165)
+# convert to a capture history file usable by 'secr' 
+wolvcapt<-make.capthist(wolv.dat,trapfile,fmt="trapID",noccasions=165)
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

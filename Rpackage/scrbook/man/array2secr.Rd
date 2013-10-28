@@ -37,7 +37,7 @@ in secr, see secr documentation (help(secr)).
 %% ~put references to the literature/web site here ~
 }
 \author{
-%%  ~~who you are~~
+Rahel Sollmann  %%  ~~who you are~~
 }
 \note{
 Currently array2secr only supports binary and count detection data for the detector types "proximity" and "count", respectively.
@@ -49,12 +49,28 @@ Currently array2secr only supports binary and count detection data for the detec
 scr2secr, SCR23darray
 }
 \examples{
+
 library("secr")
 library("scrbook")
 data("beardata")
-.... need to fill in with final bear data format
+
+y<-beardata$bearArray
+sex<-beardata$sex
+
 caps<-array2secr(y, detector="proximity") #no sex specification, all individuals get session=1
 caps.sex<-array2secr(y, session=sex, detector="proximity") #each individual has sex assigned 
+
+
+## Now reverse the steps, use SCR23darray to produce the 3darray from "caps"
+
+## trapmat is not a trap deployment file format so make one
+traps<-beardata$trapmat
+bear.tdf<-cbind(1:nrow(traps), traps, matrix(1,ncol=8,nrow=nrow(traps)))
+bear.edf<- caps
+
+# should look exactly like beardata$bearArray
+y3d<- SCR23darray(bear.edf,bear.tdf)
+
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

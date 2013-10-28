@@ -7,8 +7,10 @@ An R script that fits multiple models to the wolverine data.  }
 Fits sex-specific models to wolverine data using the
 jags() function of the R2jags package.  This is a one-trick pony -- it
 works only for the wolverine data and is provided as an example. It is
-not meant to be a general-purpose function.  } \usage{ wolvSCR0ms(nb =
-1000, ni = 2000, buffer = 2, M = 200, model = 1,parm="a")
+not meant to be a general-purpose function.
+} 
+\usage{
+wolvSCR0ms(nb = 1000, ni = 2000, buffer = 2, M = 200, model = 1,parm="a")
  }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

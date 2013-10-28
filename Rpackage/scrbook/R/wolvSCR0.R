@@ -5,8 +5,8 @@ library("R2WinBUGS")
 
 # trapping grid scaled appropriately
 traplocs<-as.matrix(traps[,2:3])
-mingridx<-min(traplocs[,1])
-mingridy<-min(traplocs[,2])
+
+
 traplocs[,1]<-traplocs[,1] -min(traplocs[,1])
 traplocs[,2]<-traplocs[,2]- min(traplocs[,2])
 traplocs<-traplocs/coord.scale ###units of 10 km if coord.scale=10000
@@ -17,26 +17,25 @@ Xu<-max(traplocs[,1] + buffer)
 Yl<-min(traplocs[,2] - buffer)
 Yu<-max(traplocs[,2] + buffer)
 area<- (Xu-Xl)*(Yu-Yl)/10
-#####plot(traplocs,pch=20,xlim=c(Xl,Xu),ylim=c(Yl,Yu))
-### ARRAY having dimensions individual x rep x trap
-## MASK is trap x rep
+
+
 nz<-M-dim(y3d)[1]
 MASK<-traps[,4:ncol(traps)]
-Dmat<-as.matrix(dist(traplocs))
+
 nind<-dim(y3d)[1]
-K<-dim(y3d)[2]
+K<-dim(y3d)[3]
 
 ## Data Augmentation
 
-newy<-array(0,dim=c(nind+nz,K,ntraps))
+newy<-array(0,dim=c(nind+nz,ntraps,K))
 for(j in 1:nind){
-newy[j,1:K,1:ntraps]<-y3d[j,1:K,1:ntraps]
+newy[j,1:ntraps, 1:K]<-y3d[j,1:ntraps,1:K]
 }
 y3d<-newy
-M<-nind+nz
+
 # compute trap-specific sample size
 K<-apply(MASK,1,sum)
-y<- apply(y3d,c(1,3),sum)
+y<- apply(y3d,c(1,2),sum)
 
 sink("modelfile.txt")
 cat("
@@ -87,7 +86,7 @@ zst<-c(rep(1,nind),rep(0,M-nind))
 inits <- function(){
   list (sigma=runif(1,.4,1),p0=runif(1,.01,.2),z=zst,s=sst)
 }
-parameters <- c("psi","sigma","p0","N","D","alpha1","s","z") ###,"Xobs","Xnew","s")
+parameters <- c("psi","sigma","p0","N","D","alpha1")
 if(keepz)
 parameters <- c("psi","sigma","p0","N","D","alpha1","s","z") ###,"Xobs","Xnew","s","z")
 

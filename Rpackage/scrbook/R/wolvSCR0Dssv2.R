@@ -1,11 +1,8 @@
-wolvSCR0Dssv2 <-
-function(y3d,traps,nb=1000,ni=2000,M=200,
+wolvSCR0Dssv2 <-function(y3d,traps,nb=1000,ni=2000,M=200,
 Sgrid=wolverine$grid8,engine="bugs",area=8){
 
-### GET DATA
-ssarea<- (nrow(Sgrid)*area)/100
-print(ssarea)
 
+ssarea<- (nrow(Sgrid)*area)/100
 
 # trapping grid scaled appropriately
 traplocs<-as.matrix(traps[,2:3])
@@ -14,30 +11,9 @@ mingridy<-min(traplocs[,2])
 traplocs[,1]<-traplocs[,1] -min(traplocs[,1])
 traplocs[,2]<-traplocs[,2]- min(traplocs[,2])
 traplocs<-traplocs/10000 ###units of 10 km
-## set the state-space
 ntraps<- nrow(traplocs)
 
-### ARRAY having dimensions individual x rep x trap
-## MASK is trap x rep
-
-Y<-y3d
-nz<-M-dim(Y)[1]
-MASK<-traps[,4:ncol(traps)]
-Dmat<-as.matrix(dist(traplocs))
-nind<-dim(Y)[1]
-K<-dim(Y)[2]
-
-newy<-array(0,dim=c(nind+nz,K,ntraps))
-for(j in 1:nind){
-newy[j,1:K,1:ntraps]<-Y[j,1:K,1:ntraps]
-}
-Y<-newy
-M<-nind+nz
-ndays<-apply(MASK,1,sum)
-ncaps<- apply(Y,c(1,3),sum)
-
-start.time = Sys.time()
-
+## Standardize the state-space grid in the same manner
 Sgrid[,1]<-Sgrid[,1]-mingridx
 Sgrid[,2]<-Sgrid[,2]-mingridy
 Sgrid<-Sgrid/10000 # units of 10 km
@@ -46,7 +22,25 @@ points(traplocs,pch=20,cex=5,col="red")
 Dmat<-e2dist(traplocs,Sgrid)
 dist2<- t(Dmat)^2
 
-probs<-rep(1/nrow(Sgrid),nrow(Sgrid))
+### ARRAY having dimensions individual x trap x rep
+## MASK is trap x rep
+Y<-y3d
+nz<-M-dim(Y)[1]
+MASK<-traps[,4:ncol(traps)]
+Dmat<-as.matrix(dist(traplocs))
+nind<-dim(Y)[1]
+K<-dim(Y)[3]
+
+newy<-array(0,dim=c(nind+nz,ntraps, K))
+for(j in 1:nind){
+newy[j,1:ntraps,1:K]<-Y[j,1:ntraps,1:K]
+}
+Y<-newy
+ndays<-apply(MASK,1,sum)
+ncaps<- apply(Y,c(1,2),sum)
+
+start.time = Sys.time()
+
 
 
 sink("modelfile.txt")
@@ -56,23 +50,23 @@ model {
 for(g in 1:ngrid){
  probs[g]<- 1/ngrid
 }
-beta~dnorm(0,.1)
-###sigma~dunif(0,50)
+
+alpha1 ~ dnorm(0,.1)
+
 loglam0~dnorm(0,.01)
 lam0<-exp(loglam0)
 p0<-exp(loglam0)/(1+exp(loglam0))
-sigma<- sqrt(1/(2*beta))
+sigma<- sqrt(1/(2*alpha1))
 psi ~ dunif(0,1)
-#p0~dunif(0,1)
-#lam0<-log(p0/(1-p0))
+
 for(i in 1:M){
  w[i]~dbern(psi)
  s[i]~dcat(probs[1:ngrid])
 for(j in 1:ntraps){
   mu[i,j]<-w[i]*p[i,j]
- ncaps[i,j]~ dbin(mu[i,j],ndays[j]) 
-p[i,j] <- p0*exp(-beta*dist2[s[i],j] )
-##dist2[i,j]<-  pow(Sgrid[s[i],1] - traplocs[j,1],2)   + pow(Sgrid[s[i],2] - traplocs[j,2],2) 
+ ncaps[i,j]~ dbin(mu[i,j],ndays[j])
+p[i,j] <- p0*exp(-alpha1*dist2[s[i],j] )
+##dist2[i,j]<-  pow(Sgrid[s[i],1] - traplocs[j,1],2)   + pow(Sgrid[s[i],2] - traplocs[j,2],2)
 }
 }
 
@@ -96,12 +90,12 @@ for(i in 1:nind){
       else
       mn<- tmp
     sst[i]<- (1:ngrid)[mn==min(mn)]
-    
+
 }
 sst[(nind+1):M]<-sample(1:ngrid,M-nind,replace=TRUE)
 
 inits <- function(){
-  list (beta=runif(1,1.2,1.6),loglam0=runif(1,-3,-2),w=wst,s=sst,psi=runif(1))
+  list (alpha1=runif(1,1.2,1.6),loglam0=runif(1,-3,-2),w=wst,s=sst,psi=runif(1))
 }
 nc<-3
 nthin<-1
@@ -109,15 +103,15 @@ nthin<-1
 if(engine=="bugs"){
 library("R2WinBUGS")
 data <- list ("dist2","ncaps","M","ntraps","ndays","ngrid","ssarea")
-parameters <- c("psi","sigma","lam0","p0","N","D") ###"x0g","y0g","total.exposure","Nin")
+parameters <- c("psi","sigma","lam0","p0","N","D","alpha1")
 
-out <- bugs (data, inits, parameters, "modelfile.txt", n.thin=nthin,n.chains=nc, 
+out <- bugs (data, inits, parameters, "modelfile.txt", n.thin=nthin,n.chains=nc,
 n.burnin=nb,n.iter=ni,debug=FALSE,DIC=FALSE)
 }
 if(engine=="jags"){
 library("rjags")
 data <- list (dist2=dist2,ncaps=ncaps,M=M,ntraps=ntraps,ndays=ndays,ngrid=ngrid,ssarea=ssarea)
-parameters <- c("psi","sigma","lam0","p0","N","D") ##,"s","w") ###"x0g","y0g","total.exposure","Nin")
+parameters <- c("psi","sigma","lam0","p0","N","D","alpha1") ##,"s","w")
 
 jm<- jags.model("modelfile.txt", data=data, inits=inits, n.chains=nc,
                  n.adapt=nb)

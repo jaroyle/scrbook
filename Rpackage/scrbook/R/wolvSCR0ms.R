@@ -36,19 +36,19 @@ wsex<-c(wsex,rep(NA,nz))
 MASK<-traps[,4:ncol(traps)]
 Dmat<-as.matrix(dist(traplocs))
 nind<-dim(y3d)[1]
-K<-dim(y3d)[2]
+K<-dim(y3d)[3]
 
 ## Data Augmentation
 
-newy<-array(0,dim=c(nind+nz,K,ntraps))
+newy<-array(0,dim=c(nind+nz,ntraps,K))
 for(j in 1:nind){
-newy[j,1:K,1:ntraps]<-y3d[j,1:K,1:ntraps]
+newy[j,1:ntraps, 1:K]<-y3d[j,1:ntraps, 1:K]
 }
 y3d<-newy
-M<-nind+nz
+
 # compute trap-specific sample size
 K<-apply(MASK,1,sum)
-y<- apply(y3d,c(1,3),sum)
+y<- apply(y3d,c(1,2),sum)
 
 
 

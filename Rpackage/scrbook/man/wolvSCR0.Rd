@@ -18,27 +18,28 @@ wolvSCR0(y3d, traps, nb = 1000, ni = 2000,buffer = 2, M = 200,keepz=FALSE,coord.
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{y3d}{
-3-dimensional encounter history array: nind x noccasions x ntraps %%     ~~Describe \code{y3d} here~~
+3-dimensional encounter history array: nind x ntraps x noccasions 
 }
   \item{traps}{
     Standard trap deployment file (TDF) having at least 3 + noccasions columns:
     trapid, xcoord, ycoord, trap_operation_information
 %%     ~~Describe \code{traps} here~~
 }
+ \item{nb}{
+MCMC iterations to be discarded as burn-in. 
+}
   \item{ni}{
-Total number of MCMC iterations%%     ~~Describe \code{ni} here~~
+Total MCMC iterations. 
 }
-\item{nb}{
-Number of iterations to discard as burn-in%%     ~~Describe \code{nb} here~~
-}
-\item{buffer}{
-Size of a rectangular state-space buffer containing the minimum area
-rectangle enclosing the trap locations. %%     ~~Describe \code{buffer} here~~
+  \item{buffer}{
+    Buffer width of a rectangular state-space enclosing the trap array.
+    Standardized units of 10 km (e.g., buffer = 2 is 20 km). 
+    %%     ~~Describe \code{buffer} here~~
 }
   \item{M}{
-    Size of the augmented data set.
-    %%     ~~Describe \code{M} here~~
+ Size of the augmented data set.%%     ~~Describe \code{M} here~~
 }
+
   \item{keepz}{
 If TRUE the data-augmentation variables are retained. Necessary for
 computing certain summaries of density.
