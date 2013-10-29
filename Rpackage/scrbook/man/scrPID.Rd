@@ -7,7 +7,7 @@ MCMC algorithm for spatial mark-resight models/ SCR models with partial individu
 Runs the MCMC algorithm for spatial mark-resight models with a known number of marked individuals described in Chapter 19 
 }
 \usage{
-scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),npics,niters, 
+scrPID(n, X, y, M, obsmod = c("pois", "bern"),npics,niters, 
                   xlims, ylims, a, b, inits, delta ) 
 }
 \arguments{
@@ -38,7 +38,7 @@ scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),npics,niters,
     Outer coordinates of the rectangular state-space, in the form of two vectors (x coordinates and y coordinates)
 }
   \item{a,b}{
-   optional; if Gamma prior is used for lam0, specify shape (a) and scale/rate (b) parameters RICHARD WHICH ONE
+   optional; if Gamma prior is used for lam0, specify shape (a) and scale (b) parameters 
 }
   \item{inits}{
    function to generate initial parameter values for S, lam0, sigma and psi.

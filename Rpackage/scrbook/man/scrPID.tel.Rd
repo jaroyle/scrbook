@@ -8,7 +8,7 @@ Runs the MCMC algorithm for spatial mark-resight models with known number of mar
  described in Chapter 19 
 }
 \usage{
-scrPID.tel<-function (n, X, y, M, locs, telID, obsmod = c("pois", "bern"),npics,niters, 
+scrPID.tel(n, X, y, M, locs, telID, obsmod = c("pois", "bern"),npics,niters, 
                   xlims, ylims, a, b, inits, delta ) 
 }
 \arguments{
