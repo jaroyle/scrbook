@@ -63,3 +63,7 @@ Rahel Sollmann, Richard Chandler, J. Andy Royle
 \seealso{
 \code{\link{scrPID, scrPID.tel, sim.pID.data}}
 }
+
+\examples{
+For an example, see \code{\link{sim.pID.data}}
+}

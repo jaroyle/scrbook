@@ -60,3 +60,6 @@ Rahel Sollmann, Richard Chandler, J. Andy Royle
 \code{\link{scrPID.um, scrPID.tel, sim.pID.data}}
 }
 
+\examples{
+For an example, see \code{\link{sim.pID.data}}
+}

@@ -49,7 +49,7 @@ if (IDed ==0) {
 YknownR[i,j,k]<-0
 counter[i,j,k]<-1} #counter is the number of marked records that cannot be identified to individual level
 }
-} else if (identical(obsmod, "pois")) {
+} else if (identical(obsmod, "Ypois")) {
 if (Yobs[i,j,k] > 0 ) {
 
 IDed<-sum(rbinom(Yobs[i,j,k] ,1,rat))

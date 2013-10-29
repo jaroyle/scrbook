@@ -66,7 +66,7 @@ sim.pID.data(N=N, K=K, sigma=sigma, lam0=lam0, knownID=knownID,X=X,
 }
 
 \examples{
-####example from Royle et al. 2014; Chapt. 19 XXX
+
 set.seed(2501)
 
 #set input values
@@ -93,7 +93,7 @@ area<-(xu-xl)*(yu-yl)
 #simulate data
 dat<-sim.pID.data(N=N, K=K, sigma=sigma, lam0=lam0, knownID=knownID,
 		X=trapmat, xlims=xlims, ylims=ylims,  obsmod= "pois", 
-		nmarked="unknown",rat=1, tel =0, nlocs=0)
+		nmarked="known",rat=1, tel =0, nlocs=0)
 
 #create initial values function for scrPID, set M and tuning parameters
 inits<-function(){list(S=cbind(runif(M, xlims[1], xlims[2]), 
@@ -101,14 +101,32 @@ inits<-function(){list(S=cbind(runif(M, xlims[1], xlims[2]),
 		sigma=runif(1, 0.4, 0.6), psi=runif(1, 0.4, 0.6))}
 M<-160
 delta=c(0.1, 0.01, 2)
+n<-dat$n - apply(dat$Yknown, 2:3, sum)
 
-#run model, first m=unknown, then m=known
-mod<-scrPID(n=dat$n, X=trapmat, y=dat$Yobs, M=M, obsmod = "pois", 
-		nmarked="unknown", niters=20000, xlims=xlims, ylims=ylims, 
-		inits=inits(), delta=delta ) )
-mod2<-scrPID(n=dat$n, X=trapmat, y=dat$Yobs, M=M, obsmod = "pois", 
-		nmarked="known", niters=20000, xlims=xlims, ylims=ylims, 
-		inits=inits(), delta=delta ) )	
+#run model with m=known
+mod<-scrPID(n=n, X=trapmat, y=dat$Yknown, M=M, obsmod = "pois", 
+		 niters=20000, xlims=xlims, ylims=ylims, 
+		inits=inits(), delta=delta  )
+
+
+#run model with m=unknown
+#extract only observed individuals
+
+iobs<-which(apply(dat$Yknown>0,1,any))
+Yobs<-dat$Yknown[iobs,,]
+
+#set upper limit for marked individuals
+mmax<-40
+
+inits<-function(){list(S=cbind(runif(M+mmax, xlims[1], xlims[2]), 
+		runif(M+mmax, ylims[1], ylims[2])), lam0=runif(1, 0.4, 0.6), 
+		sigma=runif(1, 0.4, 0.6), psi=runif(1, 0.4, 0.6), psim=runif(1, 0.4, 0.6))}
+
+mod<-scrPID.um(n=n, X=trapmat, y=Yobs, M=M,mmax=mmax, obsmod = "pois", 
+		 niters=20000, xlims=xlims, ylims=ylims, 
+		inits=inits(), delta=delta  )
+
+
 }
 
 \author{
