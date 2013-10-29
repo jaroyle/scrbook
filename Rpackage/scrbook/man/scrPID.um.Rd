@@ -60,3 +60,6 @@ scrPID.um<-function (n, X, y, M, mmax, obsmod = c("pois", "bern"),niters, npics,
 Rahel Sollmann, Richard Chandler, J. Andy Royle
 }
 
+\seealso{
+\code{\link{scrPID, scrPID.tel, sim.pID.data}}
+}

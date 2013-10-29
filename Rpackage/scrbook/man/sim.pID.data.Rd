@@ -8,8 +8,8 @@ Simulates spatial mark-resight data, with options to include number of marked in
 identification rate of marked indidivuals < 100 %, and telemetry location data.
 }
 \usage{
-scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unknown"), npics,niters, 
-                  xlims, ylims, a, b, inits, delta ) 
+sim.pID.data(N=N, K=K, sigma=sigma, lam0=lam0, knownID=knownID,X=X,
+                     xlims=xlims, ylims=ylims,  obsmod= c("pois", "bern"), nmarked=c("known", "unknown"),rat=1, tel =0, nlocs=0)
 }
 \arguments{
   \item{N}{
@@ -53,8 +53,8 @@ scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unk
 }
 \value{
   A list with simulated data
-	\item{n}{all records per sampling location; includes marked and unmarked}
-	\item{Y}{array with N individual encounter histories}
+	\item{n}{all records per sampling location and occasion; includes marked and unmarked}
+	\item{Y}{array with N individual encounter histories of all individuals}
 	\item{Yknown}{array with individual encounter histories of marked individuals }
 
 	\item{Yobs}{array with individual encounter histories; 
@@ -66,7 +66,7 @@ scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),nmarked=c("known", "unk
 }
 
 \examples{
-####example from Royle et al. 2013; Chapt. 15, sec. XXX
+####example from Royle et al. 2014; Chapt. 19 XXX
 set.seed(2501)
 
 #set input values
@@ -115,3 +115,6 @@ mod2<-scrPID(n=dat$n, X=trapmat, y=dat$Yobs, M=M, obsmod = "pois",
 Rahel Sollmann, Richard Chandler
 }
 
+\seealso{
+\code{\link{scrPID, scrPID.tel, scrPID.um}}
+}
