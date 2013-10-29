@@ -1,4 +1,6 @@
 secr_wolverine<-function(){
+
+## load secr and scrbook packages, and the wolverine data:
 library("secr")
 library("scrbook")
 data("wolverine")
@@ -9,10 +11,12 @@ traps1<-as.data.frame(traps[,1:3])
 traps1$x<-as.numeric(as.character(traps1$x))
 traps1$y<-as.numeric(as.character(traps1$y))
 
-# This seems to ignore the trap operation information
+# This seems to ignore the trap operation information at the time
+#   of this writing (Feb 2013 roughly).
 trapfile1<-read.traps(data=traps1,detector="proximity")
-
-
+# Instead use the scr2secr function which writes out the trap deployment file (TDF)
+# and reads it back in using 'read.traps'
+#
 trapfile2<-scr2secr(scrtraps=traps,type="proximity")
 
 
@@ -44,7 +48,7 @@ wolv.secr4<-secr.fit(wolvcapt2,model=list(D~1, g0~1, sigma~1), buffer=20000,mask
 wolv.secr8<-secr.fit(wolvcapt2,model=list(D~1, g0~1, sigma~1), buffer=20000,mask=gr8)
 
 
-# reported in the book chapter:
+# reported in the SCR book chapter:
 wolv.secr2
 }
 

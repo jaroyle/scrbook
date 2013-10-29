@@ -2,10 +2,11 @@
 \alias{secr_wolverine}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-analysis of the wolverine data using secr
+Analysis of the wolverine data using the R package 'secr'
 }
 \description{
-analysis using secr %%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Analysis of the wolverine data using the R package 'secr' written by
+Murray Efford.  This is just an R script with no arguments. 
 }
 \usage{
 secr_wolverine()
@@ -25,7 +26,7 @@ secr_wolverine()
 %% ~put references to the literature/web site here ~
 }
 \author{
-%%  ~~who you are~~
+Andy Royle, aroyle@usgs.gov %%  ~~who you are~~
 }
 \note{
 %%  ~~further notes~~
