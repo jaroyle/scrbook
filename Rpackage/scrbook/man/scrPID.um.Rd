@@ -43,7 +43,7 @@ scrPID.um<-function (n, X, y, M, mmax, obsmod = c("pois", "bern"),niters, npics,
 }
 
   \item{inits}{
-   function to generate initial parameter values
+   function to generate initial parameter values for S, lam0, sigma, psi (unmarked augmentation parameter) and psim (marked augmentation parameter)
 }
 
   \item{delta}{

@@ -41,8 +41,7 @@ scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),npics,niters,
    optional; if Gamma prior is used for lam0, specify shape (a) and scale/rate (b) parameters RICHARD WHICH ONE
 }
   \item{inits}{
-   function to generate initial parameter values
-}
+   function to generate initial parameter values for S, lam0, sigma and psi.
 
   \item{delta}{
     list with tuning parameter values for sigma, lam0 and S 
@@ -50,7 +49,7 @@ scrPID<-function (n, X, y, M, obsmod = c("pois", "bern"),npics,niters,
 
 }
 \value{
-  A matrix with one row per iteration and five columns, for sigma, lam0, c, psi and N.
+  A matrix with one row per iteration and five columns, for sigma, lam0, c, psi and N. c=1 if npics is not supplied.
 }
 
 \author{
