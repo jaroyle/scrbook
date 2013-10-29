@@ -4,7 +4,8 @@
 MCMC algorithm for spatial mark-resight models/ SCR models with partial individual identifiability
 }
 \description{
-Runs the MCMC algorithm for spatial mark-resight models described in Chapter 15 
+Runs the MCMC algorithm for spatial mark-resight models with known number of marks and telemetry data on marked individuals
+ described in Chapter 19 
 }
 \usage{
 scrPID.tel<-function (n, X, y, M, locs, telID, obsmod = c("pois", "bern"),npics,niters, 
@@ -48,16 +49,16 @@ scrPID.tel<-function (n, X, y, M, locs, telID, obsmod = c("pois", "bern"),npics,
    optional; if Gamma prior is used for lam0, specify shape (a) and scale/rate (b) parameters RICHARD WHICH ONE
 }
   \item{inits}{
-   function to generate initial parameter values
+   function to generate initial parameter values S, sigma, lam0 and psi
 }
 
   \item{delta}{
-    list with tuning parameter values for sigma, lam0 and S 
+    list with tuning parameter values for sigma, lam0 and S (two values, one for telemetered, one for unmarked individuals)
 }
 
 }
 \value{
-  A matrix with one row per iteration and five columns, for sigma,lam0, c, psi and N.
+  A matrix with one row per iteration and five columns, for sigma,lam0, c, psi and N. c=1 if npics is not supplied
 }
 
 \author{
