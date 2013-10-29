@@ -4,7 +4,7 @@
 fits logit-normal model Mh
 }
 \description{
-......more here
+Fits model Mh using a custom made MCMC algorithm
 }
 \usage{
 modelMh(y,K,nsim)
@@ -21,7 +21,9 @@ modelMh(y,K,nsim)
   }
 }
 \value{
- .... a matrix ...
+A matrix with one row per iteration and four columns: mu, sigma (logit mean and 
+standard deviation for random detection probability), psi (data augmentation parameter),
+N (estimate of abundance)
 }
 \author{
 Andy Royle and Rahel Sollmann
