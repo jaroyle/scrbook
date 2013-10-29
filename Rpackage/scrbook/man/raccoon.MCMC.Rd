@@ -4,7 +4,7 @@
 MCMC algorithm to analyze raccoon data set (ch15racdata)
 }
 \description{
-Runs the MCMC algorithm for spatial mark-resight model includign telemetry data for raccoon example described in Chapter 15 
+Runs the MCMC algorithm for spatial mark-resight model includign telemetry data for raccoon example described in Royle et al. 2014, Chapter 19 
 }
 \usage{
 raccoon.MCMC <- function(n,X,Eff,y,M, niters,SSp,collar, locs,mi,mall, inits) 
@@ -53,20 +53,41 @@ raccoon.MCMC <- function(n,X,Eff,y,M, niters,SSp,collar, locs,mi,mall, inits)
 
 }
 \value{
-XXXXX
+A matrix with one row per iteration of the MCMC sampler, and 15 columns:
+  \item{sigma}{
+Scale parameter of Gaussian observation model
+}
+
+  \item{lam0(1) to lam0(6)}{
+Time-specific baseline detection rates
+}
+
+  \item{prat(1) to prat(6)}{
+Time-specific individual identification rate
+}
+
+  \item{psi}{
+Data augmentation parameter
+}
+
+  \item{N}{
+Abundance
+}
+
 }
 
 \examples{
-#use raccoon.MCMC to run a single MCMC chain for raccoon data from Ch15
+#use raccoon.MCMC to run a single MCMC chain for 200 iterationsfor raccoon data from Royle te al. 2014, Chapter 19
 
 data(ch15racdata)
 library(spatstat)
 library(mvtnorm)
 library(coda)
+library(maptools)
 
 #create spatial window to draw random points within state space
 newSSp <- as(racdata$SSp, "SpatialPolygons")
-nSSp<-as.owin(newSSp)
+nSSp<-as(newSSp, 'owin')
 
 #set up inits function
 inits=function(){list(theta=runif(1,0.2,0.8), lam0=c( rep(runif(1, .05, .1), 2), 
