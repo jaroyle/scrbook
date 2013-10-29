@@ -10,25 +10,23 @@ Function to analyze of the Ft. Drum black bear data with a range of possible cov
 bear.JAGS(model=c('SCR0', 'SCR0exp', 'SCRt','SCRB','SCRb', 'SCRsex', 'SCRh'), n.chains, n.adapt, n.iter)
 }
 \details{
-bear.JAGS allows you to run a spatial the null model (SCR0), the null model with negative exponential detection function (SCR0exp),
-time as factor on detection (SCRt), a global and a local trap response model (SCRB and SCRb, respectively),
-a model with sex specific detection and movement (SCRsex)
-and a heterogeneity model with 2-class mixtureswith a logit-normal mixture on detection (SCRh).
-Model results are displayed and discussed in Ch9 of Royle et al. 2013. Spatial capture Recapture.
+bear.JAGS allows you to run a spatial null model (SCR0), the null model with a negative exponential detection function (SCR0exp),
+time as a factor on detection (SCRt), a global and a local trap response model (SCRB and SCRb, respectively),
+a model with sex specific detection and movement (SCRsex),
+and a heterogeneity model with a logit-normal mixture on detection (SCRh).
+Model results are displayed and discussed in Ch9 of Royle et al. 2014. Spatial capture Recapture.
 }
 \value{
 JAGS model output (for details, see the rjags manual, under
 coda.samples())
 }
-\references{
-%% ~put references to the literature/web site here ~
-}
+
 \author{
 Rahel Sollmann, Beth Gardner
 }
 
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+%% ~~objects to See Also as \code{\link{secr.bear}}, ~~~
 }
 \examples{
 
