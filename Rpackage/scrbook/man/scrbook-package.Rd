@@ -20,7 +20,9 @@ License: \tab What license is it under?\cr
 LazyLoad: \tab yes\cr
 }
 
-Data format: most of the functions and scripts contained in the scrbook
+I. Data formatting and manipulation:
+
+most of the functions and scripts contained in the scrbook
 package operate on standard trap deployment file (TDF) and encounter
 data file (EDF) formats or 2-d or 3-d arrays. These are easily produced
 from ordinary spreadsheet files with help from a number of utility
@@ -35,9 +37,33 @@ and SCRbayes
 
 scr2secr converts the TDF into a secr traps file.
 
+II. Fitting some basic models in WinBUGS/JAGS:
 
-~~ An overview of how to use the package, including the most ~~
-~~ important functions ~~
+details here
+
+
+III. Summary analysis of output:
+
+Effective sample area
+
+Density plots
+
+IV. Fitting some based models in the R package secr (M. Efford's package):
+
+details here
+
+V. Advanced models
+
+Space-usage/RSF/telemetry
+
+Ecological distance
+
+Open models
+
+Multi-session models 
+
+
+
 }
 \author{
 Andy Royle, Richard Chandler, Rahel Sollmann and Beth Gardner. 

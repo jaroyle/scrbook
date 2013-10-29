@@ -58,12 +58,8 @@ The model is fitted using the bugs() function in the R2WinBUGS package.
   %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
-  Returns the output list from executing "bugs" (package R2WinBUGS).
-  %%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
+  Returns the output list from executing the 'bugs' function
+  (package R2WinBUGS).
 }
 \references{
 SCR book, Section 5.9%% ~put references to the literature/web site here ~

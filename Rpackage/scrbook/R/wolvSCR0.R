@@ -63,6 +63,7 @@ for(i in 1:M){
  }
 
 }
+# for computing a Bayesian p-value
 Xobs<-sum(err[,])
 Xnew<-sum(errnew[,])
 
@@ -86,9 +87,11 @@ zst<-c(rep(1,nind),rep(0,M-nind))
 inits <- function(){
   list (sigma=runif(1,.4,1),p0=runif(1,.01,.2),z=zst,s=sst)
 }
+
+## note: we don't always want the s or z output because it can lead to huge objects
 parameters <- c("psi","sigma","p0","N","D","alpha1")
 if(keepz)
-parameters <- c("psi","sigma","p0","N","D","alpha1","s","z") ###,"Xobs","Xnew","s","z")
+parameters <- c("psi","sigma","p0","N","D","alpha1","s","z")
 
 out <- bugs(data, inits, parameters, "modelfile.txt", n.thin=1,n.chains=3, n.burnin=nb,n.iter=ni,working.dir=getwd(),debug=FALSE)
 out
