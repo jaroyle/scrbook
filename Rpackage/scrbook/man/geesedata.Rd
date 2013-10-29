@@ -10,14 +10,22 @@ Spatial mark-resight dataset of 654 Canada geese (Rutledge 2013), collected in N
 \usage{data(geesedata)}
 \format{
   The format is:
+
 List of 7
+
  $ n   : num [1:57, 1:21] 0 8 0 0 0 0 0 0 0 0 ...        #unmarked sightings, site by occasion
+
  $ X   : num [1:57, 1:2] 3988 3997 3993 3995 3993 ...    #matrix of resighting location X and Y coordinates
+
  $ y   : num [1:654, 1:57, 1:21] 0 0 0 0 0 0 0 0 0 0 ... #array of indidividual resighting data of marked geese
+
  $ M   : num 7000					 #augmentation limit, unmarked geese
+
  $ mmax: num 751					 #augmentation limit, marked geese (total number ever marked)
+
  $ Eff : num [1:57, 1:21] 0 1 0 0 0 0 0 0 0 0 ...	 #site by occasion matrix with survey effort (surveyed=1, not surveyed=0)
- $ Sex : num [1:654] 1 2 1 2 1 1 1 2 1 1 ...		 #se of resighted marked geese
+ 
+$ Sex : num [1:654] 1 2 1 2 1 1 1 2 1 1 ...		 #se of resighted marked geese
 
 }
 
