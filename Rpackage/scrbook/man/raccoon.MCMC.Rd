@@ -77,7 +77,7 @@ Abundance
 }
 
 \examples{
-#use raccoon.MCMC to run a single MCMC chain for 200 iterationsfor raccoon data from Royle te al. 2014, Chapter 19
+#use raccoon.MCMC to run a single MCMC chain for 2000 iterations for raccoon data from Royle et al. 2014, Chapter 19
 
 data(ch15racdata)
 library(spatstat)
@@ -98,12 +98,12 @@ inits=function(){list(theta=runif(1,0.2,0.8), lam0=c( rep(runif(1, .05, .1), 2),
 #run raccoon model
 out<-raccoon.MCMC(n=racdata$n,y=racdata$y, X=racdata$X, mi=racdata$mi, 
                   mall=racdata$mall, M=racdata$M,Eff=racdata$Eff, 
-                  collar=racdata$telID, locs=racdata$locs, niters=200,
+                  collar=racdata$telID, locs=racdata$locs, niters=2000,
                   inits=inits(), SSp=racdata$SSp)
 
 #look at output, remove XX iterations as burn-in
 mod<-mcmc(out)
-summary(window(out, start=10001))
+summary(window(out, start=1001))
 }
 \author{
 Rahel Sollmann, Richard Chandler, J. Andy Royle
