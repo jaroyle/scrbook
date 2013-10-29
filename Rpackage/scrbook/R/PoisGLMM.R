@@ -43,7 +43,7 @@ avec<-rep(alpha, times=c(rep(10,10)))
 loglike<- sum(dpois (y, exp(avec + beta*x), log=TRUE))  
 logprior<- dnorm(beta, mu_beta,sig_beta, log=TRUE)
 loglike.cand<- sum(dpois (y, exp(avec + beta.cand *x), log=TRUE))  
-logprior.cand<- dunif(beta.cand, mu_beta,sig_beta, log=TRUE)
+logprior.cand<- dnor(beta.cand, mu_beta,sig_beta, log=TRUE)
 if (runif(1)< exp((loglike.cand+logprior.cand) - (loglike+logprior) )) {
 beta<-beta.cand
 }
