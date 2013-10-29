@@ -12,7 +12,7 @@ seen <- apply(y>0, 1, any)
 z[seen]<-1#set seen individuals' z=1
 
 #initiate distance matrix and lamij matrix
-d <- e2dist1(S, X)
+d <- e2dist(S, X)
 lam<-lam0*exp(-(d*d)/(2*sigma*sigma))
 
 #set up matrix to hold results
