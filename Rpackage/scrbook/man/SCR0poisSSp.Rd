@@ -35,11 +35,17 @@ SCR0poisSSp(y, X,M,  SSp, delta,niter)
 }
 \details{
   Starting values are chosen at random within the function as:
-S<-cbind(runif(M, xl, xu), runif(M,yl,yu))
+
+S<-cbind( (runifpoint(n=M, win=nSSp))[[3]]/1000, (runifpoint(n=M, win=nSSp))[[4]]/1000 )
+
 sigma<-runif(1,0.5,5)
+
 lam0<-runif(1,0.1,1)
+
 psi<-runif(1,0.2,0.8)
+
 z<-rbinom(M,1,psi)
+
 Function requires the packages sp, spatstat...
 The code is currently set up for the format "SpatialPolygons" of SSp
 and will run into problems if SSp is a "SpatialPolygonsDataFrame". The
