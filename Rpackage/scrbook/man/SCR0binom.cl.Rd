@@ -4,7 +4,7 @@
 MCMC algorithm for basic spatial capture-recapture model
 }
 \description{
-Runs the MCMC algorithm developed in Ch7 section 7.5.1 for a spatial capture-recapture model with Binomial encounter process and clog-log link
+Runs the MCMC algorithm developed in Ch17 for a spatial capture-recapture model with Binomial encounter process and clog-log link
 }
 \usage{
 SCR0pois(y, X,M, xl,xu,yl,yu,K,delta, niter)
@@ -33,7 +33,7 @@ SCR0pois(y, X,M, xl,xu,yl,yu,K,delta, niter)
 }
 }
 \value{
-  A matrix with one row per iteration and four columns, for sigmaa, lam0, psi and N.
+  A matrix with one row per iteration and four columns, for sigma, lam0, psi and N.
 }
 \details{
   Starting values are chosen at random within the function as:
@@ -47,5 +47,35 @@ z<-rbinom(M,1,psi)
 Rahel Sollmann, Richard Chandler, J. Andy Royle
 }
 \examples{
+# analyze Ft. Drum black bear data 
+data(beardata)
+
+#set data augmentation 
+M<-700
+
+trapmat<- beardata$trapmat
+
+#summarize capture across occasions
+bearmat<-apply(beardata$bearArray, 1:2, sum)
+#augment
+Xaug<-matrix(0, nrow=M, ncol=dim(trapmat)[1])
+Xaug[1:dim(bearmat)[1],]<-bearmat
+
+#set state space coordinates
+
+xl<-min(trapmat[,1])-20
+xu<-max(trapmat[,1])+20
+yl<-min(trapmat[,2])-20
+yu<-max(trapmat[,2])+20
+
+set.seed(2013)
+
+#run MCMC algorithm
+mod0<-SCR0binom.cl(y=Xaug,X=trapmat,M=M, xl=xl,xu=xu,yl=yl,yu=yu,K=dim(beardata$bearArray)[3],
+	delta=c(0.1, 0.05, 2), niter=5000)
+
+#use coda to look at output
+library(coda)
+summary(window(mcmc(mod0), start=1001))
 
 }
