@@ -4,7 +4,7 @@
 MCMC algorithm for basic spatial capture-recapture model
 }
 \description{
-Runs the MCMC algorithm developed in Ch7 section 7.5 for a spatial capture-recapture model with Poisson encounter process
+Runs the MCMC algorithm developed in Ch17 for a spatial capture-recapture model with Poisson encounter process
 }
 \usage{
 SCR0pois(y, X,M, xl,xu,yl,yu,delta, niter)
@@ -30,7 +30,7 @@ SCR0pois(y, X,M, xl,xu,yl,yu,delta, niter)
 }
 }
 \value{
-  A matrix with one row per iteration and four columns, for sigmaa, lam0, psi and N.
+  A matrix with one row per iteration and four columns, for sigma, lam0, psi and N.
 }
 \details{
   Starting values are chosen at random within the function as:
@@ -44,5 +44,5 @@ z<-rbinom(M,1,psi)
 Rahel Sollmann, Richard Chandler, J. Andy Royle
 }
 \examples{
-1
+
 }
