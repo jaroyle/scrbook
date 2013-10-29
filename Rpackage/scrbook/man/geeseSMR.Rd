@@ -74,13 +74,13 @@ library(maptools)
 library(coda)
 
 #set up data and initial values
-X<-geesedata$X
+X<-newgeesedata$X
  xxx<-convexhull.xy(vertices(dilation.owin(convexhull.xy(X), 4.5)))
 xxy<-as(xxx, "SpatialPolygons")
 
-M<-geesedata$M
-mmax<-geesedata$mmax
-EffAr<-aperm(array(geesedata$Eff, c(dim(X)[1], dim(geesedata$y)[3],M+mmax)),c(3,1,2) )
+M<-newgeesedata$M
+mmax<-newgeesedata$mmax
+EffAr<-aperm(array(newgeesedata$Eff, c(dim(X)[1], dim(newgeesedata$y)[3],M+mmax)),c(3,1,2) )
 delta=c(0.015, 0.008,0.8)
 
 inits<-function(){list(sigma=runif(2, 0.9,1.1), lam0=runif(1,0.28,0.35), z=rbinom(M,1,0.8), phi=runif(1,0.3,0.7), psi=runif(1, 0.3, 0.8), 
@@ -90,7 +90,7 @@ inits<-function(){list(sigma=runif(2, 0.9,1.1), lam0=runif(1,0.28,0.35), z=rbino
 
 #run 5000 iterations - will take several hours
 
-out<-geeseSMR(n=geesedata$n, X=X,y=geesedata$y, M=M, mmax=mmax, obsmod="bern", niters=5000, Sex=geesedata$Sex,
+out<-geeseSMR(n=newgeesedata$n, X=X,y=newgeesedata$y, M=M, mmax=mmax, obsmod="bern", niters=5000, Sex=newgeesedata$Sex,
 			EffAr=EffAr,inits=inits(),delta=delta, SSp=xxy  )
 
 #lookat summary output
