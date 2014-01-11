@@ -5,7 +5,7 @@
 bleen
 }
 \description{
-Simulate some independent multinomial SCR data..... %%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Simulate some independent multinomial SCR data and fit the model using JAGS. %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
 simMnSCR(parms, K = 7, ssbuff = 2)
@@ -13,13 +13,16 @@ simMnSCR(parms, K = 7, ssbuff = 2)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{parms}{
-a vector of parameter values.........%%     ~~Describe \code{parms} here~~
+Presently the simulation function accepts a list with 4 parameters which
+should have names: N = population size, "alpha0" = intercept on the
+multinomial logit scale, "sigma" = scale parameter of a Gaussian model,
+i.e., alpha1 = 1/(2*sigma^2), "alpha2" = behavioral response effect.
 }
   \item{K}{
 number of sample periods
 }
   \item{ssbuff}{
-%%     ~~Describe \code{ssbuff} here~~
+width of the buffer around the trap array %%     ~~Describe \code{ssbuff} here~~
 }
 }
 \details{
@@ -36,7 +39,7 @@ number of sample periods
 %% ~put references to the literature/web site here ~
 }
 \author{
-%%  ~~who you are~~
+Andy Royle, aroyle@usgs.gov
 }
 \note{
 %%  ~~further notes~~
@@ -48,10 +51,9 @@ number of sample periods
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-
 set.seed(2013)
 
-parms<-list(N=100,alpha0= -.40, sigma=0.5,alpha2=0)
+parms<-list(N=100, alpha0= -.40, sigma=0.5,alpha2=0)
 
 # simulate some data
 data<-simMnSCR(parms,K=7,ssbuff=2)
@@ -77,7 +79,7 @@ data <- list (X=data$X,K=data$K, trap.space=1,Ycat=Ycat,M=M,ntraps=nrow(data$X),
 cat("
 model {
 psi ~ dunif(0,1)
-alpha0 ~ dnorm(0,10)
+alpha0 ~ dnorm(0,.1)
 sigma ~dunif(0,10)
 alpha1<-  1/(2*sigma*sigma)
 
@@ -112,11 +114,12 @@ D <- N/A
 #Uncomment and use this bugs statement rather than the one above if using OpenBUGS
 #out <- bugs (data, inits, parameters, "model.txt", n.thin=nthin, n.chains=nc, n.burnin=nb, n.iter=ni, debug=TRUE, program=c("OpenBUGS"))
 
+# fit the model by jags. This takes less time.
 library("R2jags")
 out <- jags (data, inits, parameters, "model.txt", n.thin=1, n.chains=3, n.burnin=1000, n.iter=2000)
 
 
-# fit the model by jags. This takes less time.
+# or use the "rjags" package
 library("rjags")
 out1 <- jags.model("model.txt", data, inits, n.chains=3, n.adapt=500)
 out2 <- coda.samples(out1,parameters,n.iter=2000)
