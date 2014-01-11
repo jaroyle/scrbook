@@ -6,6 +6,10 @@
   %%  ~~function to do ... ~~
 }
 \description{
+  Right now this is a simple R script that provides very little
+  flexibility. At some point, we'll generalize the function but, until
+  then, you should be able to easily modify this script to suit
+  your own needs. 
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
@@ -19,11 +23,10 @@ simSCR0(N=100,K=20,discard0 = TRUE, array3d = FALSE, rnd = 2013)
      If TRUE only the encounter individuals are returned, if FALSE it
      returns the encounter history array or matrix for all N individuals
      whether encountered or not. 
-%%     ~~Describe \code{discard0} here~~
 }
 \item{array3d}{
   If TRUE, returns the full 3-d encounter history array having
-  dimensions nind x K (n occasions) x ntraps
+  dimensions nind x ntraps x K (n occasions) 
   If FALSE, summarizes over noccasions and returns the total number of
   encounters out of K.
 %%     ~~Describe \code{array3d} here~~

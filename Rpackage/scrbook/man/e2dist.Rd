@@ -4,7 +4,7 @@
 Compute the distance between trap locations and animal activity centers.
 }
 \description{
-A fast alternative to using 'for' loops. 
+A fast alternative to using 'for' loops for computing a distance matrix. 
 }
 \usage{
 e2dist(x, y)
@@ -23,12 +23,15 @@ e2dist(x, y)
   A distance matrix with one row per animal and one column per trap.
 }
 \author{
-J. Andy Royle
+Andy Royle, aroyle@usgs.gov 
 }
 \examples{
+
 nAnimals <- 10
 nTraps <- 5
 activity.centers <- cbind(runif(nAnimals), runif(nAnimals))
 trap.locs <- cbind(seq(0, 1, length=nTraps), seq(0, 1, length=nTraps))
-e2dist(activity.centers, trap.locs)
+Dmat<- e2dist(activity.centers, trap.locs)
+
+
 }
