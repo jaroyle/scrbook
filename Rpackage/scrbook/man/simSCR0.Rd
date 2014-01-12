@@ -23,17 +23,16 @@ simSCR0(N=100,K=20,discard0 = TRUE, array3d = FALSE, rnd = 2013)
      If TRUE only the encounter individuals are returned, if FALSE it
      returns the encounter history array or matrix for all N individuals
      whether encountered or not. 
-}
-\item{array3d}{
+   }
+   \item{array3d}{
   If TRUE, returns the full 3-d encounter history array having
   dimensions nind x ntraps x K (n occasions) 
   If FALSE, summarizes over noccasions and returns the total number of
   encounters out of K.
-%%     ~~Describe \code{array3d} here~~
-}
+  }
   \item{rnd}{
-Random number seed.  rnd=2013 should reproduce the results in the SCR
-book. %%     ~~Describe \code{sd} here~~
+   Random number seed.  rnd=2013 should reproduce the results in the SCR
+   book. 
 }
 }
 \details{

@@ -39,13 +39,13 @@ SCR0bayes(dataobj, M = 200, engine = "jags", ni = 2000, nb = 1000)
     Uses either "jags" or "winbugs" via the rjags or R2WinBUGS
     packages. Obviously at least one of those must be installed.
     %%     ~~Describe \code{engine} here~~
-}
+   }
   \item{ni}{
-Total number of MCMC iterations. %%     ~~Describe \code{ni} here~~
-}
+   Total number of MCMC iterations. %%     ~~Describe \code{ni} here~~
+   }
   \item{nb}{
-Number of burn-in iterations. %%     ~~Describe \code{nb} here~~
-}
+    Number of burn-in iterations. %%     ~~Describe \code{nb} here~~
+   }
 }
 \details{
   This R functions is a script that organizes a data set, creates the

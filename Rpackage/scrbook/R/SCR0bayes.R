@@ -3,7 +3,7 @@ function(dataobj,M=200,engine="jags",ni=2000,nb=1000){
 if(sum(engine==c("jags","winbugs"))==0) { return("use jags or winbugs!")  }
 
 y<-data$Y
-if(dim(y)!=2)
+if(length(dim(y))!=2)
      return("Data must be 2-d array, nind x ntraps")
 
 traplocs<-data$traplocs
