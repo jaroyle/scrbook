@@ -1,3 +1,4 @@
+uniform_search<-function(){
 
 # 100 individuals 4 periods (would be years in a CJS model but phi=1 here)
 N<-100
@@ -115,7 +116,9 @@ parameters <- c("p0","tau","N","psi","sigma.move")
 model1 <- jags(jags.data, inits, parameters, "model1.mod", n.chains = nc, n.thin = nt, n.iter = ni, n.burnin = nb, working.directory = getwd())
 
 
+return(model1)
 
+}
 
 
 
