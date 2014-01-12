@@ -42,7 +42,7 @@ scrPID(n, X, y, M, obsmod = c("pois", "bern"),npics,niters,
 }
   \item{inits}{
    function to generate initial parameter values for S, lam0, sigma and psi.
-
+}
   \item{delta}{
     list with tuning parameter values for sigma, lam0 and S 
 }
