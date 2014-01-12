@@ -1,4 +1,4 @@
-
+snakeline<-function(){
 
 
 basex<-c(0,0,1,1,0)
@@ -215,7 +215,11 @@ ni<-3500
 
 # Load interface package and start WinBUGS (note: this takes about 4.5 h)
 library("R2jags")
-wbout2 <- jags(data, inits, parameters, "model0.txt", n.thin=nthin, n.chains=nc,
+jout <- jags(data, inits, parameters, "model0.txt", n.thin=nthin, n.chains=nc,
 n.burnin=nb, n.iter=ni, working.dir=getwd())
 
 
+jout
+
+
+}
