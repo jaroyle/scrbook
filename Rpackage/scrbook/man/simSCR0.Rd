@@ -13,13 +13,21 @@
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-simSCR0(N=100,K=20,discard0 = TRUE, array3d = FALSE, rnd = 2013)
+simSCR0(N=100,K=20,alpha0=-2.5, sigma = .5, discard0 = TRUE, array3d = FALSE, rnd = 2013)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{N}{ Population size }
   \item{K}{ Number of sampling occasions (nights of camera trapping effort)}
-  \item{discard0}{
+  \item{alpha0}
+  { Intercept of the Gaussian encounter probability model:
+    probcap<-plogis(alpha0)*exp(-alpha1*D*D)
+   }
+   \item{sigma}{
+   The scale parameter of the Gaussian encounter probability model,
+   i.e., alpha1 = (1/(2*sigma*sigma)). 
+     }
+   \item{discard0}{
      If TRUE only the encounter individuals are returned, if FALSE it
      returns the encounter history array or matrix for all N individuals
      whether encountered or not. 
@@ -39,7 +47,7 @@ simSCR0(N=100,K=20,discard0 = TRUE, array3d = FALSE, rnd = 2013)
   This function is meant as a learning tool and a template to modify to
   suit your own needs. It is not a general purpose function.
   
-  Simulates Bernoulli encounters of N individuals by a 5x5 array of
+  It simulates Bernoulli encounters of N individuals by a 5x5 array of
   camera traps or similar. Trap coordinates are the integers
   (1,2,3,4,5)x(1,2,3,4,5). The state-space is defined by a buffer
   extending 2 units beyond the trap array, for a total size of 8x8
@@ -54,7 +62,7 @@ simSCR0(N=100,K=20,discard0 = TRUE, array3d = FALSE, rnd = 2013)
   %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
-  Returns a list suitable for use in SCR0bayes and other functions. It
+  Returns a data list suitable for use in SCR0bayes and other functions. It
   has elements:
 
   Y = nind x ntraps (array3d=FALSE) of encounter frequencies or N x
@@ -75,11 +83,6 @@ simSCR0(N=100,K=20,discard0 = TRUE, array3d = FALSE, rnd = 2013)
   sigma = true value of sigma
 
   K = number of sampling occasions
-  %%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
 }
 \references{
 SCR book, Chapter 5. %% ~put references to the literature/web site here ~
@@ -99,14 +102,17 @@ SCR0bayes, SCR0bayesDss%% ~~objects to See Also as \code{\link{help}}, ~~~
 \examples{
 
 library("scrbook")
-data<-simSCR0(N=100, K=20, discard0=TRUE,rnd=2013)
+## Simulate a data set for a population of N = 100 individuals
+data<-simSCR0(N=100, K=20, alpha0= -2.5, sigma = 0.5, discard0=TRUE,rnd=2013)
 
 ##out1<-SCR0bayes(data,M=200,engine="jags",ni=2000,nb=1000)
 # Fit the model using WinBUGS:
+
 out2<-SCR0bayes(data,M=200,engine="winbugs",ni=2000,nb=1000)
 
+## Inspect the results....
 
-
+print(out2)
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

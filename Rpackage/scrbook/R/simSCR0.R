@@ -1,5 +1,5 @@
 simSCR0 <-
-function(N=100,K=20,discard0=TRUE,array3d=FALSE,rnd=2013){
+function(N=100,K=20,alpha0=-2.5,sigma=.5, discard0=TRUE,array3d=FALSE,rnd=2013){
 set.seed(rnd)
 
 # make trapping grid. Normally you would provide a 2-dimensional matrix
@@ -26,8 +26,8 @@ S<-cbind(sx,sy)
 # how far is each individual from each trap?
 D<- e2dist(S,traplocs)
 
-alpha0<- -2.5
-sigma<- 0.5
+#alpha0<- -2.5
+#sigma<- 0.5
 alpha1<- 1/(2*sigma*sigma)
 
 #cloglog.probcap<- alpha0  - alpha1*D*D
