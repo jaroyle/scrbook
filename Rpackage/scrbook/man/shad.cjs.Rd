@@ -85,7 +85,7 @@ lam0[12]  0.6921  0.8463  0.9364  1.0301  1.2503
 phi       0.7600  0.7763  0.7847  0.7927  0.8070
 sigma    13.4624 13.7073 13.8384 13.9736 14.2431
 
-
+}
 
 
 % Add one or more standard keywords, see file 'KEYWORDS' in the
