@@ -4,7 +4,7 @@
 MCMC algorithm to analyze raccoon data set (ch15racdata)
 }
 \description{
-Runs the MCMC algorithm for spatial mark-resight model includign telemetry data for raccoon example described in Royle et al. 2014, Chapter 19 
+Runs the MCMC algorithm for spatial mark-resight model including telemetry data for raccoon example described in Royle et al. 2014, Chapter 19 
 }
 \usage{
 raccoon.MCMC <- function(n,X,Eff,y,M, niters,SSp,collar, locs,mi,mall, inits) 
