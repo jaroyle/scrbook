@@ -233,27 +233,26 @@ sink()
 
 #Set up data input
 
-#Set up a data input
-data<-list(y=tagid.week, first=first, M=M, T=T, nantenna=nantenna, antenna.loc=antenna.loc)
+data<-list(y=tagid.week, first=first, M=M, T=T, xl=xl, xu=xu, nantenna=nantenna, antenna.loc=antenna.loc)
 
 z=matrix(NA, M, T)
 St=matrix(NA, M, T)
 
 for(i in 1:M){ 
-for(t in first[i]:T){ 
+for(t in (first[i]+1):T){ 
 z[i,t] <-1
-St[i,t] <- (sum(y[i,,t] * antenna.loc)/sum(y[i,,t])) + 3
+St[i,t] <- (sum(tagid.week[i,,t] * antenna.loc)/sum(tagid.week[i,,t])) + 3
 if(St[i,t] == "NaN") St[i,t] <- St[i,t-1]
 } 
 }
 
 #Set initial values
-inits =  function() {list(z=z, phi=runif(1,0,1), lam0=runif(12,1,3), tauv=runif(1,0,20), mu=runif(1,1,3), beta=runif(1,0,1)) }
+inits =  function() {list(z=z, phi=runif(1,0,1), lam0=runif(12,1,3), tauv=runif(1,0,20)) }
 
 # Parameters to follow
 parameters <- c("sigma", "phi", "lam0")
 
-modelFile= "SpatialCJS.txt"                                                  
+modelFile= "SpatialCJS.txt"                                                 
 
 } #end if
 
