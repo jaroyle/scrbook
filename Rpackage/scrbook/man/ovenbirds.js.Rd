@@ -4,7 +4,8 @@
 analysis of the ovenbird data provided in the secr package using JAGS
 }
 \description{
-Function to analyze  the ovenbird data under the spatial multi-session model, the non-spatial Jolly-Seber model, and the spatial Jolly-Seber model.
+Function to analyze ovenbird data collected from 2005 to 2009 by D. K. Dawson and M. G. Efford  under the spatial multi-session model, the non-spatial Jolly-Seber model, and the spatial Jolly-Seber model.
+The data are described in more detail by Efford in the secr package and other analyses of mist-netting in the study site are described in Efford, Dawson & Robbins (2004).
 }
 \usage{
 ovenbirds.js(model=c('SMS', 'NSJS', 'SJS'), n.chains, n.adapt, n.iter)
@@ -19,12 +20,17 @@ JAGS model output (for details, see the rjags manual, under
 coda.samples())
 }
 
+\references{
+Efford, M. G., Dawson, D. K. and Robbins C. S. (2004) DENSITY: software for analysing capture-recapture data from passive detector arrays. 
+Animal Biodiversity and Conservation 27, 217–228.
+}
+
 \author{
 Beth Gardner
 }
 
 \seealso{
-%% ~~objects to See Also as \code{\link{ovenbird}}, ~~~
+\code{\link{ovenbird}}
 }
 \examples{
 
