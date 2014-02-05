@@ -13,12 +13,19 @@ the weir and PIT antennas are treated the same; however, Raabe et al. (2014) imp
 \usage{data(Ch16shaddata)}
 \format{
   The format is:
+
  List of 2
+
  $ shad :'data.frame':  3406 obs. of  4 variables:
+
   ..$ TagID: int [1:3406] 161210451 161210451 161210451 161210451 161210451 161210451 161210451 161210451 161210451 161210451 ...
+
   ..$ Week : int [1:3406] 1 1 1 1 1 1 1 4 4 5 ...
+
   ..$ RKM  : num [1:3406] 7.7 7.7 13.4 13.4 13.4 13.4 13.4 45.3 56.4 13.4 ...
+
   ..$ state: int [1:3406] 1 1 1 1 1 1 1 2 2 1 ...
+
  $ first: num [1:315] 1 7 6 6 6 6 6 6 5 5 ...
 
 
