@@ -35,11 +35,9 @@ the weir and PIT antennas are treated the same; however, Raabe et al. (2014) imp
 the antenna location, state indicates the geographic state (1 or 2 for upper or lower reach) for the multi-state model, 
 and first is the week in which the fish was first captured (length is 315 because there are 315 unique fish in this dataset).
 }
-
 \references{
 Raabe, J. K., Gardner, B., & Hightower, J. E. (2014). A spatial capture-recapture model to estimate fish 
 survival and location from linear continuous monitoring arrays. Canadian Journal of Fisheries and Aquatic Sciences, 71(1), 120-130.
-}
 }
 \examples{
 data(Ch16shaddata)

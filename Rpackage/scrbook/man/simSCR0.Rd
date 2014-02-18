@@ -19,8 +19,7 @@ simSCR0(N=100,K=20,alpha0=-2.5, sigma = .5, discard0 = TRUE, array3d = FALSE, rn
 \arguments{
   \item{N}{ Population size }
   \item{K}{ Number of sampling occasions (nights of camera trapping effort)}
-  \item{alpha0}
-  { Intercept of the Gaussian encounter probability model:
+  \item{alpha0}{ Intercept of the Gaussian encounter probability model:
     probcap<-plogis(alpha0)*exp(-alpha1*D*D)
    }
    \item{sigma}{
