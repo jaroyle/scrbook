@@ -76,9 +76,22 @@ unix.time(out<-wolvSCR0(y3d,traps,nb=1000,ni=2000,buffer=1,M=100,keepz=TRUE))
 
 Sx<-out$sims.list$s[,,1]
 Sy<-out$sims.list$s[,,2]
-w<- out$sims.list$z
+z<- out$sims.list$z
 obj<-list(Sx=Sx,Sy=Sy,z=z)
-SCRdensity(obj)
+## input scale 1 unit = 100 km^2
+## express output in wolverines per 1000 km^2 (note: this is different
+##  from the map in Fig 5.6 of the SCR book)
+SCRdensity(obj,scalein=100,scaleout=1000)
+
+
+
+
+
+
+
+
+
+
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

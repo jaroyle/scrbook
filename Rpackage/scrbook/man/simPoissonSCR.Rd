@@ -1,5 +1,5 @@
 \name{simPoissonSCR}
-\alias{simPoissonSCR.fn}
+\alias{simPoissonSCR}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Simulatesion SCR data with Poisson observation model

@@ -75,7 +75,7 @@ intlik1, intlik3, intlik4 and related functions %% ~~objects to See Also as \cod
 
 ## Simulate a data set. Note by setting discard0=TRUE a data set with
 ##  no "all-0" encounter histories is generated. 
-data<-simSCR0(discard0=TRUE,sd=2013) 
+data<-simSCR0(discard0=TRUE,rnd=2013) 
 y<-data$Y
 traplocs<-data$traplocs
 nind<-nrow(y)

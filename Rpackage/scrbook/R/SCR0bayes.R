@@ -1,5 +1,5 @@
 SCR0bayes <-
-function(dataobj,M=200,engine="jags",ni=2000,nb=1000){
+function(data,M=200,engine="jags",ni=2000,nb=1000){
 if(sum(engine==c("jags","winbugs"))==0) { return("use jags or winbugs!")  }
 
 y<-data$Y
@@ -26,7 +26,6 @@ alpha0~dnorm(0,.1)
 logit(p0)<- alpha0
 alpha1~dnorm(0,.1)
 psi~dunif(0,1)
-
 for(i in 1:M){
  z[i] ~ dbern(psi)
  s[i,1]~dunif(xlim[1],xlim[2])

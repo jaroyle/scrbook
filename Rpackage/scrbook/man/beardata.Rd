@@ -49,7 +49,7 @@ y[y>1]<- 1                 # toss out multiple encounters b/c
 set.seed(2013)               # to obtain the same results each time
 library(R2WinBUGS)
 data0<-list(y=y,M=M,K=K)
-params0<-list('psi','p','N')
+params0<-c("psi","p","N")
 zst=c(rep(1,nind),rbinom(M-nind, 1, .5))
 inits =  function() {  list(z=zst, psi=runif(1), p=runif(1)) }
 
@@ -72,6 +72,15 @@ N<-sum(z[1:M])
 
 fit0 = bugs(data0, inits, params0, model.file="modelM0.txt",n.chains=3, 
        n.iter=2000, n.burnin=1000, n.thin=1,debug=TRUE,working.directory=getwd())
+
+
+## Using JAGS through the "rjags" package, we can do this:
+library("rjags")
+jm <- jags.model("modelM0.txt", data=data0, inits=inits,
+                 n.chains=3, n.adapt=1000)
+jc <- coda.samples(jm, params0, n.iter=1000)
+
+
 
 ###
 ### Fit model Mh to the bear data using MCMC algorithm written in R

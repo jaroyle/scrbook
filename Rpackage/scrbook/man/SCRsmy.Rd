@@ -30,7 +30,7 @@ SCRsmy(y3d)
 %% ~put references to the literature/web site here ~
 }
 \author{
-%%  ~~who you are~~
+Andy Royle, aroyle@usgs.gov %%  ~~who you are~~
 }
 \note{
 %%  ~~further notes~~
@@ -43,9 +43,9 @@ SCRsmy(y3d)
 }
 \examples{
 
-library("scrbook")
+library(scrbook)
 data(wolverine)
-y3d <-SCR23darray.fn(wolverine$wcaps,wolverine$wtraps)
+y3d <-SCR23darray(wolverine$wcaps,wolverine$wtraps)
 SCRsmy(y3d)
 
 }

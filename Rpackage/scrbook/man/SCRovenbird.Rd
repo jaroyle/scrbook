@@ -5,7 +5,8 @@
 fit SCR model to ovenbird data using JAGS%%  ~~function to do ... ~~
 }
 \description{
-yes, does that    %%  ~~ A concise (1-5 lines) description of what the function does. ~~
+This R script will do a Bayesian analysis of the ovenbird data set from
+M. Efford's secr package (see below for references).
 }
 \usage{
 SCRovenbird()
@@ -22,10 +23,18 @@ SCRovenbird()
 %% ...
 }
 \references{
-%% ~put references to the literature/web site here ~
+See the helpfile ?ovenbird from the R package 'secr' 
+  
+Borchers, D. L. and Efford, M. G. (2008) Spatially explicit maximum likelihood methods for capture-recapture studies. Biometrics 64, 377-385. 
+
+Dawson, D. K. and Efford, M. G. (2009) Bird population density estimated from acoustic signals. Journal of Applied Ecology 46, 1201-1209. 
+
+Efford, M. G., Dawson, D. K. and Robbins C. S. (2004) DENSITY: software for analysing capture-recapture data from passive detector arrays. Animal Biodiversity and Conservation 27, 217-228. 
+
+Stamm, D. D., Davis, D. E. and Robbins, C. S. (1960) A method of studying wild bird populations by mist-netting and banding. Bird-Banding 31, 115-130. 
 }
 \author{
-%%  ~~who you are~~
+Andy Royle, aroyle@usgs.gov 
 }
 \note{
 %%  ~~further notes~~
@@ -46,12 +55,12 @@ library("secr")
 data(ovenbird)
 set.seed(2013)
 
-png("Ovenbird_traps.png",width=7,height=7, units="in", res=400)
+##png("Ovenbird_traps.png",width=7,height=7, units="in", res=400)
 par(mfrow=c(1,3))
  plot(ovenCH[["2005"]])
  plot(ovenCH[["2007"]])
  plot(ovenCH[["2009"]])
-dev.off()
+##dev.off()
 
 ## extract the trap locations and create a state-space by adding 150 m
 X<-traps<-traps(ovenCH)
@@ -72,21 +81,21 @@ died<-NULL
 # make the data into a 3-d array
 
 for(i in 1:5){
-tmp<-Y[[i]]
-nind<-nrow(tmp)
-nrep<-ncol(tmp)
-D<-matrix(0,nrow=M,ncol=10)
-D[1:nind,1:nrep]<-tmp
-D[D>0]<- 0
-D[D<0]<- 1
-died<-rbind(died,D)
+  tmp<-Y[[i]]
+  nind<-nrow(tmp)
+  nrep<-ncol(tmp)
+  D<-matrix(0,nrow=M,ncol=10)
+  D[1:nind,1:nrep]<-tmp
+  D[D>0]<- 0
+  D[D<0]<- 1
+  died<-rbind(died,D)
 
-tmp[tmp<0]<- 0 ## dead guy set to 0 b/c "died" created above
-tmp[tmp==0]<-ntraps+1
-tmp2<-matrix(NA,nrow=M,ncol=10)  # pad last col with NA for year 1
-tmp2[,1:nrep]<-ntraps+1
-tmp2[1:nind,1:nrep]<-tmp
-Ymat<- rbind(Ymat, tmp2)
+  tmp[tmp<0]<- 0 ## dead guy set to 0 b/c "died" created above
+  tmp[tmp==0]<-ntraps+1
+  tmp2<-matrix(NA,nrow=M,ncol=10)  # pad last col with NA for year 1
+  tmp2[,1:nrep]<-ntraps+1
+  tmp2[1:nind,1:nrep]<-tmp
+  Ymat<- rbind(Ymat, tmp2)
 
 sout<-spiderplot(tmp2[1:nind,1:nrep],as.matrix(X[[i]]))$avg.s
 Stmp<-Sst0

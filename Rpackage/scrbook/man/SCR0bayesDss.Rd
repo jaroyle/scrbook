@@ -15,7 +15,7 @@ SCR0bayesDss(data, ng = 10, engine = "jags", ni = 2000, nb = 1000, M = 200)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-\item{dataobj}{
+\item{data}{
     A list having elements
 
      Y = encounter history data, 2-dimensional array, nind x ntraps

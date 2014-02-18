@@ -10,11 +10,11 @@ Fit a basic SCR model using JAGS or WinBUGS %%  ~~function to do ... ~~
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-SCR0bayes(dataobj, M = 200, engine = "jags", ni = 2000, nb = 1000)
+SCR0bayes(data, M = 200, engine = "jags", ni = 2000, nb = 1000)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{dataobj}{
+  \item{data}{
     A list having elements
 
      Y = encounter history data, 2-dimensional array, nind x ntraps

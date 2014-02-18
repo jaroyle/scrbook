@@ -72,7 +72,7 @@ wolvSCR0Dss(y3d, traps, nb = 1000, ni = 2000, M = 200, Sgrid = wolverine$grid8, 
 library("scrbook")
 data(wolverine)
 traps<-wolverine$wtraps
-y3d <-SCR23darray.fn(wolverine$wcaps,wolverine$wtraps)
+y3d <-SCR23darray(wolverine$wcaps,wolverine$wtraps)
 g<-as.matrix(wolverine$grid8)
 bln<-wolvSCR0Dss(y3d,traps,nb=1000,ni=2000,M=100,Sgrid=g,engine="jags",area=8,coord.scale=10000)
 
