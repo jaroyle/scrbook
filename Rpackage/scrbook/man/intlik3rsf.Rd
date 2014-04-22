@@ -5,8 +5,15 @@
 SCR+RSF integrated likelihood%%  ~~function to do ... ~~
 }
 \description{
-  computes the likelihood from royle et al. 2013 mee paper
-  %%  ~~ A concise (1-5 lines) description of what the function does. ~~
+  Computes the likelihood for combined SCR and telemetry data with a resource selection
+  covariate. Uses only a single resource selection covariate (this is
+  required input in the present version of the function) and the
+  Gaussian hazard encounter probability model:
+
+  p(x,s) = 1-exp(-lambda(x,s))
+
+  log(lambda(x,s)) = alpha0 - (1/(2*sigma*sigma))*D(x,s)^2  + alpha2*covariate(x)
+
 }
 \usage{
 intlik3rsf(start = NULL, y = y, K = NULL, X = traplocs, ztrap, G, ntel = NULL, zall = NULL, stel = NULL)
@@ -14,35 +21,47 @@ intlik3rsf(start = NULL, y = y, K = NULL, X = traplocs, ztrap, G, ntel = NULL, z
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{start}{
-%%     ~~Describe \code{start} here~~
+    Starting values for the parameter vector. Has length = 4:
+    alpha0 <- start[1]    
+    sigma <- exp(start[2])
+    alpha2 <- start[3]
+    n0 <- exp(start[4])
 }
-  \item{y}{
+  \item{y}{ nind x ntraps matrix of encounter frequencies (out of K)
 %%     ~~Describe \code{y} here~~
 }
   \item{K}{
-%%     ~~Describe \code{K} here~~
+Number of sample occasions%%     ~~Describe \code{K} here~~
 }
   \item{X}{
-%%     ~~Describe \code{X} here~~
+ntraps x 2 matrix of trap coordinates %%     ~~Describe \code{X} here~~
 }
   \item{ztrap}{
-%%     ~~Describe \code{ztrap} here~~
+Covariate values at the trap locations, ntraps x 1 vector %%     ~~Describe \code{ztrap} here~~
 }
   \item{G}{
-%%     ~~Describe \code{G} here~~
+nG x 2 matrix of state-space grid cells -- should be the raster coordinates (center points) %%     ~~Describe \code{G} here~~
 }
   \item{ntel}{
-%%     ~~Describe \code{ntel} here~~
+nTel x nG matrix of telemetry encounter frequencies in each grid
+cell. nTel = number of telemetered individuals, nG = number of raster
+grid cells. %%     ~~Describe \code{ntel} here~~
 }
   \item{zall}{
-%%     ~~Describe \code{zall} here~~
+Raster covariate, nG x 1 vector %%     ~~Describe \code{zall} here~~
 }
-  \item{stel}{
-%%     ~~Describe \code{stel} here~~
+  \item{stel}{ optional nTel x 2 matrix of location centroids for each
+    individual. If provided this is used as an estimate of s[i] for the
+    telemetered individuals and the likelihood for telemetered
+    individuals is not marginalized over s[i]
 }
 }
 \details{
-%%  ~~ If necessary, more details than the description above ~~
+This function illustrates calculation of the combined likelihood for
+spatial capture-recapture data with some telemetered individuals.
+The model assumes independence of the two samples and so does not
+accommodate the observation of telemetered individuals in some
+traps (which probably induces a very slight loss of efficiency).
 }
 \value{
 %%  ~Describe the value returned
@@ -52,10 +71,17 @@ intlik3rsf(start = NULL, y = y, K = NULL, X = traplocs, ztrap, G, ntel = NULL, z
 %% ...
 }
 \references{
-%% ~put references to the literature/web site here ~
+  Chapter 13 of the SCR book.
+  
+  Royle, J. A., Chandler, R. B., Sun, C. C., and Fuller, A. K. (2013).
+  Integrating resource selection information with spatial
+  capture-recapture. Methods in Ecology and Evolution, 4(6), 520-530.
+
+  
+
 }
 \author{
-%%  ~~who you are~~
+Andy Royle, aroyle@usgs.gov
 }
 \note{
 %%  ~~further notes~~
@@ -73,10 +99,6 @@ intlik3rsf(start = NULL, y = y, K = NULL, X = traplocs, ztrap, G, ntel = NULL, z
 
 ## The function is currently defined as
 
-
-### before running this code, put the functions at the end of this script
-### into your R workspace
-###
 library("scrbook")
 
 ## the following block of code makes up a covariate as a spatially correlated
@@ -85,8 +107,9 @@ set.seed(1234)
 gr<-expand.grid(1:40,1:40)
 Dmat<-as.matrix(dist(gr))
 V<-exp(-Dmat/5)
-z<-t(chol(V))%*%rnorm(1600)
-spatial.plot(gr,z)
+z<-t(chol(V))\%*\%rnorm(nrow(gr))
+par(mar=c(3,3,3,6))
+spatial.plot(gr,z,cx=3,col=terrain.colors(20))
 
 
 ###
@@ -152,14 +175,14 @@ p<- 1-exp(-exp(loglam))
 K<- 10
 y<-matrix(NA,nrow=N,ncol=ntraps)
 for(i in 1:N){
-y[i,]<- rbinom(ntraps,K,p[i,])
+   y[i,]<- rbinom(ntraps,K,p[i,])
 }
 
 cap<-apply(y,1,sum)>0
 
 y<-y[cap,]
 gr<-as.matrix(gr)
-sbar<- (n%*%gr)/as.vector(n%*%rep(1,nrow(gr)))
+sbar<- (n\%*\%gr)/as.vector(n\%*\%rep(1,nrow(gr)))
 
 ###
 ### ORDER OF STARTING VALUES
@@ -168,13 +191,19 @@ sbar<- (n%*%gr)/as.vector(n%*%rep(1,nrow(gr)))
 ### to transform back take , e.g., nrow(y)+exp(tmp1$estimate[4]) = Nhat
 ###
 ###
-# Basic SCR model with RSF covariate at trap locations.
+
+
+### Fit basic SCR model with RSF covariate at trap locations.
+
 tmp1<-nlm(intlik3rsf,c(-3,log(3),1,0),y=y,K=K,X=X,ztrap=z[raster.point],G=gr)
+
+## Note: this will generate some non-critical numerical warnings. You
+##   can use optim() instead which won't generate those warnings. 
 
 # use telemetry data and activity centers for those are marginalized out of the likelihood
 tmp2<-nlm(intlik3rsf,c(-3,log(3),1,0),y=y,K=K,X=X,ztrap=z[raster.point],G=gr,ntel=n,zall=as.vector(z))
 
-# use mean "s" instead of estimating it
+# use mean telemetry location as estimate of "s" instead of marginalizing it out
 tmp3<-nlm(intlik3rsf,c(-3,log(3),1,0),y=y,K=K,X=X,ztrap=z[raster.point],G=gr,ntel=n,zall=as.vector(z),stel=sbar)
 
 # no SCR data, s is random. Here there are 2 extra parameters that are not estimated: start[1] and start[4]
