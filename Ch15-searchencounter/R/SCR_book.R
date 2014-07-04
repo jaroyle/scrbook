@@ -10,7 +10,7 @@ effort<-as.numeric(data[,9])
 grid<-data[,2:3]
 
 grid<-as.matrix(grid)
-grid<-grid/5000
+grid<-grid/1000
 grid[,1]<-grid[,1]-min(grid[,1])
 grid[,2]<-grid[,2]-min(grid[,2])
 Dmat<-as.matrix(dist(grid))
@@ -26,7 +26,7 @@ save("fisher",file="fisher.Rda")
 load("fisher.Rda")
 ###source("fisher.R")
 
-ni<- 11000
+ni<- 2000
 nb<-1000
 nthin<-1
 nc<-3
@@ -37,7 +37,7 @@ Ygen<-fisher$Ygen
 mask<-fisher$mask
 grid<-fisher$grid
 
-nz<- 750
+nz<- 50
 delta<-0  # grid is already buffered
 Xl<-min(grid[,1] - delta)
 Xu<-max(grid[,1] + delta)
@@ -59,7 +59,7 @@ ngen<-ngen+nz
 sink("modelfile.txt")
 cat("
 model {
-sigma~dunif(0,10)
+sigma~dunif(0,100)
 psi ~ dunif(0,1)
 lam0~dgamma(.1,.1)
 alpha~dunif(0,1)
