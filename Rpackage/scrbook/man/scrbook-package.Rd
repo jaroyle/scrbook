@@ -22,24 +22,24 @@ LazyLoad: \tab yes\cr
 
 I. Data formatting and manipulation:
 
-most of the functions and scripts contained in the scrbook
+Most of the functions and scripts contained in the scrbook
 package operate on standard trap deployment file (TDF) and encounter
 data file (EDF) formats or 2-d or 3-d arrays. These are easily produced
 from ordinary spreadsheet files with help from a number of utility
-functions
-including:
+functions which include:
 
-SCR23darray  will convert EDF and TDF information to 3-d array useful
-for BUGS/JAGS
+SCR23darray: will convert EDF and TDF information to 3-d array
+  useful for BUGS/JAGS 
 
-array2secr will convert a 3-d array into the EDF format useful in secr
-and SCRbayes
+array2secr: will convert a 3-d array into the EDF format useful in secr
+and SCRbayes 
 
-scr2secr converts the TDF into a secr traps file.
+scr2secr: converts the TDF into a secr traps file. 
+
 
 II. Fitting some basic models in WinBUGS/JAGS:
 
-details here
+
 
 
 III. Summary analysis of output:
