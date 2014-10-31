@@ -1,29 +1,31 @@
-\name{simScSCR.fn}
-\alias{simScSCR.fn}
+\name{simScSCR}
+\alias{simScSCR}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 bleen
 }
 \description{
-Simulates single catch data. Simulates data on a 10 x 10 grid, unit spacing.
+Simulates single catch data on a 10 x 10 grid with unit spacing.
 }
 \usage{
-simScSCR.fn(parms, K = 7, ssbuff = 2)
+simScSCR(parms, K = 7, ssbuff = 2)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{parms}{
-%%     ~~Describe \code{parms} here~~
-}
+  \item{parms}{ a named vector of parameter values: N (population size),
+  alpha0 (intercept) = logit-scale intercept, 
+  sigma = std. deviation parameter of a half-normal  encounter probability 
+  model, alpha2 = behavioral response (on the logit-scale)
+  }
   \item{K}{
 number of replicate samples
 }
   \item{ssbuff}{
-%%     ~~Describe \code{ssbuff} here~~
+  State-space buffer in standardized units. 
 }
 }
 \details{
-%%  ~~ If necessary, more details than the description above ~~
+  %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
 %%  ~Describe the value returned
@@ -33,10 +35,10 @@ number of replicate samples
 %% ...
 }
 \references{
-%% ~put references to the literature/web site here ~
+Section 9.3 of the SCR book
 }
 \author{
-%%  ~~who you are~~
+Andy Royle, aroyle@usgs.gov
 }
 \note{
 %%  ~~further notes~~
@@ -49,14 +51,14 @@ number of replicate samples
 }
 \examples{
 
-### illustration of fitting independent multinomial model to
-### single-catch trap data
-##
+### Illustration of fitting independent multinomial model to
+###    single-catch trap data
+###
 
 set.seed(2013)
 # simulate some data
 parms<-list(N=100,alpha0= -1.50, sigma=0.5,alpha2=0)
-data<-simScSCR.fn(parms,K=7,ssbuff=2)
+data<-simScSCR(parms,K=7,ssbuff=2)
 
 nind<-nrow(data$Ycat)
 M<-150
@@ -66,18 +68,19 @@ Ycat<-rbind(data$Ycat,matrix(nrow(data$X)+1,nrow=(M-nind),ncol=data$K))
 Sst<-rbind(data$S[1:nind,],cbind(runif(M-nind,data$xlim[1],data$xlim[2]),
                         runif(M-nind,data$ylim[1],data$ylim[2])))
 zst<-c(rep(1,M*.6),rep(0,M*.4))
-# starting values and bundle data
-inits <- function(){list (z=zst,sigma=runif(1,.5,1) ,S=Sst,psi=.5) }
-data <- list (X=data$X,K=data$K,
-Ycat=Ycat,M=M,ntraps=nrow(data$X),ylim=data$ylim,xlim=data$xlim)
 
-# write out the model
+## Starting values and bundle data
+inits <- function(){list (z=zst,sigma=runif(1,.5,1) ,S=Sst,psi=.5) }
+data <- list (X=data$X, K=data$K, Ycat=Ycat, M=M, ntraps=nrow(data$X), 
+              ylim=data$ylim, xlim=data$xlim)
+
+## Write out the model file
 
 cat("
 model {
 psi ~ dunif(0,1)
 alpha0 ~ dnorm(0,10)
-sigma ~dunif(0,10)
+sigma ~ dunif(0,10)
 alpha1<- 1/(2*sigma*sigma)
 
 for(i in 1:M){
@@ -119,5 +122,5 @@ out2 <- coda.samples(out1,parameters,n.iter=1000)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{single-catch}
+\keyword{multinomial}% __ONLY ONE__ keyword per line

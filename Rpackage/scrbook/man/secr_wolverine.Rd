@@ -57,9 +57,11 @@ traps1<-as.data.frame(traps[,1:3])
 traps1$x<-as.numeric(as.character(traps1$x))
 traps1$y<-as.numeric(as.character(traps1$y))
 
-# This seems to ignore the trap operation information
+# This ignores the trap operation information and analysis will
+#  assume traps were operational the entire study
 trapfile1<-read.traps(data=traps1,detector="proximity")
 
+# But we want to use the operating schedule information
 trapfile2<-scr2secr(scrtraps=traps,type="proximity")
 
 wolv.dat<-wolverine$wcaps
