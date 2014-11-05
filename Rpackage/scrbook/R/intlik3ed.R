@@ -17,7 +17,7 @@ Xl<-covariate@extent@xmin
 Xu<-covariate@extent@xmax
 Yl<-covariate@extent@ymin
 Yu<-covariate@extent@ymax
-SSarea<- (Xu-Xl)*(Yu-Yl)
+#SSarea<- (Xu-Xl)*(Yu-Yl)
 ### ASSUMES SQUARE RASTER -- NEED TO GENERALIZE THIS
 delta<- (Xu-Xl)/nc
 xg<-seq(Xl+delta/2,Xu-delta/2,delta)
@@ -27,6 +27,7 @@ npix.y<-length(yg)
 area<- (Xu-Xl)*(Yu-Yl)/((npix.x)*(npix.y))
 G<-cbind(rep(xg,npix.y),sort(rep(yg,npix.x)))
 nG<-nrow(G)
+SSarea<- (delta*delta)*nG
 
 if(distmet=="euclid")
 D<- e2dist(X,G)

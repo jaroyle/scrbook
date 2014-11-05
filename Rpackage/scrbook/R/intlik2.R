@@ -11,10 +11,11 @@ xg<-seq(Xl+delta/2,Xu-delta/2,delta)
 yg<-seq(Yl+delta/2,Yu-delta/2,delta)
 npix.x<-length(xg)
 npix.y<-length(yg)
-area<- (Xu-Xl)*(Yu-Yl)/((npix.x)*(npix.y))
+#area<- (Xu-Xl)*(Yu-Yl)/((npix.x)*(npix.y))
 G<-cbind(rep(xg,npix.y),sort(rep(yg,npix.x)))
 nG<-nrow(G)
 D<- e2dist(X,G)
+area<- (delta*delta)*nrow(G)
 
 alpha0<-parm[1]
 alpha1<-exp(parm[2])

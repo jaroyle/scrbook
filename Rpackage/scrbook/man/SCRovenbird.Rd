@@ -14,11 +14,16 @@ SCRovenbird()
 %- maybe also 'usage' for other objects documented here.
 \details{
 The approach uses a brute-force "T-fold" data augmentation in which each
-of the T years of data has it's own data augmentation parameter, psi[t].
+of the T years of data has it's own data augmentation parameter,
+psi[t]. The formulation here requires a year indicator variable to keep
+track of which year or stratum each record belongs to.
 
 The data from each year are stacked into a single large data set and
 things are indexed using a fixed "year" index variable which is input as
 data.
+
+It is also easy to do this type of T-fold data augmentation using a 3-D
+array.
 
 }
 \value{
@@ -52,12 +57,6 @@ Andy Royle, aroyle@usgs.gov
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
-
-
-
 
 library("scrbook")
 library("secr")
@@ -190,8 +189,7 @@ for(i in 1:5){
 zst<-c(zst,rep(1,nind[i]),rep(0,M-nind[i]))
 }
 
-inits <- function(){list (z=zst,sigma=runif(1,50,100) ,S=Sst,alpha0=runif(1,-2,-1)
-,alpha2=-2,alpha3=-2) }
+inits <- function(){list (z=zst,sigma=runif(1,50,100) ,S=Sst,alpha0=runif(1,-2,-1))}
 ## parameters to monitor
 parameters <- c("psi","alpha0","alpha1","sigma","N","D")
 ## data used in BUGS model

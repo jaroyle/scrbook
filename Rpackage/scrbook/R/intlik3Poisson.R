@@ -8,14 +8,15 @@ Yl<-min(X[,2])- ssbuffer
 SSarea<- (Xu-Xl)*(Yu-Yl)
 if(is.null(K)) return("need sample size")
 #delta<- (Xu-Xl)/npix
-xg<-seq(Xl+delta/2,Xu-delta/2,delta) 
-yg<-seq(Yl+delta/2,Yu-delta/2,delta) 
+xg<-seq(Xl+delta/2,Xu-delta/2,delta)
+yg<-seq(Yl+delta/2,Yu-delta/2,delta)
 npix.x<-length(xg)
 npix.y<-length(yg)
-area<- (Xu-Xl)*(Yu-Yl)/((npix.x)*(npix.y))
+#area<- (Xu-Xl)*(Yu-Yl)/((npix.x)*(npix.y))
 G<-cbind(rep(xg,npix.y),sort(rep(yg,npix.x)))
 nG<-nrow(G)
-D<- e2dist(X,G)  
+D<- e2dist(X,G)
+area<- (delta*delta)*nrow(G)
 
 if(is.null(start)) start<-c(0,0,0)
 alpha0<-start[1]
@@ -31,8 +32,8 @@ lik.marg<-rep(NA,nrow(ymat))
 for(i in 1:nrow(ymat)){
 Pm[1:length(Pm)]<- (dbinom(rep(ymat[i,],nG),rep(K,nG),probcap[1:length(Pm)],log=TRUE))
 lik.cond<- exp(colSums(Pm))
-lik.marg[i]<- sum( lik.cond*(1/nG) )  
-}                                                 
+lik.marg[i]<- sum( lik.cond*(1/nG) )
+}
 nv<-c(rep(1,length(lik.marg)-1),1)
 atheta<- 1-lik.marg[nrow(ymat)]
 nind<-nrow(ymat)-1

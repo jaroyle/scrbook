@@ -59,5 +59,27 @@ spiderplot(y3d, tdf[,2:3])
 # Fit a basic model 
 toad<-wolvSCR0(y3d,traps,nb=1000,ni=2000,buffer=1,M=100,coord.scale=10000)
 
+###
+## Do some manipulations to fit a model in 'secr'
+###
+library(secr)
+tdf <-as.matrix(wolverine$wtraps)   
+
+# Provide suitable names required by 'secr'
+dimnames(tdf) <- list(NULL,c("trapID","x","y",paste("day",1:165,sep="")))
+
+# Convert to a 'secr' trapfile
+trapfile<-scr2secr(scrtraps=tdf,type="proximity")
+
+# grab the encounter data file 
+wolv.edf <- wolverine$wcaps
+
+# provide suitable names required by 'secr' and convert to a dataframe
+dimnames(wolv.edf)<-list(NULL,c("Session","ID","Occasion","trapID"))
+wolv.edf <- as.data.frame(wolv.edf)
+
+# convert to a capture history file usable by 'secr' 
+wolvcapt<-make.capthist(wolv.edf, trapfile,fmt="trapID",noccasions=165)
+
 }
 \keyword{datasets}
