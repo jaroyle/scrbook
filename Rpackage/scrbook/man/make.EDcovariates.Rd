@@ -4,7 +4,8 @@
 generate covariates for the ecological distance simulations
 }
 \description{
-......more here
+  ......more here....
+  requires libraries gdistance and raster
 }
 \usage{
 make.EDcovariates()

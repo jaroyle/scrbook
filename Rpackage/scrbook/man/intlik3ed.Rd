@@ -49,6 +49,12 @@ J. Andy Royle
 \examples{
 
 library("scrbook")
+library("gdistance")
+library("sp")
+library("rgeos")
+library("scrbook")
+library("raster")
+
 out<-make.EDcovariates()
 covariate<-out$covariate.patchy
 set.seed(2013)

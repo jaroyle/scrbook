@@ -48,6 +48,7 @@ J. Andy Royle
 library("sp")
 library("rgeos")
 library("scrbook")
+library("raster")
 data("fakecorridor")
 
 ## Step 1

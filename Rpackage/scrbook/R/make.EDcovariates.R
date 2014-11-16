@@ -1,7 +1,6 @@
 make.EDcovariates<-function(){
 
 ### We require 3 R libraries
-library("shapefiles")
 library("gdistance")
 library("raster")
 

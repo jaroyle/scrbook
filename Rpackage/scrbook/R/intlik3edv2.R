@@ -6,6 +6,8 @@ G<-S
 nG<-nrow(G)
 nind<-nrow(y)
 J<-nrow(X)
+
+ if(length(K)==1) K<- rep(K,nrow(X))
 # note this assumes that input S is already subsetted
 #inpoly<- rep(1,nrow(G))
 ###
