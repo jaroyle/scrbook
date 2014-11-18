@@ -2,49 +2,68 @@
 \alias{intlik3ed}
 \title{
 Computes the integrated likelihood for binomial SCR model with
-ecological
-distance .
+ecological or Euclidean distance.
 }
 \description{
   Computes integrated likelihood for binomial SCR model with ecological
-  distance metric.
+  or Euclidean distance metric.  The model used here is the Bernoulli
+  encounter model so that y[i,j,k] = 1 if individual i is encountered in
+  trap j during sample occasion k. The function uses the summary
+  statstioncs y2d[i,j] = number of encounters out of K. 
 }
 \usage{
 intlik3ed(start,y,K,X,distmet="ecol",covariate,alpha2=NA)
 }
 \arguments{
   \item{start}{
-    values of parameters to evaluate likelihood with.
+    values of parameters at which to evaluate likelihood.
     order is alpha0, alpha1, n0, alpha2. If distmet="euclid" then
-    dont put alpha2 here
+    dont provide a starting value for alpha2.
 }
   \item{y}{
-    Data....
+   nind x ntraps matrix of encounter frequencies from a study based on K
+   sample occasions. 
 }
 \item{K}{
-  number reps
+  Number of sampling occasions.
 }
 \item{X}{
-  trap coordinates
+  Trap coordinates
 }
 \item{distmet}{
-either "ecol" or "euclid"
+Either "ecol" or "euclid". "ecol" is the least-cost path model. 
   }
   \item{covariate}{
-    the covariate to be used in the cost function.
+    The covariate to be used in the cost function.
     cost(x) = exp(alpha2*covariate(x))
   }
   \item{alpha2}{
-    you can fix the value of alpha2 using this argument. In that case
+    You can fix the value of alpha2 using this argument. In that case
     start should be length 3 and alpha2 is not estimated.
     if dist="euclid" then you should have alpha2=NA
   }
 }
-\value{
-returns -1*loglikelihood
+\details{
+  more here
 }
+\value{
+Returns -1*loglikelihood
+}
+\references{
+  SCR book, Chapter 12. 
+
+  Royle, J. A., Chandler, R. B., Gazenski, K. D., & Graves,
+  T. A. (2013). Spatial capture-recapture models for jointly estimating
+  population density and landscape connectivity. Ecology, 94(2),
+  287-294.
+
+  Sutherland, C., A.K. Fuller and J.A. Royle. Modelling non-Euclidean
+  movement and landscape connectivity in highly-structured ecological
+  networks. (in review)
+  
+  }
 \author{
-J. Andy Royle
+J. Andy Royle, aroyle@usgs.gov
 }
 \examples{
 
@@ -52,7 +71,6 @@ library("scrbook")
 library("gdistance")
 library("sp")
 library("rgeos")
-library("scrbook")
 library("raster")
 
 out<-make.EDcovariates()

@@ -18,7 +18,7 @@ spiderplot(y3d,traplocs)
 }
 }
 \value{
- Makes a spider plot. Retunrs list with 
+ Makes a spider plot. Returns a list with 
 
   xcent = distance from trap array centroid of each guy.
 
@@ -27,13 +27,14 @@ spiderplot(y3d,traplocs)
   center = centroid of trap array
 }
 \author{
-J. Andy Royle
+Andy Royle, aroyle@usgs.gov
 }
 \examples{
 
 library("scrbook")
 
-# make spiderplot for the beardata the hard way:
+# make spiderplot for the beardata the hard way by converting the 
+# encounter data file to a 3-d array:
 data(beardata)
 X<-as.matrix(cbind(id=1:nrow(beardata$trapmat),beardata$trapmat))
 opps<-matrix(1,nrow=nrow(X),ncol=8)
@@ -41,17 +42,20 @@ dimnames(opps)<-list(NULL,1:8)
 X<-cbind(X,opps)
 a<-SCR23darray(beardata$flat,X)
 toad<-spiderplot(a,beardata$trapmat)
+title("Fort Drum hair snag array and mean capture locations")
 # now grab the distance from centroid variable
 xcent<-toad$xcent
 # see Chapter 3 of the book
 
 # the easy way
 spiderplot(beardata$bearArray,beardata$trapmat)
+title("Fort Drum hair snag array and mean capture locations")
 
 # for the wolverine data:
+data(wolverine)
 y3d <- SCR23darray(wolverine$wcaps,wolverine$wtraps)
-spiderplot(y3d,wolverine$wtraps[,2:3])
-
+toad<- spiderplot(y3d,wolverine$wtraps[,2:3])
+title("Wolverine camera trap array and mean capture locations")
 
 
 

@@ -1,7 +1,9 @@
 \name{make.EDcovariates}
 \alias{make.EDcovariates}
 \title{
-generate covariates for the ecological distance simulations
+Generate covariates for the ecological distance simulations. The
+covariates
+are as described in Royle, Chandler, Gazenski and Graves (2013; Ecology).
 }
 \description{
   ......more here....
@@ -20,7 +22,7 @@ there are no arguments
   "covariate.trend"
 }
 \author{
-Andy Royle
+Andy Royle, aroyle@usgs.gov 
 }
 \examples{
 library("scrbook")

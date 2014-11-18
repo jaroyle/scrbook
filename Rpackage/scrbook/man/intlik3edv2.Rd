@@ -6,24 +6,31 @@
 \description{
   Computes the integrated likelihood for binomial SCR model with
   a prescribed distance matrix, which may be normal Euclidean distance
-  or it may be ecological distance. 
+  or it may be ecological distance. The model used here is the Bernoulli
+  encounter model so that y[i,j,k] = 1 if individual i is encountered in
+  trap j during sample occasion k. The function uses the summary
+  statstioncs y2d[i,j] = number of encounters out of K. 
 }
 \usage{
 intlik3edv2(start,y,K,X,S,D,inpoly)
 }
 \arguments{
   \item{start}{
-    values of parameters to evaluate likelihood with.
-    order is intercept (alpha0) distance coefficent (alpha1) and log(n0)
-}
-  \item{y}{
-    Data....
+    values of parameters at which to evaluate likelihood.
+    order is intercept (alpha0) distance coefficent (alpha1) and
+    log(n0).
+     If distmet="euclid" then
+    dont provide a starting value for alpha2.
+  }
+    \item{y}{
+   nind x ntraps matrix of encounter frequencies from a study based on K
+   sample occasions. 
 }
 \item{K}{
-  number reps
+  Number of sampling occasions.
 }
 \item{X}{
-  trap coordinates
+  Trap coordinates
 }
 \item{S}{
  state-space grid
@@ -142,7 +149,10 @@ Y<-Y[apply(Y,1,sum)>0,]
 ###
 # first with distance-in-corridor
 frog1<-nlm(intlik3edv2,c(-2.5,2,log(4)),hessian=TRUE,y=Y,K=K,X=traplocs,S=pts,D=Dtraps,inpoly=in.pts)
-# now run Euclidean distance
+# Warnings produced are numerical problems due to nlm evaluating the
+# function at extreme values. If you use better starts they go away.
+#
+### Now run Euclidean distance
 frog2<-nlm(intlik3edv2,c(-2.5,2,log(4)),hessian=TRUE,y=Y,K=K,X=traplocs,S=pts,D=Deuclid,inpoly=in.pts)
 
 
