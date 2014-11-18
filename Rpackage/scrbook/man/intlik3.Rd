@@ -87,11 +87,10 @@ library("scrbook")
 data("wolverine")
 
 traps<-wolverine$wtraps
-traplocs<-traps[,1:2]/10000
-K.wolv<-apply(traps[,3:ncol(traps)],1,sum)
-traps<-cbind(1:nrow(traps),traps)  # pad an ID variable
-y3d<-SCR23darray(wolverine$wcaps,traps)
-y2d<-apply(y3d,c(1,3),sum)
+traplocs<-traps[,2:3]/10000
+K.wolv<-apply(traps[,4:ncol(traps)],1,sum)
+y3d<-SCR23darray(wolverine$wcaps,wolverine$wtraps)
+y2d<-apply(y3d,c(1,2),sum)
 
 
 starts<-c(-1.5,0,3)
