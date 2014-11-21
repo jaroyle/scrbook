@@ -13,7 +13,7 @@ spiderplot(y3d,traplocs)
   \item{y3d}{
  3-d encounter history array: nind x ntraps x nreps
 }
-  \item{traplos}{
+  \item{traplocs}{
    ntraps x 2 matrix of trap coordinates.
 }
 }

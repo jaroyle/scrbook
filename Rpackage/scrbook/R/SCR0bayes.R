@@ -42,11 +42,13 @@ D<- N/area
 ",file = "SCR0b.txt")
 
 sst<-cbind(runif(M,xlim[1],xlim[2]),runif(M,ylim[1],ylim[2]))  # starting values for s
+# Starting values for activity centers are taken as the mean encounter location
 for(i in 1:nind){
 if(sum(y[i,])==0) next
 sst[i,1]<- mean( X[y[i,]>0,1] )
 sst[i,2]<- mean( X[y[i,]>0,2] )
 }
+# Package up the data for analysis by BUGS or JAGS
 data <- list (y=y,X=X,K=K,M=M,J=J,xlim=xlim,ylim=ylim,area=area)
 inits <- function(){
   list (alpha0=rnorm(1,-4,.4),alpha1=runif(1,1,2),s=sst,z=z)

@@ -12,25 +12,25 @@ scrUN(y, X, Zknown, M, niters, xlims, ylims, a, b)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{y}{
-%%     ~~Describe \code{y} here~~
+ntraps x noccasions matrix of counts 
 }
   \item{X}{
-%%     ~~Describe \code{X} here~~
+ntraps x 2 matrix of trap coordinates
 }
   \item{Zknown}{
 %%     ~~Describe \code{Zknown} here~~
 }
   \item{M}{
-%%     ~~Describe \code{M} here~~
+Integer larger than maximum possible population size %%     ~~Describe \code{M} here~~
 }
   \item{niters}{
-%%     ~~Describe \code{niters} here~~
+Number of MCMC iterations %%     ~~Describe \code{niters} here~~
 }
   \item{xlims}{
-%%     ~~Describe \code{xlims} here~~
+xlimits of state-space %%     ~~Describe \code{xlims} here~~
 }
   \item{ylims}{
-%%     ~~Describe \code{ylims} here~~
+ylimits of state-space %%     ~~Describe \code{ylims} here~~
 }
   \item{a}{
 %%     ~~Describe \code{a} here~~
@@ -50,10 +50,13 @@ scrUN(y, X, Zknown, M, niters, xlims, ylims, a, b)
 %% ...
 }
 \references{
-%% ~put references to the literature/web site here ~
+Chandler and Royle (2013) AOAS
+
+SCR book Ch. 18
+
 }
 \author{
-%%  ~~who you are~~
+Richard Chandler 
 }
 \note{
 %%  ~~further notes~~
@@ -69,10 +72,12 @@ library(coda)
 
 # Analysis of the Northern Parula data
 data(nopa)
-fm1 <- scrUN(nopaDat$y, nopaDat$X, M=100, obsmod="pois", niters=1000,
+fm1 <- scrUN(nopaDat$y, nopaDat$X, M=100, niters=1000,
     xlims=c(0,24), ylims=c(0, 16), tune=c(0.5,0.2,1))
 plot(mcmc(fm1))
 
+
+% not working quite right
 fm2 <- scrUN(nopaDat$y, nopaDat$X, M=80, obsmod="bern", niters=12000,
     xlims=c(0,24), ylims=c(0, 16), tune=c(0.4, 0.05, 15))
 mc2 <- mcmc(fm2)
@@ -111,7 +116,7 @@ plot(s, pch=16, col=4, asp=1, xlim=xlims)
 rect(xlims[1], ylims[1], xlims[2], ylims[2])
 points(X, pch="+")
 
-fm3 <- scrUN(n, X, M=100, obsmod="pois", niters=5000,
+fm3 <- scrUN(n, X, M=100, niters=5000,
     xlims=xlims, ylim=ylims, tune=c(0.1, 0.1, 5))
 
 mc3 <- mcmc(fm3)

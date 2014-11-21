@@ -7,7 +7,6 @@ Fit a basic SCR model using JAGS or WinBUGS %%  ~~function to do ... ~~
 \description{
   Fits "model SCR0" -- Bernoulli encounter model with a Gaussian
 (half-normal) encounter probability model.
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
 SCR0bayes(data, M = 200, engine = "jags", ni = 2000, nb = 1000)
@@ -15,9 +14,11 @@ SCR0bayes(data, M = 200, engine = "jags", ni = 2000, nb = 1000)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{data}{
-    A list having elements
+    A list having elements:
 
-     Y = encounter history data, 2-dimensional array, nind x ntraps
+     Y = encounter history data, 2-dimensional array, nind x
+     ntraps. Y[i,j] = number of encounters of individual i in trap j,
+     out of K sample occasions. 
 
      traplocs = ntraps x 2 matrix of trap coordinates
 
