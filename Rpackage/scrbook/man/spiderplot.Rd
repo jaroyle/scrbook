@@ -72,7 +72,7 @@ trapmat<-beardata$trapmat
 nind<-dim(beardata$bearArray)[1]
 K<-dim(beardata$bearArray)[3]
 ntraps<-dim(beardata$bearArray)[2]
-M=100
+M=200
 
 nz<-M-nind
 
