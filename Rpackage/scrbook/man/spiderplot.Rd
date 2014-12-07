@@ -58,6 +58,81 @@ toad<- spiderplot(y3d,wolverine$wtraps[,2:3])
 title("Wolverine camera trap array and mean capture locations")
 
 
+##
+## Here's a full script to fit the "individual covariate" model
+## to the Fort Drum black bear data
+## Provided by Bob Klaver (bklaver@iastate.edu)
+##
+library(scrbook)
+library(R2WinBUGS)
+data(beardata)
+str(beardata)
+
+trapmat<-beardata$trapmat
+nind<-dim(beardata$bearArray)[1]
+K<-dim(beardata$bearArray)[3]
+ntraps<-dim(beardata$bearArray)[2]
+M=100
+
+nz<-M-nind
+
+Yaug <- array(0, dim=c(M,ntraps,K))
+Yaug[1:nind,,] <- beardata$bearArray
+
+y<- apply(Yaug,c(1,3),sum) # summarize by ind x rep
+
+y[y>1]<- 1                 # toss out multiple encounters b/c
+                           #    traditional CR models ignore space
+
+ytot <- apply(y, 1, sum)
+
+bear.spider <- spiderplot(beardata$bearArray, beardata$trapmat)
+xcent <- bear.spider$xcent
+
+Xarg <- vector("numeric", length=nz)
+xcent <- c(xcent, rep(NA,nz))
+
+B <- 11.5
+
+set.seed(2013)             # to obtain the same results each time
+
+cat("model {
+    p0 ~dunif(0, 1)
+    alpha0 <- log(p0/(1-p0))
+    alpha1 ~ dnorm(0, 0.01)
+    psi ~dunif(0,1)
+    
+    for (i in 1:(nind+nz)) {
+      xcent[i] ~dunif(0, B) 
+      z[i] ~dbern(psi)       # zero inflated variables
+      lp[i] <- alpha0 + alpha1*xcent[i]
+      logit(p[i]) <- lp[i]
+      mu[i] <- z[i]*p[i]
+      y[i] ~dbin(mu[i], K)  # observation model
+    }
+    N<-sum(z[1:(nind+nz)])
+} ",file="modelMcov.txt")
+
+
+zst=c(rep(1,nind),rbinom(M-nind, 1, .5))
+
+data2 <- list(y=ytot, nz=nz, nind = nind, K=K, xcent=xcent, B=B)
+params2 <- c("p0", "psi", "N", "alpha0", "alpha1")
+inits =  function() {  list(z=as.numeric(ytot >= 1), p0=runif(1),
+                       alpha1=rnorm(1)) }
+
+fit2 = bugs(data2, inits, params2, model.file="modelMcov.txt",n.chains=3,
+            n.iter=110000, n.burnin=10000, n.thin=1,
+            working.directory=getwd(), debug=TRUE)
+
+print(fit2, digits=2)
+
+plot(density(fit2$sims.list$N))
+
+summary(fit2$sims.list$N/277.11)
+
+
+
 
 
 }

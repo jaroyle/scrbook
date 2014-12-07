@@ -42,7 +42,7 @@ modelMhBUGS(Yarr, engine = "winbugs", M = 500, ni = 10000, nb = 1000)
 %% ~put references to the literature/web site here ~
 }
 \author{
-%%  ~~who you are~~
+Andy Royle, aroyle@usgs.gov
 }
 \note{
 %%  ~~further notes~~
@@ -58,11 +58,16 @@ library("scrbook")
 data(beardata)
 
 set.seed(2013)
-jout<-modelMhBUGS(beardata$bearArray,engine="jags",ni=2000,nb=1000)
+jout<-modelMhBUGS(beardata$bearArray,engine="r2jags",ni=2000,nb=1000)
 
 set.seed(2013)
 wbout<-modelMhBUGS(beardata$bearArray,engine="winbugs",ni=2000,nb=1000)
 summary(as.mcmc.list(wbout))
+
+summary(wbout$sims.list$N/277.11)
+
+summary(jout$BUGSoutput$sims.list$N/277.11)
+
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

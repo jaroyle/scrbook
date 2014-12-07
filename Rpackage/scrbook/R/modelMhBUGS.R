@@ -1,5 +1,5 @@
 modelMhBUGS <-
-function(Yarr,engine="winbugs",M=500,ni=10000,nb=1000){
+function(Yarr,engine="winbugs",M=700,ni=10000,nb=1000){
 if( sum(engine == c("jags","winbugs","r2jags"))==0) return("not a valid MCMC engine: use winbugs or jags")
 
 nind<-dim(Yarr)[1]
