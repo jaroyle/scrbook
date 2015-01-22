@@ -2,6 +2,11 @@ SCR23darray <-
 function(edf, tdf){
 ### Returns 3-d array "ind x trap x occasion"
 
+# Check for dups
+    uq<- paste(edf[,2],edf[,3],edf[,4])
+    uq<- unique(uq)
+    if(any(uq>1)) cat("Duplicate captures (same individual, trap, occasion) present in data set, these are not used",fill=TRUE)
+
 nind<-max(edf[,2])
 ntraps<-nrow(tdf)
 nperiods<-ncol(tdf)-3
