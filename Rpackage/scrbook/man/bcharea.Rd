@@ -24,6 +24,7 @@ buffer a convex hull and compute area
 \examples{
 library("rgeos")
 library("scrbook")
+library("maptools")
 data(beardata)
 trapmat<-beardata$trapmat
 
