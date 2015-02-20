@@ -7,10 +7,10 @@ z<-obj$z
 niter<-nrow(z)
 
 if(is.null(Xl)){
-Xl<-min(Sxout)*.999
-Xu<-max(Sxout)*1.001
-Yl<-min(Syout)*.999
-Yu<-max(Syout)*1.001
+Xl<-min(Sxout) #*.999
+Xu<-max(Sxout) #*1.001
+Yl<-min(Syout) #*.999
+Yu<-max(Syout) #*1.001
 }
 xg<-seq(Xl,Xu,,nx)
 yg<-seq(Yl,Yu,,ny)
