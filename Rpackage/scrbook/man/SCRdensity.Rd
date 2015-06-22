@@ -6,7 +6,8 @@ Makes a spatial capture-recapture density plot %%  ~~function to do ... ~~
 }
 \description{
 requires MCMC output in the form of histories of activity center
-coordinates and data augmentation variables
+coordinates and data augmentation variables. Basically this makes a 2-d
+histogram plot. It bins the points and makes an image plot out of it. 
 }
 \usage{
 SCRdensity(obj, nx = 30, ny = 30, Xl = NULL, Xu = NULL, Yl = NULL, Yu = NULL, scalein = 100, scaleout = 100)
@@ -14,48 +15,52 @@ SCRdensity(obj, nx = 30, ny = 30, Xl = NULL, Xu = NULL, Yl = NULL, Yu = NULL, sc
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{obj}{
-list with elements Sx Sy and w each is "niters x M" matrices
+list with elements Sx Sy and w each of which is "niters x M" matrices
+where M is the size of the augmented data set and w are the data
+augmentation variables (binary)
 }
   \item{nx}{
-%%     ~~Describe \code{nx} here~~
+number of bins in the x direction%%     ~~Describe \code{nx} here~~
 }
   \item{ny}{
-%%     ~~Describe \code{ny} here~~
+number of bins in the y direction%%     ~~Describe \code{ny} here~~
 }
   \item{Xl}{
-%%     ~~Describe \code{Xl} here~~
+Lower x limit of the statespace %%     ~~Describe \code{Xl} here~~
 }
   \item{Xu}{
-%%     ~~Describe \code{Xu} here~~
+Upper x limit of the statespace%%     ~~Describe \code{Xu} here~~
 }
   \item{Yl}{
-%%     ~~Describe \code{Yl} here~~
+Lower y limit of the statespace %%     ~~Describe \code{Yl} here~~
 }
   \item{Yu}{
-%%     ~~Describe \code{Yu} here~~
+Upper y limit of the statespace %%     ~~Describe \code{Yu} here~~
 }
   \item{scalein}{
-%%     ~~Describe \code{scalein} here~~
+Units of the input coordinate system (of Sx and Sy)%%     ~~Describe \code{scalein} here~~
 }
   \item{scaleout}{
-%%     ~~Describe \code{scaleout} here~~
+Units to scale density by in the output%%     ~~Describe \code{scaleout} here~~
 }
 }
 \details{
-%%  ~~ If necessary, more details than the description above ~~
+scalein and scaleout need some explanation. If inputs coordinate system
+is in "km" (i.e., UTM divided by 1000) then input scalein=1. If you want
+output in "individuals per 100 km^2" then scaleout = 100. 
 }
 \value{
-%%  ~Describe the value returned
+A matrix of density values. Also produces a figure. 
 %%  If it is a LIST, use
 %%  \item{comp1 }{Description of 'comp1'}
 %%  \item{comp2 }{Description of 'comp2'}
 %% ...
 }
 \references{
-%% ~put references to the literature/web site here ~
+Royle et al., (2014), ch. 5. 
 }
 \author{
-%%  ~~who you are~~
+Andy Royle, aroyle@usgs.gov
 }
 \note{
 %%  ~~further notes~~

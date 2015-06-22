@@ -53,7 +53,7 @@ Andy Royle, aroyle@usgs.gov
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-  data(wolverine), wolvSCR0
+  data(wolverine), wolvSCR0, array2secr
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{

@@ -5,7 +5,8 @@
 Converts detection histories from BUGS format to secr format
 }
 \description{
-Converts 3-dimensional arrays with individual 0/1 detection histories (BUGS format) to 2-dimensional secr format
+Converts 3-dimensional arrays with individual 0/1 detection histories (BUGS format) to 2-dimensional secr format.
+Presently does not work for 4-d arrays (multi-sessions)
 }
 \usage{
 array2secr(y, session, detector="proximity")
@@ -46,7 +47,7 @@ Currently array2secr only supports binary and count detection data for the detec
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-scr2secr, SCR23darray
+scr2secr, SCR23darray, SCR24darray
 }
 \examples{
 

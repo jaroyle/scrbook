@@ -42,10 +42,11 @@ tdf<-wolverine$wtraps
 edf<-wolverine$wcaps
 
 str(edf)
- num [1:115, 1:4] 1 1 1 1 1 1 1 1 1 1 ...
- - attr(*, "dimnames")=List of 2
-  ..$ : NULL
-  ..$ : chr [1:4] "year" "individual" "day" "trap"
+# produces this:
+# num [1:115, 1:4] 1 1 1 1 1 1 1 1 1 1 ...
+# - attr(*, "dimnames")=List of 2
+#  ..$ : NULL
+#  ..$ : chr [1:4] "year" "individual" "day" "trap"
 
 dimnames(edf)<-list(NULL,NULL)  # Names don't matter
 
@@ -57,7 +58,7 @@ y3d <-SCR23darray(edf,tdf)
 spiderplot(y3d, tdf[,2:3])
 
 # Fit a basic model 
-toad<-wolvSCR0(y3d,traps,nb=1000,ni=2000,buffer=1,M=100,coord.scale=10000)
+toad<-wolvSCR0(y3d,tdf,nb=1000,ni=2000,buffer=1,M=100,coord.scale=10000)
 
 ###
 ## Do some manipulations to fit a model in 'secr'

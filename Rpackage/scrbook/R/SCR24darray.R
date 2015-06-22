@@ -4,9 +4,9 @@ function (edf, tdf)
 
 
 # Check for dups
-    uq<- paste(edf[,2],edf[,3],edf[,4])
+    uq<- paste(edf[,1],edf[,2],edf[,3],edf[,4])
     uq<- unique(uq)
-    if(any(uq>1)) cat("Duplicate captures (same individual, trap, occasion) present in data set, these are not used",fill=TRUE)
+    if(any(table(uq)>1)) cat("Duplicate captures (same session, individual, trap, occasion) present in data set, these are not used",fill=TRUE)
 
 
     nind <- max(edf[, 2])

@@ -68,7 +68,7 @@ Andy Royle, aroyle@usgs.gov
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-SCR23darray
+SCR23darray, array2secr
 }
 \examples{
 data(wolverine)

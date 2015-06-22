@@ -48,11 +48,11 @@ TDF<-as.matrix(TDF)
 ## Let's take a look. The wolverine study involved 37 camera traps and 
 ##   they were operated over a 168 day period
 str(TDF)
-
- num [1:37, 1:168] 1 2 3 4 5 6 7 8 9 10 ...
- - attr(*, "dimnames")=List of 2
-  ..$ : NULL
-  ..$ : chr [1:168] "1:37" "Easting" "Northing" "1" ...
+## Produces this:
+# num [1:37, 1:168] 1 2 3 4 5 6 7 8 9 10 ...
+# - attr(*, "dimnames")=List of 2
+#  ..$ : NULL
+#  ..$ : chr [1:168] "1:37" "Easting" "Northing" "1" ...
 
 
 ## Do a Bayesian analysis in WinBUGS 
