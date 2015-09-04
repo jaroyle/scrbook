@@ -1,5 +1,5 @@
-\name{scrPID}
-\alias{scrPID}
+\name{scrPID.um}
+\alias{scrPIDum}
 \title{
 MCMC algorithm for spatial mark-resight models/ SCR models with partial individual identifiability
 }
