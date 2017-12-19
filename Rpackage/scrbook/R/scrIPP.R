@@ -104,14 +104,15 @@ scrIPP <- function(y, X, M, niters, xlims, ylims, space.cov,
     z[rowSums(y)>0] <- 1
 #    z[] <- 1
 
-    ll.y <- sum(dpois(y, lam*z, log=TRUE))
+    ll.y <- dpois(y, lam*z, log=TRUE)
+    ll.y.sum <- sum(ll.y)
 
     # matrix to hold samples
     out <- matrix(NA, nrow=niters, ncol=7)
     colnames(out) <- c("sigma", "lam0", "beta0", "beta1", "N", "EN", "deviance")
 
     cat("\ninitial values =",
-        c(sigma, lam0, beta0, beta1, sum(z), EN, -2*ll.y), "\n\n")
+        c(sigma, lam0, beta0, beta1, sum(z), EN, -2*ll.y.sum), "\n\n")
 
     for(iter in 1:niters) {
 
@@ -128,9 +129,11 @@ scrIPP <- function(y, X, M, niters, xlims, ylims, space.cov,
         sigma.cand <- rnorm(1, sigma, tune[1])
         if(sigma.cand > 0) {
             lam.cand <- lam0*exp(-(D*D)/(2*sigma.cand*sigma.cand))
-            ll.y.cand <- sum(dpois(y, lam.cand*z, log=TRUE) )
-            if(runif(1) < exp( ll.y.cand  - ll.y ) ){
+            ll.y.cand <- dpois(y, lam.cand*z, log=TRUE)
+            ll.y.cand.sum <- sum(ll.y.cand)
+            if(runif(1) < exp( ll.y.cand.sum  - ll.y.sum ) ){
                 ll.y <- ll.y.cand
+                ll.y.sum <- ll.y.cand.sum
                 lam <- lam.cand
                 sigma <- sigma.cand
             }
@@ -140,8 +143,9 @@ scrIPP <- function(y, X, M, niters, xlims, ylims, space.cov,
         lam0.cand <- rnorm(1, lam0, tune[2])
         if(lam0.cand>0) {
             lam.cand <- lam0.cand*exp(-(D*D)/(2*sigma*sigma))
-            ll.y.cand<- sum(dpois(y, lam.cand*z, log=TRUE) )
-            if(runif(1) < exp( ll.y.cand - ll.y ) ) {
+            ll.y.cand<- dpois(y, lam.cand*z, log=TRUE)
+            ll.y.cand.sum <- sum(ll.y.cand)
+            if(runif(1) < exp( ll.y.cand.sum - ll.y.sum ) ) {
                 lam0<-lam0.cand
                 lam<-lam.cand
                 ll.y <- ll.y.cand
@@ -157,18 +161,20 @@ scrIPP <- function(y, X, M, niters, xlims, ylims, space.cov,
             zcand <- z
             if(z[i]==0) {
                 zcand[i] <- 1
-                ll.y <- 0
-                ll.y.cand <- sum(dpois(y[i,,], lam[i,]*zcand[i], log=TRUE))
+##                ll.y[i,,] <- 0
+                ll.y.cand <- dpois(y[i,,], lam[i,]*zcand[i], log=TRUE)
             } else {
                 zcand[i] <- 0
-                ll.y <- sum(dpois(y[i,,], lam[i,]*z[i], log=TRUE))
+##                ll.y <- sum(dpois(y[i,,], lam[i,]*z[i], log=TRUE))
                 ll.y.cand <- 0
             }
             ll.z <- dbinom(z[i], 1, psi, log=TRUE)
             ll.z.cand <- dbinom(zcand[i], 1, psi, log=TRUE)
-            if(runif(1) < exp((ll.y.cand+ll.z.cand) - (ll.y+ll.z))) {
+            if(runif(1) < exp((sum(ll.y.cand)+ll.z.cand) -
+                              (sum(ll.y[i,,])+ll.z))) {
                 z <- zcand
                 zUps <- zUps+1
+                ll.y[i,,] <- ll.y.cand
             }
         }
 
@@ -179,22 +185,16 @@ scrIPP <- function(y, X, M, niters, xlims, ylims, space.cov,
                          beta0 = beta0.cand, beta1=beta1,
                          flags=list(verbose=0))$value
         psi.cand <- EN.cand/M
-##        ll.beta <- sum(((beta0 + beta1*space.cov(s)) - log(EN))*z) +
-##            dbinom(sum(z), M, EN/M, log=TRUE)
         ll.s <- beta0 + beta1*space.cov(s) - log(EN)
         ll.z <- dbinom(z, 1, psi, log=TRUE)
         if(EN.cand < M) {
-##            ll.beta.cand <- sum(((beta0.cand + beta1*space.cov(s)) -
-##                log(EN.cand))*z) + dbinom(sum(z), M, EN.cand/M, log=TRUE)
             ll.s.cand <- beta0.cand + beta1*space.cov(s) - log(EN.cand)
             ll.z.cand <- dbinom(z, 1, psi.cand, log=TRUE)
-##            if(runif(1) < exp(ll.beta.cand - ll.beta) )  {
             if(runif(1) < exp((sum(ll.s.cand)+sum(ll.z.cand)) -
                               (sum(ll.s)+sum(ll.z)) ))  {
                 beta0 <- beta0.cand
                 EN <- EN.cand
                 psi <- psi.cand
-##                ll.beta <- ll.beta.cand
                 ll.s <- ll.s.cand
                 ll.z <- ll.z.cand
             }
@@ -208,24 +208,17 @@ scrIPP <- function(y, X, M, niters, xlims, ylims, space.cov,
                          flags=list(verbose=0))$value
         psi.cand <- EN.cand/M
         if(EN.cand < M) {
-##            ll.beta.cand <- sum(((beta0 + beta1.cand*space.cov(s)) -
-##                log(EN.cand))*z) + dbinom(sum(z), M, EN.cand/M, log=TRUE)
             ll.s.cand <- beta0 + beta1.cand*space.cov(s) - log(EN.cand)
             ll.z.cand <- dbinom(z, 1, psi.cand, log=TRUE)
-##            if(runif(1) < exp(ll.beta.cand - ll.beta) )  {
             if(runif(1) < exp((sum(ll.s.cand)+sum(ll.z.cand)) -
                               (sum(ll.s)+sum(ll.z)) ))  {
                 beta1 <- beta1.cand
                 EN <- EN.cand
                 psi <- psi.cand
-##                ll.beta <- ll.beta.cand
                 ll.s <- ll.s.cand
                 ll.z <- ll.z.cand
             }
         }
-
-##        # update psi
-##        psi <- EN / M
 
         # update s
         sups <- 0
@@ -240,32 +233,28 @@ scrIPP <- function(y, X, M, niters, xlims, ylims, space.cov,
             lam.cand <- lam
             lam.cand[i,] <-  lam0*exp(-(dtmp*dtmp)/(2*sigma*sigma))
             if(z[i]==0) {
-##                ll.s <- ll.s.cand <- 0
-                ll.y <- ll.y.cand <- 0
+##                ll.y <- ll.y.cand <- 0
+                ll.y.cand <- 0
             } else {
-##                ll.s <- sum(dpois(y[i,,], lam[i,], log=TRUE) )
-##                ll.s.cand <- sum(dpois(y[i,,], lam.cand[i,], log=TRUE) )
-                ll.y <- sum(dpois(y[i,,], lam[i,], log=TRUE) )
-                ll.y.cand <- sum(dpois(y[i,,], lam.cand[i,], log=TRUE) )
+##                ll.y <- sum(dpois(y[i,,], lam[i,], log=TRUE) )
+                ll.y.cand <- dpois(y[i,,], lam.cand[i,], log=TRUE)
             }
             #ln(prior), denominator is constant
-##            prior.s <- beta0 + beta1*space.cov(s[i,])
-##            prior.s.cand <- beta0 + beta1*space.cov(scand)
             ll.s <- beta0 + beta1*space.cov(s[i,])
             ll.s.cand <- beta0 + beta1*space.cov(scand)
 
-##           if(runif(1)< exp((ll.s.cand+prior.s.cand) - (ll.s+prior.s))) {
-            if(runif(1) < exp((ll.y.cand+ll.s.cand) -
-                              (ll.y+ll.s))) {
+            if(runif(1) < exp((sum(ll.y.cand)+ll.s.cand) -
+                              (sum(ll.y[i,,])+ll.s))) {
                 s[i,] <- scand
                 lam <- lam.cand
                 D[i,] <- dtmp
-                ##psi[i] <- psi.cand
+                ll.y[i,,] <- ll.y.cand
                 sups <- sups+1
             }
         }
-        ll.y <- sum(dpois(y, lam*z, log=TRUE))
-        out[iter,] <- c(sigma, lam0, beta0, beta1, sum(z), EN, -2*ll.y)
+##        ll.y <- dpois(y, lam*z, log=TRUE)
+        ll.y.sum <- sum(ll.y)
+        out[iter,] <- c(sigma, lam0, beta0, beta1, sum(z), EN, -2*ll.y.sum)
     }
     last <- list(s=s, lam=lam, z=z)
     list(out=out, last=last)
