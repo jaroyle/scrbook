@@ -11,10 +11,10 @@ function (ll = NA, minx = NA, maxx = NA, miny = NA, maxy = NA,
         maxy <- max(ll[, 2])
         bx <- (maxx - minx) * buffer
         by <- (maxy - miny) * buffer
-        minx <- minx - bx
-        maxx <- maxx + bx
-        miny <- miny - by
-        maxy <- maxy + by
+        minx <- minx - bx/2
+        maxx <- maxx + bx/2
+        miny <- miny - by/2
+        maxy <- maxy + by/2
     }
     x <- sort(rep(seq(minx, maxx, , nx), ny))
     y <- rep(seq(maxy, miny, , ny), nx)
