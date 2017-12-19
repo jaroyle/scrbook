@@ -4,7 +4,7 @@ function (x, y, add = FALSE, cx = 1,col="gray")
     nc <- as.numeric(cut(y, 10))
     if (!add)
         plot(x, pch = " ",asp=1)
-        if(col=="gray"){
+        if( any(col=="gray")){
         cc<-seq(3,17,,10)/20
         cc<-gray(cc)
 }
