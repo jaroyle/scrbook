@@ -16,25 +16,25 @@ intlik4(start = NULL, y = y, K = NULL, delta = 0.3, X = traplocs, G = NULL, ssbu
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{start}{
-%%     ~~Describe \code{start} here~~
+parameter starting values: logit(p0), log(1/(2*sigma*sigma)), log(n0)
 }
   \item{y}{
-%%     ~~Describe \code{y} here~~
+2-d encounter frequency matrix: individuals x traps 
 }
   \item{K}{
-%%     ~~Describe \code{K} here~~
+vector of trap-specific sample occasions. 
 }
   \item{delta}{
-%%     ~~Describe \code{delta} here~~
+resolution of integration grid (spacing)%%     ~~Describe \code{delta} here~~
 }
   \item{X}{
-%%     ~~Describe \code{X} here~~
+trap locations%%     ~~Describe \code{X} here~~
 }
   \item{G}{
-%%     ~~Describe \code{G} here~~
+state-space grid %%     ~~Describe \code{G} here~~
 }
   \item{ssbuffer}{
-%%     ~~Describe \code{ssbuffer} here~~
+width of buffer around trap array to define state-space. If G is not provided%%     ~~Describe \code{ssbuffer} here~~
 }
 }
 \details{
@@ -51,7 +51,7 @@ intlik4(start = NULL, y = y, K = NULL, delta = 0.3, X = traplocs, G = NULL, ssbu
 %% ~put references to the literature/web site here ~
 }
 \author{
-%%  ~~who you are~~
+Andy Royle, aroyle@usgs.gov 
 }
 \note{
 %%  ~~further notes~~
@@ -110,17 +110,23 @@ frog<-nlm(intlik4,c(-2.5,0,3),hessian=TRUE,y=y,K=K,delta=.3,X=traplocs,G=G)
 ####
 ####
 
+
 library("scrbook")
 data("wolverine")
 traps<-wolverine$wtraps
-traplocs<-traps[,1:2]/10000
-K.wolv<-apply(traps[,3:ncol(traps)],1,sum)
-traps<-cbind(1:nrow(traps),traps)  # pad an ID variable
-y3d<-SCR23darray.fn(wolverine$wcaps,traps)
-y2d<-apply(y3d,c(1,3),sum)
+traplocs<-traps[,2:3]/10000   # change to columns 2:3
+K.wolv<-apply(traps[,4:ncol(traps)],1,sum)
+
+y3d<-SCR23darray(wolverine$wcaps,traps)
+y2d<-apply(y3d,c(1,2),sum)
+
 G<-wolverine$grid2/10000    ## Use the 2km grid
+plot(G,pch=20)
+points(traplocs,pch=20,col="red")
 starts<-c(-1.5,0,3)
 frog<-nlm(intlik4,starts,hessian=TRUE,y=y2d,K=K.wolv,X=traplocs,G=G,ssbuffer=2)
+
+
 
 
 }

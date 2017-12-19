@@ -83,10 +83,26 @@ Sx<-out$sims.list$s[,,1]
 Sy<-out$sims.list$s[,,2]
 z<- out$sims.list$z
 obj<-list(Sx=Sx,Sy=Sy,z=z)
-## input scale 1 unit = 100 km^2
-## express output in wolverines per 1000 km^2 (note: this is different
+## Input scale 1 unit = 100 km^2
+##  express output in wolverines per 1000 km^2 (note: this is different
 ##  from the map in Fig 5.6 of the SCR book)
 SCRdensity(obj,scalein=100,scaleout=1000)
+
+
+
+#png("wolv_post_s.png",width=5.25,height=5.25, units="in", res=400)
+# Fig. 5.7 (more or less)
+
+par(mfrow=c(1,1),mar=c(2,2,2,6))
+X<-wolverine$wtraps[,2:3]
+X[,1]<-(X[,1]-min(X[,1]))/10000
+X[,2]<-(X[,2]-min(X[,2]))/10000
+
+SCRdensity(obj,whichguy=1)
+points(X,pch=20,cex=1,col="white")
+points(X[30,],pch=1,cex=2,col="black")
+#dev.off()
+
 
 
 
